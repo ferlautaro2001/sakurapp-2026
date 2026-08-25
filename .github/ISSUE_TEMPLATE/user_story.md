@@ -1,7 +1,7 @@
 ---
 name: "🟢 User Story"
 about: "Especificación de funcionalidad con criterios BDD y tareas técnicas"
-title: "[📚 User Story-X] [Pto] [Titulo]
+title: "[User Story-X] [Pto] [Titulo]
 labels: ["user-story"]
 assignees: ""
 ---

@@ -1,21 +1,19 @@
 ---
 name: "🟢 User Story"
 about: "Especificación de funcionalidad con criterios BDD y tareas técnicas"
-title: "[US-X.Y] [Pto Z] Título de la Historia"
+title: "[📚 User Story-X] [Pto] [Titulo]
 labels: ["user-story"]
 assignees: ""
 ---
-
-## 📚 User Story
 **Como** [XXX],  
 **Quiero** [XXX],  
 **Para** [XXX].
 
 ---
 
-## 📖 Punto Relacionado
-* **Punto del Enunciado:** `Punto X`
-* **Épica Vinculada:** #ID_EPICA
+## Punto Relacionado
+* **Punto/s del Enunciado:** `X`
+* **Épica Vinculada:** #ID
 
 ---
 

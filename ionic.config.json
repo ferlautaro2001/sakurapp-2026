@@ -1,0 +1,7 @@
+{
+  "name": "la-mesa",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

@@ -79,6 +79,8 @@ src/environments/environment.prod.ts
 *.prompt.md
 prompt_*.md
 epicreator.md
+/v0/
+v0/
 
 # Android & Capacitor build artifacts
 /android/.gradle/

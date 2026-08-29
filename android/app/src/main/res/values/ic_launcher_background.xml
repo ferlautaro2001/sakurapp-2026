@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tono medio del degradado del propio ícono: así el ícono adaptativo no
+         muestra un corte entre el arte y el relleno de alrededor. -->
+    <color name="ic_launcher_background">#FD5F76</color>
+</resources>

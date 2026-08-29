@@ -77,7 +77,7 @@ A continuación se indexan las capturas de pantalla de los flujos y componentes 
 
 ---
 
-## atálogo de Códigos QR del Sistema
+## Catálogo de Códigos QR del Sistema
 
 Códigos QR funcionales requeridos por la cátedra para pruebas y corrección desde la aplicación:
 

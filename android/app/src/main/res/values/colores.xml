@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Paleta de SakurApp usada por el contenedor nativo. -->
+    <color name="sakurapp_coral">#FF7665</color>
+    <color name="sakurapp_rosa">#FD527C</color>
+    <color name="sakurapp_fucsia">#EB366B</color>
+    <color name="sakurapp_nieve">#FDECEF</color>
+    <color name="sakurapp_ciruela">#6E1234</color>
+</resources>

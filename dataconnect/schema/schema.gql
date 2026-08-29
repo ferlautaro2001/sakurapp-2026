@@ -1,0 +1,195 @@
+enum Perfil {
+  DUENO
+  SUPERVISOR
+  METRE
+  MOZO
+  COCINERO
+  CANTINERO
+  CLIENTE_REGISTRADO
+  CLIENTE_ANONIMO
+}
+
+enum EstadoUsuario {
+  PENDIENTE
+  APROBADO
+  RECHAZADO
+}
+
+enum TipoMesa {
+  VIP
+  ESTANDAR
+  MOVILIDAD_REDUCIDA
+}
+
+enum EstadoMesa {
+  VACIA
+  OCUPADA
+}
+
+enum TipoProducto {
+  COMIDA
+  BEBIDA
+  POSTRE
+}
+
+enum Sector {
+  COCINA
+  BAR
+}
+
+enum EstadoEspera {
+  ESPERANDO
+  ASIGNADO
+  CANCELADO
+  FINALIZADO
+}
+
+enum EstadoPedido {
+  SELECCIONANDO
+  PENDIENTE_CONFIRMACION
+  RECHAZADO
+  CONFIRMADO
+  EN_PREPARACION
+  LISTO
+  ENTREGADO
+  RECIBIDO
+  CUENTA_SOLICITADA
+  PAGO_PENDIENTE
+  CERRADO
+}
+
+enum EstadoSector {
+  NO_APLICA
+  PENDIENTE
+  EN_PREPARACION
+  LISTO
+}
+
+enum RolMensaje {
+  CLIENTE
+  MOZO
+}
+
+enum EstadoConversacion {
+  ABIERTA
+  CERRADA
+}
+
+type User @table(name: "usuarios") {
+  id: UUID! @default(expr: "uuidV4()")
+  uid: String! @unique @col(dataType: "varchar(128)")
+  nombre: String! @col(dataType: "varchar(60)")
+  apellido: String @col(dataType: "varchar(60)")
+  dni: String @unique @col(dataType: "varchar(15)")
+  cuil: String @unique @col(dataType: "varchar(15)")
+  email: String @unique @col(dataType: "varchar(120)")
+  perfil: Perfil!
+  fotoUrl: String!
+  estado: EstadoUsuario! @default(value: PENDIENTE)
+  pushToken: String
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type Mesa @table(name: "mesas") {
+  id: UUID! @default(expr: "uuidV4()")
+  numero: Int! @unique
+  cantidadComensales: Int!
+  tipo: TipoMesa!
+  estado: EstadoMesa! @default(value: VACIA)
+  fotoUrl: String!
+  qrCodeUrl: String!
+  clienteActual: User
+}
+
+type Producto @table(name: "productos") {
+  id: UUID! @default(expr: "uuidV4()")
+  nombre: String! @col(dataType: "varchar(80)")
+  descripcion: String!
+  tiempoElaboracion: Int!
+  precio: Float! @col(dataType: "numeric(10,2)")
+  tipo: TipoProducto!
+  sector: Sector!
+  foto1: String!
+  foto2: String!
+  foto3: String!
+  activo: Boolean! @default(value: true)
+}
+
+type Espera @table(name: "listaEspera") {
+  id: UUID! @default(expr: "uuidV4()")
+  cliente: User!
+  estado: EstadoEspera! @default(value: ESPERANDO)
+  mesaAsignada: Mesa
+  timestamp: Timestamp! @default(expr: "request.time")
+}
+
+type Pedido @table(name: "pedidos") {
+  id: UUID! @default(expr: "uuidV4()")
+  mesa: Mesa!
+  cliente: User!
+  estadoGlobal: EstadoPedido! @default(value: SELECCIONANDO)
+  estadoCocina: EstadoSector! @default(value: NO_APLICA)
+  estadoBar: EstadoSector! @default(value: NO_APLICA)
+  motivoRechazo: String
+  tiempoEstimado: Int!
+  totalBruto: Float! @col(dataType: "numeric(10,2)")
+  descuentoJuego: Int! @default(value: 0)
+  montoDescuentoJuego: Float! @default(value: 0) @col(dataType: "numeric(10,2)")
+  porcentajePropina: Int! @default(value: 0)
+  montoPropina: Float! @default(value: 0) @col(dataType: "numeric(10,2)")
+  totalFinal: Float! @col(dataType: "numeric(10,2)")
+  confirmadoPor: User
+  timestampCreacion: Timestamp! @default(expr: "request.time")
+}
+
+type PedidoItem @table(name: "pedidoItems") {
+  id: UUID! @default(expr: "uuidV4()")
+  pedido: Pedido!
+  producto: Producto!
+  cantidad: Int!
+  precioUnitario: Float! @col(dataType: "numeric(10,2)")
+  subtotal: Float! @col(dataType: "numeric(10,2)")
+  sector: Sector!
+}
+
+type Conversacion @table(name: "conversaciones") {
+  id: UUID! @default(expr: "uuidV4()")
+  mesa: Mesa! @unique
+  estado: EstadoConversacion! @default(value: ABIERTA)
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type Mensaje @table(name: "mensajes") {
+  id: UUID! @default(expr: "uuidV4()")
+  conversacion: Conversacion!
+  remitente: User!
+  rolRemitente: RolMensaje!
+  contenido: String!
+  leido: Boolean! @default(value: false)
+  timestamp: Timestamp! @default(expr: "request.time")
+}
+
+type IntentoJuego @table(name: "intentosJuego") {
+  id: UUID! @default(expr: "uuidV4()")
+  pedido: Pedido!
+  cliente: User!
+  tipoJuego: String! @col(dataType: "varchar(20)")
+  numeroIntento: Int!
+  gano: Boolean!
+  descuentoOtorgado: Int! @default(value: 0)
+  timestamp: Timestamp! @default(expr: "request.time")
+}
+
+type Encuesta @table(name: "encuestas") {
+  id: UUID! @default(expr: "uuidV4()")
+  cliente: User!
+  pedido: Pedido! @unique
+  mesa: Mesa!
+  calificacionMozo: Int!
+  nivelLimpieza: Int!
+  recomendaria: Boolean!
+  aspectoFavorito: String! @col(dataType: "varchar(40)")
+  comentarios: String
+  timestamp: Timestamp! @default(expr: "request.time")
+}
+

@@ -1,0 +1,69 @@
+query ListProductos @auth(level: PUBLIC, insecureReason: "Cualquier usuario puede ver la carta de productos.") {
+  productos(where: { activo: { eq: true } }) {
+    id
+    nombre
+    descripcion
+    precio
+    tiempoElaboracion
+    tipo
+    sector
+    foto1
+    foto2
+    foto3
+    activo
+  }
+}
+
+query ListMesas @auth(level: PUBLIC, insecureReason: "Consulta de estado de mesas en el salón.") {
+  mesas {
+    id
+    numero
+    cantidadComensales
+    tipo
+    estado
+    fotoUrl
+    qrCodeUrl
+    clienteActual {
+      id
+      nombre
+      apellido
+      perfil
+    }
+  }
+}
+
+query ListUsuarios @auth(level: PUBLIC, insecureReason: "Consulta de personal y comensales.") {
+  users {
+    id
+    uid
+    nombre
+    apellido
+    dni
+    cuil
+    email
+    perfil
+    fotoUrl
+    estado
+    createdAt
+  }
+}
+
+query ListPedidosActivos @auth(level: PUBLIC, insecureReason: "Monitoreo de pedidos.") {
+  pedidos(orderBy: [{ timestampCreacion: DESC }]) {
+    id
+    mesa {
+      numero
+    }
+    cliente {
+      nombre
+      apellido
+    }
+    estadoGlobal
+    estadoCocina
+    estadoBar
+    tiempoEstimado
+    totalFinal
+    timestampCreacion
+  }
+}
+

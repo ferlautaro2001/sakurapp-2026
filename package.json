@@ -11,7 +11,8 @@
     "lint": "ng lint",
     "android": "npm run build && cap sync android && cap open android",
     "android:apk": "npm run build && cap sync android && cd android && gradlew assembleDebug",
-    "sync": "npm run build && cap sync android",
+    "sync": "npm run build && cap sync android"
+  },
   "dependencies": {
     "@angular/common": "22.0.1",
     "@angular/compiler": "22.0.1",
@@ -56,5 +57,5 @@
     "typescript-eslint": "^8.61.0",
     "vitest": "^4.0.8"
   },
-  "description": "La Mesa · gestión de restaurante asiático. Trabajo final integrador."
+  "description": "SakurApp · gestión de restaurante asiático. Trabajo final integrador."
 }

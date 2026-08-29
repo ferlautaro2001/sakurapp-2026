@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'ar.com.sakurapp.app',
-  appName: 'La Mesa',
+  appName: 'SakurApp',
   webDir: 'www',
   android: {
     // El fondo del contenedor nativo acompaña al coral de la aplicación:

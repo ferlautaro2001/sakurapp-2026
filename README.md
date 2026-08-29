@@ -19,7 +19,7 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 | **Fernandez Di Bella, Lautaro Alfredo** | Líder de Proyecto  
 ---
 
-## ecnologías Utilizadas
+## Tech Stack
 
 <p align="left">
   <img src="https://img.shields.io/badge/Angular-DD0031?style=flat-square&logo=angular&logoColor=white" alt="angular"/>
@@ -110,8 +110,8 @@ npm install
 
 ### 2. Cambiar examples.
 /src/environments/environment.example.ts 
-
 .env
+
 ### 3. Compilar la aplicación web de Angular en modo producción
 ionic build --prod
 
@@ -123,7 +123,6 @@ npx cap add android
 npx cap sync
 
 ### 6. EJECUCIÓN:
-
 # OPCIÓN A: Abrir el proyecto en Android Studio para compilarlo desde su interfaz gráfica
 npx cap open android
 

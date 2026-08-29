@@ -1,0 +1,12 @@
+specVersion: "v1"
+serviceId: "sakurapp"
+location: "us-east4"
+schemas:
+  - source: "./schema"
+    datasource:
+      postgresql:
+        database: "fdcdb"
+        cloudSql:
+          instanceId: "sakurapp-fdc"
+connectorDirs: ["./example"]
+

@@ -1,0 +1,27 @@
+/*
+ * SakurApp · estilos globales
+ *
+ * El modo oscuro está deliberadamente fuera: es un requerimiento excluyente
+ * del trabajo final y una regla dura del sistema de diseño.
+ */
+
+/* Sistema de diseño de SakurApp */
+@import "./theme/tokens.css";
+@import "./theme/componentes.css";
+
+/* El componente enrutado ocupa todo el contenedor de la aplicación: así el
+   encabezado y la barra inferior quedan fijos y el cuerpo se desplaza solo.
+ *
+ * El selector apunta al hermano inmediato del `router-outlet`, que es donde el
+ * enrutador inserta la pantalla, y no a "todo lo que no sea el outlet": las
+ * capas que van encima —la ventana modal, los avisos flotantes y el indicador
+ * de espera— también son hijas de `.sk-app` y no deben repartirse el alto con
+ * la pantalla. Cuando lo hacían, abrir el modal encogía la vista de atrás a la
+ * mitad exacta. */
+.sk-app > router-outlet + * {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}

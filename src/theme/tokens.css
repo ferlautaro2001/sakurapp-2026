@@ -1,0 +1,166 @@
+/* SakurApp · tokens
+   Paleta, tipografía, espaciado, radios, sombras y movimiento del sistema de
+   diseño. Los colores salen de la paleta de la marca (coral, rosa y pétalo);
+   los dos tonos ciruela son esos mismos rosas oscurecidos para que el texto
+   tenga contraste nítido. No inventar valores nuevos acá. */
+
+@import url("https://fonts.googleapis.com/css2?family=Figtree:ital,wght@0,300..900;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,1,0&display=block");
+
+:root {
+  /* paleta de la marca */
+  --sk-coral: #FF7665;
+  --sk-coral-hondo: #FE666F;
+  --sk-rosa: #FE5B76;
+  --sk-rosa-hondo: #FD527C;
+  --sk-fucsia: #EB366B;
+  --sk-fucsia-hondo: #C72657;
+  --sk-petalo-hondo: #DA5279;
+  --sk-petalo: #E07390;
+  --sk-petalo-claro: #F39DAF;
+  --sk-petalo-vivo: #FE8FAC;
+  --sk-petalo-tenue: #F5B1C0;
+  --sk-nieve: #FDECEF;
+  --sk-nieve-rosa: #FFD7DF;
+  --sk-ciruela: #6E1234;
+  --sk-ciruela-suave: #A4436A;
+
+  /* estados: el verde y el rojo son los únicos colores fuera de la familia,
+     porque aceptar y rechazar no pueden confundirse con la marca */
+  --sk-verde: #1B7A4C;
+  --sk-verde-fondo: #DCF1E5;
+  --sk-rojo: #C0261A;
+  --sk-rojo-fondo: #FFE0DB;
+  --sk-ambar: #8F4B00;
+  --sk-ambar-fondo: #FFE3D9;
+
+  --sk-velo: rgba(253, 236, 239, .74);
+  --sk-scrim: rgba(110, 18, 52, .52);
+
+  /* El fondo de toda la aplicación es un rosa profundo y plano: nunca blanco,
+     nunca oscuro y nunca un degradado a pantalla completa, que resulta pesado.
+     El degradado de la marca queda reservado para la pantalla de presentación
+     y para acentos chicos. Cada par de colores de acá está verificado con
+     `python herramientas/contraste.py`. */
+  --sk-fondo: #B92E58;
+  --sk-fondo-hondo: #A82A52;
+  --gradiente-marca: linear-gradient(140deg, var(--sk-coral) 0%, var(--sk-rosa-hondo) 55%, var(--sk-fucsia) 100%);
+
+  /* semánticos */
+  --bg-app: var(--sk-fondo);
+  --surface-card: var(--sk-nieve);
+  --surface-sunken: var(--sk-nieve-rosa);
+  --surface-inverse: var(--sk-ciruela);
+  --text-title: var(--sk-ciruela);
+  --text-body: var(--sk-ciruela);
+  --text-muted: var(--sk-ciruela-suave);
+  --text-on-primary: #FFFFFF;
+  --text-link: var(--sk-fucsia);
+  /* lo que se apoya directamente sobre el degradado, sin tarjeta debajo */
+  --text-sobre-fondo: #FFFFFF;
+  --text-sobre-fondo-suave: rgba(255, 255, 255, .88);
+  --linea-sobre-fondo: rgba(255, 255, 255, .34);
+  /* Acento de lo que vive dentro de una tarjeta: precios, íconos, pestaña
+     activa. Va en fucsia hondo porque el fucsia claro no llega a 4,5 sobre
+     nieve. */
+  --action-primary: var(--sk-fucsia-hondo);
+  --action-primary-pressed: #A81E48;
+  --action-accent: var(--sk-petalo-hondo);
+  /* La acción primaria de pantalla es una barra blanca sobre el rosa profundo:
+     es lo que más contrasta de la pantalla, que es justo lo que se espera de
+     la única acción principal. */
+  --boton-primario: #FFFFFF;
+  --boton-primario-texto: var(--sk-fucsia-hondo);
+  --boton-primario-pulsado: var(--sk-nieve-rosa);
+  --border-field: var(--sk-petalo-tenue);
+  --border-card: rgba(243, 157, 175, .7);
+  --border-divider: rgba(164, 67, 106, .26);
+  --state-error: var(--sk-rojo);
+  --state-error-surface: var(--sk-rojo-fondo);
+  --state-success: var(--sk-verde);
+  --state-success-surface: var(--sk-verde-fondo);
+  --state-pending: var(--sk-ambar);
+  --state-pending-surface: var(--sk-ambar-fondo);
+
+  /* alias heredados del sistema anterior, para no romper referencias sueltas */
+  --lm-surface: var(--sk-nieve);
+  --lm-cocoa: var(--sk-ciruela);
+  --lm-tint: var(--sk-nieve-rosa);
+  --lm-tint-strong: var(--sk-petalo-tenue);
+  --lm-white-veil: var(--sk-velo);
+
+  /* avatares del ingreso rápido: distinguibles entre sí, todos cálidos */
+  --avatar-1: #C72657;
+  --avatar-2: #A1357F;
+  --avatar-3: #B4462B;
+  --avatar-4: #7A2E86;
+  --avatar-5: #B3123F;
+  --avatar-6: #8C3A57;
+
+  /* tipografía */
+  --font-display: "Zen Maru Gothic", "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-text: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --font-numeric: "Zen Maru Gothic", "Figtree", "Segoe UI", system-ui, sans-serif;
+  --type-display: 900 36px/1.08 var(--font-display);
+  --type-title-xl: 900 32px/1.12 var(--font-display);
+  --type-title: 700 27px/1.18 var(--font-display);
+  --type-section: 700 20px/1.28 var(--font-display);
+  --type-card-title: 700 17px/1.32 var(--font-display);
+  --type-body: 400 16px/1.5 var(--font-text);
+  --type-body-medium: 500 16px/1.5 var(--font-text);
+  --type-body-small: 400 14px/1.45 var(--font-text);
+  --type-caption: 400 13px/1.4 var(--font-text);
+  --type-label: 700 12px/1.2 var(--font-text);
+  --type-button: 700 16px/1 var(--font-text);
+  --type-price: 900 21px/1.1 var(--font-numeric);
+  --type-numeral: 900 34px/1 var(--font-numeric);
+  --type-numeral-lg: 900 48px/1 var(--font-numeric);
+  --tracking-label: .13em;
+  --tracking-tight: -.01em;
+
+  /* espaciado */
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px; --space-9: 56px;
+  --gutter-screen: 18px;
+  --gap-list: 12px;
+  --touch-min: 48px;
+  --field-height: 56px;
+  --button-height: 56px;
+  --header-h: 64px;
+  --bottomnav-h: 74px;
+
+  /* forma */
+  --radius-field: 14px;
+  --radius-button: 16px;
+  --radius-card: 20px;
+  --radius-pill: 999px;
+  --radius-sheet: 26px;
+  --radius-thumb: 14px;
+  --shadow-card: 0 1px 2px rgba(59, 8, 27, .1), 0 6px 16px rgba(59, 8, 27, .14);
+  --shadow-raised: 0 2px 6px rgba(59, 8, 27, .14), 0 14px 30px rgba(59, 8, 27, .22);
+  --shadow-button: 0 6px 16px rgba(59, 8, 27, .26);
+  --shadow-inset-field: inset 0 1px 0 rgba(255, 255, 255, .9);
+  --focus-ring: 0 0 0 3px rgba(199, 38, 87, .34);
+
+  /* movimiento */
+  --ease-standard: cubic-bezier(.2, .6, .2, 1);
+  --ease-out-soft: cubic-bezier(.16, .84, .32, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --dur-splash: 1500ms;
+}
+
+@keyframes lm-spin { to { transform: rotate(360deg); } }
+@keyframes lm-pulse { 0%, 100% { opacity: .5; transform: scale(.95); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes lm-slide-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes lm-rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes lm-scan { 0%, 100% { transform: translateY(-88px); } 50% { transform: translateY(88px); } }
+@keyframes sk-flotar { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(6deg); } }
+@keyframes sk-caer {
+  0% { transform: translate3d(0, -14vh, 0) rotate(0deg); opacity: 0; }
+  12% { opacity: .5; }
+  88% { opacity: .5; }
+  100% { transform: translate3d(22px, 108vh, 0) rotate(220deg); opacity: 0; }
+}

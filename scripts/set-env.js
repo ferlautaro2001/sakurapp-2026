@@ -2,19 +2,27 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-// Cargar .env desde la raíz del proyecto
+// Cargar o inicializar automáticamente .env desde la plantilla si no existe o está vacío
 const envPath = path.resolve(__dirname, '../.env');
+const dotExamplePath = path.resolve(__dirname, '../.env.example');
+const examplePath = path.resolve(__dirname, '../env.example');
+
+const isEnvEmpty = !fs.existsSync(envPath) || fs.statSync(envPath).size === 0;
+
+if (isEnvEmpty) {
+  const source = fs.existsSync(dotExamplePath) ? dotExamplePath : (fs.existsSync(examplePath) ? examplePath : null);
+  if (source) {
+    fs.copyFileSync(source, envPath);
+    console.log('📋 Archivo .env inicializado automáticamente desde la plantilla del proyecto.');
+  }
+}
+
 if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath });
-} else {
-  console.warn('⚠️ Archivo .env no encontrado. Intentando usar archivo de plantilla de entorno como contingencia.');
-  const dotExamplePath = path.resolve(__dirname, '../.env.example');
-  const examplePath = path.resolve(__dirname, '../env.example');
-  if (fs.existsSync(dotExamplePath)) {
-    dotenv.config({ path: dotExamplePath });
-  } else if (fs.existsSync(examplePath)) {
-    dotenv.config({ path: examplePath });
-  }
+} else if (fs.existsSync(dotExamplePath)) {
+  dotenv.config({ path: dotExamplePath });
+} else if (fs.existsSync(examplePath)) {
+  dotenv.config({ path: examplePath });
 }
 
 const envDir = path.resolve(__dirname, '../src/environments');
@@ -44,8 +52,8 @@ export const environment = {
 `;
 }
 
-fs.writeFileSync(path.join(envDir, 'environment.ts'), generarContenido(false), 'utf8');
-fs.writeFileSync(path.join(envDir, 'environment.prod.ts'), generarContenido(true), 'utf8');
+// En entorno educativo siempre se opera en modo producción con la base de datos real en un único archivo
+fs.writeFileSync(path.join(envDir, 'environment.ts'), generarContenido(true), 'utf8');
 
-console.log('✅ Archivos de entorno src/environments/environment*.ts generados exitosamente desde .env');
+console.log('✅ Archivo de entorno src/environments/environment.ts generado exitosamente desde .env (producción)');
 

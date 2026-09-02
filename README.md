@@ -96,37 +96,71 @@ Códigos QR funcionales requeridos por la cátedra para pruebas y corrección de
 
 ---
 
-## Instalación y Puesta en Marcha
+## 🚀 Instalación y Puesta en Marcha
 
 ### Prerrequisitos
 * Node.js (v20+ recomendado)
 * npm
-* Android Studio (para pruebas nativas y emulador)
+* Android Studio (con Android SDK y emulador o dispositivo físico configurado)
 
-### Pasos
+### 1. Clonar e instalar dependencias
 ```bash
-### 1. Instalar las dependencias de Node.js del proyecto
+git clone https://github.com/ferlautaro2001/sakurapp-2026.git
+cd sakurapp-2026
 npm install
+```
 
-### 2. Cambiar examples.
-/src/environments/environment.example.ts 
-.env
+### 2. Variables de entorno
+Copiar la plantilla de ejemplo para generar el archivo local `.env`:
+```bash
+cp .env.example .env
+```
+*(Completar con las credenciales de Firebase y Data Connect si es necesario).*
 
-### 3. Compilar la aplicación web de Angular en modo producción
-ionic build --prod
+---
 
-### 4. INSTALACIÓN INICIAL (Ejecutar solo si es la primera vez que agregas Android):
-npm install @capacitor/android
-npx cap add android
+## 📱 Cómo Levantar en Android Studio
 
-### 5. Sincronizar los archivos compilados de Angular con el proyecto nativo de Android
-npx cap sync
+> [!NOTE]
+> La plataforma nativa ya está completamente integrada en la carpeta `android/` del repositorio (no es necesario ejecutar `npx cap add android`).
 
-### 6. EJECUCIÓN:
-# OPCIÓN A: Abrir el proyecto en Android Studio para compilarlo desde su interfaz gráfica
+### Opción A: Comando automático todo-en-uno (Recomendado)
+Compila la web, inyecta las variables de entorno, sincroniza con Capacitor y abre Android Studio de forma automática:
+```bash
+npm run android
+```
+
+### Opción B: Paso a paso por consola
+```bash
+# 1. Compilar la aplicación web de Angular (dispara prebuild y set-env)
+npm run build
+
+# 2. Sincronizar el bundle compilado y plugins con Android nativo
+npx cap sync android
+
+# 3. Abrir el proyecto en Android Studio
 npx cap open android
+```
 
-# OPCIÓN B: Abrir el proyecto en el navegador con Ionic.
-npx ionic serve
+### Pasos dentro de Android Studio:
+1. Al abrir, esperar unos segundos a que finalice la sincronización inicial de Gradle (**Gradle Sync**).
+2. Seleccionar un emulador virtual (AVD) o tu dispositivo físico conectado con depuración USB.
+3. Presionar el botón **Run 'app' (▶️)** en la barra superior (o presionar `Shift + F10`).
+
+> [!TIP]
+> **Generar APK debug por terminal:**
+> Podés compilar directamente el archivo `.apk` sin abrir la interfaz gráfica de Android Studio ejecutando:
+> ```bash
+> npm run android:apk
+> ```
+> El instalable se generará en: `android/app/build/outputs/apk/debug/app-debug.apk`.
+
+---
+
+## 🌐 Ejecución en Navegador Web (Desarrollo)
+
+Para probar la aplicación en el navegador localmente:
+```bash
+npm start
 ```
 

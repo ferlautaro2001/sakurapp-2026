@@ -88,3 +88,11 @@ v0/
 /android/app/src/main/assets/public/
 /android/app/src/main/assets/capacitor.config.json
 /android/app/src/main/assets/capacitor.plugins.json
+
+# Firebase CLI (cache, logs y config local de emuladores)
+.firebase/
+firebase-debug.log
+firestore-debug.log
+database-debug.log
+ui-debug.log
+dataconnect-debug.log

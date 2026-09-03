@@ -1,10 +1,11 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getDataConnect } from 'firebase/data-connect';
 import { connectorConfig, createUsuario, Perfil as DcPerfil, EstadoUsuario as DcEstado } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
+import { AlmacenamientoService } from './almacenamiento.service';
 import { Usuario, AltaCliente } from '../modelos/modelos';
 import { Perfil } from '../modelos/enums';
 
@@ -23,6 +24,7 @@ const ORDEN_PERFIL: Perfil[] = [
 @Injectable({ providedIn: 'root' })
 export class UsuariosService {
   private readonly almacen = inject(AlmacenService);
+  private readonly almacenamiento = inject(AlmacenamientoService);
 
   readonly todos = computed(() => this.almacen.usuarios());
 
@@ -96,6 +98,17 @@ export class UsuariosService {
       console.warn('Firebase Auth registro:', err);
     }
 
+    // Subir foto a Firebase Cloud Storage
+    let urlFoto = datos.fotoUrl || 'assets/icon/sushis/sushi-7.png';
+    if (datos.fotoUrl && datos.fotoUrl.startsWith('data:')) {
+      try {
+        urlFoto = await this.almacenamiento.subirFoto(`usuarios/${uid}/perfil.jpg`, datos.fotoUrl);
+      } catch (storageErr) {
+        console.warn('⚠️ Fallback resiliente: No se pudo subir foto a Firebase Storage, usando avatar por defecto:', storageErr);
+        urlFoto = 'assets/icon/sushis/sushi-7.png';
+      }
+    }
+
     const usuario: Usuario = {
       id: `usr-${Date.now()}`,
       uid,
@@ -107,7 +120,7 @@ export class UsuariosService {
       cuil: opcional(datos.cuil),
       email: datos.email.trim().toLocaleLowerCase(),
       perfil: 'CLIENTE_REGISTRADO',
-      fotoUrl: datos.fotoUrl || 'assets/icon/sushis/sushi-7.png',
+      fotoUrl: urlFoto,
       estado: 'PENDIENTE',
       activo: true,
       clave: datos.clave,
@@ -132,7 +145,7 @@ export class UsuariosService {
       if (res?.data?.user_insert?.id) {
         usuario.id = res.data.user_insert.id;
       }
-      console.log('✅ Usuario cliente registrado exitosamente en Cloud SQL PostgreSQL (Data Connect)');
+      console.log('✅ Usuario cliente registrado exitosamente en Cloud SQL PostgreSQL (Data Connect) con foto en Storage');
     } catch (sqlErr) {
       console.warn('⚠️ No se pudo registrar en Cloud SQL Data Connect (se mantiene en almacenamiento local):', sqlErr);
     }
@@ -142,16 +155,37 @@ export class UsuariosService {
   }
 
   async crearClienteAnonimo(nombre: string, fotoUrl: string): Promise<Usuario> {
+    let uid = `uid-${Date.now()}`;
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const auth = getAuth(app);
+      const cred = await signInAnonymously(auth);
+      uid = cred.user.uid;
+    } catch (err) {
+      console.warn('Firebase Auth anónimo:', err);
+    }
+
+    // Subir foto a Firebase Cloud Storage
+    let urlFoto = fotoUrl || 'assets/icon/sushis/sushi-5.png';
+    if (fotoUrl && fotoUrl.startsWith('data:')) {
+      try {
+        urlFoto = await this.almacenamiento.subirFoto(`usuarios/${uid}/perfil.jpg`, fotoUrl);
+      } catch (storageErr) {
+        console.warn('⚠️ Fallback resiliente: No se pudo subir foto de invitado a Storage, usando avatar por defecto:', storageErr);
+        urlFoto = 'assets/icon/sushis/sushi-5.png';
+      }
+    }
+
     const usuario: Usuario = {
       id: `usr-${Date.now()}`,
-      uid: `uid-${Date.now()}`,
+      uid,
       nombre: nombre.trim(),
       apellido: null,
       dni: null,
       cuil: null,
       email: null,
       perfil: 'CLIENTE_ANONIMO',
-      fotoUrl: fotoUrl || 'assets/icon/sushis/sushi-5.png',
+      fotoUrl: urlFoto,
       estado: 'APROBADO',
       activo: true,
       clave: null,
@@ -176,7 +210,7 @@ export class UsuariosService {
       if (res?.data?.user_insert?.id) {
         usuario.id = res.data.user_insert.id;
       }
-      console.log('✅ Cliente anónimo registrado exitosamente en Cloud SQL PostgreSQL (Data Connect)');
+      console.log('✅ Cliente anónimo registrado exitosamente en Cloud SQL PostgreSQL (Data Connect) con foto en Storage');
     } catch (sqlErr) {
       console.warn('⚠️ No se pudo registrar cliente anónimo en Cloud SQL Data Connect (se mantiene local):', sqlErr);
     }

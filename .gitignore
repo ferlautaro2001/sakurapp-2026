@@ -96,3 +96,7 @@ firestore-debug.log
 database-debug.log
 ui-debug.log
 dataconnect-debug.log
+.claude/
+
+# Data Connect: esquema compilado que genera el CLI
+dataconnect/.dataconnect/

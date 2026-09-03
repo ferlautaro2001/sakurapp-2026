@@ -13,6 +13,8 @@ import {
   clave,
   clavesIguales,
   correoElectronico,
+  cuil,
+  cuilDelDocumento,
   documento,
   largoMinimo,
   requerido,
@@ -65,6 +67,15 @@ import {
           marcador="44225858"
           modo="numeric"
           [largoMaximo]="8"
+        />
+        <lm-campo
+          [control]="formulario.controls.cuil"
+          icono="fingerprint"
+          etiqueta="CUIL"
+          marcador="20-44225858-9"
+          modo="numeric"
+          [largoMaximo]="13"
+          ayuda="Lo completamos solos al escanear el documento"
         />
         <lm-campo
           [control]="formulario.controls.email"
@@ -122,11 +133,12 @@ export class RegistroClientePage {
       nombre: ['', [requerido('Escribí tus nombres'), soloLetras(), largoMinimo(2, 'El nombre es demasiado corto')]],
       apellido: ['', [requerido('Escribí tus apellidos'), soloLetras(), largoMinimo(2, 'El apellido es demasiado corto')]],
       dni: ['', [requerido('Escribí tu número de documento'), documento()]],
+      cuil: ['', [requerido('Escribí tu CUIL'), cuil()]],
       email: ['', [requerido('Escribí tu correo electrónico'), correoElectronico()]],
       clave: ['', [requerido('Elegí una contraseña'), clave()]],
       repeticion: ['', [requerido('Repetí la contraseña')]],
     },
-    { validators: clavesIguales('clave', 'repeticion') },
+    { validators: [clavesIguales('clave', 'repeticion'), cuilDelDocumento('dni', 'cuil')] },
   );
 
   protected async tomarFoto(): Promise<void> {
@@ -161,6 +173,8 @@ export class RegistroClientePage {
       nombre: datos.nombres,
       apellido: datos.apellidos,
       dni: datos.dni,
+      // El código del documento no trae el CUIL: se deduce del documento y el sexo.
+      cuil: datos.cuil,
     });
     this.leidoDelDocumento.set(true);
     this.avisos.exito('Documento leído', `${datos.nombres} ${datos.apellidos}, documento ${datos.dni}.`);
@@ -179,6 +193,9 @@ export class RegistroClientePage {
     }
     if (this.usuarios.existeDocumento(this.formulario.controls.dni.value)) {
       this.formulario.controls.dni.setErrors({ lm: 'Ese número de documento ya está registrado' });
+    }
+    if (this.usuarios.existeCuil(this.formulario.controls.cuil.value)) {
+      this.formulario.controls.cuil.setErrors({ lm: 'Ese CUIL ya está registrado' });
     }
 
     if (this.formulario.invalid || !this.foto()) {
@@ -201,6 +218,7 @@ export class RegistroClientePage {
       detalle: [
         { rotulo: 'Nombre', valor: `${datos.nombre} ${datos.apellido}` },
         { rotulo: 'Documento', valor: datos.dni },
+        { rotulo: 'CUIL', valor: datos.cuil },
         { rotulo: 'Correo', valor: datos.email },
       ],
     });
@@ -211,7 +229,7 @@ export class RegistroClientePage {
         nombre: datos.nombre,
         apellido: datos.apellido,
         dni: datos.dni,
-        cuil: '',
+        cuil: datos.cuil,
         email: datos.email,
         clave: datos.clave,
         fotoUrl: this.foto()!,

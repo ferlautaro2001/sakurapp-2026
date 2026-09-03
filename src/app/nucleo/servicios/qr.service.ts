@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { DatosDni } from '../modelos/modelos';
+import { restoCuil, verificadorCuil } from '../validacion/validadores';
 
 @Injectable({ providedIn: 'root' })
 export class QrService {
@@ -35,21 +36,14 @@ export class QrService {
 
   calcularCuil(documento: string, sexo: string): string {
     if (!/^\d{7,8}$/.test(documento)) return '';
+    const dni = documento.padStart(8, '0');
     const prefijo = sexo === 'F' ? '27' : '20';
-    const base = `${prefijo}${documento.padStart(8, '0')}`;
-    const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
-    const suma = base.split('').reduce((acc, digito, i) => acc + Number(digito) * pesos[i], 0);
-    const resto = 11 - (suma % 11);
-    let verificador = resto;
-    if (resto === 11) verificador = 0;
-    else if (resto === 10) {
-      const alterno = `23${documento.padStart(8, '0')}`;
-      const sumaAlterna = alterno.split('').reduce((acc, d, i) => acc + Number(d) * pesos[i], 0);
-      const restoAlterno = 11 - (sumaAlterna % 11);
-      const digito = restoAlterno === 11 ? 0 : restoAlterno === 10 ? 9 : restoAlterno;
-      return `23-${documento.padStart(8, '0')}-${digito}`;
-    }
-    return `${prefijo}-${documento.padStart(8, '0')}-${verificador}`;
+
+    const resto = restoCuil(`${prefijo}${dni}`);
+    if (resto === 11) return `${prefijo}-${dni}-0`;
+    // Cuando el resto da 10, el CUIL se arma con el prefijo alternativo 23.
+    if (resto === 10) return `23-${dni}-${verificadorCuil(`23${dni}`)}`;
+    return `${prefijo}-${dni}-${resto}`;
   }
 
   private capitalizar(texto: string): string {

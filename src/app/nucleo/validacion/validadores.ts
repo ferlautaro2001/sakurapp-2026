@@ -12,6 +12,9 @@ const SOLO_LETRAS = /^[A-Za-zÁÉÍÓÚÜÑáéíóúüñ' ]+$/;
 const CORREO = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
 const CUIL = /^\d{2}-?\d{8}-?\d$/;
 
+/** Prefijos de CUIL de personas físicas: 20 y 23/24 para varones, 27 y 23/24 para mujeres. */
+const PREFIJOS_PERSONA = ['20', '23', '24', '27'];
+
 export function requerido(mensaje: string): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
     const valor = control.value;
@@ -44,11 +47,85 @@ export function documento(mensaje = 'El documento tiene que tener ocho dígitos'
   };
 }
 
+/**
+ * Resto del módulo 11 con los pesos oficiales del CUIL, sobre los diez primeros
+ * dígitos (prefijo + documento). Lo comparten el validador y el cálculo del CUIL
+ * a partir del documento escaneado, para que no puedan divergir.
+ */
+export function restoCuil(prefijoYDocumento: string): number {
+  const pesos = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2];
+  const suma = [...prefijoYDocumento].reduce((acc, digito, i) => acc + Number(digito) * pesos[i], 0);
+  return 11 - (suma % 11);
+}
+
+/** Dígito verificador que le corresponde a un prefijo y un documento dados. */
+export function verificadorCuil(prefijoYDocumento: string): number {
+  const resto = restoCuil(prefijoYDocumento);
+  if (resto === 11) return 0;
+  if (resto === 10) return 9;
+  return resto;
+}
+
+/** Deja el CUIL en once dígitos, sin guiones ni puntos. */
+export function digitosCuil(valor: string | null | undefined): string {
+  return String(valor ?? '').replace(/\D/g, '');
+}
+
+/**
+ * Valida la estructura del CUIL: prefijo de persona, ocho dígitos de documento
+ * y dígito verificador correcto. La correspondencia con el documento cargado en
+ * el formulario la revisa `cuilDelDocumento`, porque necesita los dos campos.
+ */
 export function cuil(mensaje = 'El CUIL tiene que tener once dígitos, con el formato 20-12345678-9'): ValidatorFn {
   return (control) => {
     const valor = String(control.value ?? '').trim();
     if (!valor) return null;
-    return CUIL.test(valor) ? null : { lm: mensaje };
+    if (!CUIL.test(valor)) return { lm: mensaje };
+
+    const digitos = digitosCuil(valor);
+    const prefijo = digitos.slice(0, 2);
+    if (!PREFIJOS_PERSONA.includes(prefijo)) {
+      return { lm: 'El CUIL de una persona empieza con 20, 23, 24 o 27' };
+    }
+    if (Number(digitos[10]) !== verificadorCuil(digitos.slice(0, 10))) {
+      return { lm: 'El último dígito del CUIL no verifica: revisá que esté bien copiado' };
+    }
+    return null;
+  };
+}
+
+/**
+ * El CUIL lleva el número de documento en el medio: se aplica al grupo porque
+ * compara dos campos. Solo marca error cuando los dos están completos y son
+ * válidos por separado.
+ */
+export function cuilDelDocumento(campoDocumento: string, campoCuil: string): ValidatorFn {
+  return (grupo: AbstractControl): ValidationErrors | null => {
+    const documento = grupo.get(campoDocumento);
+    const cuilControl = grupo.get(campoCuil);
+    if (!documento || !cuilControl) return null;
+
+    const desincronizado = 'El CUIL tiene que llevar tu número de documento en el medio';
+    const limpiarAviso = () => {
+      if (cuilControl.errors?.['lm'] === desincronizado) {
+        const { lm, ...resto } = cuilControl.errors;
+        cuilControl.setErrors(Object.keys(resto).length ? resto : null);
+      }
+    };
+
+    const digitos = digitosCuil(cuilControl.value);
+    const nroDocumento = String(documento.value ?? '').replace(/\D/g, '');
+    if (digitos.length !== 11 || !nroDocumento) {
+      limpiarAviso();
+      return null;
+    }
+
+    if (digitos.slice(2, 10) !== nroDocumento.padStart(8, '0')) {
+      cuilControl.setErrors({ ...(cuilControl.errors ?? {}), lm: desincronizado });
+    } else {
+      limpiarAviso();
+    }
+    return null;
   };
 }
 

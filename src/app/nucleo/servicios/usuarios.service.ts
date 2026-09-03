@@ -75,6 +75,12 @@ export class UsuariosService {
     return this.almacen.usuarios().some((u) => (u.dni ?? '').replace(/\./g, '') === limpio);
   }
 
+  existeCuil(cuil: string): boolean {
+    const limpio = cuil.replace(/\D/g, '');
+    if (!limpio) return false;
+    return this.almacen.usuarios().some((u) => (u.cuil ?? '').replace(/\D/g, '') === limpio);
+  }
+
   administradores(): Usuario[] {
     return this.almacen.usuarios().filter((u) => u.perfil === 'DUENO' || u.perfil === 'SUPERVISOR');
   }
@@ -95,8 +101,10 @@ export class UsuariosService {
       uid,
       nombre: datos.nombre.trim(),
       apellido: datos.apellido.trim(),
-      dni: datos.dni.trim(),
-      cuil: datos.cuil.trim(),
+      dni: opcional(datos.dni),
+      // Vacío no: en Postgres dos cadenas '' chocan contra el índice único,
+      // mientras que dos NULL conviven sin problema.
+      cuil: opcional(datos.cuil),
       email: datos.email.trim().toLocaleLowerCase(),
       perfil: 'CLIENTE_REGISTRADO',
       fotoUrl: datos.fotoUrl || 'assets/icon/sushis/sushi-7.png',
@@ -183,6 +191,12 @@ export class UsuariosService {
     if (usuario.fotoUrl && usuario.fotoUrl.trim() !== '') return usuario.fotoUrl;
     return SUSHIS_POR_PERFIL[usuario.perfil] ?? 'assets/icon/sushis/sushi-1.png';
   }
+}
+
+/** Normaliza un campo de texto opcional: vacío se guarda como NULL, no como ''. */
+function opcional(valor: string | null | undefined): string | null {
+  const limpio = (valor ?? '').trim();
+  return limpio === '' ? null : limpio;
 }
 
 const SUSHIS_POR_PERFIL: Record<Perfil, string> = {

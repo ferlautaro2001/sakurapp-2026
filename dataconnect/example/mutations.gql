@@ -1,0 +1,130 @@
+# SakurApp - Mutations para Firebase Data Connect (Cloud SQL Postgres)
+
+mutation CreateProducto(
+  $nombre: String!
+  $descripcion: String!
+  $precio: Float!
+  $tiempoElaboracion: Int!
+  $tipo: TipoProducto!
+  $sector: Sector!
+  $foto1: String!
+  $foto2: String!
+  $foto3: String!
+) @auth(level: PUBLIC, insecureReason: "Alta de platos y bebidas.") {
+  producto_insert(
+    data: {
+      nombre: $nombre
+      descripcion: $descripcion
+      precio: $precio
+      tiempoElaboracion: $tiempoElaboracion
+      tipo: $tipo
+      sector: $sector
+      foto1: $foto1
+      foto2: $foto2
+      foto3: $foto3
+      activo: true
+    }
+  )
+}
+
+mutation CreateUsuario(
+  $uid: String!
+  $nombre: String!
+  $apellido: String
+  $dni: String
+  $cuil: String
+  $email: String
+  $perfil: Perfil!
+  $fotoUrl: String!
+  $estado: EstadoUsuario!
+) @auth(level: PUBLIC, insecureReason: "Registro de usuarios.") {
+  user_insert(
+    data: {
+      uid: $uid
+      nombre: $nombre
+      apellido: $apellido
+      dni: $dni
+      cuil: $cuil
+      email: $email
+      perfil: $perfil
+      fotoUrl: $fotoUrl
+      estado: $estado
+    }
+  )
+}
+
+mutation CreateMesa(
+  $numero: Int!
+  $cantidadComensales: Int!
+  $tipo: TipoMesa!
+  $estado: EstadoMesa!
+  $fotoUrl: String!
+  $qrCodeUrl: String!
+) @auth(level: PUBLIC, insecureReason: "Alta de mesas.") {
+  mesa_insert(
+    data: {
+      numero: $numero
+      cantidadComensales: $cantidadComensales
+      tipo: $tipo
+      estado: $estado
+      fotoUrl: $fotoUrl
+      qrCodeUrl: $qrCodeUrl
+    }
+  )
+}
+
+mutation CreatePedido(
+  $mesaId: UUID!
+  $clienteId: UUID!
+  $estadoGlobal: EstadoPedido!
+  $tiempoEstimado: Int!
+  $totalBruto: Float!
+  $descuentoJuego: Int!
+  $montoDescuentoJuego: Float!
+  $porcentajePropina: Int!
+  $montoPropina: Float!
+  $totalFinal: Float!
+  $timestampCreacion: Timestamp!
+) @auth(level: PUBLIC, insecureReason: "Alta de pedidos.") {
+  pedido_insert(
+    data: {
+      mesaId: $mesaId
+      clienteId: $clienteId
+      estadoGlobal: $estadoGlobal
+      tiempoEstimado: $tiempoEstimado
+      totalBruto: $totalBruto
+      descuentoJuego: $descuentoJuego
+      montoDescuentoJuego: $montoDescuentoJuego
+      porcentajePropina: $porcentajePropina
+      montoPropina: $montoPropina
+      totalFinal: $totalFinal
+      timestampCreacion: $timestampCreacion
+    }
+  )
+}
+
+mutation CreateEncuesta(
+  $clienteId: UUID!
+  $pedidoId: UUID!
+  $mesaId: UUID!
+  $calificacionMozo: Int!
+  $nivelLimpieza: Int!
+  $recomendaria: Boolean!
+  $aspectoFavorito: String!
+  $comentarios: String
+  $timestamp: Timestamp!
+) @auth(level: PUBLIC, insecureReason: "Carga de encuesta.") {
+  encuesta_insert(
+    data: {
+      clienteId: $clienteId
+      pedidoId: $pedidoId
+      mesaId: $mesaId
+      calificacionMozo: $calificacionMozo
+      nivelLimpieza: $nivelLimpieza
+      recomendaria: $recomendaria
+      aspectoFavorito: $aspectoFavorito
+      comentarios: $comentarios
+      timestamp: $timestamp
+    }
+  )
+}

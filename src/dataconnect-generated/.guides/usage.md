@@ -11,7 +11,7 @@ The generated SDK creates injectable wrapper functions.
 
 Here's an example:
 ```
-import { injectListProductos, injectListMesas, injectListUsuarios, injectListPedidosActivos } from '@dataconnect/generated/angular';
+import { injectCreateProducto, injectCreateUsuario, injectCreateMesa, injectCreatePedido, injectCreateEncuesta, injectListProductos, injectListMesas, injectListUsuarios, injectListPedidosActivos } from '@dataconnect/generated/angular';
 
 @Component({
   selector: 'my-component',
@@ -19,6 +19,11 @@ import { injectListProductos, injectListMesas, injectListUsuarios, injectListPed
 })
 class MyComponent {
   // The types of these injectors are available in angular/index.d.ts
+  private readonly CreateProductoOperation = injectCreateProducto(createProductoVars);
+  private readonly CreateUsuarioOperation = injectCreateUsuario(createUsuarioVars);
+  private readonly CreateMesaOperation = injectCreateMesa(createMesaVars);
+  private readonly CreatePedidoOperation = injectCreatePedido(createPedidoVars);
+  private readonly CreateEncuestaOperation = injectCreateEncuesta(createEncuestaVars);
   private readonly ListProductosOperation = injectListProductos();
   private readonly ListMesasOperation = injectListMesas();
   private readonly ListUsuariosOperation = injectListUsuarios();
@@ -65,8 +70,23 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { listProductos, listMesas, listUsuarios, listPedidosActivos } from '@dataconnect/generated';
+import { createProducto, createUsuario, createMesa, createPedido, createEncuesta, listProductos, listMesas, listUsuarios, listPedidosActivos } from '@dataconnect/generated';
 
+
+// Operation CreateProducto:  For variables, look at type CreateProductoVars in ../index.d.ts
+const { data } = await CreateProducto(dataConnect, createProductoVars);
+
+// Operation CreateUsuario:  For variables, look at type CreateUsuarioVars in ../index.d.ts
+const { data } = await CreateUsuario(dataConnect, createUsuarioVars);
+
+// Operation CreateMesa:  For variables, look at type CreateMesaVars in ../index.d.ts
+const { data } = await CreateMesa(dataConnect, createMesaVars);
+
+// Operation CreatePedido:  For variables, look at type CreatePedidoVars in ../index.d.ts
+const { data } = await CreatePedido(dataConnect, createPedidoVars);
+
+// Operation CreateEncuesta:  For variables, look at type CreateEncuestaVars in ../index.d.ts
+const { data } = await CreateEncuesta(dataConnect, createEncuestaVars);
 
 // Operation ListProductos: 
 const { data } = await ListProductos(dataConnect);

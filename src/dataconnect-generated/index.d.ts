@@ -1,6 +1,7 @@
-import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions } from 'firebase/data-connect';
+import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise, DataConnectSettings } from 'firebase/data-connect';
 
 export const connectorConfig: ConnectorConfig;
+export const dataConnectSettings: DataConnectSettings;
 
 export type TimestampString = string;
 export type UUIDString = string;
@@ -73,6 +74,85 @@ export enum TipoProducto {
 export interface Conversacion_Key {
   id: UUIDString;
   __typename?: 'Conversacion_Key';
+}
+
+export interface CreateEncuestaData {
+  encuesta_insert: Encuesta_Key;
+}
+
+export interface CreateEncuestaVariables {
+  clienteId: UUIDString;
+  pedidoId: UUIDString;
+  mesaId: UUIDString;
+  calificacionMozo: number;
+  nivelLimpieza: number;
+  recomendaria: boolean;
+  aspectoFavorito: string;
+  comentarios?: string | null;
+  timestamp: TimestampString;
+}
+
+export interface CreateMesaData {
+  mesa_insert: Mesa_Key;
+}
+
+export interface CreateMesaVariables {
+  numero: number;
+  cantidadComensales: number;
+  tipo: TipoMesa;
+  estado: EstadoMesa;
+  fotoUrl: string;
+  qrCodeUrl: string;
+}
+
+export interface CreatePedidoData {
+  pedido_insert: Pedido_Key;
+}
+
+export interface CreatePedidoVariables {
+  mesaId: UUIDString;
+  clienteId: UUIDString;
+  estadoGlobal: EstadoPedido;
+  tiempoEstimado: number;
+  totalBruto: number;
+  descuentoJuego: number;
+  montoDescuentoJuego: number;
+  porcentajePropina: number;
+  montoPropina: number;
+  totalFinal: number;
+  timestampCreacion: TimestampString;
+}
+
+export interface CreateProductoData {
+  producto_insert: Producto_Key;
+}
+
+export interface CreateProductoVariables {
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  tiempoElaboracion: number;
+  tipo: TipoProducto;
+  sector: Sector;
+  foto1: string;
+  foto2: string;
+  foto3: string;
+}
+
+export interface CreateUsuarioData {
+  user_insert: User_Key;
+}
+
+export interface CreateUsuarioVariables {
+  uid: string;
+  nombre: string;
+  apellido?: string | null;
+  dni?: string | null;
+  cuil?: string | null;
+  email?: string | null;
+  perfil: Perfil;
+  fotoUrl: string;
+  estado: EstadoUsuario;
 }
 
 export interface Encuesta_Key {
@@ -188,6 +268,66 @@ export interface User_Key {
   id: UUIDString;
   __typename?: 'User_Key';
 }
+
+interface CreateProductoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateProductoVariables): MutationRef<CreateProductoData, CreateProductoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateProductoVariables): MutationRef<CreateProductoData, CreateProductoVariables>;
+  operationName: string;
+}
+export const createProductoRef: CreateProductoRef;
+
+export function createProducto(vars: CreateProductoVariables): MutationPromise<CreateProductoData, CreateProductoVariables>;
+export function createProducto(dc: DataConnect, vars: CreateProductoVariables): MutationPromise<CreateProductoData, CreateProductoVariables>;
+
+interface CreateUsuarioRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateUsuarioVariables): MutationRef<CreateUsuarioData, CreateUsuarioVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateUsuarioVariables): MutationRef<CreateUsuarioData, CreateUsuarioVariables>;
+  operationName: string;
+}
+export const createUsuarioRef: CreateUsuarioRef;
+
+export function createUsuario(vars: CreateUsuarioVariables): MutationPromise<CreateUsuarioData, CreateUsuarioVariables>;
+export function createUsuario(dc: DataConnect, vars: CreateUsuarioVariables): MutationPromise<CreateUsuarioData, CreateUsuarioVariables>;
+
+interface CreateMesaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateMesaVariables): MutationRef<CreateMesaData, CreateMesaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateMesaVariables): MutationRef<CreateMesaData, CreateMesaVariables>;
+  operationName: string;
+}
+export const createMesaRef: CreateMesaRef;
+
+export function createMesa(vars: CreateMesaVariables): MutationPromise<CreateMesaData, CreateMesaVariables>;
+export function createMesa(dc: DataConnect, vars: CreateMesaVariables): MutationPromise<CreateMesaData, CreateMesaVariables>;
+
+interface CreatePedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreatePedidoVariables): MutationRef<CreatePedidoData, CreatePedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreatePedidoVariables): MutationRef<CreatePedidoData, CreatePedidoVariables>;
+  operationName: string;
+}
+export const createPedidoRef: CreatePedidoRef;
+
+export function createPedido(vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
+export function createPedido(dc: DataConnect, vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
+
+interface CreateEncuestaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateEncuestaVariables): MutationRef<CreateEncuestaData, CreateEncuestaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateEncuestaVariables): MutationRef<CreateEncuestaData, CreateEncuestaVariables>;
+  operationName: string;
+}
+export const createEncuestaRef: CreateEncuestaRef;
+
+export function createEncuesta(vars: CreateEncuestaVariables): MutationPromise<CreateEncuestaData, CreateEncuestaVariables>;
+export function createEncuesta(dc: DataConnect, vars: CreateEncuestaVariables): MutationPromise<CreateEncuestaData, CreateEncuestaVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */

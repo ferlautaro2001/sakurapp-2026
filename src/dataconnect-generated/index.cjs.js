@@ -1,4 +1,4 @@
-const { queryRef, executeQuery, validateArgsWithOptions, validateArgs } = require('firebase/data-connect');
+const { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs, makeMemoryCacheProvider } = require('firebase/data-connect');
 
 const EstadoMesa = {
   VACIA: "VACIA",
@@ -74,6 +74,82 @@ const connectorConfig = {
   location: 'us-east4'
 };
 exports.connectorConfig = connectorConfig;
+const dataConnectSettings = {
+  cacheSettings: {
+    cacheProvider: makeMemoryCacheProvider()
+  }
+};
+exports.dataConnectSettings = dataConnectSettings;
+
+const createProductoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateProducto', inputVars);
+}
+createProductoRef.operationName = 'CreateProducto';
+exports.createProductoRef = createProductoRef;
+
+exports.createProducto = function createProducto(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createProductoRef(dcInstance, inputVars));
+}
+;
+
+const createUsuarioRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateUsuario', inputVars);
+}
+createUsuarioRef.operationName = 'CreateUsuario';
+exports.createUsuarioRef = createUsuarioRef;
+
+exports.createUsuario = function createUsuario(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createUsuarioRef(dcInstance, inputVars));
+}
+;
+
+const createMesaRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateMesa', inputVars);
+}
+createMesaRef.operationName = 'CreateMesa';
+exports.createMesaRef = createMesaRef;
+
+exports.createMesa = function createMesa(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createMesaRef(dcInstance, inputVars));
+}
+;
+
+const createPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreatePedido', inputVars);
+}
+createPedidoRef.operationName = 'CreatePedido';
+exports.createPedidoRef = createPedidoRef;
+
+exports.createPedido = function createPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createPedidoRef(dcInstance, inputVars));
+}
+;
+
+const createEncuestaRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateEncuesta', inputVars);
+}
+createEncuestaRef.operationName = 'CreateEncuesta';
+exports.createEncuestaRef = createEncuestaRef;
+
+exports.createEncuesta = function createEncuesta(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createEncuestaRef(dcInstance, inputVars));
+}
+;
 
 const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);

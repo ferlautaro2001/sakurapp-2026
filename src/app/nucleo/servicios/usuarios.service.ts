@@ -1,6 +1,8 @@
 import { Injectable, computed, inject } from '@angular/core';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createUsuario, Perfil as DcPerfil, EstadoUsuario as DcEstado } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { Usuario, AltaCliente } from '../modelos/modelos';
@@ -103,6 +105,30 @@ export class UsuariosService {
       clave: datos.clave,
       createdAt: new Date().toISOString(),
     };
+
+    // Inserción en Firebase Data Connect (Cloud SQL PostgreSQL)
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+      const res = await createUsuario(dc, {
+        uid,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        dni: usuario.dni,
+        cuil: usuario.cuil,
+        email: usuario.email,
+        perfil: DcPerfil.CLIENTE_REGISTRADO,
+        fotoUrl: usuario.fotoUrl,
+        estado: DcEstado.PENDIENTE,
+      });
+      if (res?.data?.user_insert?.id) {
+        usuario.id = res.data.user_insert.id;
+      }
+      console.log('✅ Usuario cliente registrado exitosamente en Cloud SQL PostgreSQL (Data Connect)');
+    } catch (sqlErr) {
+      console.warn('⚠️ No se pudo registrar en Cloud SQL Data Connect (se mantiene en almacenamiento local):', sqlErr);
+    }
+
     await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
     return usuario;
   }
@@ -123,6 +149,30 @@ export class UsuariosService {
       clave: null,
       createdAt: new Date().toISOString(),
     };
+
+    // Inserción en Firebase Data Connect (Cloud SQL PostgreSQL)
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+      const res = await createUsuario(dc, {
+        uid: usuario.uid,
+        nombre: usuario.nombre,
+        apellido: null,
+        dni: null,
+        cuil: null,
+        email: null,
+        perfil: DcPerfil.CLIENTE_ANONIMO,
+        fotoUrl: usuario.fotoUrl,
+        estado: DcEstado.APROBADO,
+      });
+      if (res?.data?.user_insert?.id) {
+        usuario.id = res.data.user_insert.id;
+      }
+      console.log('✅ Cliente anónimo registrado exitosamente en Cloud SQL PostgreSQL (Data Connect)');
+    } catch (sqlErr) {
+      console.warn('⚠️ No se pudo registrar cliente anónimo en Cloud SQL Data Connect (se mantiene local):', sqlErr);
+    }
+
     await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
     return usuario;
   }

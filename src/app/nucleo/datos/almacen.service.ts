@@ -2,13 +2,14 @@ import { Injectable, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDataConnect } from 'firebase/data-connect';
-import { listUsuarios, connectorConfig } from '../../../dataconnect-generated';
+import { listProductos, listUsuarios, connectorConfig } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
-import { Usuario } from '../modelos/modelos';
+import { Producto, Usuario } from '../modelos/modelos';
 import { Semilla } from './semilla';
 
 const CLAVE = {
   usuarios: 'sk.usuarios',
+  productos: 'sk.productos',
   version: 'sk.version',
   sesion: 'sk.sesion',
 };
@@ -23,12 +24,14 @@ const VERSION_DATOS = '3-v0';
 @Injectable({ providedIn: 'root' })
 export class AlmacenService {
   readonly usuarios = signal<Usuario[]>([]);
+  readonly productos = signal<Producto[]>([]);
   private iniciado = false;
 
   async iniciar(sembrar: () => Promise<Semilla> | Semilla): Promise<void> {
     if (this.iniciado) return;
 
     let usuariosCargados: Usuario[] = [];
+    let productosCargados: Producto[] = [];
 
     // 1. Conexión a Firebase Data Connect (Cloud SQL PostgreSQL)
     try {
@@ -54,6 +57,22 @@ export class AlmacenService {
         }));
         await this.guardar(CLAVE.usuarios, usuariosCargados);
       }
+      const productos = await listProductos(dc);
+      if (productos?.data?.productos?.length) {
+        productosCargados = productos.data.productos.map((p) => ({
+          id: p.id,
+          nombre: p.nombre,
+          descripcion: p.descripcion,
+          tiempoElaboracion: p.tiempoElaboracion,
+          precio: p.precio,
+          tipo: p.tipo,
+          sector: p.sector,
+          fotos: [p.foto1, p.foto2, p.foto3],
+          activo: p.activo,
+          disponible: true,
+        }));
+        await this.guardar(CLAVE.productos, productosCargados);
+      }
     } catch (error) {
       console.warn('Conexión en vivo a Firebase Data Connect no disponible, utilizando almacenamiento local:', error);
     }
@@ -67,15 +86,22 @@ export class AlmacenService {
         await Preferences.set({ key: CLAVE.version, value: VERSION_DATOS });
       }
       usuariosCargados = await this.leer<Usuario>(CLAVE.usuarios);
+      productosCargados = await this.leer<Producto>(CLAVE.productos);
     }
 
     this.usuarios.set(usuariosCargados);
+    this.productos.set(productosCargados);
     this.iniciado = true;
   }
 
   async guardarUsuarios(lista: Usuario[]): Promise<void> {
     this.usuarios.set(lista);
     await this.guardar(CLAVE.usuarios, lista);
+  }
+
+  async guardarProductos(lista: Producto[]): Promise<void> {
+    this.productos.set(lista);
+    await this.guardar(CLAVE.productos, lista);
   }
 
   // --- sesión ------------------------------------------------------------

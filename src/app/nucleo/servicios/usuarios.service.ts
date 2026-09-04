@@ -12,7 +12,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { AlmacenamientoService } from './almacenamiento.service';
-import { Usuario, AltaCliente } from '../modelos/modelos';
+import { Usuario, AltaCliente, AltaEmpleado } from '../modelos/modelos';
 import { EstadoUsuario, PERFILES_ADMIN, Perfil } from '../modelos/enums';
 
 const ORDEN_PERFIL: Perfil[] = [
@@ -291,6 +291,62 @@ export class UsuariosService {
       console.log('✅ Cliente anónimo registrado exitosamente en Cloud SQL PostgreSQL (Data Connect) con foto en Storage');
     } catch (sqlErr) {
       console.warn('⚠️ No se pudo registrar cliente anónimo en Cloud SQL Data Connect (se mantiene local):', sqlErr);
+    }
+
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    return usuario;
+  }
+
+  /** Alta administrativa: el empleado nace aprobado y puede autenticarse inmediatamente. */
+  async crearEmpleado(datos: AltaEmpleado): Promise<Usuario> {
+    let uid = `uid-${Date.now()}`;
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const cred = await createUserWithEmailAndPassword(getAuth(app), datos.email.trim(), datos.clave);
+      uid = cred.user.uid;
+    } catch (err) {
+      console.warn('Firebase Auth alta de empleado:', err);
+    }
+
+    let fotoUrl = datos.fotoUrl;
+    try {
+      fotoUrl = await this.almacenamiento.subirFoto(`usuarios/${uid}/perfil.jpg`, datos.fotoUrl);
+    } catch (err) {
+      console.warn('Firebase Storage alta de empleado:', err);
+    }
+
+    const usuario: Usuario = {
+      id: `usr-${Date.now()}`,
+      uid,
+      nombre: datos.nombre.trim(),
+      apellido: datos.apellido.trim(),
+      dni: opcional(datos.dni),
+      cuil: opcional(datos.cuil),
+      email: datos.email.trim().toLocaleLowerCase(),
+      perfil: datos.perfil,
+      fotoUrl,
+      estado: 'APROBADO',
+      activo: true,
+      clave: datos.clave,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const res = await createUsuario(getDataConnect(app, connectorConfig), {
+        uid: usuario.uid,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        dni: usuario.dni,
+        cuil: usuario.cuil,
+        email: usuario.email,
+        perfil: usuario.perfil as DcPerfil,
+        fotoUrl: usuario.fotoUrl,
+        estado: DcEstado.APROBADO,
+      });
+      if (res?.data?.user_insert?.id) usuario.id = res.data.user_insert.id;
+    } catch (err) {
+      console.warn('Cloud SQL alta de empleado:', err);
     }
 
     await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);

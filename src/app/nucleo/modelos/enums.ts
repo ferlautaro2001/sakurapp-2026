@@ -15,6 +15,14 @@ export type Perfil =
 
 export type EstadoUsuario = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
 
+export type TipoProducto = 'COMIDA' | 'BEBIDA' | 'POSTRE';
+export type Sector = 'COCINA' | 'BAR';
+
+/** Una bebida se prepara siempre en la barra; el resto, en cocina. */
+export function sectorDe(tipo: TipoProducto): Sector {
+  return tipo === 'BEBIDA' ? 'BAR' : 'COCINA';
+}
+
 /** Rótulos en español rioplatense, sin abreviaturas. */
 export const ROTULO_PERFIL: Record<Perfil, string> = {
   DUENO: 'Dueño',

@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
@@ -21,7 +21,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
             Mesa {{ m.numero }} · {{ tipo() }}
           </lm-titulo>
 
-          <lm-placa-qr [fuente]="m.qrCodeUrl" [rotulo]="'Mesa ' + m.numero + ' · ' + m.cantidadComensales + ' personas'" />
+          <lm-placa-qr [fuente]="fuenteQr() || m.qrCodeUrl" [rotulo]="'Mesa ' + m.numero + ' · ' + m.cantidadComensales + ' personas'" />
 
           <lm-separador rotulo="Uso en salón" />
           <p class="lm-parrafo">
@@ -65,13 +65,24 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
     `,
   ],
 })
-export class MesaQrPage extends PaginaConSesion {
+export class MesaQrPage extends PaginaConSesion implements OnInit {
   private readonly mesas = inject(MesasService);
+  protected readonly fuenteQr = signal('');
   private readonly qr = inject(QrService);
 
   readonly id = input.required<string>();
 
   protected readonly mesa = computed(() => this.mesas.porId(this.id()));
+
+    async ngOnInit(): Promise<void> {
+    const mesa = this.mesa();
+
+    if (mesa) {
+      this.fuenteQr.set(
+        await this.qr.generarDeMesa(mesa.id, mesa.numero),
+      );
+    }
+  }
 
   protected tipo(): string {
     const m = this.mesa();
@@ -85,11 +96,25 @@ export class MesaQrPage extends PaginaConSesion {
   }
 
   protected async compartir(): Promise<void> {
-    const m = this.mesa();
-    if (!m) return;
-    const listo = await this.qr.compartir(m.qrCodeUrl, `sakurapp-mesa-${m.numero}`, `Código QR Mesa ${m.numero}`);
+    const mesa = this.mesa();
+
+    if (!mesa) {
+      return;
+    }
+
+    const imagen = this.fuenteQr() || mesa.qrCodeUrl;
+
+    const listo = await this.qr.compartir(
+      imagen,
+      `sakurapp-mesa-${mesa.numero}`,
+      `Código QR Mesa ${mesa.numero}`,
+    );
+
     if (!listo) {
-      this.avisos.error('No pudimos compartir el código', 'Probá de nuevo en unos segundos.');
+      this.avisos.error(
+        'No pudimos compartir el código',
+        'Probá de nuevo en unos segundos.',
+      );
     }
   }
 

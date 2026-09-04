@@ -169,13 +169,13 @@ export class ClientesPendientesPage extends PaginaConSesion {
         () => this.usuarios.actualizarEstadoUsuario(cliente.id, aprobar ? 'APROBADO' : 'RECHAZADO'),
       );
 
-      // El sonido y la vibración alcanzan como confirmación: la fila ya
-      // desapareció del listado y no hace falta taparlo con un cartel.
+      // La vibración alcanza como confirmación: la fila ya desapareció del
+      // listado y los únicos sonidos de la aplicación son los de abrirla y
+      // cerrarla. Aprobar y rechazar vibran distinto, para que se distingan
+      // sin mirar la pantalla.
       if (aprobar) {
-        this.sonido.reproducir('exito');
         void Haptics.impact({ style: ImpactStyle.Light }).catch(() => undefined);
       } else {
-        this.sonido.reproducir('aviso');
         this.avisos.vibrarError();
       }
     } catch (error) {

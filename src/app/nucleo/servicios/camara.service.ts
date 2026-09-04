@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { Capacitor } from '@capacitor/core';
 import { AvisosService } from './avisos.service';
+import { SonidoService } from './sonido.service';
 
 /**
  * Captura de fotos con la cámara nativa o web.
@@ -9,6 +10,7 @@ import { AvisosService } from './avisos.service';
 @Injectable({ providedIn: 'root' })
 export class CamaraService {
   private readonly avisos = inject(AvisosService);
+  private readonly sonido = inject(SonidoService);
 
   /** Foto tomada con la cámara del dispositivo. */
   async tomarFoto(): Promise<string | null> {
@@ -21,6 +23,9 @@ export class CamaraService {
   }
 
   private async capturar(origen: CameraSource): Promise<string | null> {
+    // La cámara nativa se abre encima de la aplicación y la manda al fondo:
+    // eso no es cerrar la aplicación, así que no tiene que sonar.
+    this.sonido.abrioPantallaDelSistema();
     try {
       if (Capacitor.isNativePlatform()) {
         const permisos = await Camera.checkPermissions();
@@ -47,6 +52,8 @@ export class CamaraService {
       if (this.fueCancelada(error)) return null;
       this.avisos.error('No pudimos abrir la cámara', 'Revisá los permisos de la aplicación y volvé a intentar.');
       return null;
+    } finally {
+      this.sonido.cerroPantallaDelSistema();
     }
   }
 

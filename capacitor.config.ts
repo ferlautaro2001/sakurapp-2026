@@ -1,9 +1,21 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
+/**
+ * Recarga en vivo sobre el dispositivo.
+ *
+ * `npm run android:live` levanta el servidor de desarrollo y exporta esta
+ * variable con la dirección de la máquina en la red local: la aplicación
+ * instalada deja de leer la copia de `www` y carga desde la computadora, así
+ * cada archivo que se guarda se ve en el celular sin recompilar ni reinstalar.
+ * Sin la variable, el empaquetado es el normal, con la aplicación autónoma.
+ */
+const servidorEnVivo = process.env['CAP_SERVER_URL'];
+
 const config: CapacitorConfig = {
   appId: 'ar.com.sakurapp.app',
   appName: 'SakurApp',
   webDir: 'www',
+  ...(servidorEnVivo ? { server: { url: servidorEnVivo, cleartext: true } } : {}),
   android: {
     // El fondo del contenedor nativo acompaña al coral de la aplicación:
     // así no aparece un flash blanco entre el splash y la primera pantalla.

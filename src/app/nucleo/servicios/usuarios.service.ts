@@ -2,12 +2,18 @@ import { Injectable, computed, inject } from '@angular/core';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, createUsuario, Perfil as DcPerfil, EstadoUsuario as DcEstado } from '../../../dataconnect-generated';
+import {
+  connectorConfig,
+  createUsuario,
+  updateEstadoUsuario,
+  Perfil as DcPerfil,
+  EstadoUsuario as DcEstado,
+} from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { AlmacenamientoService } from './almacenamiento.service';
 import { Usuario, AltaCliente } from '../modelos/modelos';
-import { Perfil } from '../modelos/enums';
+import { EstadoUsuario, PERFILES_ADMIN, Perfil } from '../modelos/enums';
 
 const ORDEN_PERFIL: Perfil[] = [
   'DUENO',
@@ -35,6 +41,17 @@ export class UsuariosService {
       .filter((u) => u.activo && u.estado === 'APROBADO')
       .filter((u, i, todos) => todos.findIndex((o) => o.perfil === u.perfil) === i)
       .sort((a, b) => ORDEN_PERFIL.indexOf(a.perfil) - ORDEN_PERFIL.indexOf(b.perfil)),
+  );
+
+  /**
+   * Punto 6 · comensales esperando que el dueño o el supervisor resuelvan su
+   * registro. Los más antiguos primero: quien esperó más, se resuelve antes.
+   */
+  readonly pendientes = computed(() =>
+    this.almacen
+      .usuarios()
+      .filter((u) => u.perfil === 'CLIENTE_REGISTRADO' && u.estado === 'PENDIENTE' && u.activo)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
   );
 
   porId(id: string): Usuario | undefined {
@@ -84,7 +101,43 @@ export class UsuariosService {
   }
 
   administradores(): Usuario[] {
-    return this.almacen.usuarios().filter((u) => u.perfil === 'DUENO' || u.perfil === 'SUPERVISOR');
+    return this.almacen.usuarios().filter((u) => PERFILES_ADMIN.includes(u.perfil));
+  }
+
+  /** Puntos 6 y 8 · el comensal queda habilitado para ingresar a la aplicación. */
+  async aprobar(usuarioId: string): Promise<Usuario | undefined> {
+    return this.actualizarEstadoUsuario(usuarioId, 'APROBADO');
+  }
+
+  /** Puntos 6 y 7 · el comensal queda sin acceso, con su registro conservado. */
+  async rechazar(usuarioId: string): Promise<Usuario | undefined> {
+    return this.actualizarEstadoUsuario(usuarioId, 'RECHAZADO');
+  }
+
+  /**
+   * Mutación del estado de una cuenta en Cloud SQL (Data Connect) y en el
+   * almacén local.
+   *
+   * El signal se actualiza siempre, incluso si la base no responde: la
+   * decisión ya la tomó una persona y la pantalla tiene que reflejarla en el
+   * acto. El mismo fallback resiliente que usa el alta de clientes.
+   */
+  async actualizarEstadoUsuario(usuarioId: string, estado: EstadoUsuario): Promise<Usuario | undefined> {
+    const usuario = this.porId(usuarioId);
+    if (!usuario) return undefined;
+
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+      await updateEstadoUsuario(dc, { id: usuarioId, estado: DcEstado[estado] });
+      console.log(`✅ Estado del usuario ${usuarioId} actualizado a ${estado} en Cloud SQL PostgreSQL (Data Connect)`);
+    } catch (sqlErr) {
+      console.warn('⚠️ No se pudo actualizar el estado en Cloud SQL Data Connect (se mantiene local):', sqlErr);
+    }
+
+    const lista = this.almacen.usuarios().map((u) => (u.id === usuarioId ? { ...u, estado } : u));
+    await this.almacen.guardarUsuarios(lista);
+    return lista.find((u) => u.id === usuarioId);
   }
 
   async crearClienteRegistrado(datos: AltaCliente): Promise<Usuario> {

@@ -128,3 +128,11 @@ mutation CreateEncuesta(
     }
   )
 }
+
+# Punto 6 · el dueño o el supervisor resuelven el registro de un comensal.
+# Es la única mutación que toca el estado de una cuenta: aprobar y rechazar
+# son el mismo movimiento con distinto destino, así que comparten operación.
+mutation UpdateEstadoUsuario($id: UUID!, $estado: EstadoUsuario!)
+  @auth(level: PUBLIC, insecureReason: "Aprobación y rechazo de comensales por dueño o supervisor.") {
+  user_update(id: $id, data: { estado: $estado })
+}

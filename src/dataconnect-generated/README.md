@@ -20,6 +20,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateMesa*](#createmesa)
   - [*CreatePedido*](#createpedido)
   - [*CreateEncuesta*](#createencuesta)
+  - [*UpdateEstadoUsuario*](#updateestadousuario)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `example`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -1157,6 +1158,118 @@ console.log(data.encuesta_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.encuesta_insert);
+});
+```
+
+## UpdateEstadoUsuario
+You can execute the `UpdateEstadoUsuario` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+updateEstadoUsuario(vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+
+interface UpdateEstadoUsuarioRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoUsuarioVariables): MutationRef<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+}
+export const updateEstadoUsuarioRef: UpdateEstadoUsuarioRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+updateEstadoUsuario(dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+
+interface UpdateEstadoUsuarioRef {
+  ...
+  (dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationRef<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+}
+export const updateEstadoUsuarioRef: UpdateEstadoUsuarioRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the updateEstadoUsuarioRef:
+```typescript
+const name = updateEstadoUsuarioRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `UpdateEstadoUsuario` mutation requires an argument of type `UpdateEstadoUsuarioVariables`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface UpdateEstadoUsuarioVariables {
+  id: UUIDString;
+  estado: EstadoUsuario;
+}
+```
+### Return Type
+Recall that executing the `UpdateEstadoUsuario` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `UpdateEstadoUsuarioData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface UpdateEstadoUsuarioData {
+  user_update?: User_Key | null;
+}
+```
+### Using `UpdateEstadoUsuario`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, updateEstadoUsuario, UpdateEstadoUsuarioVariables } from '@dataconnect/generated';
+
+// The `UpdateEstadoUsuario` mutation requires an argument of type `UpdateEstadoUsuarioVariables`:
+const updateEstadoUsuarioVars: UpdateEstadoUsuarioVariables = {
+  id: ..., 
+  estado: ..., 
+};
+
+// Call the `updateEstadoUsuario()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await updateEstadoUsuario(updateEstadoUsuarioVars);
+// Variables can be defined inline as well.
+const { data } = await updateEstadoUsuario({ id: ..., estado: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await updateEstadoUsuario(dataConnect, updateEstadoUsuarioVars);
+
+console.log(data.user_update);
+
+// Or, you can use the `Promise` API.
+updateEstadoUsuario(updateEstadoUsuarioVars).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
+});
+```
+
+### Using `UpdateEstadoUsuario`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, updateEstadoUsuarioRef, UpdateEstadoUsuarioVariables } from '@dataconnect/generated';
+
+// The `UpdateEstadoUsuario` mutation requires an argument of type `UpdateEstadoUsuarioVariables`:
+const updateEstadoUsuarioVars: UpdateEstadoUsuarioVariables = {
+  id: ..., 
+  estado: ..., 
+};
+
+// Call the `updateEstadoUsuarioRef()` function to get a reference to the mutation.
+const ref = updateEstadoUsuarioRef(updateEstadoUsuarioVars);
+// Variables can be defined inline as well.
+const ref = updateEstadoUsuarioRef({ id: ..., estado: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = updateEstadoUsuarioRef(dataConnect, updateEstadoUsuarioVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.user_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.user_update);
 });
 ```
 

@@ -11,7 +11,7 @@ The generated SDK creates injectable wrapper functions.
 
 Here's an example:
 ```
-import { injectCreateProducto, injectCreateUsuario, injectCreateMesa, injectCreatePedido, injectCreateEncuesta, injectListProductos, injectListMesas, injectListUsuarios, injectListPedidosActivos } from '@dataconnect/generated/angular';
+import { injectCreateProducto, injectCreateUsuario, injectCreateMesa, injectCreatePedido, injectCreateEncuesta, injectUpdateEstadoUsuario, injectListProductos, injectListMesas, injectListUsuarios, injectListPedidosActivos } from '@dataconnect/generated/angular';
 
 @Component({
   selector: 'my-component',
@@ -24,6 +24,7 @@ class MyComponent {
   private readonly CreateMesaOperation = injectCreateMesa(createMesaVars);
   private readonly CreatePedidoOperation = injectCreatePedido(createPedidoVars);
   private readonly CreateEncuestaOperation = injectCreateEncuesta(createEncuestaVars);
+  private readonly UpdateEstadoUsuarioOperation = injectUpdateEstadoUsuario(updateEstadoUsuarioVars);
   private readonly ListProductosOperation = injectListProductos();
   private readonly ListMesasOperation = injectListMesas();
   private readonly ListUsuariosOperation = injectListUsuarios();
@@ -70,7 +71,7 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createProducto, createUsuario, createMesa, createPedido, createEncuesta, listProductos, listMesas, listUsuarios, listPedidosActivos } from '@dataconnect/generated';
+import { createProducto, createUsuario, createMesa, createPedido, createEncuesta, updateEstadoUsuario, listProductos, listMesas, listUsuarios, listPedidosActivos } from '@dataconnect/generated';
 
 
 // Operation CreateProducto:  For variables, look at type CreateProductoVars in ../index.d.ts
@@ -87,6 +88,9 @@ const { data } = await CreatePedido(dataConnect, createPedidoVars);
 
 // Operation CreateEncuesta:  For variables, look at type CreateEncuestaVars in ../index.d.ts
 const { data } = await CreateEncuesta(dataConnect, createEncuestaVars);
+
+// Operation UpdateEstadoUsuario:  For variables, look at type UpdateEstadoUsuarioVars in ../index.d.ts
+const { data } = await UpdateEstadoUsuario(dataConnect, updateEstadoUsuarioVars);
 
 // Operation ListProductos: 
 const { data } = await ListProductos(dataConnect);

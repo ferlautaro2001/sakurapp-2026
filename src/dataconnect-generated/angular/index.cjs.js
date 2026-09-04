@@ -1,4 +1,4 @@
-const { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef } = require('../');
+const { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef } = require('../');
 const { DataConnect, CallerSdkTypeEnum } = require('@angular/fire/data-connect');
 const { injectDataConnectQuery, injectDataConnectMutation } = require('@tanstack-query-firebase/angular/data-connect');
 const { inject, EnvironmentInjector } = require('@angular/core');
@@ -21,6 +21,10 @@ exports.injectCreatePedido = function injectCreatePedido(args, injector) {
 
 exports.injectCreateEncuesta = function injectCreateEncuesta(args, injector) {
   return injectDataConnectMutation(createEncuestaRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+exports.injectUpdateEstadoUsuario = function injectUpdateEstadoUsuario(args, injector) {
+  return injectDataConnectMutation(updateEstadoUsuarioRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 exports.injectListProductos = function injectListProductos(options, injector) {

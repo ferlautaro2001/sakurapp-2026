@@ -25,7 +25,7 @@ import { DocumentoPipe } from './documento.pipe';
       :host { display: block; }
       .lm-profile {
         display: flex; align-items: center; gap: 10px; width: 100%;
-        min-height: 52px; padding: 7px 10px; text-align: left; cursor: pointer;
+        min-height: 46px; padding: 4px 10px; text-align: left; cursor: pointer;
         border-radius: var(--radius-field); background: var(--surface-card);
         border: 1.5px solid var(--border-field);
         box-shadow: 0 1px 3px rgba(110, 18, 52, 0.05);

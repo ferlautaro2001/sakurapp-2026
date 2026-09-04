@@ -17,10 +17,17 @@ import {
   CampoComponent,
   FiltrosComponent,
   FotoComponent,
+  InterruptorComponent,
+  SegmentadoComponent,
   TarjetaEscaneoComponent,
 } from './formulario';
 import { BarraInferiorComponent, EncabezadoComponent } from './estructura';
-import { FilaPendienteComponent, TarjetaPerfilComponent } from './datos';
+import {
+  FilaPendienteComponent,
+  PlacaQrComponent,
+  TarjetaMesaComponent,
+  TarjetaPerfilComponent,
+} from './datos';
 import { DocumentoPipe } from './documento.pipe';
 
 export * from './basicos';
@@ -47,10 +54,15 @@ export const UI = [
   FotoComponent,
   BuscadorComponent,
   FiltrosComponent,
+  SegmentadoComponent,
+  InterruptorComponent,
   TarjetaEscaneoComponent,
   EncabezadoComponent,
   BarraInferiorComponent,
   TarjetaPerfilComponent,
   FilaPendienteComponent,
+  TarjetaMesaComponent,
+  PlacaQrComponent,
   DocumentoPipe,
 ] as const;
+

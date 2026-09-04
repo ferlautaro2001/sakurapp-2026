@@ -283,7 +283,16 @@ body.camara-encendida .lm-header {
   background: var(--surface-sunken);
   box-shadow: 0 0 0 3px rgba(253, 236, 239, .65), var(--shadow-card);
 }
-.lm-field--error .lm-field__box { background: var(--state-error-surface); border-color: var(--state-error); box-shadow: none; }
+/* El error grita más fuerte que el foco: fondo rojizo, borde rojo y halo del
+   mismo rojo. Antes el rosa del error y el rosa del campo activo se parecían
+   demasiado y no se distinguía uno de otro. */
+.lm-field--error .lm-field__box {
+  background: #FFD3CC;
+  border-color: var(--state-error);
+  box-shadow: 0 0 0 3px rgba(192, 38, 26, .3), var(--shadow-card);
+}
+.lm-field--error .lm-field__box input { color: #7A1810; }
+.lm-field--error .lm-field__box input::placeholder { color: rgba(122, 24, 16, .6); }
 .lm-field__box input, .lm-field__box textarea {
   flex: 1; min-width: 0; border: none; outline: none; background: transparent;
   font: var(--type-body); color: var(--text-body); padding: 0;

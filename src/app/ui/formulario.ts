@@ -200,3 +200,56 @@ export class FiltrosComponent {
   readonly valor = input.required<string>();
   readonly cambiar = output<string>();
 }
+
+/** Control segmentado: tipo de mesa, categoría corta. De dos a tres opciones. */
+@Component({
+  selector: 'lm-segmentado',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (etiqueta()) {
+      <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
+    }
+    <div class="lm-segmented" [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',1fr)'">
+      @for (opcion of opciones(); track opcion.valor) {
+        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
+          {{ opcion.rotulo }}
+        </button>
+      }
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class SegmentadoComponent {
+  readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
+  readonly valor = input.required<string>();
+  readonly etiqueta = input<string | null>(null);
+  readonly columnas = input<number | null>(null);
+  readonly cambiar = output<string>();
+}
+
+/** Interruptor de disponibilidad. Fila completa táctil. */
+@Component({
+  selector: 'lm-interruptor',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <button type="button" class="lm-toggle" (click)="cambiar.emit(!activo())">
+      <span class="lm-toggle__texto">
+        <b>{{ etiqueta() }}</b>
+        @if (ayuda()) {
+          <small>{{ ayuda() }}</small>
+        }
+      </span>
+      <span class="lm-toggle__pista" [class.on]="activo()">
+        <span class="lm-toggle__perilla"></span>
+      </span>
+    </button>
+  `,
+  styles: [':host{display:block}'],
+})
+export class InterruptorComponent {
+  readonly etiqueta = input.required<string>();
+  readonly ayuda = input<string | null>(null);
+  readonly activo = input(false, { transform: booleanAttribute });
+  readonly cambiar = output<boolean>();
+}
+

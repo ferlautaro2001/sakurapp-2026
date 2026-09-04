@@ -44,3 +44,24 @@ export const ROTULO_ESTADO_USUARIO: Record<EstadoUsuario, string> = {
 /** Perfiles con permisos de administración. */
 export const PERFILES_ADMIN: Perfil[] = ['DUENO', 'SUPERVISOR'];
 
+export type TipoMesa = 'ESTANDAR' | 'VIP' | 'MOVILIDAD_REDUCIDA';
+export type EstadoMesa = 'VACIA' | 'OCUPADA' | 'INACTIVA';
+
+export const ROTULO_TIPO_MESA: Record<TipoMesa, string> = {
+  ESTANDAR: 'Estándar',
+  VIP: 'VIP',
+  MOVILIDAD_REDUCIDA: 'Movilidad reducida',
+};
+
+export const ICONO_TIPO_MESA: Record<TipoMesa, string> = {
+  ESTANDAR: 'table_restaurant',
+  VIP: 'workspace_premium',
+  MOVILIDAD_REDUCIDA: 'accessible',
+};
+
+export const ROTULO_ESTADO_MESA: Record<EstadoMesa, string> = {
+  VACIA: 'Vacía',
+  OCUPADA: 'Ocupada',
+  INACTIVA: 'Inactiva',
+};
+

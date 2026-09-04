@@ -62,6 +62,31 @@ export const routes: Routes = [
     loadComponent: () => import('./pantallas/admin/alta-empleado.page').then((m) => m.AltaEmpleadoPage),
   },
   {
+    path: 'admin/alta-mesa',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
+    loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
+  },
+  {
+    path: 'mesas',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
+    loadComponent: () => import('./pantallas/mesas/mesas.page').then((m) => m.MesasPage),
+  },
+  {
+    path: 'mesas/nueva',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
+    loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
+  },
+  {
+    path: 'mesas/:id/qr',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
+    loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
+  },
+  {
+    path: 'mesas/:id',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
+    loadComponent: () => import('./pantallas/mesas/mesa-form.page').then((m) => m.MesaFormPage),
+  },
+  {
     path: 'cantinero/alta-bebida',
     canActivate: [guardiaSesion, guardiaPerfil('CANTINERO')],
     loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),

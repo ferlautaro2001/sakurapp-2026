@@ -4,7 +4,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { Usuario } from '../modelos/modelos';
-import { Perfil } from '../modelos/enums';
+import { PERFILES_ADMIN, Perfil } from '../modelos/enums';
 import { UsuariosService } from './usuarios.service';
 import { NotificacionesService } from './notificaciones.service';
 
@@ -21,6 +21,14 @@ export class SesionService {
 
   readonly usuario = signal<Usuario | null>(null);
   readonly autenticado = computed(() => this.usuario() !== null);
+  readonly esAdministrador = computed(() => {
+    const u = this.usuario();
+    return u !== null && PERFILES_ADMIN.includes(u.perfil);
+  });
+  readonly esCliente = computed(() => {
+    const u = this.usuario();
+    return u?.perfil === 'CLIENTE_REGISTRADO' || u?.perfil === 'CLIENTE_ANONIMO';
+  });
 
   /** Ingreso estricto con correo electrónico y contraseña validados contra Firebase Authentication. */
   async ingresar(email: string, clave: string): Promise<ResultadoIngreso> {

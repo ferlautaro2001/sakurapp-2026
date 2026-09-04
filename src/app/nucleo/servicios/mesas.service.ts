@@ -96,7 +96,7 @@ export class MesasService {
         numero: mesa.numero,
         cantidadComensales: mesa.cantidadComensales,
         tipo: mesa.tipo as DcTipoMesa,
-        estado: DcEstadoMesa[mesa.estado] ?? DcEstadoMesa.VACIA,
+        estado: mesa.estado === 'OCUPADA' ? DcEstadoMesa.OCUPADA : DcEstadoMesa.VACIA,
         fotoUrl: mesa.fotoUrl,
         qrCodeUrl: mesa.qrCodeUrl,
       });

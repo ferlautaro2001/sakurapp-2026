@@ -116,8 +116,8 @@ export class ClientesPendientesPage extends PaginaConSesion {
       icono: 'close',
       foto: this.usuarios.avatarSushi(cliente),
       detalle: [
-        { rotulo: 'Nombres', valor: cliente.nombre },
-        { rotulo: 'Apellidos', valor: cliente.apellido ?? 'Sin dato' },
+        { rotulo: 'Nombres', valor: this.usuarios.nombrePropio(cliente.nombre) },
+        { rotulo: 'Apellidos', valor: this.usuarios.nombrePropio(cliente.apellido) || 'Sin dato' },
         { rotulo: 'DNI', valor: this.documento.transform(cliente.dni) },
         { rotulo: 'Correo', valor: cliente.email ?? 'Sin correo' },
         { rotulo: 'Estado', valor: ROTULO_ESTADO_USUARIO[cliente.estado] },

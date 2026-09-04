@@ -63,10 +63,35 @@ export class UsuariosService {
     return this.almacen.usuarios().find((u) => (u.email ?? '').toLocaleLowerCase() === buscado);
   }
 
-  /** Nombre completo listo para mostrar. */
+  /** Nombre completo listo para mostrar, ya normalizado. */
   nombreCompleto(usuario: Usuario | undefined | null): string {
     if (!usuario) return '';
-    return `${usuario.nombre} ${usuario.apellido ?? ''}`.trim();
+    return `${this.nombrePropio(usuario.nombre)} ${this.nombrePropio(usuario.apellido)}`.trim();
+  }
+
+  /**
+   * Nombre propio con la primera letra de cada palabra en mayúscula.
+   *
+   * La gente escribe su nombre como quiere: todo en minúscula desde el
+   * teclado del celular, o todo en mayúscula copiándolo del documento. Lo que
+   * se guarda es lo que la persona tipeó; lo que se muestra se normaliza acá,
+   * en un solo lugar, para que el listado se lea parejo.
+   *
+   * Las partículas de los apellidos compuestos quedan en minúscula, como se
+   * escriben en castellano: "Juana de la Torre", no "Juana De La Torre".
+   */
+  nombrePropio(texto: string | null | undefined): string {
+    if (!texto) return '';
+    return texto
+      .trim()
+      .toLocaleLowerCase('es-AR')
+      .split(/\s+/)
+      .map((palabra, indice) => {
+        if (indice > 0 && PARTICULAS.includes(palabra)) return palabra;
+        // Los compuestos con guion llevan mayúscula de los dos lados.
+        return palabra.split('-').map(mayusculaInicial).join('-');
+      })
+      .join(' ');
   }
 
   /** Iniciales para el avatar. */
@@ -278,6 +303,14 @@ export class UsuariosService {
     if (usuario.fotoUrl && usuario.fotoUrl.trim() !== '') return usuario.fotoUrl;
     return SUSHIS_POR_PERFIL[usuario.perfil] ?? 'assets/icon/sushis/sushi-1.png';
   }
+}
+
+/** Partículas que no llevan mayúscula dentro de un apellido compuesto. */
+const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'y', 'da', 'das', 'do', 'dos', 'di', 'della', 'van', 'von', 'san', 'santa'];
+
+function mayusculaInicial(palabra: string): string {
+  if (!palabra) return palabra;
+  return palabra.charAt(0).toLocaleUpperCase('es-AR') + palabra.slice(1);
 }
 
 /** Normaliza un campo de texto opcional: vacío se guarda como NULL, no como ''. */

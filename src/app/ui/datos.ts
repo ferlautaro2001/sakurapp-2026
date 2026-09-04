@@ -15,7 +15,7 @@ import { DocumentoPipe } from './documento.pipe';
         <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario().nombre" width="34" height="34" />
       </span>
       <span class="lm-profile__texto">
-        <b>{{ soloNombre() ? usuario().nombre : usuarios.nombreCompleto(usuario()) }}</b>
+        <b>{{ soloNombre() ? usuarios.nombrePropio(usuario().nombre) : usuarios.nombreCompleto(usuario()) }}</b>
         <small>{{ rotulo() }}</small>
       </span>
     </button>

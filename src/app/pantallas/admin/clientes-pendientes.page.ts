@@ -5,6 +5,8 @@ import { PaginaConSesion } from '../pagina-base';
 import { Usuario } from '../../nucleo/modelos/modelos';
 import { EstadoUsuario, ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
+import { CorreoService } from '../../nucleo/servicios/correo.service';
+import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
 import { DocumentoPipe } from '../../ui/documento.pipe';
 
 const FILTROS = ['Todos', 'Pendiente', 'Aprobado', 'Rechazado'];
@@ -71,6 +73,8 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
 })
 export class ClientesPendientesPage extends PaginaConSesion {
   private readonly usuarios = inject(UsuariosService);
+  private readonly correo = inject(CorreoService);
+  private readonly notificaciones = inject(NotificacionesService);
   /** El mismo formato de documento que muestra la fila, también en el modal. */
   private readonly documento = new DocumentoPipe();
 
@@ -168,6 +172,25 @@ export class ClientesPendientesPage extends PaginaConSesion {
         aprobar ? 'Aprobando el registro…' : 'Rechazando el registro…',
         () => this.usuarios.actualizarEstadoUsuario(cliente.id, aprobar ? 'APROBADO' : 'RECHAZADO'),
       );
+
+      // US-3.2: Envío automático de correo con plantilla institucional según resolución
+      const resolutor = this.sesion.usuario();
+      if (resolutor) {
+        if (aprobar) {
+          void this.correo.enviarAprobacion(cliente, resolutor).catch((err) => {
+            console.warn('⚠️ Error al enviar correo de aprobación:', err);
+          });
+        } else {
+          void this.correo.enviarRechazo(cliente, resolutor).catch((err) => {
+            console.warn('⚠️ Error al enviar correo de rechazo:', err);
+          });
+        }
+      }
+
+      // US-3.2: Notificación push / aviso de resolución al dispositivo del cliente
+      void this.notificaciones.notificarResolucion(cliente.id, aprobar).catch((err) => {
+        console.warn('⚠️ Error al emitir notificación de resolución:', err);
+      });
 
       // La vibración alcanza como confirmación: la fila ya desapareció del
       // listado y los únicos sonidos de la aplicación son los de abrirla y

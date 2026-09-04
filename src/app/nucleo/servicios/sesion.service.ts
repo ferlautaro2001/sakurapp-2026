@@ -6,6 +6,7 @@ import { AlmacenService } from '../datos/almacen.service';
 import { Usuario } from '../modelos/modelos';
 import { Perfil } from '../modelos/enums';
 import { UsuariosService } from './usuarios.service';
+import { NotificacionesService } from './notificaciones.service';
 
 export type ResultadoIngreso =
   | { ok: true; usuario: Usuario }
@@ -16,6 +17,7 @@ export type ResultadoIngreso =
 export class SesionService {
   private readonly almacen = inject(AlmacenService);
   private readonly usuarios = inject(UsuariosService);
+  private readonly notificaciones = inject(NotificacionesService);
 
   readonly usuario = signal<Usuario | null>(null);
   readonly autenticado = computed(() => this.usuario() !== null);
@@ -52,6 +54,7 @@ export class SesionService {
     if (usuario.estado === 'RECHAZADO') return { ok: false, motivo: 'RECHAZADO' };
 
     this.usuario.set(usuario);
+    this.notificaciones.registrarSesion(usuario.id);
     await this.almacen.guardarSesion(usuario.id);
     return { ok: true, usuario };
   }
@@ -62,16 +65,19 @@ export class SesionService {
     if (!id) return null;
     const usuario = this.usuarios.porId(id);
     if (!usuario || !usuario.activo || usuario.estado !== 'APROBADO') {
+      this.notificaciones.registrarSesion(null);
       await this.almacen.borrarSesion();
       return null;
     }
     this.usuario.set(usuario);
+    this.notificaciones.registrarSesion(usuario.id);
     return usuario;
   }
 
   /** Cierra la sesión y borra la credencial guardada en el dispositivo. */
   async cerrar(): Promise<void> {
     this.usuario.set(null);
+    this.notificaciones.registrarSesion(null);
     await this.almacen.borrarSesion();
   }
 

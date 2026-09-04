@@ -6,6 +6,8 @@ import { AvisosService } from '../../nucleo/servicios/avisos.service';
 import { CamaraService } from '../../nucleo/servicios/camara.service';
 import { CargandoService } from '../../nucleo/servicios/cargando.service';
 import { ConfirmacionService } from '../../nucleo/servicios/confirmacion.service';
+import { CorreoService } from '../../nucleo/servicios/correo.service';
+import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
 import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
@@ -121,6 +123,8 @@ export class RegistroClientePage {
   private readonly avisos = inject(AvisosService);
   private readonly cargando = inject(CargandoService);
   private readonly confirmacion = inject(ConfirmacionService);
+  private readonly correo = inject(CorreoService);
+  private readonly notificaciones = inject(NotificacionesService);
 
   protected readonly foto = signal<string | null>(null);
   protected readonly errorFoto = signal<string | null>(null);
@@ -224,7 +228,7 @@ export class RegistroClientePage {
     });
     if (!seguro) return;
 
-    await this.cargando.conEsperaMinima('Enviando tu registro…', () =>
+    const usuarioCreado = await this.cargando.conEsperaMinima('Enviando tu registro…', () =>
       this.usuarios.crearClienteRegistrado({
         nombre: datos.nombre,
         apellido: datos.apellido,
@@ -235,6 +239,19 @@ export class RegistroClientePage {
         fotoUrl: this.foto()!,
       }),
     );
+
+    // US-3.2: Envío automático de correo con plantilla "Registro Recibido"
+    void this.correo.enviarConfirmacionRegistro(usuarioCreado).catch((err) => {
+      console.warn('⚠️ Fallo en despacho de correo de registro recibido:', err);
+    });
+
+    // US-3.2: Notificación push a Dueño y Supervisor ante nuevo comensal pendiente
+    const adminIds = this.usuarios.administradores().map((u) => u.id);
+    void this.notificaciones
+      .notificarNuevoRegistro(this.usuarios.nombreCompleto(usuarioCreado), adminIds)
+      .catch((err) => {
+        console.warn('⚠️ Fallo al emitir notificación a administradores:', err);
+      });
 
     await this.router.navigate(['/registro-enviado'], { replaceUrl: true });
   }

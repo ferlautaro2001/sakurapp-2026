@@ -1,8 +1,16 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
+import { Router } from '@angular/router';
 import { IconoComponent, IconoBotonComponent } from './basicos';
 import { SesionService } from '../nucleo/servicios/sesion.service';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
 import { ROTULO_PERFIL } from '../nucleo/modelos/enums';
+
+export interface ItemNavegacion {
+  id: string;
+  rotulo: string;
+  icono: string;
+  ruta: string;
+}
 
 /**
  * Encabezado con avatar, nombre, rol visible y botón de cerrar sesión.
@@ -57,3 +65,34 @@ export class EncabezadoComponent {
   }
 }
 
+
+/** Barra inferior de secciones. Sólo donde el rol tiene más de una sección. */
+@Component({
+  selector: 'lm-barra-inferior',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent],
+  template: `
+    @if (items().length > 1) {
+      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',1fr)'">
+        @for (item of items(); track item.id) {
+          <button type="button" [class.on]="item.id === activo()" (click)="ir(item)">
+            <span class="lm-bottomnav__pastilla">
+              <lm-icono [nombre]="item.icono" [tamano]="22" />
+            </span>
+            <span class="lm-bottomnav__rotulo">{{ item.rotulo }}</span>
+          </button>
+        }
+      </nav>
+    }
+  `,
+  styles: [':host{display:block;flex:0 0 auto}'],
+})
+export class BarraInferiorComponent {
+  private readonly router = inject(Router);
+  readonly items = input.required<ItemNavegacion[]>();
+  readonly activo = input.required<string>();
+
+  protected ir(item: ItemNavegacion): void {
+    void this.router.navigate([item.ruta]);
+  }
+}

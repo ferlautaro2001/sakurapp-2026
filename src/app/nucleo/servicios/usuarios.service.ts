@@ -2,12 +2,18 @@ import { Injectable, computed, inject } from '@angular/core';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { getDataConnect } from 'firebase/data-connect';
-import { connectorConfig, createUsuario, Perfil as DcPerfil, EstadoUsuario as DcEstado } from '../../../dataconnect-generated';
+import {
+  connectorConfig,
+  createUsuario,
+  updateEstadoUsuario,
+  Perfil as DcPerfil,
+  EstadoUsuario as DcEstado,
+} from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { AlmacenamientoService } from './almacenamiento.service';
-import { Usuario, AltaCliente } from '../modelos/modelos';
-import { Perfil } from '../modelos/enums';
+import { Usuario, AltaCliente, AltaEmpleado } from '../modelos/modelos';
+import { EstadoUsuario, PERFILES_ADMIN, Perfil } from '../modelos/enums';
 
 const ORDEN_PERFIL: Perfil[] = [
   'DUENO',
@@ -37,6 +43,17 @@ export class UsuariosService {
       .sort((a, b) => ORDEN_PERFIL.indexOf(a.perfil) - ORDEN_PERFIL.indexOf(b.perfil)),
   );
 
+  /**
+   * Punto 6 · comensales esperando que el dueño o el supervisor resuelvan su
+   * registro. Los más antiguos primero: quien esperó más, se resuelve antes.
+   */
+  readonly pendientes = computed(() =>
+    this.almacen
+      .usuarios()
+      .filter((u) => u.perfil === 'CLIENTE_REGISTRADO' && u.estado === 'PENDIENTE' && u.activo)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
+  );
+
   porId(id: string): Usuario | undefined {
     return this.almacen.usuarios().find((u) => u.id === id);
   }
@@ -46,10 +63,35 @@ export class UsuariosService {
     return this.almacen.usuarios().find((u) => (u.email ?? '').toLocaleLowerCase() === buscado);
   }
 
-  /** Nombre completo listo para mostrar. */
+  /** Nombre completo listo para mostrar, ya normalizado. */
   nombreCompleto(usuario: Usuario | undefined | null): string {
     if (!usuario) return '';
-    return `${usuario.nombre} ${usuario.apellido ?? ''}`.trim();
+    return `${this.nombrePropio(usuario.nombre)} ${this.nombrePropio(usuario.apellido)}`.trim();
+  }
+
+  /**
+   * Nombre propio con la primera letra de cada palabra en mayúscula.
+   *
+   * La gente escribe su nombre como quiere: todo en minúscula desde el
+   * teclado del celular, o todo en mayúscula copiándolo del documento. Lo que
+   * se guarda es lo que la persona tipeó; lo que se muestra se normaliza acá,
+   * en un solo lugar, para que el listado se lea parejo.
+   *
+   * Las partículas de los apellidos compuestos quedan en minúscula, como se
+   * escriben en castellano: "Juana de la Torre", no "Juana De La Torre".
+   */
+  nombrePropio(texto: string | null | undefined): string {
+    if (!texto) return '';
+    return texto
+      .trim()
+      .toLocaleLowerCase('es-AR')
+      .split(/\s+/)
+      .map((palabra, indice) => {
+        if (indice > 0 && PARTICULAS.includes(palabra)) return palabra;
+        // Los compuestos con guion llevan mayúscula de los dos lados.
+        return palabra.split('-').map(mayusculaInicial).join('-');
+      })
+      .join(' ');
   }
 
   /** Iniciales para el avatar. */
@@ -84,7 +126,43 @@ export class UsuariosService {
   }
 
   administradores(): Usuario[] {
-    return this.almacen.usuarios().filter((u) => u.perfil === 'DUENO' || u.perfil === 'SUPERVISOR');
+    return this.almacen.usuarios().filter((u) => PERFILES_ADMIN.includes(u.perfil));
+  }
+
+  /** Puntos 6 y 8 · el comensal queda habilitado para ingresar a la aplicación. */
+  async aprobar(usuarioId: string): Promise<Usuario | undefined> {
+    return this.actualizarEstadoUsuario(usuarioId, 'APROBADO');
+  }
+
+  /** Puntos 6 y 7 · el comensal queda sin acceso, con su registro conservado. */
+  async rechazar(usuarioId: string): Promise<Usuario | undefined> {
+    return this.actualizarEstadoUsuario(usuarioId, 'RECHAZADO');
+  }
+
+  /**
+   * Mutación del estado de una cuenta en Cloud SQL (Data Connect) y en el
+   * almacén local.
+   *
+   * El signal se actualiza siempre, incluso si la base no responde: la
+   * decisión ya la tomó una persona y la pantalla tiene que reflejarla en el
+   * acto. El mismo fallback resiliente que usa el alta de clientes.
+   */
+  async actualizarEstadoUsuario(usuarioId: string, estado: EstadoUsuario): Promise<Usuario | undefined> {
+    const usuario = this.porId(usuarioId);
+    if (!usuario) return undefined;
+
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+      await updateEstadoUsuario(dc, { id: usuarioId, estado: DcEstado[estado] });
+      console.log(`✅ Estado del usuario ${usuarioId} actualizado a ${estado} en Cloud SQL PostgreSQL (Data Connect)`);
+    } catch (sqlErr) {
+      console.warn('⚠️ No se pudo actualizar el estado en Cloud SQL Data Connect (se mantiene local):', sqlErr);
+    }
+
+    const lista = this.almacen.usuarios().map((u) => (u.id === usuarioId ? { ...u, estado } : u));
+    await this.almacen.guardarUsuarios(lista);
+    return lista.find((u) => u.id === usuarioId);
   }
 
   async crearClienteRegistrado(datos: AltaCliente): Promise<Usuario> {
@@ -219,12 +297,76 @@ export class UsuariosService {
     return usuario;
   }
 
+  /** Alta administrativa: el empleado nace aprobado y puede autenticarse inmediatamente. */
+  async crearEmpleado(datos: AltaEmpleado): Promise<Usuario> {
+    let uid = `uid-${Date.now()}`;
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const cred = await createUserWithEmailAndPassword(getAuth(app), datos.email.trim(), datos.clave);
+      uid = cred.user.uid;
+    } catch (err) {
+      console.warn('Firebase Auth alta de empleado:', err);
+    }
+
+    let fotoUrl = datos.fotoUrl;
+    try {
+      fotoUrl = await this.almacenamiento.subirFoto(`usuarios/${uid}/perfil.jpg`, datos.fotoUrl);
+    } catch (err) {
+      console.warn('Firebase Storage alta de empleado:', err);
+    }
+
+    const usuario: Usuario = {
+      id: `usr-${Date.now()}`,
+      uid,
+      nombre: datos.nombre.trim(),
+      apellido: datos.apellido.trim(),
+      dni: opcional(datos.dni),
+      cuil: opcional(datos.cuil),
+      email: datos.email.trim().toLocaleLowerCase(),
+      perfil: datos.perfil,
+      fotoUrl,
+      estado: 'APROBADO',
+      activo: true,
+      clave: datos.clave,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const res = await createUsuario(getDataConnect(app, connectorConfig), {
+        uid: usuario.uid,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        dni: usuario.dni,
+        cuil: usuario.cuil,
+        email: usuario.email,
+        perfil: usuario.perfil as DcPerfil,
+        fotoUrl: usuario.fotoUrl,
+        estado: DcEstado.APROBADO,
+      });
+      if (res?.data?.user_insert?.id) usuario.id = res.data.user_insert.id;
+    } catch (err) {
+      console.warn('Cloud SQL alta de empleado:', err);
+    }
+
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    return usuario;
+  }
+
   /** Ícono de sushi para el avatar. */
   avatarSushi(usuario: Usuario | undefined | null): string {
     if (!usuario) return 'assets/icon/sushis/sushi-1.png';
     if (usuario.fotoUrl && usuario.fotoUrl.trim() !== '') return usuario.fotoUrl;
     return SUSHIS_POR_PERFIL[usuario.perfil] ?? 'assets/icon/sushis/sushi-1.png';
   }
+}
+
+/** Partículas que no llevan mayúscula dentro de un apellido compuesto. */
+const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'y', 'da', 'das', 'do', 'dos', 'di', 'della', 'van', 'von', 'san', 'santa'];
+
+function mayusculaInicial(palabra: string): string {
+  if (!palabra) return palabra;
+  return palabra.charAt(0).toLocaleUpperCase('es-AR') + palabra.slice(1);
 }
 
 /** Normaliza un campo de texto opcional: vacío se guarda como NULL, no como ''. */

@@ -1,7 +1,6 @@
-import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise, DataConnectSettings } from 'firebase/data-connect';
+import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise } from 'firebase/data-connect';
 
 export const connectorConfig: ConnectorConfig;
-export const dataConnectSettings: DataConnectSettings;
 
 export type TimestampString = string;
 export type UUIDString = string;
@@ -264,6 +263,15 @@ export interface Producto_Key {
   __typename?: 'Producto_Key';
 }
 
+export interface UpdateEstadoUsuarioData {
+  user_update?: User_Key | null;
+}
+
+export interface UpdateEstadoUsuarioVariables {
+  id: UUIDString;
+  estado: EstadoUsuario;
+}
+
 export interface User_Key {
   id: UUIDString;
   __typename?: 'User_Key';
@@ -328,6 +336,18 @@ export const createEncuestaRef: CreateEncuestaRef;
 
 export function createEncuesta(vars: CreateEncuestaVariables): MutationPromise<CreateEncuestaData, CreateEncuestaVariables>;
 export function createEncuesta(dc: DataConnect, vars: CreateEncuestaVariables): MutationPromise<CreateEncuestaData, CreateEncuestaVariables>;
+
+interface UpdateEstadoUsuarioRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoUsuarioVariables): MutationRef<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationRef<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+  operationName: string;
+}
+export const updateEstadoUsuarioRef: UpdateEstadoUsuarioRef;
+
+export function updateEstadoUsuario(vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+export function updateEstadoUsuario(dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */

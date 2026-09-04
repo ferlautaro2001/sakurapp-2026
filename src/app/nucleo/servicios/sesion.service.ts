@@ -4,6 +4,7 @@ import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { Usuario } from '../modelos/modelos';
+import { Perfil } from '../modelos/enums';
 import { UsuariosService } from './usuarios.service';
 
 export type ResultadoIngreso =
@@ -74,9 +75,30 @@ export class SesionService {
     await this.almacen.borrarSesion();
   }
 
-  /** En el MVP (v0), toda sesión activa se dirige a la Página Principal. */
-  rutaInicio(): string {
-    return '/home';
+  /**
+   * Pantalla de inicio de cada perfil.
+   *
+   * No hay tablero intermedio: quien inicia sesión aparece directamente en la
+   * pantalla donde trabaja. Las secciones que todavía está desarrollando el
+   * resto del grupo caen en la pantalla provisoria; a medida que se suban, se
+   * reemplaza cada `/en-preparacion` por su ruta real.
+   */
+  rutaInicio(perfil?: Perfil): string {
+    const p = perfil ?? this.usuario()?.perfil;
+    switch (p) {
+      case 'DUENO':
+      case 'SUPERVISOR':
+        return '/clientes-pendientes';
+      case 'METRE':
+      case 'MOZO':
+      case 'COCINERO':
+      case 'CANTINERO':
+      case 'CLIENTE_REGISTRADO':
+      case 'CLIENTE_ANONIMO':
+        return '/en-preparacion';
+      default:
+        return '/login';
+    }
   }
 }
 

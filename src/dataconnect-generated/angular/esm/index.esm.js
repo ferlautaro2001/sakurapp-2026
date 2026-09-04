@@ -1,4 +1,4 @@
-import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef } from '../../';
+import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef } from '../../';
 import { DataConnect, CallerSdkTypeEnum } from '@angular/fire/data-connect';
 import { injectDataConnectQuery, injectDataConnectMutation } from '@tanstack-query-firebase/angular/data-connect';
 import { inject, EnvironmentInjector } from '@angular/core';
@@ -20,6 +20,10 @@ export function injectCreatePedido(args, injector) {
 
 export function injectCreateEncuesta(args, injector) {
   return injectDataConnectMutation(createEncuestaRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectUpdateEstadoUsuario(args, injector) {
+  return injectDataConnectMutation(updateEstadoUsuarioRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 export function injectListProductos(options, injector) {

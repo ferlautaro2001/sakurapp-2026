@@ -14,6 +14,7 @@
     "test": "ng test",
     "lint": "ng lint",
     "android": "npm run build && cap sync android && cap open android",
+    "android:live": "node scripts/set-env.js && node scripts/live-android.js",
     "android:apk": "npm run build && cap sync android && cd android && gradlew assembleDebug",
     "sync": "npm run build && cap sync android"
   },

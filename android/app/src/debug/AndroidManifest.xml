@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sólo para las compilaciones de depuración.
+
+  La recarga en vivo (`npm run android:live`) hace que la aplicación cargue
+  desde el servidor de desarrollo de la computadora, que habla HTTP simple.
+  Desde Android 9 el sistema bloquea el tráfico sin cifrar, así que hay que
+  habilitarlo explícitamente. Al vivir en el conjunto de recursos `debug`, la
+  compilación de release sigue exigiendo HTTPS y no se afloja nada en la
+  aplicación que se entrega.
+-->
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:usesCleartextTraffic="true"
+        tools:replace="android:usesCleartextTraffic" />
+
+</manifest>

@@ -23,8 +23,8 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   imports: [ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
-      <div class="lm-body" style="padding-top:calc(12px + env(safe-area-inset-top)); padding-bottom: 8px; gap: 10px">
-        <lm-logo bajada="Bienvenido" [tamano]="56" />
+      <div class="lm-body" style="padding-top:calc(10px + env(safe-area-inset-top)); padding-bottom: 4px; gap: 8px">
+        <lm-logo bajada="Bienvenido" [tamano]="44" />
         <p class="lm-parrafo lm-centro" style="margin:0">Iniciá sesión para continuar</p>
 
         @if (error()) {
@@ -48,17 +48,17 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
           tecla="done"
         />
 
-        <lm-separador rotulo="Acceso rápido" />
+        <lm-separador class="corte" rotulo="Acceso rápido" />
         <p class="lm-nota lm-centro" style="margin:0">Tocá un perfil para entrar directamente con sus credenciales.</p>
 
-        <div class="lm-grid2" style="gap: 8px">
+        <div class="lm-grid2" style="gap: 3px">
           @for (usuario of perfiles(); track usuario.id) {
             <lm-tarjeta-perfil [usuario]="usuario" soloNombre (presionar)="entrarComo(usuario)" />
           }
         </div>
       </div>
 
-      <div class="lm-actionbar" style="padding-top: 10px; padding-bottom: calc(12px + env(safe-area-inset-bottom)); gap: 6px">
+      <div class="lm-actionbar" style="padding-top: 6px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); gap: 4px">
         <lm-boton icono="login" (presionar)="ingresar()">Iniciar sesión</lm-boton>
         <div class="registro">
           <span>¿No tenés cuenta?</span>
@@ -73,6 +73,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      /* El corte respira arriba y abajo; ese aire sale del hueco que había
+         entre la última fila de perfiles y el botón de ingresar. */
+      .corte { margin: 14px 0 4px; }
       .registro { display: flex; align-items: center; justify-content: center; gap: 4px; flex-wrap: wrap; }
       .registro span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); }
       .registro lm-texto-boton { display: inline-block; }

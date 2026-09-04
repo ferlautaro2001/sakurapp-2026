@@ -1,7 +1,15 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SonidoService } from '../../nucleo/servicios/sonido.service';
 import { GRUPO } from '../../nucleo/grupo';
+
+/**
+ * Cuánto dura el splash si el audio no llega a cargar.
+ *
+ * Alcanza para leer el nombre del grupo y los integrantes, que es lo que la
+ * consigna pide mostrar acá.
+ */
+const DURACION_POR_DEFECTO = 2400;
 
 /**
  * Pantalla de presentación animada (Splash Dinámica).
@@ -38,7 +46,7 @@ import { GRUPO } from '../../nucleo/grupo';
           <div class="titulo">SakurApp</div>
           <div class="bajada">Gestión Gastronómica</div>
         </div>
-        <div class="barra"><span></span></div>
+        <div class="barra"><span [style.animation-duration.ms]="duracion()"></span></div>
       </div>
 
       <div class="equipo">
@@ -111,7 +119,7 @@ import { GRUPO } from '../../nucleo/grupo';
         display: block;
         height: 100%;
         background: #FFFFFF;
-        animation: avance 2200ms var(--ease-standard) both;
+        animation: avance var(--ease-standard) both;
       }
       .equipo {
         z-index: 1;
@@ -148,6 +156,15 @@ export class SplashPage implements OnInit {
   private readonly sonido = inject(SonidoService);
   protected readonly grupo = GRUPO;
 
+  /**
+   * La pantalla dura lo que dura el gong de inicio.
+   *
+   * No es un número fijo: se lee del propio archivo de audio, así que si
+   * mañana se cambia el sonido, la animación de la barra y la transición a la
+   * presentación se acomodan solas.
+   */
+  protected readonly duracion = signal(DURACION_POR_DEFECTO);
+
   protected readonly petalos = [
     { x: 8, tamano: 26, retraso: 0, duracion: 3200 },
     { x: 22, tamano: 18, retraso: 420, duracion: 3900 },
@@ -157,9 +174,13 @@ export class SplashPage implements OnInit {
     { x: 86, tamano: 22, retraso: 640, duracion: 3700 },
   ];
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.sonido.reproducir('inicio');
-    setTimeout(() => void this.router.navigate(['/presentacion'], { replaceUrl: true }), 2400);
+
+    const duracion = await this.sonido.duracion('inicio', DURACION_POR_DEFECTO);
+    this.duracion.set(duracion);
+
+    setTimeout(() => void this.router.navigate(['/presentacion'], { replaceUrl: true }), duracion);
   }
 }
 

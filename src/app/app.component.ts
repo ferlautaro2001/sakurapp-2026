@@ -117,9 +117,11 @@ export class AppComponent implements OnInit {
       await StatusBar.setBackgroundColor({ color: '#B92E58' }).catch(() => undefined);
       await SplashScreen.hide().catch(() => undefined);
 
-      // Sonidos de inicio y cierre al pasar a segundo plano y primer plano
-      await App.addListener('pause', () => this.sonido.reproducir('cierre'));
-      await App.addListener('resume', () => this.sonido.reproducir('inicio'));
+      // Sonidos de inicio y cierre de la aplicación. No suenan cuando el que
+      // manda la aplicación al fondo es el sistema, por la cámara o por un
+      // pedido de permiso.
+      await App.addListener('pause', () => this.sonido.porCicloDeVida('cierre'));
+      await App.addListener('resume', () => this.sonido.porCicloDeVida('inicio'));
     }
   }
 }

@@ -4,7 +4,6 @@ import { SesionService } from '../nucleo/servicios/sesion.service';
 import { AvisosService } from '../nucleo/servicios/avisos.service';
 import { CargandoService } from '../nucleo/servicios/cargando.service';
 import { ConfirmacionService, PedidoConfirmacion } from '../nucleo/servicios/confirmacion.service';
-import { SonidoService } from '../nucleo/servicios/sonido.service';
 import { navegacionDe } from './navegacion';
 
 /**
@@ -19,7 +18,6 @@ export abstract class PaginaConSesion {
   protected readonly avisos = inject(AvisosService);
   protected readonly cargando = inject(CargandoService);
   protected readonly confirmacion = inject(ConfirmacionService);
-  protected readonly sonido = inject(SonidoService);
 
   protected readonly usuario = this.sesion.usuario;
   protected readonly secciones = computed(() => navegacionDe(this.sesion.usuario()?.perfil));
@@ -31,7 +29,6 @@ export abstract class PaginaConSesion {
 
   /** Cierra la sesión y borra la credencial guardada en el dispositivo. */
   protected async cerrarSesion(): Promise<void> {
-    const nombre = this.sesion.usuario()?.nombre ?? '';
     const seguro = await this.preguntar({
       titulo: '¿Cerrás la sesión?',
       mensaje: 'Se borran las credenciales guardadas en este dispositivo y volvés a la pantalla de ingreso.',
@@ -41,9 +38,10 @@ export abstract class PaginaConSesion {
     });
     if (!seguro) return;
 
+    // Sin sonido ni cartel: la consigna pide sonidos distintos al iniciar y
+    // cerrar la APLICACIÓN, no la sesión, y volver a la pantalla de ingreso ya
+    // dice por sí solo que la sesión se cerró.
     await this.cargando.conEsperaMinima('Cerrando la sesión…', () => this.sesion.cerrar(), 400);
-    this.sonido.reproducir('cierre');
-    this.avisos.info('Cerraste la sesión', `Hasta luego, ${nombre}. Se borraron las credenciales del dispositivo.`);
     await this.router.navigate(['/login'], { replaceUrl: true });
   }
 

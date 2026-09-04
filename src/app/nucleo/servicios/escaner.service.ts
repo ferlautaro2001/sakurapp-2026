@@ -41,8 +41,15 @@ export class EscanerService {
   async leer(tipo: TipoLectura): Promise<string | null> {
     if (!this.disponible()) return null;
 
+    // Pedir el permiso y encender la cámara mandan la aplicación al fondo: se
+    // avisa para que no suenen los gongs de apertura y cierre.
+    this.sonido.abrioPantallaDelSistema();
+
     const permitido = await this.pedirPermiso();
-    if (!permitido) return null;
+    if (!permitido) {
+      this.sonido.cerroPantallaDelSistema();
+      return null;
+    }
 
     const formatos =
       tipo === 'DNI'
@@ -63,7 +70,6 @@ export class EscanerService {
         this.oyente = await BarcodeScanner.addListener('barcodesScanned', async (evento) => {
           const valor = evento.barcodes?.[0]?.rawValue ?? null;
           if (!valor) return;
-          this.sonido.reproducir('escaneo');
           await this.detener();
           resolver(valor);
         });
@@ -78,6 +84,7 @@ export class EscanerService {
   }
 
   async detener(): Promise<void> {
+    if (this.visor()) this.sonido.cerroPantallaDelSistema();
     this.cancelar = null;
     this.visor.set(null);
     if (this.oyente) {

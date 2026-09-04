@@ -1,6 +1,12 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
-import { Usuario } from '../nucleo/modelos/modelos';
-import { ROTULO_ESTADO_USUARIO, ROTULO_PERFIL } from '../nucleo/modelos/enums';
+import { Mesa, Usuario } from '../nucleo/modelos/modelos';
+import {
+  ICONO_TIPO_MESA,
+  ROTULO_ESTADO_MESA,
+  ROTULO_ESTADO_USUARIO,
+  ROTULO_PERFIL,
+  ROTULO_TIPO_MESA,
+} from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
 import { BotonComponent, ChipComponent, IconoComponent } from './basicos';
 import { DocumentoPipe } from './documento.pipe';
@@ -149,3 +155,90 @@ export class FilaPendienteComponent {
     return ROTULO_ESTADO_USUARIO[this.cliente().estado];
   }
 }
+
+/**
+ * Tarjeta de mesa para SakurApp.
+ * Todas iguales y del mismo alto: la foto real de la mesa arriba, el número
+ * en una placa, la capacidad, el tipo y la disponibilidad.
+ */
+@Component({
+  selector: 'lm-tarjeta-mesa',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent, ChipComponent],
+  template: `
+    <button type="button" class="lm-mesa" (click)="presionar.emit()">
+      <span
+        class="lm-mesa__foto"
+        [class.lm-mesa__foto--sinfoto]="!mesa().fotoUrl"
+        [style.background-image]="mesa().fotoUrl ? 'url(' + mesa().fotoUrl + ')' : null"
+      >
+        <span class="lm-mesa__tipo">
+          <lm-icono [nombre]="iconoTipo()" [tamano]="14" />
+          {{ rotuloTipo() }}
+        </span>
+        <span class="lm-mesa__numero">{{ mesa().numero }}</span>
+      </span>
+
+      <span class="lm-mesa__cuerpo">
+        <span class="lm-mesa__rotulo">Mesa {{ mesa().numero }}</span>
+        <span class="lm-mesa__meta">
+          <lm-icono nombre="group" [tamano]="15" />
+          {{ mesa().cantidadComensales }} personas
+        </span>
+        <span class="lm-mesa__pie">
+          <lm-chip [estado]="mesa().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+          @if (conQr()) {
+            <span
+              class="lm-mesa__qr"
+              role="button"
+              tabindex="0"
+              [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
+              (click)="verQr($event)"
+            >
+              <lm-icono nombre="qr_code_2" [tamano]="18" color="var(--action-primary)" />
+            </span>
+          }
+        </span>
+      </span>
+    </button>
+  `,
+  styles: [':host{display:block;height:100%}'],
+})
+export class TarjetaMesaComponent {
+  readonly mesa = input.required<Mesa>();
+  readonly conQr = input(true, { transform: booleanAttribute });
+  readonly presionar = output<void>();
+  readonly abrirQr = output<void>();
+
+  protected iconoTipo(): string {
+    return ICONO_TIPO_MESA[this.mesa().tipo];
+  }
+  protected rotuloTipo(): string {
+    return ROTULO_TIPO_MESA[this.mesa().tipo];
+  }
+  protected rotuloEstado(): string {
+    return ROTULO_ESTADO_MESA[this.mesa().estado];
+  }
+  protected verQr(evento: Event): void {
+    evento.stopPropagation();
+    this.abrirQr.emit();
+  }
+}
+
+/** Placa con el código QR listo para mirar o imprimir. */
+@Component({
+  selector: 'lm-placa-qr',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="lm-qrplate">
+      <img [src]="fuente()" [alt]="'Código QR de ' + rotulo()" />
+      <span class="lm-qrplate__pie">{{ rotulo() }}</span>
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class PlacaQrComponent {
+  readonly fuente = input.required<string>();
+  readonly rotulo = input.required<string>();
+}
+

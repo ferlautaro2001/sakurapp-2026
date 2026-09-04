@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "301899482653",
+    "project_id": "project-48c8c6f4-0e4f-456d-889",
+    "storage_bucket": "project-48c8c6f4-0e4f-456d-889.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:301899482653:android:0d87c1391334e8de8e68f4",
+        "android_client_info": {
+          "package_name": "com.utn.tfigourmet"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBX44rHesQjyvfcI2WzS_whxqef6BGwcE4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

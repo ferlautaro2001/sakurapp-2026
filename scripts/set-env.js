@@ -1,6 +1,5 @@
 const fs = require('fs');
 const path = require('path');
-const dotenv = require('dotenv');
 
 // Cargar o inicializar automáticamente .env desde la plantilla si no existe o está vacío
 const envPath = path.resolve(__dirname, '../.env');
@@ -17,13 +16,38 @@ if (isEnvEmpty) {
   }
 }
 
-if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath });
-} else if (fs.existsSync(dotExamplePath)) {
-  dotenv.config({ path: dotExamplePath });
-} else if (fs.existsSync(examplePath)) {
-  dotenv.config({ path: examplePath });
+function parseEnvFile(filePath) {
+  if (!fs.existsSync(filePath)) return;
+  const lines = fs.readFileSync(filePath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const eqIdx = trimmed.indexOf('=');
+    if (eqIdx !== -1) {
+      const key = trimmed.slice(0, eqIdx).trim();
+      const val = trimmed.slice(eqIdx + 1).trim();
+      if (!process.env[key]) {
+        process.env[key] = val;
+      }
+    }
+  }
 }
+
+try {
+  const dotenv = require('dotenv');
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+  } else if (fs.existsSync(dotExamplePath)) {
+    dotenv.config({ path: dotExamplePath });
+  } else if (fs.existsSync(examplePath)) {
+    dotenv.config({ path: examplePath });
+  }
+} catch {
+  if (fs.existsSync(envPath)) parseEnvFile(envPath);
+  else if (fs.existsSync(dotExamplePath)) parseEnvFile(dotExamplePath);
+  else if (fs.existsSync(examplePath)) parseEnvFile(examplePath);
+}
+
 
 const envDir = path.resolve(__dirname, '../src/environments');
 if (!fs.existsSync(envDir)) {
@@ -46,6 +70,19 @@ export const environment = {
     service: "${process.env.DATA_CONNECT_SERVICE || 'sakurapp'}",
     location: "${process.env.DATA_CONNECT_LOCATION || 'us-east4'}",
     connector: "${process.env.DATA_CONNECT_CONNECTOR || 'example'}",
+  },
+  restaurante: {
+    nombre: "SakurApp",
+    salon: "Sakura",
+    direccion: "Arribeños 2288, Belgrano, Ciudad Autónoma de Buenos Aires",
+    direccionCorta: "Arribeños 2288, Belgrano",
+    telefono: "+54 11 4788 0022",
+    remitente: "no-reply@sakur.app",
+  },
+  correo: {
+    brevoApiKey: "${process.env.BREVO_API_KEY || ''}",
+    remitente: "no-reply@sakur.app",
+    nombreRemitente: "SakurApp",
   },
   defaultPassword: "${process.env.DEFAULT_USER_PASSWORD || 'Sakura.2026'}",
 };

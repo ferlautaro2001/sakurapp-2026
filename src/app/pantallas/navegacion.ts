@@ -20,7 +20,7 @@ export function navegacionDe(perfil: Perfil | undefined): ItemNavegacion[] {
  * integrante del grupo sube su pantalla, suma acá su ruta y la sección aparece
  * sola, sin tocar nada más.
  */
-const RUTAS_IMPLEMENTADAS: string[] = ['/clientes-pendientes'];
+const RUTAS_IMPLEMENTADAS: string[] = ['/clientes-pendientes', '/mesas'];
 
 function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
   switch (perfil) {

@@ -2,14 +2,17 @@ import { Injectable, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDataConnect } from 'firebase/data-connect';
-import { listProductos, listUsuarios, connectorConfig } from '../../../dataconnect-generated';
+import { listMesas, listProductos, listUsuarios, connectorConfig } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
-import { Producto, Usuario } from '../modelos/modelos';
+import { CorreoEnviado, Mesa, Producto, Usuario } from '../modelos/modelos';
+import { EstadoMesa, TipoMesa } from '../modelos/enums';
 import { Semilla } from './semilla';
 
 const CLAVE = {
   usuarios: 'sk.usuarios',
   productos: 'sk.productos',
+  mesas: 'sk.mesas',
+  correos: 'sk.correos',
   version: 'sk.version',
   sesion: 'sk.sesion',
 };
@@ -25,6 +28,8 @@ const VERSION_DATOS = '3-v0';
 export class AlmacenService {
   readonly usuarios = signal<Usuario[]>([]);
   readonly productos = signal<Producto[]>([]);
+  readonly mesas = signal<Mesa[]>([]);
+  readonly correos = signal<CorreoEnviado[]>([]);
   private iniciado = false;
 
   async iniciar(sembrar: () => Promise<Semilla> | Semilla): Promise<void> {
@@ -32,6 +37,7 @@ export class AlmacenService {
 
     let usuariosCargados: Usuario[] = [];
     let productosCargados: Producto[] = [];
+    let mesasCargadas: Mesa[] = [];
 
     // 1. Conexión a Firebase Data Connect (Cloud SQL PostgreSQL)
     try {
@@ -73,6 +79,19 @@ export class AlmacenService {
         }));
         await this.guardar(CLAVE.productos, productosCargados);
       }
+      const mesasRes = await listMesas(dc);
+      if (mesasRes?.data?.mesas?.length) {
+        mesasCargadas = mesasRes.data.mesas.map((m) => ({
+          id: m.id,
+          numero: m.numero,
+          cantidadComensales: m.cantidadComensales,
+          tipo: m.tipo as TipoMesa,
+          estado: m.estado as EstadoMesa,
+          fotoUrl: m.fotoUrl,
+          qrCodeUrl: m.qrCodeUrl,
+        }));
+        await this.guardar(CLAVE.mesas, mesasCargadas);
+      }
     } catch (error) {
       console.warn('Conexión en vivo a Firebase Data Connect no disponible, utilizando almacenamiento local:', error);
     }
@@ -89,8 +108,16 @@ export class AlmacenService {
       productosCargados = await this.leer<Producto>(CLAVE.productos);
     }
 
+    if (!mesasCargadas.length) {
+      mesasCargadas = await this.leer<Mesa>(CLAVE.mesas);
+    }
+
+    const correosCargados = await this.leer<CorreoEnviado>(CLAVE.correos);
+
     this.usuarios.set(usuariosCargados);
     this.productos.set(productosCargados);
+    this.mesas.set(mesasCargadas);
+    this.correos.set(correosCargados);
     this.iniciado = true;
   }
 
@@ -102,6 +129,16 @@ export class AlmacenService {
   async guardarProductos(lista: Producto[]): Promise<void> {
     this.productos.set(lista);
     await this.guardar(CLAVE.productos, lista);
+  }
+
+  async guardarMesas(lista: Mesa[]): Promise<void> {
+    this.mesas.set(lista);
+    await this.guardar(CLAVE.mesas, lista);
+  }
+
+  async guardarCorreos(lista: CorreoEnviado[]): Promise<void> {
+    this.correos.set(lista);
+    await this.guardar(CLAVE.correos, lista);
   }
 
   // --- sesión ------------------------------------------------------------

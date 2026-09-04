@@ -1,4 +1,4 @@
-import { EstadoUsuario, Perfil, Sector, TipoProducto } from './enums';
+import { EstadoMesa, EstadoUsuario, Perfil, Sector, TipoMesa, TipoProducto } from './enums';
 
 /**
  * Entidad Usuario para el MVP (v0).
@@ -17,6 +17,7 @@ export interface Usuario {
   estado: EstadoUsuario;
   activo: boolean;
   clave: string | null;
+  pushToken?: string | null;
   createdAt: string;
 }
 
@@ -47,6 +48,35 @@ export interface Producto {
   disponible: boolean;
 }
 
+export interface Mesa {
+  id: string;
+  numero: number;
+  cantidadComensales: number;
+  tipo: TipoMesa;
+  estado: EstadoMesa;
+  fotoUrl: string;
+  qrCodeUrl: string;
+}
+
+export interface AltaMesa {
+  numero: number;
+  cantidadComensales: number;
+  tipo: TipoMesa;
+  estado: EstadoMesa;
+  fotoUrl: string;
+}
+
+export interface CorreoEnviado {
+  id: string;
+  para: string;
+  asunto: string;
+  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO';
+  cuerpoHtml: string;
+  enviadoEn: string;
+  entregado: boolean;
+  detalle: string;
+}
+
 export interface DatosDni {
   apellidos: string;
   nombres: string;
@@ -55,4 +85,11 @@ export interface DatosDni {
   sexo: string;
   fechaNacimiento: string;
 }
+
+export type ContenidoQr =
+  | { tipo: 'MESA'; mesaId: string }
+  | { tipo: 'INGRESO' }
+  | { tipo: 'PROPINA'; porcentaje: number; rotulo: string }
+  | { tipo: 'DNI'; datos: DatosDni }
+  | { tipo: 'DESCONOCIDO'; texto: string };
 

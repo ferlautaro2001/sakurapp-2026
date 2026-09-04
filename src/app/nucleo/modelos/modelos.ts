@@ -1,4 +1,4 @@
-import { EstadoUsuario, Perfil } from './enums';
+import { EstadoUsuario, Perfil, Sector, TipoProducto } from './enums';
 
 /**
  * Entidad Usuario para el MVP (v0).
@@ -28,6 +28,23 @@ export interface AltaCliente {
   email: string;
   clave: string;
   fotoUrl: string;
+}
+
+export interface AltaEmpleado extends AltaCliente {
+  perfil: Extract<Perfil, 'COCINERO' | 'CANTINERO' | 'MOZO' | 'METRE'>;
+}
+
+export interface Producto {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  tiempoElaboracion: number;
+  precio: number;
+  tipo: TipoProducto;
+  sector: Sector;
+  fotos: string[];
+  activo: boolean;
+  disponible: boolean;
 }
 
 export interface DatosDni {

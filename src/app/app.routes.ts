@@ -57,6 +57,16 @@ export const routes: Routes = [
     loadComponent: () => import('./pantallas/comunes/en-preparacion.page').then((m) => m.EnPreparacionPage),
   },
   {
+    path: 'admin/alta-empleado',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
+    loadComponent: () => import('./pantallas/admin/alta-empleado.page').then((m) => m.AltaEmpleadoPage),
+  },
+  {
+    path: 'cantinero/alta-bebida',
+    canActivate: [guardiaSesion, guardiaPerfil('CANTINERO')],
+    loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

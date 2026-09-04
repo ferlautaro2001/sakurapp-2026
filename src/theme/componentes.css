@@ -276,7 +276,13 @@ body.camara-encendida .lm-header {
   box-shadow: var(--shadow-card);
   transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
-.lm-field__box:focus-within { border-color: var(--action-primary); box-shadow: var(--focus-ring); }
+/* El campo activo se tiñe y se recorta con un halo claro: el anillo fucsia
+   sobre el fondo fucsia de la aplicación no se distinguía. */
+.lm-field__box:focus-within {
+  border-color: var(--action-primary);
+  background: var(--surface-sunken);
+  box-shadow: 0 0 0 3px rgba(253, 236, 239, .65), var(--shadow-card);
+}
 .lm-field--error .lm-field__box { background: var(--state-error-surface); border-color: var(--state-error); box-shadow: none; }
 .lm-field__box input, .lm-field__box textarea {
   flex: 1; min-width: 0; border: none; outline: none; background: transparent;

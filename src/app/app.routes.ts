@@ -1,14 +1,17 @@
 import { Routes } from '@angular/router';
-import { guardiaSesion } from './nucleo/guardias/guardias';
+import { guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
 
 /**
- * Rutas de SakurApp para el MVP (v0).
+ * Rutas de SakurApp.
  *
- * Flujo:
+ * No hay pantalla de tablero: al iniciar sesión, cada perfil aterriza
+ * directamente en su pantalla de trabajo (ver `SesionService.rutaInicio()`).
+ *
+ * Flujo de ingreso:
  * 1. Splash dinámico ('')
  * 2. Presentación estática ('presentacion')
  * 3. Formulario de login ('login')
- * 4. Página Principal con sesión ('home')
+ * 4. Pantalla del perfil que abrió la sesión
  */
 export const routes: Routes = [
   {
@@ -41,13 +44,20 @@ export const routes: Routes = [
     loadComponent: () => import('./pantallas/cliente/estado-cuenta.page').then((m) => m.EstadoCuentaPage),
   },
   {
-    path: 'home',
+    // Punto 6 · sólo el dueño y el supervisor resuelven registros de comensales.
+    path: 'clientes-pendientes',
+    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
+    loadComponent: () =>
+      import('./pantallas/admin/clientes-pendientes.page').then((m) => m.ClientesPendientesPage),
+  },
+  {
+    // Provisorio: perfiles cuya pantalla todavía está en desarrollo.
+    path: 'en-preparacion',
     canActivate: [guardiaSesion],
-    loadComponent: () => import('./pantallas/comunes/home.page').then((m) => m.HomePage),
+    loadComponent: () => import('./pantallas/comunes/en-preparacion.page').then((m) => m.EnPreparacionPage),
   },
   {
     path: '**',
     redirectTo: '',
   },
 ];
-

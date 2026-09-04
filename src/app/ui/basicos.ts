@@ -349,9 +349,15 @@ export class PushComponent {
         [attr.aria-label]="titulo()"
         (click)="$event.stopPropagation()"
       >
-        <span class="lm-modal__icono lm-modal__icono--{{ tono() }}">
-          <lm-icono [nombre]="icono()" [tamano]="30" color="#FFFFFF" />
-        </span>
+        @if (foto()) {
+          <span class="modal-foto">
+            <img [src]="foto()" [alt]="titulo()" width="112" height="112" />
+          </span>
+        } @else {
+          <span class="lm-modal__icono lm-modal__icono--{{ tono() }}">
+            <lm-icono [nombre]="icono()" [tamano]="30" color="#FFFFFF" />
+          </span>
+        }
         <h2 class="lm-modal__titulo">{{ titulo() }}</h2>
         <p class="lm-modal__texto">{{ mensaje() }}</p>
 
@@ -366,8 +372,10 @@ export class PushComponent {
           </dl>
         }
 
-        <div class="lm-modal__acciones">
-          <lm-boton variante="ghost" (presionar)="cancelar.emit()">{{ rotuloCancelar() }}</lm-boton>
+        <div class="lm-modal__acciones" [class.lm-modal__acciones--unica]="!conCancelar()">
+          @if (conCancelar()) {
+            <lm-boton variante="ghost" (presionar)="cancelar.emit()">{{ rotuloCancelar() }}</lm-boton>
+          }
           <lm-boton [variante]="varianteConfirmar()" [icono]="icono()" (presionar)="confirmar.emit()">
             {{ rotuloConfirmar() }}
           </lm-boton>
@@ -375,7 +383,37 @@ export class PushComponent {
       </div>
     </div>
   `,
-  styles: [':host{display:contents}'],
+  styles: [
+    `
+      :host { display: contents; }
+      /*
+       * Cuando se decide sobre una persona, la cara va primero y grande, y va
+       * sola: cualquier sello encima tapa parte del rostro, que es justo lo
+       * que hay que mirar. El color del botón y el título ya dicen si se está
+       * aprobando o rechazando.
+       */
+      .modal-foto {
+        width: 116px; height: 116px; flex: 0 0 auto;
+        border-radius: 50%; background: #ffffff;
+        border: 3px solid rgba(185, 46, 88, 0.22);
+        box-shadow: 0 4px 12px rgba(110, 18, 52, 0.14);
+        /*
+         * En bloque, no en grilla: con display grid la imagen estira la fila
+         * hasta su altura natural y una foto vertical (la típica captura de
+         * pantalla de 1320x2868) se desborda del círculo y se ve corrida. En
+         * bloque, el 100% de alto se mide contra los 116px del contenedor y el
+         * recorte queda siempre centrado.
+         */
+        display: block; overflow: hidden;
+      }
+      .modal-foto img {
+        width: 100%; height: 100%; display: block;
+        object-fit: cover; object-position: center;
+      }
+      /* Sin decisión que tomar, el único botón ocupa todo el ancho. */
+      .lm-modal__acciones--unica { grid-template-columns: minmax(0, 1fr); }
+    `,
+  ],
 })
 export class ModalComponent {
   readonly titulo = input.required<string>();
@@ -385,6 +423,10 @@ export class ModalComponent {
   readonly tono = input<'exito' | 'peligro' | 'primario'>('primario');
   readonly icono = input('help');
   readonly detalle = input<{ rotulo: string; valor: string }[]>([]);
+  /** Fotografía de la persona sobre la que se decide, si la decisión es sobre alguien. */
+  readonly foto = input<string | null>(null);
+  /** En falso, el modal es una ficha para mirar: un solo botón, sin decisión. */
+  readonly conCancelar = input(true, { transform: booleanAttribute });
   readonly confirmar = output<void>();
   readonly cancelar = output<void>();
 

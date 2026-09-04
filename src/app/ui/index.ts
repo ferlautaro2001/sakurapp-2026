@@ -12,14 +12,22 @@ import {
   TituloComponent,
   VacioComponent,
 } from './basicos';
-import { CampoComponent, FotoComponent, TarjetaEscaneoComponent } from './formulario';
-import { EncabezadoComponent } from './estructura';
-import { TarjetaPerfilComponent } from './datos';
+import {
+  BuscadorComponent,
+  CampoComponent,
+  FiltrosComponent,
+  FotoComponent,
+  TarjetaEscaneoComponent,
+} from './formulario';
+import { BarraInferiorComponent, EncabezadoComponent } from './estructura';
+import { FilaPendienteComponent, TarjetaPerfilComponent } from './datos';
+import { DocumentoPipe } from './documento.pipe';
 
 export * from './basicos';
 export * from './formulario';
 export * from './estructura';
 export * from './datos';
+export * from './documento.pipe';
 
 /** Componentes del sistema de diseño para v0. */
 export const UI = [
@@ -37,8 +45,12 @@ export const UI = [
   ModalComponent,
   CampoComponent,
   FotoComponent,
+  BuscadorComponent,
+  FiltrosComponent,
   TarjetaEscaneoComponent,
   EncabezadoComponent,
+  BarraInferiorComponent,
   TarjetaPerfilComponent,
+  FilaPendienteComponent,
+  DocumentoPipe,
 ] as const;
-

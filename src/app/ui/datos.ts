@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
 import { Usuario } from '../nucleo/modelos/modelos';
-import { ROTULO_PERFIL } from '../nucleo/modelos/enums';
+import { ROTULO_ESTADO_USUARIO, ROTULO_PERFIL } from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
+import { BotonComponent, ChipComponent, IconoComponent } from './basicos';
+import { DocumentoPipe } from './documento.pipe';
 
 /** Tarjeta de perfil del ingreso rápido: foto o iniciales, nombre y rol. Nunca un combo. */
 @Component({
@@ -73,3 +75,77 @@ export class TarjetaPerfilComponent {
   }
 }
 
+
+/**
+ * Fila de un comensal pendiente de aprobación.
+ *
+ * La foto va grande y a la izquierda, pegada a los nombres y apellidos, para
+ * que nunca haya dudas de qué cara corresponde a qué registro. Aceptar y
+ * rechazar viven dentro de la fila, no en una barra global: la decisión es por
+ * persona. Van separados veinte píxeles y con colores opuestos, para que sea
+ * imposible confundirlos de un toque.
+ */
+@Component({
+  selector: 'lm-fila-pendiente',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent, ChipComponent, BotonComponent, DocumentoPipe],
+  template: `
+    <div class="lm-pending">
+      <button type="button" class="lm-pending__fila fila" (click)="abrir.emit()">
+        <span class="lm-avatar" [style.background-image]="'url(' + usuarios.avatarSushi(cliente()) + ')'"></span>
+        <span class="lm-pending__datos">
+          <span class="lm-pending__nombre">{{ usuarios.nombreCompleto(cliente()) }}</span>
+          <span class="lm-pending__meta">
+            <lm-icono nombre="badge" [tamano]="15" />
+            DNI: {{ cliente().dni | documento }}
+          </span>
+          <span class="lm-pending__meta">
+            <lm-icono nombre="mail" [tamano]="15" />
+            <span>{{ cliente().email ?? 'Sin correo' }}</span>
+          </span>
+        </span>
+        <lm-chip [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+      </button>
+      @if (cliente().estado === 'PENDIENTE' && conAcciones()) {
+        <div class="lm-pending__acciones">
+          <lm-boton variante="danger" icono="close" (presionar)="rechazar.emit()">Rechazar</lm-boton>
+          <lm-boton variante="success" icono="check" (presionar)="aceptar.emit()">Aceptar</lm-boton>
+        </div>
+      }
+    </div>
+  `,
+  styles: [
+    `
+      :host { display: block; }
+      /*
+       * La fila entera abre la ficha ampliada: la foto de la lista es chica y
+       * la decisión merece ver bien la cara. Es un botón, no un div con click,
+       * para que también se llegue con el teclado.
+       */
+      .fila {
+        width: 100%;
+        border: none;
+        background: transparent;
+        padding: 0;
+        text-align: left;
+        cursor: pointer;
+        font: inherit;
+        color: inherit;
+      }
+      .fila:active { opacity: 0.7; }
+    `,
+  ],
+})
+export class FilaPendienteComponent {
+  protected readonly usuarios = inject(UsuariosService);
+  readonly cliente = input.required<Usuario>();
+  readonly conAcciones = input(true, { transform: booleanAttribute });
+  readonly aceptar = output<void>();
+  readonly rechazar = output<void>();
+  /** Toque sobre la fila: abre la ficha ampliada de la persona. */
+  readonly abrir = output<void>();
+
+  protected rotuloEstado(): string {
+    return ROTULO_ESTADO_USUARIO[this.cliente().estado];
+  }
+}

@@ -136,3 +136,67 @@ export class TarjetaEscaneoComponent {
   readonly escanear = output<void>();
 }
 
+
+/** Buscador de una sola línea, con limpieza a la derecha. */
+@Component({
+  selector: 'lm-buscador',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent],
+  template: `
+    <span class="lm-search">
+      <lm-icono nombre="search" [tamano]="20" color="var(--text-muted)" />
+      <input
+        type="search"
+        [placeholder]="marcador()"
+        [value]="valor()"
+        (input)="cambiar.emit($any($event.target).value)"
+      />
+      @if (valor()) {
+        <button
+          type="button"
+          aria-label="Limpiar la búsqueda"
+          (click)="cambiar.emit('')"
+          style="border:none;background:transparent;cursor:pointer;display:flex"
+        >
+          <lm-icono nombre="close" [tamano]="18" color="var(--text-muted)" />
+        </button>
+      }
+    </span>
+  `,
+  styles: [':host{display:block}'],
+})
+export class BuscadorComponent {
+  readonly marcador = input('Buscar');
+  readonly valor = input('');
+  readonly cambiar = output<string>();
+}
+
+/** Filtros reales en fila desplazable. Nunca un combo escondido. */
+@Component({
+  selector: 'lm-filtros',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent],
+  template: `
+    <div class="lm-filters">
+      @for (opcion of opciones(); track opcion) {
+        <button
+          type="button"
+          class="lm-filter"
+          [class.lm-filter--on]="opcion === valor()"
+          (click)="cambiar.emit(opcion)"
+        >
+          @if (opcion === valor()) {
+            <lm-icono nombre="check" [tamano]="16" />
+          }
+          {{ opcion }}
+        </button>
+      }
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class FiltrosComponent {
+  readonly opciones = input.required<string[]>();
+  readonly valor = input.required<string>();
+  readonly cambiar = output<string>();
+}

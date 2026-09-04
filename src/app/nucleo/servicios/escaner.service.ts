@@ -6,6 +6,17 @@ import { SonidoService } from './sonido.service';
 
 export type TipoLectura = 'QR' | 'DNI';
 
+/** Cuántas veces se le vuelve a preguntar al sistema por el permiso recién dado. */
+const REINTENTOS_PERMISO = 6;
+
+/** Entre consulta y consulta. Seis intentos dan poco más de un segundo. */
+const ESPERA_ENTRE_INTENTOS = 180;
+
+/** El permiso limitado alcanza para leer un código: da acceso a la cámara. */
+function concedido(estado: string): boolean {
+  return estado === 'granted' || estado === 'limited';
+}
+
 @Injectable({ providedIn: 'root' })
 export class EscanerService {
   private readonly avisos = inject(AvisosService);
@@ -80,18 +91,38 @@ export class EscanerService {
     this.marcarCamaraVisible(false);
   }
 
+  /**
+   * Permiso de cámara, incluso cuando el sistema tarda en confirmarlo.
+   *
+   * Al pedir el permiso, Android manda la aplicación al fondo para mostrar su
+   * propio diálogo. Cuando la persona acepta y la aplicación vuelve, el plugin
+   * a veces responde con el estado viejo, el de antes de aceptar: por eso
+   * antes hacía falta tocar el botón dos veces. Así que si la respuesta no
+   * llega concedida, se vuelve a consultar unas cuantas veces antes de darla
+   * por negada.
+   */
   private async pedirPermiso(): Promise<boolean> {
-    const estado = await BarcodeScanner.checkPermissions();
-    if (estado.camera === 'granted' || estado.camera === 'limited') return true;
+    if (await this.tienePermiso()) return true;
 
     const pedido = await BarcodeScanner.requestPermissions();
-    if (pedido.camera === 'granted' || pedido.camera === 'limited') return true;
+    if (concedido(pedido.camera)) return true;
+
+    // El sistema todavía no terminó de propagar la respuesta: se le da tiempo.
+    for (let intento = 0; intento < REINTENTOS_PERMISO; intento++) {
+      await new Promise((seguir) => setTimeout(seguir, ESPERA_ENTRE_INTENTOS));
+      if (await this.tienePermiso()) return true;
+    }
 
     this.avisos.error(
       'Falta el permiso de cámara',
       'Habilitalo desde los ajustes del teléfono para poder leer los códigos.',
     );
     return false;
+  }
+
+  private async tienePermiso(): Promise<boolean> {
+    const estado = await BarcodeScanner.checkPermissions().catch(() => null);
+    return Boolean(estado && concedido(estado.camera));
   }
 
   private marcarCamaraVisible(visible: boolean): void {

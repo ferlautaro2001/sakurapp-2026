@@ -263,6 +263,15 @@ export interface Producto_Key {
   __typename?: 'Producto_Key';
 }
 
+export interface UpdateEstadoMesaData {
+  mesa_update?: Mesa_Key | null;
+}
+
+export interface UpdateEstadoMesaVariables {
+  id: UUIDString;
+  estado: EstadoMesa;
+}
+
 export interface UpdateEstadoUsuarioData {
   user_update?: User_Key | null;
 }
@@ -348,6 +357,18 @@ export const updateEstadoUsuarioRef: UpdateEstadoUsuarioRef;
 
 export function updateEstadoUsuario(vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
 export function updateEstadoUsuario(dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+
+interface UpdateEstadoMesaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoMesaVariables): MutationRef<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateEstadoMesaVariables): MutationRef<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+  operationName: string;
+}
+export const updateEstadoMesaRef: UpdateEstadoMesaRef;
+
+export function updateEstadoMesa(vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+export function updateEstadoMesa(dc: DataConnect, vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */

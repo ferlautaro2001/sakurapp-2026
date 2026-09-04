@@ -19,7 +19,11 @@ export class CamaraService {
 
   /** Foto tomada con la cámara o elegida de la galería. */
   async elegirFoto(): Promise<string | null> {
-    return this.capturar(CameraSource.Prompt);
+    const origen = Capacitor.isNativePlatform()
+      ? CameraSource.Prompt
+      : CameraSource.Photos;
+
+    return this.capturar(origen);
   }
 
   private async capturar(origen: CameraSource): Promise<string | null> {

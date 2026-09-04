@@ -1,4 +1,4 @@
-import { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs, makeMemoryCacheProvider } from 'firebase/data-connect';
+import { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } from 'firebase/data-connect';
 
 export const EstadoMesa = {
   VACIA: "VACIA",
@@ -65,11 +65,6 @@ export const connectorConfig = {
   service: 'sakurapp',
   location: 'us-east4'
 };
-export const dataConnectSettings = {
-  cacheSettings: {
-    cacheProvider: makeMemoryCacheProvider()
-  }
-};
 export const createProductoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -128,6 +123,18 @@ createEncuestaRef.operationName = 'CreateEncuesta';
 export function createEncuesta(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(createEncuestaRef(dcInstance, inputVars));
+}
+
+export const updateEstadoUsuarioRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateEstadoUsuario', inputVars);
+}
+updateEstadoUsuarioRef.operationName = 'UpdateEstadoUsuario';
+
+export function updateEstadoUsuario(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateEstadoUsuarioRef(dcInstance, inputVars));
 }
 
 export const listProductosRef = (dc) => {

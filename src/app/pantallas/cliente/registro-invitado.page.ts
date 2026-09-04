@@ -109,7 +109,7 @@ export class RegistroInvitadoPage {
     });
 
     this.avisos.exito(`Bienvenido, ${invitado.nombre}`, 'Ingresaste a SakurApp.');
-    await this.router.navigate(['/home'], { replaceUrl: true });
+    await this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
   }
 
   protected cuentaCompleta(): void {

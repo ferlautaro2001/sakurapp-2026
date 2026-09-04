@@ -47,6 +47,8 @@ import { ConfirmacionService } from './nucleo/servicios/confirmacion.service';
           [tono]="pedido.tono ?? 'primario'"
           [icono]="pedido.icono ?? 'help'"
           [detalle]="pedido.detalle ?? []"
+          [foto]="pedido.foto ?? null"
+          [conCancelar]="!pedido.soloCerrar"
           (confirmar)="confirmacion.responder(true)"
           (cancelar)="confirmacion.responder(false)"
         />

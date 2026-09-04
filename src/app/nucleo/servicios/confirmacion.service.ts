@@ -11,9 +11,21 @@ export interface PedidoConfirmacion {
   icono?: string;
   /** Datos que se muestran en la ficha del modal, para saber qué se está tocando. */
   detalle?: { rotulo: string; valor: string }[];
+  /**
+   * Fotografía de la persona sobre la que se decide.
+   *
+   * Cuando la decisión es sobre alguien, la cara reemplaza al ícono: es lo
+   * último que se mira antes de aprobar o rechazar un registro.
+   */
+  foto?: string | null;
 }
 
+/** Ficha para mirar: el rótulo del único botón es opcional, por defecto "Cerrar". */
+export type PedidoFicha = Omit<PedidoConfirmacion, 'confirmar'> & { confirmar?: string };
+
 interface ConfirmacionAbierta extends PedidoConfirmacion {
+  /** Una ficha para mirar no ofrece decisión: lleva un solo botón. */
+  soloCerrar?: boolean;
   resolver: (respuesta: boolean) => void;
 }
 
@@ -35,6 +47,24 @@ export class ConfirmacionService {
 
     return new Promise<boolean>((resolver) => {
       this.abierta.set({ tono: 'primario', cancelar: 'Cancelar', ...pedido, resolver });
+    });
+  }
+
+  /**
+   * Ficha ampliada: el mismo modal, pero para mirar en detalle a una persona.
+   * Sin decisión que tomar, así que lleva un único botón para cerrar.
+   */
+  mostrar(pedido: PedidoFicha): Promise<boolean> {
+    this.abierta()?.resolver(false);
+
+    return new Promise<boolean>((resolver) => {
+      this.abierta.set({
+        tono: 'primario',
+        ...pedido,
+        confirmar: pedido.confirmar ?? 'Cerrar',
+        soloCerrar: true,
+        resolver,
+      });
     });
   }
 

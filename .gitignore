@@ -107,3 +107,6 @@ dataconnect/.dataconnect/
 
 # Graphify artifacts
 graphify-out/
+
+# Local agent memory
+AGENTS.md

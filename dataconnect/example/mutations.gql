@@ -136,3 +136,12 @@ mutation UpdateEstadoUsuario($id: UUID!, $estado: EstadoUsuario!)
   @auth(level: PUBLIC, insecureReason: "Aprobación y rechazo de comensales por dueño o supervisor.") {
   user_update(id: $id, data: { estado: $estado })
 }
+
+# AC-4.4.1 · Actualización rápida de disponibilidad de una mesa.
+mutation UpdateEstadoMesa($id: UUID!, $estado: EstadoMesa!)
+  @auth(
+    level: PUBLIC
+    insecureReason: "Actualización de disponibilidad por personal autorizado."
+  ) {
+  mesa_update(id: $id, data: { estado: $estado })
+}

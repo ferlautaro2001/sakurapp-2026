@@ -91,6 +91,16 @@ export const routes: Routes = [
     canActivate: [guardiaSesion, guardiaPerfil('CANTINERO')],
     loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
   },
+{
+  path: 'cocinero/alta-plato',
+  canActivate: [
+    guardiaSesion,
+    guardiaPerfil('COCINERO'),
+  ],
+  loadComponent: () =>
+    import('./pantallas/cocinero/alta-plato.page')
+      .then((m) => m.AltaPlatoPage),
+},
   {
     path: '**',
     redirectTo: '',

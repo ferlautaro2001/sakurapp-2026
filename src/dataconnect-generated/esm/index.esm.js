@@ -137,6 +137,18 @@ export function updateEstadoUsuario(dcOrVars, vars) {
   return executeMutation(updateEstadoUsuarioRef(dcInstance, inputVars));
 }
 
+export const updateEstadoMesaRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateEstadoMesa', inputVars);
+}
+updateEstadoMesaRef.operationName = 'UpdateEstadoMesa';
+
+export function updateEstadoMesa(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateEstadoMesaRef(dcInstance, inputVars));
+}
+
 export const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();

@@ -1,4 +1,4 @@
-import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData } from '../';
+import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData } from '../';
 import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise} from '@angular/fire/data-connect';
 import { CreateQueryResult, CreateMutationResult} from '@tanstack/angular-query-experimental';
 import { CreateDataConnectQueryResult, CreateDataConnectQueryOptions, CreateDataConnectMutationResult, DataConnectMutationOptionsUndefinedMutationFn } from '@tanstack-query-firebase/angular/data-connect';
@@ -22,6 +22,9 @@ export function injectCreateEncuesta(options?: CreateEncuestaOptions, injector?:
 
 type UpdateEstadoUsuarioOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoUsuarioData, FirebaseError, UpdateEstadoUsuarioVariables>;
 export function injectUpdateEstadoUsuario(options?: UpdateEstadoUsuarioOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoUsuarioVariables>;
+
+type UpdateEstadoMesaOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoMesaData, FirebaseError, UpdateEstadoMesaVariables>;
+export function injectUpdateEstadoMesa(options?: UpdateEstadoMesaOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateEstadoMesaVariables>;
 
 export type ListProductosOptions = () => Omit<CreateDataConnectQueryOptions<ListProductosData, undefined>, 'queryFn'>;
 export function injectListProductos(options?: ListProductosOptions, injector?: Injector): CreateDataConnectQueryResult<ListProductosData, undefined>;

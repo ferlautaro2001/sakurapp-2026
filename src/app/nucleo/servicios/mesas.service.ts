@@ -4,6 +4,8 @@ import { getDataConnect } from 'firebase/data-connect';
 import {
   connectorConfig,
   createMesa,
+  updateEstadoMesa,
+  listMesas,
   TipoMesa as DcTipoMesa,
   EstadoMesa as DcEstadoMesa,
 } from '../../../dataconnect-generated';
@@ -119,8 +121,59 @@ export class MesasService {
     return lista.find((m) => m.id === id);
   }
 
-  async cambiarEstado(id: string, estado: EstadoMesa): Promise<void> {
+    async cambiarEstado(id: string, estado: EstadoMesa): Promise<void> {
+    const mesa = this.porId(id);
+
+    if (!mesa) {
+      throw new Error(`No se encontró la mesa ${id}`);
+    }
+
+    const estadoAnterior = mesa.estado;
+
+    // Actualización optimista: la insignia cambia inmediatamente.
     await this.editar(id, { estado });
+
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+
+      const estadoDataConnect =
+        estado === 'OCUPADA'
+          ? DcEstadoMesa.OCUPADA
+          : DcEstadoMesa.VACIA;
+
+      await updateEstadoMesa(dc, {
+        id,
+        estado: estadoDataConnect,
+      });
+    } catch (error) {
+      // Si Cloud SQL falla, recuperamos el estado anterior.
+      await this.editar(id, { estado: estadoAnterior });
+      console.error('No se pudo actualizar el estado de la mesa en Cloud SQL:', error);
+      throw error;
+    }
+  }
+
+    async sincronizar(): Promise<void> {
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const dc = getDataConnect(app, connectorConfig);
+      const resultado = await listMesas(dc);
+
+      const mesas = resultado.data.mesas.map((mesa) => ({
+        id: mesa.id,
+        numero: mesa.numero,
+        cantidadComensales: mesa.cantidadComensales,
+        tipo: mesa.tipo as Mesa['tipo'],
+        estado: mesa.estado as EstadoMesa,
+        fotoUrl: mesa.fotoUrl,
+        qrCodeUrl: mesa.qrCodeUrl,
+      }));
+
+      await this.almacen.guardarMesas(mesas);
+    } catch (error) {
+      console.warn('No se pudieron sincronizar las mesas desde Cloud SQL:', error);
+    }
   }
 
   async desactivar(id: string): Promise<void> {

@@ -104,3 +104,6 @@ dataconnect-debug.log
 
 # Data Connect: esquema compilado que genera el CLI
 dataconnect/.dataconnect/
+
+# Graphify artifacts
+graphify-out/

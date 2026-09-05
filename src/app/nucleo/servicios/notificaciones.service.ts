@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
+import { FirestoreService } from './firestore.service';
 
 export interface AvisoPush {
   id: number;
@@ -26,6 +27,7 @@ const CANAL = 'sakurapp-salon';
 @Injectable({ providedIn: 'root' })
 export class NotificacionesService {
   private readonly router = inject(Router);
+  private readonly firestore = inject(FirestoreService);
 
   private siguienteId = 1;
   private readonly enSesion = signal<string | null>(null);
@@ -39,6 +41,10 @@ export class NotificacionesService {
 
   registrarSesion(usuarioId: string | null): void {
     this.enSesion.set(usuarioId);
+    const token = this.pushToken();
+    if (usuarioId && token) {
+      void this.firestore.registrarFcmToken(usuarioId, token);
+    }
   }
 
   async iniciar(): Promise<void> {
@@ -85,6 +91,10 @@ export class NotificacionesService {
         await PushNotifications.addListener('registration', (token: Token) => {
           console.log('📲 Token Push FCM registrado con éxito:', token.value);
           this.pushToken.set(token.value);
+          const u = this.enSesion();
+          if (u) {
+            void this.firestore.registrarFcmToken(u, token.value);
+          }
         });
 
         await PushNotifications.addListener('registrationError', (error: any) => {
@@ -137,6 +147,16 @@ export class NotificacionesService {
       }
       return siguiente;
     });
+
+    // Encolar en Firestore para despacho serverless vía Cloud Functions a FCM
+    for (const dest of destinatarios) {
+      void this.firestore.encolarNotificacion({
+        destinatarioUid: dest,
+        titulo,
+        cuerpo,
+        ruta: ruta ? ruta.join('/') : undefined,
+      });
+    }
 
     const enUso = this.enSesion();
     const esParaSesionActual = enUso && destinatarios.includes(enUso);

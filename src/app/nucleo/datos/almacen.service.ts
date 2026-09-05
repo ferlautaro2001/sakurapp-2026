@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getDataConnect } from 'firebase/data-connect';
@@ -7,6 +7,7 @@ import { environment } from '../../../environments/environment';
 import { CorreoEnviado, Mesa, Producto, Usuario } from '../modelos/modelos';
 import { EstadoMesa, TipoMesa } from '../modelos/enums';
 import { Semilla } from './semilla';
+import { FirestoreService } from '../servicios/firestore.service';
 
 const CLAVE = {
   usuarios: 'sk.usuarios',
@@ -26,6 +27,8 @@ const VERSION_DATOS = '3-v0';
  */
 @Injectable({ providedIn: 'root' })
 export class AlmacenService {
+  private readonly firestore = inject(FirestoreService);
+
   readonly usuarios = signal<Usuario[]>([]);
   readonly productos = signal<Producto[]>([]);
   readonly mesas = signal<Mesa[]>([]);
@@ -119,6 +122,31 @@ export class AlmacenService {
     this.mesas.set(mesasCargadas);
     this.correos.set(correosCargados);
     this.iniciado = true;
+
+    // 3. Sincronización en tiempo real vía Firestore (sakurapp)
+    try {
+      this.firestore.escucharUsuarios((listaFirestore) => {
+        if (listaFirestore.length > 0) {
+          this.usuarios.update((actuales) => {
+            const mapa = new Map<string, Usuario>();
+            for (const u of actuales) mapa.set(u.uid || u.id, u);
+            for (const u of listaFirestore) {
+              const previo = mapa.get(u.uid || u.id);
+              mapa.set(u.uid || u.id, { ...previo, ...u });
+            }
+            const combinados = Array.from(mapa.values());
+            void this.guardar(CLAVE.usuarios, combinados);
+            return combinados;
+          });
+        } else if (usuariosCargados.length > 0) {
+          for (const u of usuariosCargados) {
+            void this.firestore.guardarUsuario(u);
+          }
+        }
+      });
+    } catch (fsErr) {
+      console.warn('⚠️ No se pudo iniciar escucha en tiempo real de Firestore:', fsErr);
+    }
   }
 
   async guardarUsuarios(lista: Usuario[]): Promise<void> {

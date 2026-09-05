@@ -18,6 +18,7 @@ export interface Usuario {
   activo: boolean;
   clave: string | null;
   pushToken?: string | null;
+  fcmToken?: string | null;
   createdAt: string;
 }
 

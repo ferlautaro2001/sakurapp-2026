@@ -12,6 +12,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { AlmacenamientoService } from './almacenamiento.service';
+import { FirestoreService } from './firestore.service';
 import { Usuario, AltaCliente, AltaEmpleado } from '../modelos/modelos';
 import { EstadoUsuario, PERFILES_ADMIN, Perfil } from '../modelos/enums';
 
@@ -31,6 +32,7 @@ const ORDEN_PERFIL: Perfil[] = [
 export class UsuariosService {
   private readonly almacen = inject(AlmacenService);
   private readonly almacenamiento = inject(AlmacenamientoService);
+  private readonly firestore = inject(FirestoreService);
 
   readonly todos = computed(() => this.almacen.usuarios());
 
@@ -160,6 +162,30 @@ export class UsuariosService {
       console.warn('⚠️ No se pudo actualizar el estado en Cloud SQL Data Connect (se mantiene local):', sqlErr);
     }
 
+    // Sincronización en tiempo real vía Cloud Firestore
+    await this.firestore.actualizarEstadoUsuario(usuario.uid || usuarioId, estado);
+
+    // Encolar notificación push para despacho serverless 24/7 vía Google FCM
+    if (estado === 'APROBADO') {
+      void this.firestore.encolarNotificacion({
+        destinatarioUid: usuario.uid || usuario.id,
+        destinatarioEmail: usuario.email ?? undefined,
+        destinatarioRol: usuario.perfil,
+        titulo: '🌸 ¡Cuenta habilitada!',
+        cuerpo: `Bienvenido a SakurApp, ${usuario.nombre}. Tu cuenta fue aprobada.`,
+        ruta: '/login',
+      });
+    } else if (estado === 'RECHAZADO') {
+      void this.firestore.encolarNotificacion({
+        destinatarioUid: usuario.uid || usuario.id,
+        destinatarioEmail: usuario.email ?? undefined,
+        destinatarioRol: usuario.perfil,
+        titulo: '🌸 Solicitud de registro',
+        cuerpo: `Hola ${usuario.nombre}, tu registro no fue admitido en esta oportunidad.`,
+        ruta: '/login',
+      });
+    }
+
     const lista = this.almacen.usuarios().map((u) => (u.id === usuarioId ? { ...u, estado } : u));
     await this.almacen.guardarUsuarios(lista);
     return lista.find((u) => u.id === usuarioId);
@@ -227,6 +253,23 @@ export class UsuariosService {
     } catch (sqlErr) {
       console.warn('⚠️ No se pudo registrar en Cloud SQL Data Connect (se mantiene en almacenamiento local):', sqlErr);
     }
+
+    // Sincronizar nuevo cliente en Cloud Firestore (sakurapp)
+    await this.firestore.guardarUsuario(usuario);
+
+    // Encolar notificación push para Dueños y Supervisores vía Google FCM
+    void this.firestore.encolarNotificacion({
+      destinatarioRol: 'SUPERVISOR',
+      titulo: '🌸 Nuevo cliente pendiente',
+      cuerpo: `${usuario.nombre} ${usuario.apellido ?? ''} completó su registro y espera aprobación.`,
+      ruta: '/clientes-pendientes',
+    });
+    void this.firestore.encolarNotificacion({
+      destinatarioRol: 'DUENO',
+      titulo: '🌸 Nuevo cliente pendiente',
+      cuerpo: `${usuario.nombre} ${usuario.apellido ?? ''} completó su registro y espera aprobación.`,
+      ruta: '/clientes-pendientes',
+    });
 
     await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
     return usuario;

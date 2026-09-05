@@ -73,6 +73,10 @@ Thumbs.db
 .env
 .env*.local
 src/environments/environment.ts
+*serviceAccount*.json
+scripts_backend/node_modules/
+scripts_backend/serviceAccountKey.json
+functions/node_modules/
 
 # Prompts y notas internas de desarrollo
 *.prompt.md

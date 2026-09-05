@@ -1,0 +1,13 @@
+{
+  "name": "sakurapp-scripts-backend",
+  "version": "1.0.0",
+  "description": "Scripts locales para pruebas de notificaciones FCM y administración de SakurApp",
+  "main": "enviarPush.js",
+  "scripts": {
+    "push": "node enviarPush.js",
+    "escuchar": "node escucharYEnviarPush.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}

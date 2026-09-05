@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 
 export type TonoAviso = 'error' | 'success' | 'info';
@@ -13,16 +13,16 @@ export interface Aviso {
 /**
  * Avisos de la aplicación.
  *
- * Nunca se usa `alert()` ni un diálogo del sistema: todo error o confirmación
- * aparece como banner dentro de la pantalla, que es un control propio de la
- * aplicación. Los errores, además, vibran el dispositivo. No suenan: los
- * únicos sonidos son los de abrir y cerrar la aplicación.
+ * Nunca se usa `alert()` ni un diálogo del sistema: los errores aparecen
+ * como banner y los éxitos/guardados se avisan mediante un modal con transición suave.
  */
 @Injectable({ providedIn: 'root' })
 export class AvisosService {
   private siguienteId = 1;
 
   readonly avisos = signal<Aviso[]>([]);
+  readonly avisosToast = computed(() => this.avisos().filter((a) => a.tono !== 'success'));
+  readonly modalExito = computed(() => this.avisos().find((a) => a.tono === 'success') || null);
 
   error(titulo: string, cuerpo?: string): void {
     this.vibrarError();

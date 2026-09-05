@@ -367,6 +367,7 @@ body.camara-encendida .lm-header {
   box-shadow: var(--shadow-card); padding: 0; overflow: hidden;
 }
 .lm-photo__marco--circulo { border-radius: 50%; }
+.lm-photo__marco--ovalo { border-radius: 50% / 44%; aspect-ratio: 1 / 1.15; }
 .lm-photo__marco--rect { border-radius: var(--radius-card); width: 100%; }
 .lm-photo__marco--cargada { border: 3px solid var(--surface-card); }
 .lm-photo__pie {
@@ -490,11 +491,12 @@ body.camara-encendida .lm-header {
 }
 .lm-pending__fila { display: flex; align-items: center; gap: 12px; }
 .lm-avatar {
-  width: 56px; height: 56px; flex: 0 0 auto; border-radius: 18px;
+  width: 54px; height: 62px; flex: 0 0 auto; border-radius: 50% / 44%;
   background: var(--avatar-1) center / cover no-repeat; color: var(--text-on-primary);
   display: grid; place-items: center; font: 700 17px/1 var(--font-text); overflow: hidden;
+  box-shadow: 0 2px 6px rgba(110, 18, 52, 0.12); border: 2px solid #FFFFFF;
 }
-.lm-avatar--sm { width: 48px; height: 48px; border-radius: 15px; font-size: 15px; }
+.lm-avatar--sm { width: 44px; height: 50px; border-radius: 50% / 44%; font-size: 14px; }
 .lm-pending__datos { flex: 1; min-width: 0; }
 .lm-pending__nombre {
   display: block; font: var(--type-card-title); color: var(--text-title);

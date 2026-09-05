@@ -37,8 +37,8 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="pendientes().length" bajada="Tocá una tarjeta para ver la ficha completa, o aceptá y rechazá desde su fila">
-          Registros pendientes
+        <lm-titulo [contador]="pendientes().length" [bajada]="bajadaPendientes()">
+          Registro de clientes
         </lm-titulo>
 
         <lm-buscador
@@ -85,6 +85,12 @@ export class ClientesPendientesPage extends PaginaConSesion {
   protected readonly busqueda = signal('');
 
   protected readonly pendientes = computed(() => this.usuarios.pendientes());
+  protected readonly bajadaPendientes = computed(() => {
+    const cant = this.pendientes().length;
+    if (cant === 0) return 'No hay clientes pendientes de aprobación';
+    if (cant === 1) return '1 cliente pendiente de aprobación';
+    return `${cant} clientes pendientes de aprobación`;
+  });
 
   protected readonly visibles = computed(() => {
     const filtro = this.filtro();

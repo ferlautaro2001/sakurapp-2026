@@ -74,9 +74,10 @@ export class CampoComponent {
         type="button"
         class="lm-photo__marco"
         [class.lm-photo__marco--circulo]="forma() === 'circulo'"
+        [class.lm-photo__marco--ovalo]="forma() === 'ovalo'"
         [class.lm-photo__marco--rect]="forma() === 'rectangulo'"
         [class.lm-photo__marco--cargada]="!!fuente()"
-        [style.width.px]="forma() === 'circulo' ? tamano() : null"
+        [style.width.px]="forma() === 'ovalo' ? Math.round(tamano() * 0.88) : forma() === 'circulo' ? tamano() : null"
         [style.height.px]="tamano()"
         [style.background-image]="fuente() ? 'url(' + fuente() + ')' : null"
         [style.border-color]="error() ? 'var(--state-error)' : null"
@@ -102,10 +103,11 @@ export class CampoComponent {
   styles: [':host{display:block}'],
 })
 export class FotoComponent {
+  protected readonly Math = Math;
   readonly fuente = input<string | null>(null);
   readonly etiqueta = input('Foto con cámara');
-  readonly forma = input<'circulo' | 'rectangulo'>('circulo');
-  readonly tamano = input(132, { transform: (v: any) => Number(v) || 132 });
+  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('ovalo');
+  readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
   readonly capturar = output<void>();
 }

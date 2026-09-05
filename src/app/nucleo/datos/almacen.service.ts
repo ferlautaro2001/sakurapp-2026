@@ -144,6 +144,26 @@ export class AlmacenService {
           }
         }
       });
+
+      this.firestore.escucharMesas((listaFirestoreMesas) => {
+        if (listaFirestoreMesas.length > 0) {
+          this.mesas.update((actuales) => {
+            const mapa = new Map<string, Mesa>();
+            for (const m of actuales) mapa.set(m.id, m);
+            for (const m of listaFirestoreMesas) {
+              const previo = mapa.get(m.id);
+              mapa.set(m.id, { ...previo, ...m });
+            }
+            const combinadas = Array.from(mapa.values());
+            void this.guardar(CLAVE.mesas, combinadas);
+            return combinadas;
+          });
+        } else if (mesasCargadas.length > 0) {
+          for (const m of mesasCargadas) {
+            void this.firestore.guardarMesa(m);
+          }
+        }
+      });
     } catch (fsErr) {
       console.warn('⚠️ No se pudo iniciar escucha en tiempo real de Firestore:', fsErr);
     }
@@ -171,16 +191,31 @@ export class AlmacenService {
 
   // --- sesión ------------------------------------------------------------
 
-  async guardarSesion(usuarioId: string): Promise<void> {
-    await Preferences.set({ key: CLAVE.sesion, value: usuarioId });
+  async guardarSesion(usuarioOId: Usuario | string): Promise<void> {
+    const id = typeof usuarioOId === 'string' ? usuarioOId : usuarioOId.id;
+    await Preferences.set({ key: CLAVE.sesion, value: id });
+    if (typeof usuarioOId !== 'string') {
+      await Preferences.set({ key: 'sk.sesion.usuario', value: JSON.stringify(usuarioOId) });
+    }
   }
 
   async leerSesion(): Promise<string | null> {
     return this.leerTexto(CLAVE.sesion);
   }
 
+  async leerSesionUsuario(): Promise<Usuario | null> {
+    const res = await Preferences.get({ key: 'sk.sesion.usuario' });
+    if (!res.value) return null;
+    try {
+      return JSON.parse(res.value) as Usuario;
+    } catch {
+      return null;
+    }
+  }
+
   async borrarSesion(): Promise<void> {
     await Preferences.remove({ key: CLAVE.sesion });
+    await Preferences.remove({ key: 'sk.sesion.usuario' });
   }
 
   // --- helpers privados --------------------------------------------------

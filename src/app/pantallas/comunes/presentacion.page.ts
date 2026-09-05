@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
 import { GRUPO } from '../../nucleo/grupo';
+import { SesionService } from '../../nucleo/servicios/sesion.service';
 
 /**
  * Pantalla de presentación estática (Splash Estática).
@@ -121,12 +122,23 @@ import { GRUPO } from '../../nucleo/grupo';
     `,
   ],
 })
-export class PresentacionPage {
+export class PresentacionPage implements OnInit {
   private readonly router = inject(Router);
+  private readonly sesion = inject(SesionService);
   protected readonly grupo = GRUPO;
 
+  ngOnInit(): void {
+    if (this.sesion.autenticado()) {
+      void this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
+    }
+  }
+
   protected entrar(): void {
-    void this.router.navigate(['/login'], { replaceUrl: true });
+    if (this.sesion.autenticado()) {
+      void this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
+    } else {
+      void this.router.navigate(['/login'], { replaceUrl: true });
+    }
   }
 }
 

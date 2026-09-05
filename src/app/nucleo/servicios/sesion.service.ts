@@ -63,7 +63,7 @@ export class SesionService {
 
     this.usuario.set(usuario);
     this.notificaciones.registrarSesion(usuario.id);
-    await this.almacen.guardarSesion(usuario.id);
+    await this.almacen.guardarSesion(usuario);
     return { ok: true, usuario };
   }
 
@@ -71,12 +71,17 @@ export class SesionService {
   async restaurar(): Promise<Usuario | null> {
     const id = await this.almacen.leerSesion();
     if (!id) return null;
-    const usuario = this.usuarios.porId(id);
-    if (!usuario || !usuario.activo || usuario.estado !== 'APROBADO') {
-      this.notificaciones.registrarSesion(null);
-      await this.almacen.borrarSesion();
+
+    let usuario = this.usuarios.porId(id) || this.almacen.usuarios().find((u) => u.id === id || u.uid === id);
+    if (!usuario) {
+      const enCache = await this.almacen.leerSesionUsuario();
+      if (enCache) usuario = enCache;
+    }
+
+    if (!usuario || !usuario.activo) {
       return null;
     }
+
     this.usuario.set(usuario);
     this.notificaciones.registrarSesion(usuario.id);
     return usuario;

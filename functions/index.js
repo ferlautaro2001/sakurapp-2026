@@ -1,5 +1,4 @@
 const { onDocumentCreated } = require("firebase-functions/v2/firestore");
-const { onRequest } = require("firebase-functions/v2/https");
 const { initializeApp } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getMessaging } = require("firebase-admin/messaging");
@@ -14,7 +13,7 @@ const DATABASE_ID = "sakurapp";
  * un documento en 'notificaciones_cola'.
  * Busca los tokens FCM correspondientes en Firestore ('sakurapp') y despacha a Google FCM.
  */
-exports.despacharPush = onDocumentCreated(
+exports.procesarColaPush = onDocumentCreated(
   {
     document: "notificaciones_cola/{notifId}",
     database: DATABASE_ID,
@@ -114,38 +113,12 @@ exports.despacharPush = onDocumentCreated(
         procesadoEn: new Date().toISOString(),
       });
     } catch (error) {
-      console.error("❌ Error en Cloud Function despacharPush:", error);
+      console.error("❌ Error en Cloud Function procesarColaPush:", error);
       await snap.ref.update({
         estado: "ERROR",
         error: error.message || String(error),
         procesadoEn: new Date().toISOString(),
       });
-    }
-  }
-);
-
-/**
- * Endpoint HTTP auxiliar para probar envíos o enviar push desde cualquier lugar vía HTTP.
- */
-exports.enviarPushHttp = onRequest(
-  { region: "southamerica-east1" },
-  async (req, res) => {
-    const { rol, uid, titulo, cuerpo } = req.query;
-    const db = getFirestore(DATABASE_ID);
-
-    try {
-      const docRef = await db.collection("notificaciones_cola").add({
-        destinatarioRol: rol || null,
-        destinatarioUid: uid || null,
-        titulo: titulo || "Aviso SakurApp",
-        cuerpo: cuerpo || "Mensaje de prueba",
-        estado: "PENDIENTE",
-        creadoEn: new Date().toISOString(),
-      });
-
-      res.status(200).json({ ok: true, notifId: docRef.id });
-    } catch (e) {
-      res.status(500).json({ ok: false, error: e.message });
     }
   }
 );

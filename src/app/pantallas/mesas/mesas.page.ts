@@ -33,16 +33,11 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
       <div class="lm-body lm-body--gap12">
         <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón</lm-titulo>
 
-        <div class="lm-grid2 resumen">
+        <div class="resumen">
           <div class="lm-card resumen__dato">
-            <lm-icono nombre="table_restaurant" [tamano]="18" color="var(--state-success)" />
+            <lm-icono nombre="table_restaurant" [tamano]="20" color="var(--state-success)" />
             <b>{{ mesas.vacias().length }}</b>
-            <span>libres ahora</span>
-          </div>
-          <div class="lm-card resumen__dato">
-            <lm-icono nombre="group" [tamano]="18" color="var(--action-accent)" />
-            <b>{{ cubiertos() }}</b>
-            <span>cubiertos totales</span>
+            <span>mesas libres ahora</span>
           </div>
         </div>
 
@@ -118,10 +113,6 @@ export class MesasPage extends PaginaConSesion implements OnInit, OnDestroy {
     if (this.intervaloSincronizacion) {
       clearInterval(this.intervaloSincronizacion);
     }
-  }
-
-  protected cubiertos(): number {
-    return this.mesas.todas().reduce((total, m) => total + m.cantidadComensales, 0);
   }
 
   protected bajada(): string {

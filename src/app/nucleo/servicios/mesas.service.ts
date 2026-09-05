@@ -16,6 +16,7 @@ import { AltaMesa, Mesa } from '../modelos/modelos';
 import { EstadoMesa } from '../modelos/enums';
 import { QrService } from './qr.service';
 import { AlmacenamientoService } from './almacenamiento.service';
+import { FirestoreService } from './firestore.service';
 
 /**
  * Gestión integral de Mesas de SakurApp (US-4.3):
@@ -28,6 +29,7 @@ export class MesasService {
   private readonly almacen = inject(AlmacenService);
   private readonly qr = inject(QrService);
   private readonly almacenamiento = inject(AlmacenamientoService);
+  private readonly firestore = inject(FirestoreService);
 
   readonly todas = computed(() => [...this.almacen.mesas()].sort((a, b) => a.numero - b.numero));
   readonly vacias = computed(() => this.todas().filter((m) => m.estado === 'VACIA'));
@@ -112,16 +114,21 @@ export class MesasService {
     }
 
     await this.almacen.guardarMesas([...this.almacen.mesas(), mesa]);
+    await this.firestore.guardarMesa(mesa);
     return mesa;
   }
 
   async editar(id: string, cambios: Partial<AltaMesa>): Promise<Mesa | undefined> {
     const lista = this.almacen.mesas().map((m) => (m.id === id ? { ...m, ...cambios } : m));
     await this.almacen.guardarMesas(lista);
-    return lista.find((m) => m.id === id);
+    const editada = lista.find((m) => m.id === id);
+    if (editada) {
+      void this.firestore.guardarMesa(editada);
+    }
+    return editada;
   }
 
-    async cambiarEstado(id: string, estado: EstadoMesa): Promise<void> {
+  async cambiarEstado(id: string, estado: EstadoMesa): Promise<void> {
     const mesa = this.porId(id);
 
     if (!mesa) {
@@ -130,8 +137,9 @@ export class MesasService {
 
     const estadoAnterior = mesa.estado;
 
-    // Actualización optimista: la insignia cambia inmediatamente.
+    // Actualización optimista reactiva e inmediata.
     await this.editar(id, { estado });
+    void this.firestore.actualizarEstadoMesa(id, estado);
 
     try {
       const app = getApps().length ? getApp() : initializeApp(environment.firebase);
@@ -147,10 +155,8 @@ export class MesasService {
         estado: estadoDataConnect,
       });
     } catch (error) {
-      // Si Cloud SQL falla, recuperamos el estado anterior.
-      await this.editar(id, { estado: estadoAnterior });
-      console.error('No se pudo actualizar el estado de la mesa en Cloud SQL:', error);
-      throw error;
+      // Si Cloud SQL falla, la mesa sigue persistida en Firestore y localmente
+      console.warn('⚠️ Nota sobre Cloud SQL en cambiarEstado (se mantiene en Firestore):', error);
     }
   }
 

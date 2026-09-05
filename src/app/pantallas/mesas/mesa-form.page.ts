@@ -30,13 +30,19 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         }
 
         @if (soloDisponibilidad()) {
-          <lm-foto
-            [fuente]="foto()"
-            forma="rectangulo"
-            [tamano]="168"
-            etiqueta="Sin foto cargada"
-            (capturar)="avisarSinPermiso()"
-          />
+          <div class="foto-readonly">
+            @if (foto()) {
+              <div
+                class="foto-readonly__marco"
+                [style.background-image]="'url(' + foto() + ')'"
+              ></div>
+            } @else {
+              <div class="foto-readonly__vacia">
+                <lm-icono nombre="table_restaurant" [tamano]="40" color="var(--text-muted)" />
+                <span class="foto-readonly__texto">Mesa sin fotografía</span>
+              </div>
+            }
+          </div>
           <div class="lm-grid2">
             <div class="lm-card dato">
               <span class="lm-label">Número</span>
@@ -63,7 +69,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
 
           <lm-campo
             [control]="formulario.controls.numero"
-            icono="numbers"
+            icono="table_restaurant"
             etiqueta="Número de mesa"
             marcador="7"
             modo="numeric"
@@ -113,6 +119,18 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
       .dato { padding: 14px; }
       .dato__valor { display: block; font: var(--type-numeral); color: var(--text-title); }
       .dato__texto { display: block; font: var(--type-card-title); color: var(--text-title); margin-top: 4px; }
+      .foto-readonly { width: 100%; display: flex; justify-content: center; }
+      .foto-readonly__marco {
+        width: 100%; height: 168px; border-radius: var(--radius-card);
+        background: var(--surface-card) center / cover no-repeat;
+        box-shadow: var(--shadow-card); border: 1.5px solid var(--border-card);
+      }
+      .foto-readonly__vacia {
+        width: 100%; height: 140px; border-radius: var(--radius-card);
+        background: var(--surface-card); border: 2px dashed var(--border-card);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+      }
+      .foto-readonly__texto { font: var(--type-caption); color: var(--text-muted); }
     `,
   ],
 })
@@ -164,15 +182,15 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
   }
 
   protected async tomarFoto(): Promise<void> {
+    if (this.soloDisponibilidad()) {
+      this.avisos.info('Solo lectura', 'El metre no tiene permisos para editar la foto de las mesas.');
+      return;
+    }
     const imagen = await this.camara.tomarFoto();
     if (imagen) {
       this.foto.set(imagen);
       this.errorFoto.set(null);
     }
-  }
-
-  protected avisarSinPermiso(): void {
-    this.avisos.info('La foto la cambia el administrador', 'Desde este perfil sólo se puede cambiar la disponibilidad.');
   }
 
   protected async guardar(): Promise<void> {

@@ -15,8 +15,8 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Usuario } from '../modelos/modelos';
-import { EstadoUsuario, Perfil } from '../modelos/enums';
+import { Mesa, Usuario } from '../modelos/modelos';
+import { EstadoMesa, EstadoUsuario, Perfil, TipoMesa } from '../modelos/enums';
 
 export interface NotificacionCola {
   id?: string;
@@ -179,6 +179,82 @@ export class FirestoreService {
     } catch (err) {
       console.warn('⚠️ Error encolando notificación en Firestore:', err);
       return null;
+    }
+  }
+
+  /**
+   * Escucha en tiempo real la colección de mesas ('sakurapp').
+   * Cualquier cambio (alta de mesa, cambio de disponibilidad) se refleja inmediatamente en los clientes.
+   */
+  escucharMesas(callback: (mesas: Mesa[]) => void): Unsubscribe {
+    const db = this.obtenerDb();
+    const colRef = collection(db, 'mesas');
+
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const lista: Mesa[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          lista.push({
+            id: docSnap.id,
+            numero: Number(data['numero']) || 0,
+            cantidadComensales: Number(data['cantidadComensales']) || 2,
+            tipo: (data['tipo'] as TipoMesa) || 'ESTANDAR',
+            estado: (data['estado'] as EstadoMesa) || 'VACIA',
+            fotoUrl: data['fotoUrl'] || undefined,
+            qrCodeUrl: data['qrCodeUrl'] || undefined,
+          });
+        });
+        callback(lista);
+      },
+      (error) => {
+        console.warn('⚠️ Error en listener en tiempo real de mesas Firestore:', error);
+      }
+    );
+  }
+
+  /**
+   * Guarda o actualiza una mesa en Firestore (sakurapp).
+   */
+  async guardarMesa(mesa: Mesa): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      const mesaRef = doc(db, 'mesas', mesa.id);
+      await setDoc(
+        mesaRef,
+        {
+          id: mesa.id,
+          numero: mesa.numero,
+          cantidadComensales: mesa.cantidadComensales,
+          tipo: mesa.tipo,
+          estado: mesa.estado,
+          fotoUrl: mesa.fotoUrl ?? null,
+          qrCodeUrl: mesa.qrCodeUrl ?? null,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      console.log(`✅ Mesa ${mesa.numero} sincronizada en Firestore`);
+    } catch (err) {
+      console.warn('⚠️ Error al sincronizar mesa en Firestore:', err);
+    }
+  }
+
+  /**
+   * Actualiza el estado de una mesa en Firestore en tiempo real.
+   */
+  async actualizarEstadoMesa(mesaId: string, estado: EstadoMesa): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      const mesaRef = doc(db, 'mesas', mesaId);
+      await updateDoc(mesaRef, {
+        estado,
+        estadoActualizadoEn: new Date().toISOString(),
+      });
+      console.log(`✅ Estado de mesa ${mesaId} actualizado a ${estado} en Firestore`);
+    } catch (err) {
+      console.warn('⚠️ Error actualizando estado de mesa en Firestore:', err);
     }
   }
 }

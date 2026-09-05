@@ -58,7 +58,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
 
         <lm-campo
           [control]="formulario.controls.numero"
-          icono="numbers"
+          icono="table_restaurant"
           etiqueta="Número de mesa (único)"
           marcador="1"
           modo="numeric"

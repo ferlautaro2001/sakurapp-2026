@@ -34,7 +34,15 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+  <lm-icono-boton
+    accion
+    icono="person_add"
+    rotulo="Dar de alta un empleado"
+    tono="primario"
+    (presionar)="ir(['/admin/alta-empleado'])"
+  />
+</lm-encabezado>
 
       <div class="lm-body lm-body--gap12">
         <lm-titulo [contador]="pendientes().length" bajada="Tocá una tarjeta para ver la ficha completa, o aceptá y rechazá desde su fila">
@@ -60,10 +68,20 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
             }
           </div>
         } @else {
-          <lm-vacio icono="how_to_reg" [titulo]="tituloVacio()">
-            {{ textoVacio() }}
-          </lm-vacio>
-        }
+  <lm-vacio icono="how_to_reg" [titulo]="tituloVacio()">
+    {{ textoVacio() }}
+
+    <lm-boton
+      accion
+      variante="secondary"
+      icono="person_add"
+      [ancho]="false"
+      (presionar)="ir(['/admin/alta-empleado'])"
+    >
+      Dar de alta un empleado
+    </lm-boton>
+  </lm-vacio>
+}
       </div>
 
       <lm-barra-inferior [items]="secciones()" activo="registros" />

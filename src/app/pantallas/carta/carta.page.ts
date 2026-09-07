@@ -1,0 +1,183 @@
+import { Component, computed, inject, signal } from '@angular/core';
+import { Producto } from '../../nucleo/modelos/modelos';
+import { TipoProducto } from '../../nucleo/modelos/enums';
+import { ProductosService } from '../../nucleo/servicios/productos.service';
+import { UI } from '../../ui';
+import { PaginaConSesion } from '../pagina-base';
+
+type Categoria = 'TODOS' | TipoProducto;
+
+@Component({
+  selector: 'lm-carta',
+  imports: [...UI],
+  template: `
+    <div class="lm-screen">
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+        @if (puedeCargar()) {
+          <lm-icono-boton
+            accion
+            icono="add"
+            rotulo="Agregar un producto"
+            tono="primario"
+            (presionar)="agregarProducto()"
+          />
+        }
+      </lm-encabezado>
+
+      <div class="lm-body lm-body--gap12">
+        <lm-titulo
+          [contador]="visibles().length"
+          bajada="La carta completa del salón. Tocá un producto para ver sus tres fotos"
+        >
+          Carta
+        </lm-titulo>
+
+        <lm-segmentado
+          [opciones]="categorias"
+          [valor]="categoria()"
+          [columnas]="4"
+          (cambiar)="categoria.set($any($event))"
+        />
+
+        <lm-buscador
+          marcador="Buscar en la carta"
+          [valor]="busqueda()"
+          (cambiar)="busqueda.set($event)"
+        />
+
+        @if (visibles().length) {
+          <div class="lm-list">
+            @for (producto of visibles(); track producto.id) {
+              <button
+                type="button"
+                class="lm-product"
+                (click)="ir(['/carta', producto.id])"
+              >
+                <span class="lm-product__thumb">
+                  @if (portada(producto)) {
+                    <img
+                      [src]="portada(producto)"
+                      [alt]="producto.nombre"
+                    />
+                  } @else {
+                    <lm-icono
+                      [nombre]="icono(producto)"
+                      [tamano]="28"
+                      color="var(--action-primary)"
+                    />
+                  }
+                </span>
+
+                <span class="lm-product__datos">
+                  <span class="lm-product__nombre">
+                    {{ producto.nombre }}
+                  </span>
+
+                  <span class="lm-product__desc">
+                    {{ producto.descripcion }}
+                  </span>
+
+                  <span class="lm-product__pie">
+                    <span class="lm-product__precio">
+                      {{ precio(producto.precio) }}
+                    </span>
+
+                    <span class="lm-product__tiempo">
+                      <lm-icono nombre="schedule" [tamano]="15" />
+                      {{ producto.tiempoElaboracion }} minutos
+                    </span>
+                  </span>
+                </span>
+              </button>
+            }
+          </div>
+        } @else {
+          <lm-vacio
+            icono="restaurant_menu"
+            titulo="No encontramos productos"
+          >
+            Probá con otra categoría o con otra búsqueda.
+          </lm-vacio>
+        }
+      </div>
+
+      <lm-barra-inferior [items]="secciones()" activo="carta" />
+    </div>
+  `,
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .lm-product__thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    `,
+  ],
+})
+export class CartaPage extends PaginaConSesion {
+  private readonly productos = inject(ProductosService);
+
+  protected readonly busqueda = signal('');
+  protected readonly categoria = signal<Categoria>('TODOS');
+
+  protected readonly categorias: {
+    valor: Categoria;
+    rotulo: string;
+  }[] = [
+    { valor: 'TODOS', rotulo: 'Todos' },
+    { valor: 'COMIDA', rotulo: 'Comidas' },
+    { valor: 'BEBIDA', rotulo: 'Bebidas' },
+    { valor: 'POSTRE', rotulo: 'Postres' },
+  ];
+
+    protected readonly puedeCargar = computed(() => {
+        const perfil = this.sesion.usuario()?.perfil;
+        return perfil === 'COCINERO' || perfil === 'CANTINERO';
+    });
+
+  protected readonly visibles = computed<Producto[]>(() => {
+    const categoria = this.categoria();
+    const texto = this.busqueda().trim().toLocaleLowerCase('es-AR');
+
+    const productos =
+      categoria === 'TODOS'
+        ? this.productos.todos()
+        : this.productos.porTipo(categoria);
+
+    return productos.filter(
+      (producto) =>
+        !texto ||
+        producto.nombre.toLocaleLowerCase('es-AR').includes(texto) ||
+        producto.descripcion.toLocaleLowerCase('es-AR').includes(texto),
+    );
+  });
+
+  protected portada(producto: Producto): string | null {
+    return producto.fotos[0] ?? null;
+  }
+
+  protected icono(producto: Producto): string {
+    if (producto.tipo === 'BEBIDA') return 'local_bar';
+    if (producto.tipo === 'POSTRE') return 'icecream';
+    return 'restaurant';
+  }
+
+  protected precio(valor: number): string {
+    return `$ ${valor.toLocaleString('es-AR')}`;
+  }
+
+  protected agregarProducto(): void {
+    if (this.sesion.usuario()?.perfil === 'CANTINERO') {
+      this.ir(['/cantinero/alta-bebida']);
+      return;
+    }
+
+    this.ir(['/cocinero/alta-plato']);
+  }
+}

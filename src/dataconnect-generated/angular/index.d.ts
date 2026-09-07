@@ -1,4 +1,4 @@
-import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData } from '../';
+import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateProductoData, UpdateProductoVariables, UpdateActivoProductoData, UpdateActivoProductoVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData } from '../';
 import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise} from '@angular/fire/data-connect';
 import { CreateQueryResult, CreateMutationResult} from '@tanstack/angular-query-experimental';
 import { CreateDataConnectQueryResult, CreateDataConnectQueryOptions, CreateDataConnectMutationResult, DataConnectMutationOptionsUndefinedMutationFn } from '@tanstack-query-firebase/angular/data-connect';
@@ -25,6 +25,12 @@ export function injectUpdateEstadoUsuario(options?: UpdateEstadoUsuarioOptions, 
 
 type UpdateEstadoMesaOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoMesaData, FirebaseError, UpdateEstadoMesaVariables>;
 export function injectUpdateEstadoMesa(options?: UpdateEstadoMesaOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateEstadoMesaVariables>;
+
+type UpdateProductoOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateProductoData, FirebaseError, UpdateProductoVariables>;
+export function injectUpdateProducto(options?: UpdateProductoOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateProductoData, UpdateProductoVariables, UpdateProductoVariables>;
+
+type UpdateActivoProductoOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateActivoProductoData, FirebaseError, UpdateActivoProductoVariables>;
+export function injectUpdateActivoProducto(options?: UpdateActivoProductoOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateActivoProductoData, UpdateActivoProductoVariables, UpdateActivoProductoVariables>;
 
 export type ListProductosOptions = () => Omit<CreateDataConnectQueryOptions<ListProductosData, undefined>, 'queryFn'>;
 export function injectListProductos(options?: ListProductosOptions, injector?: Injector): CreateDataConnectQueryResult<ListProductosData, undefined>;

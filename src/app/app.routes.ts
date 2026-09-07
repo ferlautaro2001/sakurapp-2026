@@ -86,21 +86,47 @@ export const routes: Routes = [
     canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
     loadComponent: () => import('./pantallas/mesas/mesa-form.page').then((m) => m.MesaFormPage),
   },
+    {
+    path: 'carta/:id/editar',
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil('COCINERO'),
+    ],
+    loadComponent: () =>
+      import('./pantallas/cocinero/alta-plato.page').then(
+        (m) => m.AltaPlatoPage,
+      ),
+  },
+    {
+    path: 'carta/:id',
+    canActivate: [guardiaSesion],
+    loadComponent: () =>
+      import('./pantallas/carta/producto-ficha.page').then(
+        (m) => m.ProductoFichaPage,
+      ),
+  },
+    {
+    path: 'carta',
+    canActivate: [guardiaSesion],
+    loadComponent: () =>
+      import('./pantallas/carta/carta.page').then((m) => m.CartaPage),
+  },
   {
     path: 'cantinero/alta-bebida',
     canActivate: [guardiaSesion, guardiaPerfil('CANTINERO')],
-    loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
+    loadComponent: () =>
+      import('./pantallas/cantinero/alta-bebida.page').then(
+        (m) => m.AltaBebidaPage,
+      ),
   },
-{
-  path: 'cocinero/alta-plato',
-  canActivate: [
-    guardiaSesion,
-    guardiaPerfil('COCINERO'),
-  ],
-  loadComponent: () =>
-    import('./pantallas/cocinero/alta-plato.page')
-      .then((m) => m.AltaPlatoPage),
-},
+  {
+    path: 'cocinero/alta-plato',
+    canActivate: [guardiaSesion, guardiaPerfil('COCINERO')],
+    loadComponent: () =>
+      import('./pantallas/cocinero/alta-plato.page').then(
+        (m) => m.AltaPlatoPage,
+      ),
+  },
   {
     path: '**',
     redirectTo: '',

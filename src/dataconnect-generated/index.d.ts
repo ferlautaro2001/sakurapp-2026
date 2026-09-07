@@ -263,6 +263,15 @@ export interface Producto_Key {
   __typename?: 'Producto_Key';
 }
 
+export interface UpdateActivoProductoData {
+  producto_update?: Producto_Key | null;
+}
+
+export interface UpdateActivoProductoVariables {
+  id: UUIDString;
+  activo: boolean;
+}
+
 export interface UpdateEstadoMesaData {
   mesa_update?: Mesa_Key | null;
 }
@@ -279,6 +288,23 @@ export interface UpdateEstadoUsuarioData {
 export interface UpdateEstadoUsuarioVariables {
   id: UUIDString;
   estado: EstadoUsuario;
+}
+
+export interface UpdateProductoData {
+  producto_update?: Producto_Key | null;
+}
+
+export interface UpdateProductoVariables {
+  id: UUIDString;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  tiempoElaboracion: number;
+  tipo: TipoProducto;
+  sector: Sector;
+  foto1: string;
+  foto2: string;
+  foto3: string;
 }
 
 export interface User_Key {
@@ -369,6 +395,30 @@ export const updateEstadoMesaRef: UpdateEstadoMesaRef;
 
 export function updateEstadoMesa(vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
 export function updateEstadoMesa(dc: DataConnect, vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+
+interface UpdateProductoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateProductoVariables): MutationRef<UpdateProductoData, UpdateProductoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateProductoVariables): MutationRef<UpdateProductoData, UpdateProductoVariables>;
+  operationName: string;
+}
+export const updateProductoRef: UpdateProductoRef;
+
+export function updateProducto(vars: UpdateProductoVariables): MutationPromise<UpdateProductoData, UpdateProductoVariables>;
+export function updateProducto(dc: DataConnect, vars: UpdateProductoVariables): MutationPromise<UpdateProductoData, UpdateProductoVariables>;
+
+interface UpdateActivoProductoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateActivoProductoVariables): MutationRef<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateActivoProductoVariables): MutationRef<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+  operationName: string;
+}
+export const updateActivoProductoRef: UpdateActivoProductoRef;
+
+export function updateActivoProducto(vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+export function updateActivoProducto(dc: DataConnect, vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */

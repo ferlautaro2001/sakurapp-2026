@@ -173,6 +173,34 @@ exports.updateEstadoMesa = function updateEstadoMesa(dcOrVars, vars) {
 }
 ;
 
+const updateProductoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateProducto', inputVars);
+}
+updateProductoRef.operationName = 'UpdateProducto';
+exports.updateProductoRef = updateProductoRef;
+
+exports.updateProducto = function updateProducto(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateProductoRef(dcInstance, inputVars));
+}
+;
+
+const updateActivoProductoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateActivoProducto', inputVars);
+}
+updateActivoProductoRef.operationName = 'UpdateActivoProducto';
+exports.updateActivoProductoRef = updateActivoProductoRef;
+
+exports.updateActivoProducto = function updateActivoProducto(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateActivoProductoRef(dcInstance, inputVars));
+}
+;
+
 const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();

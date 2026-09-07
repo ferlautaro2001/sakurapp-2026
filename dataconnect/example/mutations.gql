@@ -145,3 +145,51 @@ mutation UpdateEstadoMesa($id: UUID!, $estado: EstadoMesa!)
   ) {
   mesa_update(id: $id, data: { estado: $estado })
 }
+
+# Edición completa de un producto existente.
+mutation UpdateProducto(
+  $id: UUID!
+  $nombre: String!
+  $descripcion: String!
+  $precio: Float!
+  $tiempoElaboracion: Int!
+  $tipo: TipoProducto!
+  $sector: Sector!
+  $foto1: String!
+  $foto2: String!
+  $foto3: String!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Edición de productos por personal autorizado."
+) {
+  producto_update(
+    id: $id
+    data: {
+      nombre: $nombre
+      descripcion: $descripcion
+      precio: $precio
+      tiempoElaboracion: $tiempoElaboracion
+      tipo: $tipo
+      sector: $sector
+      foto1: $foto1
+      foto2: $foto2
+      foto3: $foto3
+    }
+  )
+}
+
+# Baja lógica: conserva el producto en la base, pero lo oculta de la carta.
+mutation UpdateActivoProducto(
+  $id: UUID!
+  $activo: Boolean!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Alta o baja lógica de productos por personal autorizado."
+) {
+  producto_update(
+    id: $id
+    data: {
+      activo: $activo
+    }
+  )
+}

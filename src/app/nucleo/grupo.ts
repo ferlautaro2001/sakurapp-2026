@@ -6,7 +6,7 @@ export const GRUPO = {
   nombre: 'Grupo Sakura',
   integrantes: [
     'Fernandez Di Bella Lautaro',
-    'Gaercez Gonzalo',
+    'Garcez Gonzalo',
     'Graneros Johann',
     'Nagel Cano Sabrina',
   ],

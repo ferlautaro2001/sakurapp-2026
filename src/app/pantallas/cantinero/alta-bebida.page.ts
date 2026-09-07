@@ -18,12 +18,11 @@ import { enteroEntre, largoMinimo, marcarEnviado, precio, requerido } from '../.
       <lm-encabezado titulo="Nueva bebida" conVolver (volver)="volver()" />
       <div class="lm-body lm-body--gap12">
         @if (resumenError()) { <lm-banner tono="error" titulo="Revisá los datos">{{ resumenError() }}</lm-banner> }
-        <div class="sector"><lm-icono nombre="local_bar" [tamano]="22" color="var(--action-primary)" /><span>Se registrará como <b>BEBIDA</b> en el sector <b>BAR / CANTINA</b>.</span></div>
         <lm-campo [control]="formulario.controls.nombre" icono="local_bar" etiqueta="Nombre de la bebida" marcador="Vermut tinto" />
         <lm-campo [control]="formulario.controls.descripcion" icono="notes" etiqueta="Descripción" marcador="Cómo se sirve y con qué viene" />
         <lm-campo [control]="formulario.controls.precio" icono="payments" etiqueta="Precio en pesos" marcador="32000" modo="decimal" [largoMaximo]="8" />
         <lm-campo [control]="formulario.controls.minutos" icono="schedule" etiqueta="Tiempo de barra (minutos)" marcador="5" modo="numeric" [largoMaximo]="3" />
-        <section aria-labelledby="fotos-title"><span id="fotos-title" class="lm-label">Fotos de presentación · 3 obligatorias</span><div class="fotos">@for (indice of [0,1,2]; track indice) { <lm-foto forma="rectangulo" [tamano]="104" [fuente]="fotos()[indice]" [etiqueta]="'Foto ' + (indice + 1)" (capturar)="cargarFoto(indice)" /> }</div>@if (errorFotos()) { <span class="lm-field__error">{{ errorFotos() }}</span> } @else { <span class="lm-field__hint">Podés usar cámara o galería; cada foto queda en su propio contenedor.</span> }</section>
+        <section aria-labelledby="fotos-title"><span id="fotos-title" class="lm-label">Fotos de presentación</span><div class="fotos">@for (indice of [0,1,2]; track indice) { <lm-foto forma="rectangulo" [tamano]="104" [fuente]="fotos()[indice]" [etiqueta]="'Foto ' + (indice + 1)" (capturar)="cargarFoto(indice)" /> }</div>@if (errorFotos()) { <span class="lm-field__error">{{ errorFotos() }}</span> } @else { <span class="lm-field__hint">Podés usar cámara o galería; cada foto queda en su propio contenedor.</span> }</section>
       </div>
       <div class="lm-actionbar"><lm-boton icono="add" (presionar)="guardar()">Agregar bebida</lm-boton></div>
     </div>

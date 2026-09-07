@@ -1,4 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed  } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -12,6 +13,8 @@ import {
   requerido,
 } from '../../nucleo/validacion/validadores';
 
+import { TipoProducto } from '../../nucleo/modelos/enums';
+
 /**
  * Punto 2 - Alta de platos.
  *
@@ -24,51 +27,68 @@ import {
   template: `
     <div class="lm-screen">
       <lm-encabezado
-        titulo="Nuevo plato"
-        (cerrarSesion)="cerrarSesion()"
+        [titulo]="
+          editando
+            ? (esPostre() ? 'Editar postre' : 'Editar plato')
+            : (esPostre() ? 'Nuevo postre' : 'Nuevo plato')
+        "
+        conVolver
+        (volver)="ir(['/carta'])"
       />
 
       <div class="lm-body lm-body--gap14">
         @if (resumenError()) {
           <lm-banner
             tono="error"
-            titulo="Faltan datos del plato"
+            [titulo]="
+              esPostre()
+                ? 'Faltan datos del postre'
+                : 'Faltan datos del plato'
+            "
           >
             {{ resumenError() }}
           </lm-banner>
         }
 
-        <div class="lm-card categoria">
-          <lm-icono
-            nombre="restaurant"
-            [tamano]="22"
-            color="var(--action-primary)"
-          />
-
-          <span>
-            Se registrará como <b>COMIDA</b> en el sector <b>COCINA</b>.
-          </span>
-        </div>
+        <lm-segmentado
+          etiqueta="Categoría"
+          [opciones]="tiposProducto"
+          [valor]="tipoProducto()"
+          [columnas]="2"
+          (cambiar)="tipoProducto.set($any($event))"
+        />
 
         <lm-campo
           [control]="formulario.controls.nombre"
-          icono="restaurant"
-          etiqueta="Nombre del plato"
-          marcador="Ramen tonkotsu"
+          [icono]="esPostre() ? 'icecream' : 'restaurant'"
+          [etiqueta]="
+            esPostre()
+              ? 'Nombre del postre'
+              : 'Nombre del plato'
+          "
+          [marcador]="
+            esPostre()
+              ? 'Mochi helado'
+              : 'Ramen tonkotsu'
+          "
         />
 
         <lm-campo
           [control]="formulario.controls.descripcion"
           icono="notes"
           etiqueta="Descripción"
-          marcador="Ingredientes y forma de presentación"
+          [marcador]="
+            esPostre()
+              ? 'Sabores, ingredientes y forma de presentación'
+              : 'Ingredientes y forma de presentación'
+          "
         />
 
         <lm-campo
           [control]="formulario.controls.precio"
           icono="payments"
           etiqueta="Precio"
-          marcador="15000"
+          [marcador]="esPostre() ? '8500' : '15000'"
           modo="decimal"
           [largoMaximo]="10"
         />
@@ -77,7 +97,7 @@ import {
           [control]="formulario.controls.minutos"
           icono="schedule"
           etiqueta="Tiempo de elaboración en minutos"
-          marcador="30"
+          [marcador]="esPostre() ? '15' : '30'"
           modo="numeric"
           [largoMaximo]="3"
         />
@@ -87,7 +107,11 @@ import {
             id="titulo-fotos"
             class="lm-label"
           >
-            Fotos del plato - tres obligatorias
+            {{
+              esPostre()
+                ? 'Fotos del postre - tres obligatorias'
+                : 'Fotos del plato - tres obligatorias'
+            }}
           </span>
 
           <div class="fotos">
@@ -96,7 +120,12 @@ import {
                 forma="rectangulo"
                 [tamano]="104"
                 [fuente]="fotos()[indice] ?? null"
-                [etiqueta]="'Foto ' + (indice + 1)"
+                [etiqueta]="
+                  (esPostre()
+                    ? 'Foto del postre '
+                    : 'Foto del plato ') +
+                  (indice + 1)
+                "
                 (capturar)="cargarFoto(indice)"
               />
             }
@@ -125,45 +154,70 @@ import {
           icono="save"
           (presionar)="guardar()"
         >
-          Agregar plato
+          {{
+            editando
+              ? 'Guardar cambios'
+              : (esPostre() ? 'Agregar postre' : 'Agregar plato')
+          }}
         </lm-boton>
       </div>
-  </div>
-`,
-styles:[
-  `
-    :host {
-      display: flex;
-      flex: 1;
-      min-height: 0;
-    }
-
-    .categoria {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 14px;
-      font: var(--type-body-small);
-      color: var(--text-body);
-    }
-
-    .fotos {
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
-      margin: 8px 0;
-    }
-
-    .fotos lm-foto {
-      min-width: 0;
-    }
+    </div>
   `,
-],
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .categoria {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px;
+        font: var(--type-body-small);
+        color: var(--text-body);
+      }
+
+      .fotos {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 8px 0;
+      }
+
+      .fotos lm-foto {
+        min-width: 0;
+      }
+    `,
+  ],
 })
 export class AltaPlatoPage extends PaginaConSesion {
   private readonly fb = inject(FormBuilder);
   private readonly productos = inject(ProductosService);
   private readonly camara = inject(CamaraService);
+  private readonly route = inject(ActivatedRoute);
+
+  private readonly idProducto =
+    this.route.snapshot.paramMap.get('id');
+
+  protected readonly editando =
+    this.idProducto !== null;
+
+  protected readonly tipoProducto = signal<TipoProducto>('COMIDA');
+  
+  protected readonly esPostre = computed(
+    () => this.tipoProducto() === 'POSTRE',
+      );
+
+  protected readonly tiposProducto: {
+    valor: TipoProducto;
+    rotulo: string;
+    }[] = [
+      { valor: 'COMIDA', rotulo: 'Comida' },
+      { valor: 'POSTRE', rotulo: 'Postre' },
+  ];
 
   protected readonly fotos = signal<(string | null)[]>([
     null,
@@ -219,7 +273,45 @@ export class AltaPlatoPage extends PaginaConSesion {
     ],
   });
 
+  constructor() {
+    super();
 
+    if (!this.idProducto) {
+      return;
+    }
+
+    const producto = this.productos.porId(
+      this.idProducto,
+    );
+
+    if (
+      !producto ||
+      producto.tipo === 'BEBIDA'
+    ) {
+      this.avisos.error(
+        'No se puede editar el producto',
+        'El producto no existe o no pertenece al sector cocina.',
+      );
+
+      this.ir(['/carta']);
+      return;
+    }
+
+    this.tipoProducto.set(producto.tipo);
+
+    this.formulario.setValue({
+      nombre: producto.nombre,
+      descripcion: producto.descripcion,
+      precio: String(producto.precio),
+      minutos: String(producto.tiempoElaboracion),
+    });
+
+    this.fotos.set([
+      producto.fotos[0] ?? null,
+      producto.fotos[1] ?? null,
+      producto.fotos[2] ?? null,
+    ]);
+  }
 
   /**
    * Abre el selector de Capacitor para elegir entre cámara y galería.
@@ -245,120 +337,165 @@ protected async cargarFoto(indice: number): Promise<void> {
   this.errorFotos.set('');
 }
 
-  protected async guardar(): Promise<void> {
-    this.resumenError.set(null);
-    this.errorFotos.set(null);
+protected async guardar(): Promise<void> {
+  this.resumenError.set(null);
+  this.errorFotos.set(null);
 
-    marcarEnviado(this.formulario);
+  marcarEnviado(this.formulario);
 
-    const fotosCargadas = this.fotos().filter(
-      (foto): foto is string => Boolean(foto),
+  const fotosCargadas = this.fotos().filter(
+    (foto): foto is string => Boolean(foto),
+  );
+
+  if (fotosCargadas.length !== 3) {
+    const cantidadFaltante =
+      3 - fotosCargadas.length;
+
+    this.errorFotos.set(
+      cantidadFaltante === 1
+        ? 'Falta una foto obligatoria'
+        : `Faltan ${cantidadFaltante} fotos obligatorias`,
+    );
+  }
+
+  const nombre =
+    this.formulario.controls.nombre.value;
+
+  if (
+    nombre &&
+    this.productos.existeNombre(
+      nombre,
+      this.idProducto ?? undefined,
+    )
+  ) {
+    this.formulario.controls.nombre.setErrors({
+      lm: `${nombre.trim()} ya está registrado en la carta`,
+    });
+  }
+
+  if (
+    this.formulario.invalid ||
+    fotosCargadas.length !== 3
+  ) {
+    this.resumenError.set(
+      'Completá correctamente todos los campos y las tres fotos.',
     );
 
-    if (fotosCargadas.length !== 3) {
-      const cantidadFaltante = 3 - fotosCargadas.length;
+    this.avisos.error(
+      this.editando
+        ? 'No se pudieron guardar los cambios'
+        : `No se pudo registrar el ${
+            this.esPostre() ? 'postre' : 'plato'
+          }`,
+      'Revisá los campos marcados.',
+    );
 
-      this.errorFotos.set(
-        cantidadFaltante === 1
-          ? 'Falta una foto obligatoria'
-          : `Faltan ${cantidadFaltante} fotos obligatorias`,
-      );
-    }
-
-    const nombre = this.formulario.controls.nombre.value;
-
-    if (
-      nombre &&
-      this.productos.existeNombre(nombre)
-    ) {
-      this.formulario.controls.nombre.setErrors({
-        lm: `${nombre.trim()} ya está registrado en la carta`,
-      });
-    }
-
-    if (
-      this.formulario.invalid ||
-      fotosCargadas.length !== 3
-    ) {
-      this.resumenError.set(
-        'Completá correctamente todos los campos y las tres fotos.',
-      );
-
-      this.avisos.error(
-        'No se pudo registrar el plato:',
-        'Revisá los campos marcados.',
-      );
-
-      return;
-    }
-
-    const datos = this.formulario.getRawValue();
-
-
-
-const seguro = await this.preguntar({
-      titulo: '¿Agregás este plato?',
-      mensaje: 'El plato quedará activo en el sector COCINA.',
-      confirmar: 'Agregar plato',
-      tono: 'exito',
-      icono: 'restaurant',
-      detalle: [
-        {
-          rotulo: 'Plato',
-          valor: datos.nombre.trim(),
-        },
-        {
-          rotulo: 'Precio',
-          valor: `$ ${this.convertirPrecio(
-            datos.precio,
-          ).toLocaleString('es-AR')}`,
-        },
-        {
-          rotulo: 'Elaboración',
-          valor: `${datos.minutos} minutos`,
-        },
-      ],
-    });
-
-    if (!seguro) {
-      return;
-    }
-
-    try {
-      const producto = await this.cargando.conEsperaMinima(
-          'Subiendo las fotos y guardando el plato...',
-        () =>
-          this.productos.crear({
-            nombre: datos.nombre,
-            descripcion: datos.descripcion,
-            precio: this.convertirPrecio(datos.precio),
-            tiempoElaboracion: Number(datos.minutos),
-            tipo: 'COMIDA',
-            fotos: fotosCargadas,
-          }),
-      );
-
-      this.avisos.exito(
-        'Plato agregado',
-        `${producto.nombre} ya aparece en la carta.`,
-      );
-
-      this.formulario.reset();
-      this.fotos.set([null, null, null]);
-      this.errorFotos.set(null);
-      this.resumenError.set(null);
-    } catch (error) {
-      console.error(
-        'No se pudo registrar el producto:',
-        error,
-      );
-
-      this.avisos.error(
-        'No pudimos guardar el producto',
-        'Revisá la conexión e intentá nuevamente.',
-      );
-    }
+    return;
   }
+
+  const datos = this.formulario.getRawValue();
+  const nombreTipo = this.esPostre()
+    ? 'postre'
+    : 'plato';
+
+  const seguro = await this.preguntar({
+    titulo: this.editando
+      ? `¿Guardás los cambios del ${nombreTipo}?`
+      : `¿Agregás este ${nombreTipo}?`,
+    mensaje: this.editando
+      ? 'Los cambios se actualizarán en la carta.'
+      : `El ${nombreTipo} quedará activo en el sector COCINA.`,
+    confirmar: this.editando
+      ? 'Guardar cambios'
+      : `Agregar ${nombreTipo}`,
+    tono: 'exito',
+    icono: this.esPostre()
+      ? 'icecream'
+      : 'restaurant',
+    detalle: [
+      {
+        rotulo: this.esPostre()
+          ? 'Postre'
+          : 'Plato',
+        valor: datos.nombre.trim(),
+      },
+      {
+        rotulo: 'Precio',
+        valor: `$ ${this.convertirPrecio(
+          datos.precio,
+        ).toLocaleString('es-AR')}`,
+      },
+      {
+        rotulo: 'Elaboración',
+        valor: `${datos.minutos} minutos`,
+      },
+    ],
+  });
+
+  if (!seguro) {
+    return;
+  }
+
+  const datosProducto = {
+    nombre: datos.nombre,
+    descripcion: datos.descripcion,
+    precio: this.convertirPrecio(datos.precio),
+    tiempoElaboracion: Number(datos.minutos),
+    tipo: this.tipoProducto(),
+    fotos: fotosCargadas,
+  };
+
+  try {
+    const producto =
+      await this.cargando.conEsperaMinima(
+        this.editando
+          ? 'Guardando los cambios...'
+          : `Subiendo las fotos y guardando el ${nombreTipo}...`,
+        () =>
+          this.idProducto
+            ? this.productos.editar(
+                this.idProducto,
+                datosProducto,
+              )
+            : this.productos.crear(
+                datosProducto,
+              ),
+      );
+
+    this.avisos.exito(
+      this.editando
+        ? 'Producto actualizado'
+        : `${
+            this.esPostre()
+              ? 'Postre'
+              : 'Plato'
+          } agregado`,
+      this.editando
+        ? `${producto.nombre} se actualizó correctamente.`
+        : `${producto.nombre} ya aparece en la carta.`,
+    );
+
+    this.formulario.reset();
+    this.tipoProducto.set('COMIDA');
+    this.fotos.set([null, null, null]);
+    this.errorFotos.set(null);
+    this.resumenError.set(null);
+
+    this.ir(['/carta']);
+  } catch (error) {
+    console.error(
+      'No se pudo guardar el producto:',
+      error,
+    );
+
+    this.avisos.error(
+      this.editando
+        ? 'No pudimos actualizar el producto'
+        : 'No pudimos guardar el producto',
+      'Revisá la conexión e intentá nuevamente.',
+    );
+  }
+}
 
   private convertirPrecio(valor: string): number {
     return Number(

@@ -112,9 +112,8 @@ export class SesionService {
       case 'MOZO':
         return '/mesas';
       case 'COCINERO':
-        return '/cocinero/alta-plato';
       case 'CANTINERO':
-        return '/cantinero/alta-bebida';
+        return '/carta';
       case 'CLIENTE_REGISTRADO':
       case 'CLIENTE_ANONIMO':
         return '/en-preparacion';

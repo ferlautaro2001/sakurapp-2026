@@ -57,7 +57,8 @@ const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
       <lm-modal titulo="Empleado dado de alta" mensaje="La cuenta quedó aprobada y puede ingresar inmediatamente." rotuloCancelar="Cerrar" rotuloConfirmar="Dar otra alta" tono="exito" icono="verified" [detalle]="detalleAlta(empleado)" (cancelar)="volver()" (confirmar)="otroMas()" />
     }
   `,
-  styles: [`:host{display:flex;flex:1;min-height:0}.roles{display:grid;gap:8px}.roles__grilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.roles__tarjeta{min-height:74px;border:1px solid var(--border-card);border-radius:var(--radius-card);background:var(--surface-card);color:var(--text-body);font:700 13px var(--font-text);display:flex;align-items:center;justify-content:center;gap:7px}.roles__tarjeta--activa{border:2px solid var(--action-primary);background:rgba(185,46,88,.08);color:var(--action-primary)}`],
+  styles: [`:host{display:flex;flex:1;min-height:0}.roles{display:grid;gap:8px}.roles__grilla{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.roles__tarjeta{min-height:74px;border:1px solid var(--border-card);border-radius:var(--radius-card);background:var(--surface-card);color:var(--text-body);font:700 13px var(--font-text);display:flex;align-items:center;justify-content:center;gap:7px}
+  .roles__tarjeta--activa{border:2px solid #fff;background:#86163e;color: #fff}`],
 })
 export class AltaEmpleadoPage {
   private readonly fb = inject(FormBuilder);

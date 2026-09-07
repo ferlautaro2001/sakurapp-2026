@@ -77,6 +77,9 @@ src/environments/environment.ts
 scripts_backend/node_modules/
 scripts_backend/serviceAccountKey.json
 functions/node_modules/
+google-services.json
+android/app/google-services.json
+
 
 # Prompts y notas internas de desarrollo
 *.prompt.md

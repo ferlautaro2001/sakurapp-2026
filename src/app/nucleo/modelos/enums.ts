@@ -65,3 +65,21 @@ export const ROTULO_ESTADO_MESA: Record<EstadoMesa, string> = {
   INACTIVA: 'Inactiva',
 };
 
+
+/**
+ * Momentos por los que pasa un comensal en la lista de espera del salón
+ * (punto 9 del enunciado).
+ *
+ *   ESPERANDO  →  ASIGNADO  →  FINALIZADO
+ *   (en la fila) (tiene mesa) (escaneó el código de su mesa)
+ *
+ * `CANCELADO` es la salida por la puerta: lo saca el metre.
+ */
+export type EstadoEspera = 'ESPERANDO' | 'ASIGNADO' | 'CANCELADO' | 'FINALIZADO';
+
+export const ROTULO_ESTADO_ESPERA: Record<EstadoEspera, string> = {
+  ESPERANDO: 'En la fila',
+  ASIGNADO: 'Con mesa asignada',
+  CANCELADO: 'Fuera de la lista',
+  FINALIZADO: 'Sentado en su mesa',
+};

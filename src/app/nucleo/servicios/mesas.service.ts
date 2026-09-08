@@ -169,13 +169,15 @@ export class MesasService {
     }
   }
 
-    async sincronizar(): Promise<void> {
+  async sincronizar(): Promise<void> {
     try {
       const app = getApps().length ? getApp() : initializeApp(environment.firebase);
       const dc = getDataConnect(app, connectorConfig);
       const resultado = await listMesas(dc);
 
-      const mesas = resultado.data.mesas.map((mesa) => ({
+      if (!resultado?.data?.mesas) return;
+
+      const mesasDc = resultado.data.mesas.map((mesa) => ({
         id: mesa.id,
         numero: mesa.numero,
         cantidadComensales: mesa.cantidadComensales,
@@ -185,7 +187,19 @@ export class MesasService {
         qrCodeUrl: mesa.qrCodeUrl,
       }));
 
-      await this.almacen.guardarMesas(mesas);
+      // Fusión no destructiva: combinamos por número de mesa para preservar
+      // mesas recién creadas o sincronizadas por Firestore en tiempo real.
+      const mapaPorNumero = new Map<number, Mesa>();
+      for (const m of this.almacen.mesas()) {
+        mapaPorNumero.set(m.numero, m);
+      }
+      for (const m of mesasDc) {
+        const previo = mapaPorNumero.get(m.numero);
+        mapaPorNumero.set(m.numero, { ...previo, ...m });
+      }
+
+      const combinadas = Array.from(mapaPorNumero.values()).sort((a, b) => a.numero - b.numero);
+      await this.almacen.guardarMesas(combinadas);
     } catch (error) {
       console.warn('No se pudieron sincronizar las mesas desde Cloud SQL:', error);
     }

@@ -1,4 +1,4 @@
-import {Component, computed, inject, signal, OnInit, OnDestroy} from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
@@ -78,7 +78,7 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
     `,
   ],
 })
-export class MesasPage extends PaginaConSesion implements OnInit {
+export class MesasPage extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
 
   protected readonly estados = ESTADOS;
@@ -94,15 +94,6 @@ export class MesasPage extends PaginaConSesion implements OnInit {
       .filter((m) => this.estado() === 'Todas' || ROTULO_ESTADO_MESA[m.estado] === this.estado())
       .filter((m) => this.tipo() === 'Todos los tipos' || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
   );
-
-  /**
-   * Asegura la sincronización con Cloud SQL al ingresar a la pantalla.
-   * Las actualizaciones posteriores son 100% reactivas en tiempo real
-   * mediante Firestore y Angular Signals, sin necesidad de polling por intervalos.
-   */
-  ngOnInit(): void {
-    void this.mesas.sincronizar();
-  }
 
   protected bajada(): string {
     return this.puedeAgregar()

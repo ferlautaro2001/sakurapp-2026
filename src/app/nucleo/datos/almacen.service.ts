@@ -90,7 +90,7 @@ export class AlmacenService {
         }
         const mesasRes = await listMesas(dc);
         if (mesasRes?.data?.mesas?.length) {
-          mesasCargadas = mesasRes.data.mesas.map((m) => ({
+          const mesasDc = mesasRes.data.mesas.map((m) => ({
             id: m.id,
             numero: m.numero,
             cantidadComensales: m.cantidadComensales,
@@ -99,6 +99,16 @@ export class AlmacenService {
             fotoUrl: m.fotoUrl,
             qrCodeUrl: m.qrCodeUrl,
           }));
+          const mesasLocales = await this.leer<Mesa>(CLAVE.mesas);
+          const mapaMesas = new Map<number, Mesa>();
+          for (const m of mesasLocales) {
+            mapaMesas.set(m.numero, m);
+          }
+          for (const m of mesasDc) {
+            const previo = mapaMesas.get(m.numero);
+            mapaMesas.set(m.numero, { ...previo, ...m });
+          }
+          mesasCargadas = Array.from(mapaMesas.values()).sort((a, b) => a.numero - b.numero);
           await this.guardar(CLAVE.mesas, mesasCargadas);
         }
       } catch (error) {

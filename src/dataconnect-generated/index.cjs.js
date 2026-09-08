@@ -1,5 +1,13 @@
 const { queryRef, executeQuery, validateArgsWithOptions, mutationRef, executeMutation, validateArgs } = require('firebase/data-connect');
 
+const EstadoEspera = {
+  ESPERANDO: "ESPERANDO",
+  ASIGNADO: "ASIGNADO",
+  CANCELADO: "CANCELADO",
+  FINALIZADO: "FINALIZADO",
+}
+exports.EstadoEspera = EstadoEspera;
+
 const EstadoMesa = {
   VACIA: "VACIA",
   OCUPADA: "OCUPADA",
@@ -201,6 +209,34 @@ exports.updateActivoProducto = function updateActivoProducto(dcOrVars, vars) {
 }
 ;
 
+const createEsperaRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreateEspera', inputVars);
+}
+createEsperaRef.operationName = 'CreateEspera';
+exports.createEsperaRef = createEsperaRef;
+
+exports.createEspera = function createEspera(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createEsperaRef(dcInstance, inputVars));
+}
+;
+
+const updateEstadoEsperaRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'UpdateEstadoEspera', inputVars);
+}
+updateEstadoEsperaRef.operationName = 'UpdateEstadoEspera';
+exports.updateEstadoEsperaRef = updateEstadoEsperaRef;
+
+exports.updateEstadoEspera = function updateEstadoEspera(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(updateEstadoEsperaRef(dcInstance, inputVars));
+}
+;
+
 const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();
@@ -258,5 +294,35 @@ exports.listPedidosActivos = function listPedidosActivos(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
   return executeQuery(listPedidosActivosRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const listEsperaRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListEspera');
+}
+listEsperaRef.operationName = 'ListEspera';
+exports.listEsperaRef = listEsperaRef;
+
+exports.listEspera = function listEspera(dcOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
+  return executeQuery(listEsperaRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const listEncuestasRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListEncuestas');
+}
+listEncuestasRef.operationName = 'ListEncuestas';
+exports.listEncuestasRef = listEncuestasRef;
+
+exports.listEncuestas = function listEncuestas(dcOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
+  return executeQuery(listEncuestasRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;

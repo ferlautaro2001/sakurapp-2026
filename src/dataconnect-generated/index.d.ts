@@ -8,6 +8,13 @@ export type Int64String = string;
 export type DateString = string;
 
 
+export enum EstadoEspera {
+  ESPERANDO = "ESPERANDO",
+  ASIGNADO = "ASIGNADO",
+  CANCELADO = "CANCELADO",
+  FINALIZADO = "FINALIZADO",
+};
+
 export enum EstadoMesa {
   VACIA = "VACIA",
   OCUPADA = "OCUPADA",
@@ -91,6 +98,14 @@ export interface CreateEncuestaVariables {
   timestamp: TimestampString;
 }
 
+export interface CreateEsperaData {
+  espera_insert: Espera_Key;
+}
+
+export interface CreateEsperaVariables {
+  clienteId: UUIDString;
+}
+
 export interface CreateMesaData {
   mesa_insert: Mesa_Key;
 }
@@ -167,6 +182,35 @@ export interface Espera_Key {
 export interface IntentoJuego_Key {
   id: UUIDString;
   __typename?: 'IntentoJuego_Key';
+}
+
+export interface ListEncuestasData {
+  encuestas: ({
+    id: UUIDString;
+    calificacionMozo: number;
+    nivelLimpieza: number;
+    recomendaria: boolean;
+    aspectoFavorito: string;
+    timestamp: TimestampString;
+  } & Encuesta_Key)[];
+}
+
+export interface ListEsperaData {
+  esperas: ({
+    id: UUIDString;
+    estado: EstadoEspera;
+    timestamp: TimestampString;
+    cliente: {
+      id: UUIDString;
+      nombre: string;
+      apellido?: string | null;
+      fotoUrl: string;
+    } & User_Key;
+    mesaAsignada?: {
+      id: UUIDString;
+      numero: number;
+    } & Mesa_Key;
+  } & Espera_Key)[];
 }
 
 export interface ListMesasData {
@@ -270,6 +314,15 @@ export interface UpdateActivoProductoData {
 export interface UpdateActivoProductoVariables {
   id: UUIDString;
   activo: boolean;
+}
+
+export interface UpdateEstadoEsperaData {
+  espera_update?: Espera_Key | null;
+}
+
+export interface UpdateEstadoEsperaVariables {
+  id: UUIDString;
+  estado: EstadoEspera;
 }
 
 export interface UpdateEstadoMesaData {
@@ -420,6 +473,30 @@ export const updateActivoProductoRef: UpdateActivoProductoRef;
 export function updateActivoProducto(vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
 export function updateActivoProducto(dc: DataConnect, vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
 
+interface CreateEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateEsperaVariables): MutationRef<CreateEsperaData, CreateEsperaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateEsperaVariables): MutationRef<CreateEsperaData, CreateEsperaVariables>;
+  operationName: string;
+}
+export const createEsperaRef: CreateEsperaRef;
+
+export function createEspera(vars: CreateEsperaVariables): MutationPromise<CreateEsperaData, CreateEsperaVariables>;
+export function createEspera(dc: DataConnect, vars: CreateEsperaVariables): MutationPromise<CreateEsperaData, CreateEsperaVariables>;
+
+interface UpdateEstadoEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoEsperaVariables): MutationRef<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationRef<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+  operationName: string;
+}
+export const updateEstadoEsperaRef: UpdateEstadoEsperaRef;
+
+export function updateEstadoEspera(vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+export function updateEstadoEspera(dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */
   (): QueryRef<ListProductosData, undefined>;
@@ -467,4 +544,28 @@ export const listPedidosActivosRef: ListPedidosActivosRef;
 
 export function listPedidosActivos(options?: ExecuteQueryOptions): QueryPromise<ListPedidosActivosData, undefined>;
 export function listPedidosActivos(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListPedidosActivosData, undefined>;
+
+interface ListEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListEsperaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListEsperaData, undefined>;
+  operationName: string;
+}
+export const listEsperaRef: ListEsperaRef;
+
+export function listEspera(options?: ExecuteQueryOptions): QueryPromise<ListEsperaData, undefined>;
+export function listEspera(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListEsperaData, undefined>;
+
+interface ListEncuestasRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListEncuestasData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListEncuestasData, undefined>;
+  operationName: string;
+}
+export const listEncuestasRef: ListEncuestasRef;
+
+export function listEncuestas(options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
+export function listEncuestas(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
 

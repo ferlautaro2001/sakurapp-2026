@@ -37,7 +37,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
             <span class="lm-viewfinder__linea"></span>
           </div>
           <span class="lm-viewfinder__ayuda">
-            <lm-icono nombre="qr_code_scanner" [tamano]="18" color="var(--action-accent)" />
+            <lm-icono nombre="qr_code_scanner" [tamano]="18" color="#FFFFFF" />
             {{ visor.ayuda }}
           </span>
           <lm-texto-boton enfasis="claro" (presionar)="escaner.cancelarLectura()">Cancelar</lm-texto-boton>

@@ -128,6 +128,28 @@ export const routes: Routes = [
       ),
   },
   {
+    // US-5.1 · punto 9 · el comensal escanea el código de ingreso al salón y
+    // queda anotado en la lista de espera. Hasta que el metre le asigne una
+    // mesa, lo único habilitado son los resultados de las encuestas anteriores.
+    path: 'cliente/ingreso',
+    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    loadComponent: () =>
+      import('./pantallas/cliente/ingreso-local.page').then((m) => m.ClienteIngresoLocalPage),
+  },
+  {
+    // Mi lugar en la fila: el número de orden, la mesa que le asignó el metre
+    // y el escaneo del código de esa mesa.
+    path: 'cliente/espera',
+    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    loadComponent: () => import('./pantallas/cliente/espera.page').then((m) => m.ClienteEsperaPage),
+  },
+  {
+    path: 'cliente/encuestas',
+    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    loadComponent: () =>
+      import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

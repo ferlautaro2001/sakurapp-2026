@@ -409,14 +409,45 @@ body.camara-encendida .lm-header {
   background: var(--sk-petalo-vivo); box-shadow: 0 0 14px var(--sk-petalo-vivo);
   animation: lm-scan 2.2s var(--ease-standard) infinite;
 }
+/* Con la cámara encendida no hay fondo propio detrás de estas dos líneas: el
+   texto se apoya sobre la imagen del salón. Va en blanco pleno, un punto más
+   grueso y con una sombra oscura que le arma el contorno, para que se lea
+   igual sobre una pared clara que sobre una mesa oscura. */
 .lm-viewfinder__rotulo {
-  font: var(--type-label); letter-spacing: var(--tracking-label);
+  font: var(--type-label); font-weight: 800; letter-spacing: var(--tracking-label);
   text-transform: uppercase; color: #FFFFFF; white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(20, 4, 10, .85), 0 0 12px rgba(20, 4, 10, .6);
 }
 .lm-viewfinder__ayuda {
   display: inline-flex; align-items: center; gap: 8px; font: var(--type-body-small);
-  color: rgba(255, 255, 255, .86); max-width: 280px; text-align: center;
+  font-weight: 600; color: #FFFFFF; max-width: 280px; text-align: center;
+  text-shadow: 0 1px 3px rgba(20, 4, 10, .85), 0 0 12px rgba(20, 4, 10, .6);
 }
+
+/* Visor con la cámara encendida (`.visor`, en la cáscara de la aplicación).
+   Ahí atrás no hay fondo de la aplicación sino la imagen del salón, así que
+   TODO el texto —el botón de cancelar incluido— va en blanco pleno y con
+   contorno oscuro, y el velo alrededor del marco se cierra un poco más. */
+.visor .lm-viewfinder__marco { box-shadow: 0 0 0 9999px rgba(48, 6, 22, .74); }
+
+/* El velo no es un fondo: es la sombra desbordada del marco, y se pinta
+   ENCIMA de todo lo que venga antes en la marcación. El rótulo está arriba
+   del marco, así que sin esto le queda el velo por delante y el blanco se
+   apaga hasta quedar casi del color del fondo. Los tres textos suben una
+   capa y quedan por encima del velo. */
+.visor .lm-viewfinder__rotulo,
+.visor .lm-viewfinder__ayuda,
+.visor lm-texto-boton {
+  position: relative;
+  z-index: 1;
+}
+.visor .lm-viewfinder__rotulo,
+.visor .lm-viewfinder__ayuda,
+.visor .lm-textbtn {
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(20, 4, 10, .92), 0 0 14px rgba(20, 4, 10, .7);
+}
+.visor .lm-textbtn { font-weight: 700; }
 
 /* ---------- listas y tarjetas ---------- */
 .lm-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-list); min-width: 0; }

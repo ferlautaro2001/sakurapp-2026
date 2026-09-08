@@ -4,6 +4,8 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
+import { ActivatedRoute } from '@angular/router';
+import { MesasService } from '../../nucleo/servicios/mesas.service';
 
 type Categoria = 'TODOS' | TipoProducto;
 
@@ -13,7 +15,19 @@ type Categoria = 'TODOS' | TipoProducto;
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()">
-        @if (puedeCargar()) {
+        @if (mesaActiva(); as mesa) {
+          <span
+            accion
+            class="mesa-activa"
+          >
+            <lm-icono
+              nombre="table_restaurant"
+              [tamano]="18"
+              color="#FFFFFF"
+            />
+            Mesa {{ mesa.numero }}
+          </span>
+        } @else if (puedeCargar()) {
           <lm-icono-boton
             accion
             icono="add"
@@ -51,7 +65,7 @@ type Categoria = 'TODOS' | TipoProducto;
               <button
                 type="button"
                 class="lm-product"
-                (click)="ir(['/carta', producto.id])"
+                (click)="abrirProducto(producto)"
               >
                 <span class="lm-product__thumb">
                   @if (portada(producto)) {
@@ -117,14 +131,39 @@ type Categoria = 'TODOS' | TipoProducto;
         height: 100%;
         object-fit: cover;
       }
+
+      .mesa-activa {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+        font: var(--type-body-small);
+        font-weight: 800;
+        white-space: nowrap;
+      }
     `,
+
   ],
 })
 export class CartaPage extends PaginaConSesion {
   private readonly productos = inject(ProductosService);
-
   protected readonly busqueda = signal('');
   protected readonly categoria = signal<Categoria>('TODOS');
+  private readonly route = inject(ActivatedRoute);
+  private readonly mesas = inject(MesasService);
+
+  protected readonly mesaId =
+    this.route.snapshot.queryParamMap.get('mesaId');
+
+  protected readonly mesaActiva = computed(() =>
+    this.mesaId
+      ? this.mesas.porId(this.mesaId)
+      : undefined,
+  );
 
   protected readonly categorias: {
     valor: Categoria;
@@ -172,6 +211,19 @@ export class CartaPage extends PaginaConSesion {
     return `$ ${valor.toLocaleString('es-AR')}`;
   }
 
+  protected abrirProducto(
+    producto: Producto,
+  ): void {
+    void this.router.navigate(
+      ['/carta', producto.id],
+      {
+        queryParams: this.mesaId
+          ? { mesaId: this.mesaId }
+          : undefined,
+      },
+    );
+  }
+
   protected agregarProducto(): void {
     if (this.sesion.usuario()?.perfil === 'CANTINERO') {
       this.ir(['/cantinero/alta-bebida']);
@@ -180,4 +232,6 @@ export class CartaPage extends PaginaConSesion {
 
     this.ir(['/cocinero/alta-plato']);
   }
+
+
 }

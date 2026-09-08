@@ -262,10 +262,25 @@ export class ClienteEsperaPage extends PaginaConSesion {
       return;
     }
 
-    await this.cargando.conEsperaMinima('Vinculándote con tu mesa…', () =>
-      this.espera.vincularConLaMesa(entrada.id),
+    await this.cargando.conEsperaMinima(
+      'Vinculándote con tu mesa…',
+      () => this.espera.vincularConLaMesa(entrada.id),
     );
-    this.avisos.exito(`Estás en la mesa ${numero}`, 'Quedaste vinculado con tu mesa.');
+
+    this.avisos.exito(
+      `Estás en la mesa ${numero}`,
+      'Ya podés explorar la carta.',
+    );
+
+    await this.router.navigate(
+      ['/carta'],
+      {
+        queryParams: {
+          mesaId: entrada.mesaAsignadaId,
+        },
+        replaceUrl: true,
+      },
+    );
   }
 
   protected async actualizar(): Promise<void> {

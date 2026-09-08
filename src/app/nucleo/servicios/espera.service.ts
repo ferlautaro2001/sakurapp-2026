@@ -198,6 +198,31 @@ export class EsperaService {
     );
   }
 
+  /** El metre remueve al comensal y conserva el turno con estado CANCELADO. */
+  async quitar(esperaId: string): Promise<void> {
+    if (esUuid(esperaId)) {
+      try {
+        await updateEstadoEspera(this.dataConnect(), {
+          id: esperaId,
+          estado: DcEstadoEspera.CANCELADO,
+        });
+      } catch (err) {
+        console.warn('⚠️ No se pudo cancelar la espera en Data Connect:', err);
+      }
+    }
+
+    try {
+      const db = this.firestore.obtenerDb();
+      await setDoc(doc(db, COLECCION, esperaId), { estado: 'CANCELADO' }, { merge: true });
+    } catch (err) {
+      console.warn('⚠️ No se pudo reflejar la cancelación en Firestore:', err);
+    }
+
+    this.lista.update((actual) =>
+      actual.map((e) => (e.id === esperaId ? { ...e, estado: 'CANCELADO' as const } : e)),
+    );
+  }
+
   private dataConnect() {
     const app = getApps().length ? getApp() : initializeApp(environment.firebase);
     return getDataConnect(app, connectorConfig);

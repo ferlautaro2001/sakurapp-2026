@@ -23,6 +23,7 @@ export function navegacionDe(perfil: Perfil | undefined): ItemNavegacion[] {
 const RUTAS_IMPLEMENTADAS: string[] = [
   '/clientes-pendientes',
   '/mesas',
+  '/metre/espera',
   '/cliente/espera',
   '/cliente/encuestas',
 ];

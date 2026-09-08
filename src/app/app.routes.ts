@@ -128,6 +128,12 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'metre/espera',
+    canActivate: [guardiaSesion, guardiaPerfil('METRE')],
+    loadComponent: () =>
+      import('./pantallas/metre/lista-espera.page').then((m) => m.MetreListaEsperaPage),
+  },
+  {
     // US-5.1 · punto 9 · el comensal escanea el código de ingreso al salón y
     // queda anotado en la lista de espera. Hasta que el metre le asigne una
     // mesa, lo único habilitado son los resultados de las encuestas anteriores.

@@ -15,8 +15,8 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, Usuario } from '../modelos/modelos';
-import { EstadoMesa, EstadoUsuario, Perfil, TipoMesa } from '../modelos/enums';
+import { Mesa, Producto, Usuario } from '../modelos/modelos';
+import { EstadoMesa, EstadoUsuario, Perfil, Sector, TipoMesa, TipoProducto } from '../modelos/enums';
 
 export interface NotificacionCola {
   id?: string;
@@ -257,4 +257,87 @@ export class FirestoreService {
       console.warn('⚠️ Error actualizando estado de mesa en Firestore:', err);
     }
   }
+
+  /**
+   * Escucha en tiempo real la colección de productos ('sakurapp').
+   * Permite que la carta refleje altas, bajas y modificaciones al instante.
+   */
+  escucharProductos(callback: (productos: Producto[]) => void): Unsubscribe {
+    const db = this.obtenerDb();
+    const colRef = collection(db, 'productos');
+
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const lista: Producto[] = [];
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          lista.push({
+            id: docSnap.id,
+            nombre: String(data['nombre'] || ''),
+            descripcion: String(data['descripcion'] || ''),
+            tiempoElaboracion: Number(data['tiempoElaboracion']) || 0,
+            precio: Number(data['precio']) || 0,
+            tipo: (data['tipo'] as TipoProducto) || 'COMIDA',
+            sector: (data['sector'] as Sector) || 'COCINA',
+            fotos: Array.isArray(data['fotos']) ? data['fotos'] : [],
+            activo: data['activo'] !== false,
+            disponible: data['disponible'] !== false,
+          });
+        });
+        callback(lista);
+      },
+      (error) => {
+        console.warn('⚠️ Error en listener en tiempo real de productos Firestore:', error);
+      }
+    );
+  }
+
+  /**
+   * Guarda o actualiza un producto en Firestore ('sakurapp').
+   */
+  async guardarProducto(producto: Producto): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      const prodRef = doc(db, 'productos', producto.id);
+      await setDoc(
+        prodRef,
+        {
+          id: producto.id,
+          nombre: producto.nombre,
+          descripcion: producto.descripcion,
+          tiempoElaboracion: producto.tiempoElaboracion,
+          precio: producto.precio,
+          tipo: producto.tipo,
+          sector: producto.sector,
+          fotos: producto.fotos,
+          activo: producto.activo,
+          disponible: producto.disponible,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+      console.log(`✅ Producto "${producto.nombre}" sincronizado en Firestore`);
+    } catch (err) {
+      console.warn('⚠️ Error al sincronizar producto en Firestore:', err);
+    }
+  }
+
+  /**
+   * Actualiza campos parciales de un producto en Firestore en tiempo real.
+   */
+  async actualizarProducto(productoId: string, cambios: Partial<Producto>): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      const prodRef = doc(db, 'productos', productoId);
+      await updateDoc(prodRef, {
+        ...cambios,
+        updatedAt: new Date().toISOString(),
+      });
+      console.log(`✅ Producto ${productoId} actualizado en Firestore`);
+    } catch (err) {
+      console.warn('⚠️ Error actualizando producto en Firestore:', err);
+    }
+  }
 }
+

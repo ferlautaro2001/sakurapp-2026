@@ -34,139 +34,178 @@ export class AlmacenService {
   readonly mesas = signal<Mesa[]>([]);
   readonly correos = signal<CorreoEnviado[]>([]);
   private iniciado = false;
+  private inicioEnCurso?: Promise<void>;
+  private desuscribirUsuarios?: () => void;
+  private desuscribirMesas?: () => void;
+  private desuscribirProductos?: () => void;
 
   async iniciar(sembrar: () => Promise<Semilla> | Semilla): Promise<void> {
     if (this.iniciado) return;
+    if (this.inicioEnCurso) return this.inicioEnCurso;
 
-    let usuariosCargados: Usuario[] = [];
-    let productosCargados: Producto[] = [];
-    let mesasCargadas: Mesa[] = [];
+    this.inicioEnCurso = (async () => {
+      let usuariosCargados: Usuario[] = [];
+      let productosCargados: Producto[] = [];
+      let mesasCargadas: Mesa[] = [];
 
-    // 1. Conexión a Firebase Data Connect (Cloud SQL PostgreSQL)
-    try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const dc = getDataConnect(app, connectorConfig);
-      const res = await listUsuarios(dc);
+      // 1. Conexión a Firebase Data Connect (Cloud SQL PostgreSQL)
+      try {
+        const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+        const dc = getDataConnect(app, connectorConfig);
+        const res = await listUsuarios(dc);
 
-      if (res?.data?.users?.length) {
-        usuariosCargados = res.data.users.map((u) => ({
-          id: u.id,
-          uid: u.uid,
-          nombre: u.nombre,
-          apellido: u.apellido ?? null,
-          dni: u.dni ?? null,
-          cuil: u.cuil ?? null,
-          email: u.email ?? null,
-          perfil: u.perfil,
-          fotoUrl: u.fotoUrl,
-          estado: u.estado,
-          activo: true,
-          clave: null,
-          createdAt: u.createdAt,
-        }));
-        await this.guardar(CLAVE.usuarios, usuariosCargados);
-      }
-      const productos = await listProductos(dc);
-      if (productos?.data?.productos?.length) {
-        productosCargados = productos.data.productos.map((p) => ({
-          id: p.id,
-          nombre: p.nombre,
-          descripcion: p.descripcion,
-          tiempoElaboracion: p.tiempoElaboracion,
-          precio: p.precio,
-          tipo: p.tipo,
-          sector: p.sector,
-          fotos: [p.foto1, p.foto2, p.foto3],
-          activo: p.activo,
-          disponible: true,
-        }));
-        await this.guardar(CLAVE.productos, productosCargados);
-      }
-      const mesasRes = await listMesas(dc);
-      if (mesasRes?.data?.mesas?.length) {
-        mesasCargadas = mesasRes.data.mesas.map((m) => ({
-          id: m.id,
-          numero: m.numero,
-          cantidadComensales: m.cantidadComensales,
-          tipo: m.tipo as TipoMesa,
-          estado: m.estado as EstadoMesa,
-          fotoUrl: m.fotoUrl,
-          qrCodeUrl: m.qrCodeUrl,
-        }));
-        await this.guardar(CLAVE.mesas, mesasCargadas);
-      }
-    } catch (error) {
-      console.warn('Conexión en vivo a Firebase Data Connect no disponible, utilizando almacenamiento local:', error);
-    }
-
-    // 2. Si no hay conexión o no se recuperaron datos, usar datos locales / semilla
-    if (!usuariosCargados.length) {
-      const version = await this.leerTexto(CLAVE.version);
-      if (version !== VERSION_DATOS) {
-        const semilla = await sembrar();
-        await this.guardar(CLAVE.usuarios, semilla.usuarios);
-        await Preferences.set({ key: CLAVE.version, value: VERSION_DATOS });
-      }
-      usuariosCargados = await this.leer<Usuario>(CLAVE.usuarios);
-      productosCargados = await this.leer<Producto>(CLAVE.productos);
-    }
-
-    if (!mesasCargadas.length) {
-      mesasCargadas = await this.leer<Mesa>(CLAVE.mesas);
-    }
-
-    const correosCargados = await this.leer<CorreoEnviado>(CLAVE.correos);
-
-    this.usuarios.set(usuariosCargados);
-    this.productos.set(productosCargados);
-    this.mesas.set(mesasCargadas);
-    this.correos.set(correosCargados);
-    this.iniciado = true;
-
-    // 3. Sincronización en tiempo real vía Firestore (sakurapp)
-    try {
-      this.firestore.escucharUsuarios((listaFirestore) => {
-        if (listaFirestore.length > 0) {
-          this.usuarios.update((actuales) => {
-            const mapa = new Map<string, Usuario>();
-            for (const u of actuales) mapa.set(u.uid || u.id, u);
-            for (const u of listaFirestore) {
-              const previo = mapa.get(u.uid || u.id);
-              mapa.set(u.uid || u.id, { ...previo, ...u });
-            }
-            const combinados = Array.from(mapa.values());
-            void this.guardar(CLAVE.usuarios, combinados);
-            return combinados;
-          });
-        } else if (usuariosCargados.length > 0) {
-          for (const u of usuariosCargados) {
-            void this.firestore.guardarUsuario(u);
-          }
+        if (res?.data?.users?.length) {
+          usuariosCargados = res.data.users.map((u) => ({
+            id: u.id,
+            uid: u.uid,
+            nombre: u.nombre,
+            apellido: u.apellido ?? null,
+            dni: u.dni ?? null,
+            cuil: u.cuil ?? null,
+            email: u.email ?? null,
+            perfil: u.perfil,
+            fotoUrl: u.fotoUrl,
+            estado: u.estado,
+            activo: true,
+            clave: null,
+            createdAt: u.createdAt,
+          }));
+          await this.guardar(CLAVE.usuarios, usuariosCargados);
         }
-      });
-
-      this.firestore.escucharMesas((listaFirestoreMesas) => {
-        if (listaFirestoreMesas.length > 0) {
-          this.mesas.update((actuales) => {
-            const mapa = new Map<string, Mesa>();
-            for (const m of actuales) mapa.set(m.id, m);
-            for (const m of listaFirestoreMesas) {
-              const previo = mapa.get(m.id);
-              mapa.set(m.id, { ...previo, ...m });
-            }
-            const combinadas = Array.from(mapa.values());
-            void this.guardar(CLAVE.mesas, combinadas);
-            return combinadas;
-          });
-        } else if (mesasCargadas.length > 0) {
-          for (const m of mesasCargadas) {
-            void this.firestore.guardarMesa(m);
-          }
+        const productos = await listProductos(dc);
+        if (productos?.data?.productos?.length) {
+          productosCargados = productos.data.productos.map((p) => ({
+            id: p.id,
+            nombre: p.nombre,
+            descripcion: p.descripcion,
+            tiempoElaboracion: p.tiempoElaboracion,
+            precio: p.precio,
+            tipo: p.tipo,
+            sector: p.sector,
+            fotos: [p.foto1, p.foto2, p.foto3],
+            activo: p.activo,
+            disponible: true,
+          }));
+          await this.guardar(CLAVE.productos, productosCargados);
         }
-      });
-    } catch (fsErr) {
-      console.warn('⚠️ No se pudo iniciar escucha en tiempo real de Firestore:', fsErr);
-    }
+        const mesasRes = await listMesas(dc);
+        if (mesasRes?.data?.mesas?.length) {
+          mesasCargadas = mesasRes.data.mesas.map((m) => ({
+            id: m.id,
+            numero: m.numero,
+            cantidadComensales: m.cantidadComensales,
+            tipo: m.tipo as TipoMesa,
+            estado: m.estado as EstadoMesa,
+            fotoUrl: m.fotoUrl,
+            qrCodeUrl: m.qrCodeUrl,
+          }));
+          await this.guardar(CLAVE.mesas, mesasCargadas);
+        }
+      } catch (error) {
+        console.warn('Conexión en vivo a Firebase Data Connect no disponible, utilizando almacenamiento local:', error);
+      }
+
+      // 2. Si no hay conexión o no se recuperaron datos, usar datos locales / semilla
+      if (!usuariosCargados.length) {
+        const version = await this.leerTexto(CLAVE.version);
+        if (version !== VERSION_DATOS) {
+          const semilla = await sembrar();
+          await this.guardar(CLAVE.usuarios, semilla.usuarios);
+          await Preferences.set({ key: CLAVE.version, value: VERSION_DATOS });
+        }
+        usuariosCargados = await this.leer<Usuario>(CLAVE.usuarios);
+        productosCargados = await this.leer<Producto>(CLAVE.productos);
+      }
+
+      if (!mesasCargadas.length) {
+        mesasCargadas = await this.leer<Mesa>(CLAVE.mesas);
+      }
+
+      // Desduplicar preventivamente por número en caso de basura previa en almacenamiento local
+      const mapaMesasInicial = new Map<number, Mesa>();
+      for (const m of mesasCargadas) {
+        mapaMesasInicial.set(m.numero, m);
+      }
+      mesasCargadas = Array.from(mapaMesasInicial.values()).sort((a, b) => a.numero - b.numero);
+
+      const correosCargados = await this.leer<CorreoEnviado>(CLAVE.correos);
+
+      this.usuarios.set(usuariosCargados);
+      this.productos.set(productosCargados);
+      this.mesas.set(mesasCargadas);
+      this.correos.set(correosCargados);
+      this.iniciado = true;
+
+      // 3. Sincronización en tiempo real vía Firestore (sakurapp)
+      try {
+        this.desuscribirUsuarios = this.firestore.escucharUsuarios((listaFirestore) => {
+          if (listaFirestore.length > 0) {
+            this.usuarios.update((actuales) => {
+              const mapa = new Map<string, Usuario>();
+              for (const u of actuales) mapa.set(u.uid || u.id, u);
+              for (const u of listaFirestore) {
+                const previo = mapa.get(u.uid || u.id);
+                mapa.set(u.uid || u.id, { ...previo, ...u });
+              }
+              const combinados = Array.from(mapa.values());
+              void this.guardar(CLAVE.usuarios, combinados);
+              return combinados;
+            });
+          } else if (usuariosCargados.length > 0) {
+            for (const u of usuariosCargados) {
+              void this.firestore.guardarUsuario(u);
+            }
+          }
+        });
+
+        this.desuscribirMesas = this.firestore.escucharMesas((listaFirestoreMesas) => {
+          if (listaFirestoreMesas.length > 0) {
+            this.mesas.update((actuales) => {
+              // Unicidad estricta por número de mesa: el salón no admite números duplicados
+              const mapaPorNumero = new Map<number, Mesa>();
+              for (const m of actuales) {
+                mapaPorNumero.set(m.numero, m);
+              }
+              for (const m of listaFirestoreMesas) {
+                const previo = mapaPorNumero.get(m.numero);
+                mapaPorNumero.set(m.numero, { ...previo, ...m });
+              }
+              const combinadas = Array.from(mapaPorNumero.values()).sort((a, b) => a.numero - b.numero);
+              void this.guardar(CLAVE.mesas, combinadas);
+              return combinadas;
+            });
+          } else if (mesasCargadas.length > 0) {
+            for (const m of mesasCargadas) {
+              void this.firestore.guardarMesa(m);
+            }
+          }
+        });
+
+        this.desuscribirProductos = this.firestore.escucharProductos((listaFirestoreProductos) => {
+          if (listaFirestoreProductos.length > 0) {
+            this.productos.update((actuales) => {
+              const mapa = new Map<string, Producto>();
+              for (const p of actuales) mapa.set(p.id, p);
+              for (const p of listaFirestoreProductos) {
+                const previo = mapa.get(p.id);
+                mapa.set(p.id, { ...previo, ...p });
+              }
+              const combinados = Array.from(mapa.values());
+              void this.guardar(CLAVE.productos, combinados);
+              return combinados;
+            });
+          } else if (productosCargados.length > 0) {
+            for (const p of productosCargados) {
+              void this.firestore.guardarProducto(p);
+            }
+          }
+        });
+      } catch (fsErr) {
+        console.warn('⚠️ No se pudo iniciar escucha en tiempo real de Firestore:', fsErr);
+      }
+    })();
+
+    return this.inicioEnCurso;
   }
 
   async guardarUsuarios(lista: Usuario[]): Promise<void> {
@@ -216,6 +255,21 @@ export class AlmacenService {
   async borrarSesion(): Promise<void> {
     await Preferences.remove({ key: CLAVE.sesion });
     await Preferences.remove({ key: 'sk.sesion.usuario' });
+  }
+
+  /**
+   * Desconecta todas las escuchas en tiempo real de Firestore
+   * para evitar retenciones o fugas de memoria al cambiar de entorno o reiniciar sesión.
+   */
+  desconectar(): void {
+    this.desuscribirUsuarios?.();
+    this.desuscribirMesas?.();
+    this.desuscribirProductos?.();
+    this.desuscribirUsuarios = undefined;
+    this.desuscribirMesas = undefined;
+    this.desuscribirProductos = undefined;
+    this.iniciado = false;
+    this.inicioEnCurso = undefined;
   }
 
   // --- helpers privados --------------------------------------------------

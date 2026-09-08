@@ -8,6 +8,7 @@ import { nuevoId } from '../datos/semilla';
 import { Producto } from '../modelos/modelos';
 import { Sector, TipoProducto, sectorDe } from '../modelos/enums';
 import { AlmacenamientoService } from './almacenamiento.service';
+import { FirestoreService } from './firestore.service';
 
 export interface AltaProducto {
   nombre: string;
@@ -23,6 +24,7 @@ export interface AltaProducto {
 export class ProductosService {
   private readonly almacen = inject(AlmacenService);
   private readonly almacenamiento = inject(AlmacenamientoService);
+  private readonly firestore = inject(FirestoreService);
   readonly todos = computed(() =>
   this.almacen.productos().filter((producto) => producto.activo),
   );
@@ -108,6 +110,7 @@ export class ProductosService {
       console.warn('Cloud SQL alta de producto:', err);
     }
     await this.almacen.guardarProductos([...this.almacen.productos(), producto]);
+    void this.firestore.guardarProducto(producto);
     return producto;
   }
 
@@ -165,6 +168,7 @@ export class ProductosService {
     );
 
   await this.almacen.guardarProductos(productos);
+  void this.firestore.guardarProducto(actualizado);
 
   return actualizado;
 }
@@ -199,5 +203,6 @@ async quitarDeLaCarta(id: string): Promise<void> {
     );
 
   await this.almacen.guardarProductos(productos);
+  void this.firestore.actualizarProducto(id, { activo: false });
 }
 }

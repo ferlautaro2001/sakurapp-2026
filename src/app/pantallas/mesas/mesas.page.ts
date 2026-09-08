@@ -78,9 +78,8 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
     `,
   ],
 })
-export class MesasPage extends PaginaConSesion implements OnInit, OnDestroy {
+export class MesasPage extends PaginaConSesion implements OnInit {
   protected readonly mesas = inject(MesasService);
-  private intervaloSincronizacion?: ReturnType<typeof setInterval>;
 
   protected readonly estados = ESTADOS;
   protected readonly tipos = TIPOS;
@@ -96,23 +95,13 @@ export class MesasPage extends PaginaConSesion implements OnInit, OnDestroy {
       .filter((m) => this.tipo() === 'Todos los tipos' || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
   );
 
-
   /**
-   * Mantiene la grilla sincronizada con Cloud SQL mientras la pantalla
-   * permanece abierta. La actualización local sigue siendo inmediata.
+   * Asegura la sincronización con Cloud SQL al ingresar a la pantalla.
+   * Las actualizaciones posteriores son 100% reactivas en tiempo real
+   * mediante Firestore y Angular Signals, sin necesidad de polling por intervalos.
    */
   ngOnInit(): void {
     void this.mesas.sincronizar();
-
-    this.intervaloSincronizacion = setInterval(() => {
-      void this.mesas.sincronizar();
-    }, 5000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.intervaloSincronizacion) {
-      clearInterval(this.intervaloSincronizacion);
-    }
   }
 
   protected bajada(): string {

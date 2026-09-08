@@ -58,6 +58,10 @@ export class MesasService {
    * 6. Persiste en el almacén local reactivo.
    */
   async crear(datos: AltaMesa): Promise<Mesa> {
+    if (this.existeNumero(datos.numero)) {
+      throw new Error(`La mesa número ${datos.numero} ya existe en el salón.`);
+    }
+
     const idLocal = nuevoId();
 
     // 1. Subir fotografía a Firebase Storage
@@ -109,11 +113,16 @@ export class MesasService {
         mesa.id = res.data.mesa_insert.id;
         console.log(`✅ Mesa ${mesa.numero} registrada exitosamente en Cloud SQL Data Connect`);
       }
-    } catch (sqlErr) {
-      console.warn('⚠️ No se pudo persistir mesa en Cloud SQL Data Connect (se mantiene localmente):', sqlErr);
+    } catch (sqlErr: any) {
+      console.warn('⚠️ Error al registrar mesa en Cloud SQL Data Connect:', sqlErr);
+      const msg = (sqlErr?.message || '').toLowerCase();
+      if (msg.includes('unique') || msg.includes('duplicate') || msg.includes('constraint')) {
+        throw new Error(`La mesa número ${mesa.numero} ya existe en el restaurante.`);
+      }
     }
 
-    await this.almacen.guardarMesas([...this.almacen.mesas(), mesa]);
+    const filtradas = this.almacen.mesas().filter((m) => m.numero !== mesa.numero && m.id !== mesa.id);
+    await this.almacen.guardarMesas([...filtradas, mesa]);
     await this.firestore.guardarMesa(mesa);
     return mesa;
   }

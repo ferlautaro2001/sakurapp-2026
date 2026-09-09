@@ -193,3 +193,73 @@ mutation UpdateActivoProducto(
     }
   )
 }
+
+# US-5.1 · TASK-5.1.1.1 · el comensal escanea el código de ingreso al salón y
+# queda anotado en la lista de espera. Nace siempre en ESPERANDO: la mesa la
+# asigna después el metre, nunca el propio cliente.
+mutation CreateEspera($clienteId: UUID!)
+  @auth(level: PUBLIC, insecureReason: "Alta en la lista de espera al escanear el código de ingreso.") {
+  espera_insert(data: { clienteId: $clienteId, estado: ESPERANDO })
+}
+
+# US-5.1 · el comensal escaneó el código de la mesa que le asignó el metre y
+# queda sentado en ella (FINALIZADO). Es el mismo movimiento que usa el salón
+# para mover una entrada de la fila a cualquier otro estado.
+mutation UpdateEstadoEspera($id: UUID!, $estado: EstadoEspera!)
+  @auth(level: PUBLIC, insecureReason: "Avance de la entrada en la lista de espera.") {
+  espera_update(id: $id, data: { estado: $estado })
+}
+
+# US-7.3 · el mozo confirma el pedido y deja pendientes únicamente los
+# sectores que tienen productos asignados.
+mutation ConfirmarPedido(
+  $id: UUID!
+  $estadoCocina: EstadoSector!
+  $estadoBar: EstadoSector!
+  $confirmadoPorId: UUID!
+) @auth(level: PUBLIC, insecureReason: "Confirmación y derivación operativa por el mozo.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: CONFIRMADO
+      estadoCocina: $estadoCocina
+      estadoBar: $estadoBar
+      confirmadoPorId: $confirmadoPorId
+    }
+  )
+}
+
+# US-7.3 · primer y único intento no acumulativo del cliente.
+mutation RegistrarIntentoJuego(
+  $pedidoId: UUID!
+  $clienteId: UUID!
+  $gano: Boolean!
+  $descuentoOtorgado: Int!
+) @auth(level: PUBLIC, insecureReason: "Registro del intento de juego del comensal.") {
+  intentoJuego_insert(
+    data: {
+      pedidoId: $pedidoId
+      clienteId: $clienteId
+      tipoJuego: "SAKURA"
+      numeroIntento: 1
+      gano: $gano
+      descuentoOtorgado: $descuentoOtorgado
+    }
+  )
+}
+
+mutation AplicarDescuentoJuego(
+  $id: UUID!
+  $descuentoJuego: Int!
+  $montoDescuentoJuego: Float!
+  $totalFinal: Float!
+) @auth(level: PUBLIC, insecureReason: "Aplicación del premio no acumulativo al pedido.") {
+  pedido_update(
+    id: $id
+    data: {
+      descuentoJuego: $descuentoJuego
+      montoDescuentoJuego: $montoDescuentoJuego
+      totalFinal: $totalFinal
+    }
+  )
+}

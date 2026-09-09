@@ -18,6 +18,35 @@ export type EstadoUsuario = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
 export type TipoProducto = 'COMIDA' | 'BEBIDA' | 'POSTRE';
 export type Sector = 'COCINA' | 'BAR';
 
+export type EstadoPedido =
+  | 'SELECCIONANDO'
+  | 'PENDIENTE_CONFIRMACION'
+  | 'RECHAZADO'
+  | 'CONFIRMADO'
+  | 'EN_PREPARACION'
+  | 'LISTO'
+  | 'ENTREGADO'
+  | 'RECIBIDO'
+  | 'CUENTA_SOLICITADA'
+  | 'PAGO_PENDIENTE'
+  | 'CERRADO';
+
+export type EstadoSector = 'NO_APLICA' | 'PENDIENTE' | 'EN_PREPARACION' | 'LISTO';
+
+export const ROTULO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
+  SELECCIONANDO: 'Seleccionando productos',
+  PENDIENTE_CONFIRMACION: 'Esperando confirmación',
+  RECHAZADO: 'Rechazado',
+  CONFIRMADO: 'Confirmado',
+  EN_PREPARACION: 'En preparación',
+  LISTO: 'Listo',
+  ENTREGADO: 'Entregado',
+  RECIBIDO: 'Recibido',
+  CUENTA_SOLICITADA: 'Cuenta solicitada',
+  PAGO_PENDIENTE: 'Pago pendiente',
+  CERRADO: 'Cerrado',
+};
+
 /** Una bebida se prepara siempre en la barra; el resto, en cocina. */
 export function sectorDe(tipo: TipoProducto): Sector {
   return tipo === 'BEBIDA' ? 'BAR' : 'COCINA';
@@ -65,3 +94,21 @@ export const ROTULO_ESTADO_MESA: Record<EstadoMesa, string> = {
   INACTIVA: 'Inactiva',
 };
 
+
+/**
+ * Momentos por los que pasa un comensal en la lista de espera del salón
+ * (punto 9 del enunciado).
+ *
+ *   ESPERANDO  →  ASIGNADO  →  FINALIZADO
+ *   (en la fila) (tiene mesa) (escaneó el código de su mesa)
+ *
+ * `CANCELADO` es la salida por la puerta: lo saca el metre.
+ */
+export type EstadoEspera = 'ESPERANDO' | 'ASIGNADO' | 'CANCELADO' | 'FINALIZADO';
+
+export const ROTULO_ESTADO_ESPERA: Record<EstadoEspera, string> = {
+  ESPERANDO: 'En la fila',
+  ASIGNADO: 'Con mesa asignada',
+  CANCELADO: 'Fuera de la lista',
+  FINALIZADO: 'Sentado en su mesa',
+};

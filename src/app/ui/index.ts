@@ -28,12 +28,19 @@ import {
   TarjetaMesaComponent,
   TarjetaPerfilComponent,
 } from './datos';
+import {
+  DiapositivasComponent,
+  GraficoBarrasComponent,
+  GraficoLineaComponent,
+  GraficoTortaComponent,
+} from './graficos';
 import { DocumentoPipe } from './documento.pipe';
 
 export * from './basicos';
 export * from './formulario';
 export * from './estructura';
 export * from './datos';
+export * from './graficos';
 export * from './documento.pipe';
 
 /** Componentes del sistema de diseño para v0. */
@@ -63,6 +70,10 @@ export const UI = [
   FilaPendienteComponent,
   TarjetaMesaComponent,
   PlacaQrComponent,
+  GraficoTortaComponent,
+  GraficoBarrasComponent,
+  GraficoLineaComponent,
+  DiapositivasComponent,
   DocumentoPipe,
 ] as const;
 

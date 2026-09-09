@@ -130,19 +130,32 @@ export class ChipComponent {
       <span class="lm-rule__linea"></span>
       @if (rotulo()) {
         <span class="lm-rule__centro">
-          <span class="lm-rule__marca"><i></i><i></i><i></i></span>
+          @if (flor()) {
+            <img class="lm-rule__flor" src="assets/img/flor-2.png" alt="" width="22" height="22" />
+          } @else {
+            <span class="lm-rule__marca"><i></i><i></i><i></i></span>
+          }
           <span class="lm-label">{{ rotulo() }}</span>
         </span>
+      } @else if (flor()) {
+        <img class="lm-rule__flor" src="assets/img/flor-2.png" alt="" width="22" height="22" />
       } @else {
         <span class="lm-rule__marca"><i></i><i></i><i></i></span>
       }
       <span class="lm-rule__linea"></span>
     </div>
   `,
-  styles: [':host{display:block}'],
+  styles: [
+    `
+      :host { display: block; }
+      .lm-rule__flor { display: block; width: 22px; height: 22px; object-fit: contain; }
+    `,
+  ],
 })
 export class SeparadorComponent {
   readonly rotulo = input<string | null>(null);
+  /** Cambia los tres cortes al bies por un pétalo de sakura de la marca. */
+  readonly flor = input(false, { transform: booleanAttribute });
 }
 
 /**

@@ -52,9 +52,12 @@ query ListPedidosActivos @auth(level: PUBLIC, insecureReason: "Monitoreo de pedi
   pedidos(orderBy: [{ timestampCreacion: DESC }]) {
     id
     mesa {
+      id
       numero
     }
     cliente {
+      id
+      uid
       nombre
       apellido
     }
@@ -67,3 +70,52 @@ query ListPedidosActivos @auth(level: PUBLIC, insecureReason: "Monitoreo de pedi
   }
 }
 
+query ListPedidoItems @auth(level: PUBLIC, insecureReason: "Derivación de productos de pedidos activos.") {
+  pedidoItems {
+    id
+    pedido { id }
+    producto {
+      id
+      nombre
+      tipo
+    }
+    cantidad
+    precioUnitario
+    subtotal
+    sector
+  }
+}
+
+
+# US-5.1 · estado del comensal en la lista de espera. El cliente la consulta
+# para saber si ya está anotado; el salón, para ver la fila completa.
+query ListEspera @auth(level: PUBLIC, insecureReason: "Consulta de la lista de espera del salón.") {
+  esperas(orderBy: [{ timestamp: ASC }]) {
+    id
+    estado
+    timestamp
+    cliente {
+      id
+      nombre
+      apellido
+      fotoUrl
+    }
+    mesaAsignada {
+      id
+      numero
+    }
+  }
+}
+
+# US-5.1 · TASK-5.1.1.2 · encuestas históricas, sólo lectura, para los gráficos
+# que ve el comensal mientras espera.
+query ListEncuestas @auth(level: PUBLIC, insecureReason: "Resultados agregados de encuestas anteriores.") {
+  encuestas(orderBy: [{ timestamp: ASC }]) {
+    id
+    calificacionMozo
+    nivelLimpieza
+    recomendaria
+    aspectoFavorito
+    timestamp
+  }
+}

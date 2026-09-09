@@ -4,6 +4,7 @@ import { SesionService } from '../nucleo/servicios/sesion.service';
 import { AvisosService } from '../nucleo/servicios/avisos.service';
 import { CargandoService } from '../nucleo/servicios/cargando.service';
 import { ConfirmacionService, PedidoConfirmacion } from '../nucleo/servicios/confirmacion.service';
+import { PedidosService } from '../nucleo/servicios/pedidos.service';
 import { navegacionDe } from './navegacion';
 
 /**
@@ -18,9 +19,18 @@ export abstract class PaginaConSesion {
   protected readonly avisos = inject(AvisosService);
   protected readonly cargando = inject(CargandoService);
   protected readonly confirmacion = inject(ConfirmacionService);
+  private readonly pedidosNavegacion = inject(PedidosService);
 
   protected readonly usuario = this.sesion.usuario;
-  protected readonly secciones = computed(() => navegacionDe(this.sesion.usuario()?.perfil));
+  protected readonly secciones = computed(() => {
+    const usuario = this.sesion.usuario();
+    const pedido = this.pedidosNavegacion.activoDe(usuario);
+    return navegacionDe(usuario?.perfil, this.pedidosNavegacion.juegosHabilitados(pedido));
+  });
+
+  constructor() {
+    this.pedidosNavegacion.iniciar();
+  }
 
   /** Pregunta antes de hacer algo que acepta, rechaza, modifica o da de baja. */
   protected preguntar(pedido: PedidoConfirmacion): Promise<boolean> {

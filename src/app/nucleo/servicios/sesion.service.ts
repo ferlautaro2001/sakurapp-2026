@@ -109,14 +109,17 @@ export class SesionService {
       case 'SUPERVISOR':
         return '/clientes-pendientes';
       case 'METRE':
+        return '/metre/espera';
       case 'MOZO':
-        return '/mesas';
+        return '/mozo/pedidos';
       case 'COCINERO':
       case 'CANTINERO':
         return '/carta';
       case 'CLIENTE_REGISTRADO':
       case 'CLIENTE_ANONIMO':
-        return '/en-preparacion';
+        // US-5.1 · lo primero y lo único que puede hacer el comensal es
+        // escanear el código de ingreso al salón.
+        return '/cliente/ingreso';
       default:
         return '/login';
     }

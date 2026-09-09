@@ -8,8 +8,10 @@ import { Perfil } from '../nucleo/modelos/enums';
  * el trabajo, sin resúmenes intermedios. Los perfiles que tienen una sola
  * pantalla no llevan barra.
  */
-export function navegacionDe(perfil: Perfil | undefined): ItemNavegacion[] {
-  return SECCIONES(perfil).filter((item) => RUTAS_IMPLEMENTADAS.includes(item.ruta));
+export function navegacionDe(perfil: Perfil | undefined, pedidoConfirmado = false): ItemNavegacion[] {
+  return SECCIONES(perfil)
+    .filter((item) => RUTAS_IMPLEMENTADAS.includes(item.ruta))
+    .filter((item) => pedidoConfirmado || !['/cliente/estado-pedido', '/juegos'].includes(item.ruta));
 }
 
 /**
@@ -20,7 +22,16 @@ export function navegacionDe(perfil: Perfil | undefined): ItemNavegacion[] {
  * integrante del grupo sube su pantalla, suma acá su ruta y la sección aparece
  * sola, sin tocar nada más.
  */
-const RUTAS_IMPLEMENTADAS: string[] = ['/clientes-pendientes', '/mesas'];
+const RUTAS_IMPLEMENTADAS: string[] = [
+  '/clientes-pendientes',
+  '/mesas',
+  '/metre/espera',
+  '/mozo/pedidos',
+  '/cliente/espera',
+  '/cliente/encuestas',
+  '/cliente/estado-pedido',
+  '/juegos',
+];
 
 function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
   switch (perfil) {
@@ -40,6 +51,7 @@ function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
       ];
     case 'MOZO':
       return [
+        { id: 'pedidos', rotulo: 'Pedidos', icono: 'room_service', ruta: '/mozo/pedidos' },
         { id: 'mesas', rotulo: 'Mesas', icono: 'table_restaurant', ruta: '/mesas' },
         { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' },
       ];
@@ -49,6 +61,8 @@ function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
     case 'CLIENTE_ANONIMO':
       return [
         { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
+        { id: 'pedido', rotulo: 'Mi pedido', icono: 'receipt_long', ruta: '/cliente/estado-pedido' },
+        { id: 'juegos', rotulo: 'Juegos', icono: 'sports_esports', ruta: '/juegos' },
         { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' },
       ];
     // El cocinero y el cantinero trabajan sobre una sola pantalla: una barra de

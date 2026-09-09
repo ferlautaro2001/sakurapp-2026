@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -155,6 +155,18 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
     numero: ['', [requerido('Escribí el número de mesa'), enteroEntre(1, 999, 'El número tiene que estar entre 1 y 999')]],
     comensales: ['', [requerido('Escribí la cantidad de comensales'), enteroEntre(1, 30, 'La cantidad tiene que estar entre 1 y 30')]],
   });
+
+  constructor() {
+    super();
+    // Sincronización reactiva del estado disponible en vivo.
+    // Al crearse en el constructor (injection context), Angular destruye el effect automáticamente con DestroyRef
+    effect(() => {
+      const actual = this.mesa();
+      if (actual) {
+        this.disponible.set(actual.estado === 'VACIA');
+      }
+    });
+  }
 
   ngOnInit(): void {
     const existente = this.mesa();

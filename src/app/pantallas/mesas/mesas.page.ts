@@ -1,4 +1,4 @@
-import {Component, computed, inject, signal, OnInit, OnDestroy} from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
@@ -78,9 +78,8 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
     `,
   ],
 })
-export class MesasPage extends PaginaConSesion implements OnInit, OnDestroy {
+export class MesasPage extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
-  private intervaloSincronizacion?: ReturnType<typeof setInterval>;
 
   protected readonly estados = ESTADOS;
   protected readonly tipos = TIPOS;
@@ -95,25 +94,6 @@ export class MesasPage extends PaginaConSesion implements OnInit, OnDestroy {
       .filter((m) => this.estado() === 'Todas' || ROTULO_ESTADO_MESA[m.estado] === this.estado())
       .filter((m) => this.tipo() === 'Todos los tipos' || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
   );
-
-
-  /**
-   * Mantiene la grilla sincronizada con Cloud SQL mientras la pantalla
-   * permanece abierta. La actualización local sigue siendo inmediata.
-   */
-  ngOnInit(): void {
-    void this.mesas.sincronizar();
-
-    this.intervaloSincronizacion = setInterval(() => {
-      void this.mesas.sincronizar();
-    }, 5000);
-  }
-
-  ngOnDestroy(): void {
-    if (this.intervaloSincronizacion) {
-      clearInterval(this.intervaloSincronizacion);
-    }
-  }
 
   protected bajada(): string {
     return this.puedeAgregar()

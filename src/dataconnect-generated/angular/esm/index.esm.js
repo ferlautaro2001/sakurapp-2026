@@ -1,4 +1,4 @@
-import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef } from '../../';
+import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
 import { DataConnect, CallerSdkTypeEnum } from '@angular/fire/data-connect';
 import { injectDataConnectQuery, injectDataConnectMutation } from '@tanstack-query-firebase/angular/data-connect';
 import { inject, EnvironmentInjector } from '@angular/core';
@@ -36,6 +36,26 @@ export function injectUpdateProducto(args, injector) {
 
 export function injectUpdateActivoProducto(args, injector) {
   return injectDataConnectMutation(updateActivoProductoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectCreateEspera(args, injector) {
+  return injectDataConnectMutation(createEsperaRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectUpdateEstadoEspera(args, injector) {
+  return injectDataConnectMutation(updateEstadoEsperaRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectConfirmarPedido(args, injector) {
+  return injectDataConnectMutation(confirmarPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectRegistrarIntentoJuego(args, injector) {
+  return injectDataConnectMutation(registrarIntentoJuegoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectAplicarDescuentoJuego(args, injector) {
+  return injectDataConnectMutation(aplicarDescuentoJuegoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 export function injectListProductos(options, injector) {
@@ -81,6 +101,42 @@ export function injectListPedidosActivos(options, injector) {
     const addOpn = options && options();
     return {
       queryFn: () =>  listPedidosActivosRef(dc),
+      ...addOpn
+    };
+  }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectListPedidoItems(options, injector) {
+  const finalInjector = injector || inject(EnvironmentInjector);
+  const dc = finalInjector.get(DataConnect);
+  return injectDataConnectQuery(() => {
+    const addOpn = options && options();
+    return {
+      queryFn: () =>  listPedidoItemsRef(dc),
+      ...addOpn
+    };
+  }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectListEspera(options, injector) {
+  const finalInjector = injector || inject(EnvironmentInjector);
+  const dc = finalInjector.get(DataConnect);
+  return injectDataConnectQuery(() => {
+    const addOpn = options && options();
+    return {
+      queryFn: () =>  listEsperaRef(dc),
+      ...addOpn
+    };
+  }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectListEncuestas(options, injector) {
+  const finalInjector = injector || inject(EnvironmentInjector);
+  const dc = finalInjector.get(DataConnect);
+  return injectDataConnectQuery(() => {
+    const addOpn = options && options();
+    return {
+      queryFn: () =>  listEncuestasRef(dc),
       ...addOpn
     };
   }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);

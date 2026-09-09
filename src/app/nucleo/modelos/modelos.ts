@@ -1,4 +1,14 @@
-import { EstadoMesa, EstadoUsuario, Perfil, Sector, TipoMesa, TipoProducto } from './enums';
+import {
+  EstadoEspera,
+  EstadoMesa,
+  EstadoPedido,
+  EstadoSector,
+  EstadoUsuario,
+  Perfil,
+  Sector,
+  TipoMesa,
+  TipoProducto,
+} from './enums';
 
 /**
  * Entidad Usuario para el MVP (v0).
@@ -94,3 +104,65 @@ export type ContenidoQr =
   | { tipo: 'DNI'; datos: DatosDni }
   | { tipo: 'DESCONOCIDO'; texto: string };
 
+
+/**
+ * Una entrada de la lista de espera del salón.
+ *
+ * Guarda el nombre y la foto del comensal además de su identificador: el
+ * metre tiene que poder reconocer a quien está esperando —muchas veces un
+ * invitado que no tiene cuenta— sin depender de otra consulta.
+ */
+export interface Espera {
+  id: string;
+  clienteId: string;
+  clienteUid: string;
+  clienteNombre: string;
+  clienteFotoUrl: string;
+  estado: EstadoEspera;
+  mesaAsignadaId: string | null;
+  mesaAsignadaNumero: number | null;
+  timestamp: string;
+}
+
+/** Una respuesta de encuesta ya cargada. Para el comensal es sólo lectura. */
+export interface RespuestaEncuesta {
+  id: string;
+  calificacionMozo: number;
+  nivelLimpieza: number;
+  recomendaria: boolean;
+  aspectoFavorito: string;
+  fecha: string;
+}
+
+export interface PedidoItem {
+  id: string;
+  productoId: string;
+  productoNombre: string;
+  tipo: TipoProducto;
+  sector: Sector;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+/** Pedido operativo compartido por el mozo, el cliente, Cocina y Bar. */
+export interface Pedido {
+  id: string;
+  mesaId: string;
+  mesaNumero: number;
+  clienteId: string;
+  clienteUid: string;
+  clienteNombre: string;
+  estadoGlobal: EstadoPedido;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+  tiempoEstimado: number;
+  totalBruto: number;
+  descuentoJuego: number;
+  montoDescuentoJuego: number;
+  totalFinal: number;
+  confirmadoPorId: string | null;
+  juegoIntentado: boolean;
+  timestampCreacion: string;
+  items: PedidoItem[];
+}

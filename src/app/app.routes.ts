@@ -98,6 +98,22 @@ export const routes: Routes = [
       ),
   },
     {
+    path: 'comanda/carrito',
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil(
+        'CLIENTE_REGISTRADO',
+        'CLIENTE_ANONIMO',
+      ),
+    ],
+    loadComponent: () =>
+      import(
+        './pantallas/comanda/comanda-carrito.page'
+      ).then(
+        (m) => m.ComandaCarritoPage,
+      ),
+  },
+    {
     path: 'carta/:id',
     canActivate: [guardiaSesion],
     loadComponent: () =>

@@ -6,6 +6,7 @@ import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ActivatedRoute } from '@angular/router';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { CarritoService } from '../../nucleo/servicios/carrito.service';
 
 type Categoria = 'TODOS' | TipoProducto;
 
@@ -15,19 +16,37 @@ type Categoria = 'TODOS' | TipoProducto;
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()">
-        @if (mesaActiva(); as mesa) {
-          <span
-            accion
-            class="mesa-activa"
-          >
-            <lm-icono
-              nombre="table_restaurant"
-              [tamano]="18"
-              color="#FFFFFF"
-            />
-            Mesa {{ mesa.numero }}
-          </span>
-        } @else if (puedeCargar()) {
+          @if (mesaActiva(); as mesa) {
+            <div accion class="acciones-carta">
+              <span class="mesa-activa">
+                <lm-icono
+                  nombre="table_restaurant"
+                  [tamano]="18"
+                  color="#FFFFFF"
+                />
+                Mesa {{ mesa.numero }}
+              </span>
+
+              <button
+                type="button"
+                class="boton-carrito"
+                [attr.aria-label]="
+                  'Abrir carrito con ' +
+                  carrito.cantidadTotal() +
+                  ' productos'
+                "
+                (click)="verCarrito()"
+              >
+                <lm-icono
+                  nombre="shopping_cart"
+                  [tamano]="22"
+                  color="var(--action-primary)"
+                />
+
+                <strong>{{ carrito.cantidadTotal() }}</strong>
+              </button>
+            </div>
+          } @else if (puedeCargar()) {
           <lm-icono-boton
             accion
             icono="add"
@@ -145,16 +164,54 @@ type Categoria = 'TODOS' | TipoProducto;
         font-weight: 800;
         white-space: nowrap;
       }
+
+      .acciones-carta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .boton-carrito {
+        position: relative;
+        display: inline-flex;
+        width: 46px;
+        height: 46px;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 14px;
+        background: #ffffff;
+        cursor: pointer;
+      }
+
+      .boton-carrito strong {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        display: grid;
+        min-width: 22px;
+        height: 22px;
+        place-items: center;
+        padding: 0 5px;
+        border: 2px solid var(--action-primary);
+        border-radius: 999px;
+        background: #ffffff;
+        color: var(--action-primary);
+        font-size: 12px;
+        font-weight: 900;
+      }
     `,
 
   ],
 })
 export class CartaPage extends PaginaConSesion {
-  private readonly productos = inject(ProductosService);
   protected readonly busqueda = signal('');
   protected readonly categoria = signal<Categoria>('TODOS');
+  protected readonly carrito = inject(CarritoService);
   private readonly route = inject(ActivatedRoute);
   private readonly mesas = inject(MesasService);
+  private readonly productos = inject(ProductosService);
+
 
   protected readonly mesaId =
     this.route.snapshot.queryParamMap.get('mesaId');
@@ -164,6 +221,14 @@ export class CartaPage extends PaginaConSesion {
       ? this.mesas.porId(this.mesaId)
       : undefined,
   );
+
+  constructor() {
+    super();
+
+    if (this.mesaId) {
+      this.carrito.iniciarMesa(this.mesaId);
+    }
+  }
 
   protected readonly categorias: {
     valor: Categoria;
@@ -224,6 +289,17 @@ export class CartaPage extends PaginaConSesion {
     );
   }
 
+  protected verCarrito(): void {
+    void this.router.navigate(
+      ['/comanda/carrito'],
+      {
+        queryParams: this.mesaId
+          ? { mesaId: this.mesaId }
+          : undefined,
+      },
+    );
+  }
+
   protected agregarProducto(): void {
     if (this.sesion.usuario()?.perfil === 'CANTINERO') {
       this.ir(['/cantinero/alta-bebida']);
@@ -232,6 +308,5 @@ export class CartaPage extends PaginaConSesion {
 
     this.ir(['/cocinero/alta-plato']);
   }
-
 
 }

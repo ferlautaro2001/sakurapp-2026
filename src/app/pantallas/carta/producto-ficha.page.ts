@@ -5,6 +5,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { CarritoService } from '../../nucleo/servicios/carrito.service';
 
 @Component({
   selector: 'lm-producto-ficha',
@@ -162,6 +163,21 @@ import { MesasService } from '../../nucleo/servicios/mesas.service';
           >
             Quitar de la carta
           </lm-texto-boton>
+        } @else if (puedeAgregar()) {
+          <lm-boton
+            icono="add_shopping_cart"
+            (presionar)="agregarAlCarrito()"
+          >
+            Agregar al carrito
+          </lm-boton>
+
+          @if (carrito.cantidadTotal() > 0) {
+            <lm-texto-boton
+              (presionar)="verCarrito()"
+            >
+              Ver carrito ({{ carrito.cantidadTotal() }})
+            </lm-texto-boton>
+          }
         } @else {
           <lm-boton
             icono="arrow_back"
@@ -297,6 +313,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   private readonly route = inject(ActivatedRoute);
   private readonly productos = inject(ProductosService);
   private readonly mesas = inject(MesasService);
+  protected readonly carrito = inject(CarritoService);
   private readonly posicionFoto = signal(0);
 
   protected readonly mesaId =
@@ -321,6 +338,19 @@ export class ProductoFichaPage extends PaginaConSesion {
         producto !== undefined &&
         producto.tipo !== 'BEBIDA'
         );
+    });
+
+  protected readonly puedeAgregar = computed(() => {
+      const perfil = this.sesion.usuario()?.perfil;
+      const producto = this.producto();
+
+      return (
+        (perfil === 'CLIENTE_REGISTRADO' ||
+          perfil === 'CLIENTE_ANONIMO') &&
+        Boolean(this.mesaId) &&
+        producto !== undefined &&
+        producto.disponible
+      );
     });
 
   protected readonly fotos = computed(() =>
@@ -387,54 +417,81 @@ protected async quitar(): Promise<void> {
   }
 
   const seguro = await this.preguntar({
-    titulo: '¿Quitás este producto de la carta?',
-    mensaje:
-      'El producto dejará de mostrarse, pero sus datos se conservarán.',
-    confirmar: 'Quitar de la carta',
-    tono: 'peligro',
-    icono: 'delete',
-    detalle: [
-      {
-        rotulo: 'Producto',
-        valor: producto.nombre,
-      },
-      {
-        rotulo: 'Categoría',
-        valor: this.rotuloTipo(producto),
-      },
-    ],
-  });
+      titulo: '¿Quitás este producto de la carta?',
+      mensaje:
+        'El producto dejará de mostrarse, pero sus datos se conservarán.',
+      confirmar: 'Quitar de la carta',
+      tono: 'peligro',
+      icono: 'delete',
+      detalle: [
+        {
+          rotulo: 'Producto',
+          valor: producto.nombre,
+        },
+        {
+          rotulo: 'Categoría',
+          valor: this.rotuloTipo(producto),
+        },
+      ],
+    });
 
-  if (!seguro) {
-    return;
-  }
+    if (!seguro) {
+      return;
+    }
 
-  try {
-    await this.cargando.conEsperaMinima(
-      'Quitando el producto de la carta...',
-      () =>
-        this.productos.quitarDeLaCarta(
-          producto.id,
-        ),
-    );
+    try {
+      await this.cargando.conEsperaMinima(
+        'Quitando el producto de la carta...',
+        () =>
+          this.productos.quitarDeLaCarta(
+            producto.id,
+          ),
+      );
+
+      this.avisos.exito(
+        'Producto quitado',
+        `${producto.nombre} ya no aparece en la carta.`,
+      );
+
+      this.ir(['/carta']);
+    } catch (error) {
+      console.error(
+        'No se pudo quitar el producto:',
+        error,
+      );
+
+      this.avisos.error(
+        'No pudimos quitar el producto',
+        'Revisá la conexión e intentá nuevamente.',
+        );
+      }
+    }
+
+  protected agregarAlCarrito(): void {
+    const producto = this.producto();
+
+    if (!producto || !this.mesaId) {
+      return;
+    }
+
+    this.carrito.iniciarMesa(this.mesaId);
+    this.carrito.agregar(producto);
 
     this.avisos.exito(
-      'Producto quitado',
-      `${producto.nombre} ya no aparece en la carta.`,
-    );
-
-    this.ir(['/carta']);
-  } catch (error) {
-    console.error(
-      'No se pudo quitar el producto:',
-      error,
-    );
-
-    this.avisos.error(
-      'No pudimos quitar el producto',
-      'Revisá la conexión e intentá nuevamente.',
+      'Producto agregado',
+      `${producto.nombre} se agregó al carrito.`,
       );
     }
+
+  protected verCarrito(): void {
+    void this.router.navigate(
+        ['/comanda/carrito'],
+        {
+          queryParams: this.mesaId
+            ? { mesaId: this.mesaId }
+            : undefined,
+      },
+    );
   }
 
   protected volver(): void {

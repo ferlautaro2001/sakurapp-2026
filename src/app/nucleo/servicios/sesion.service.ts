@@ -111,7 +111,7 @@ export class SesionService {
       case 'METRE':
         return '/metre/espera';
       case 'MOZO':
-        return '/mesas';
+        return '/mozo/pedidos';
       case 'COCINERO':
       case 'CANTINERO':
         return '/carta';

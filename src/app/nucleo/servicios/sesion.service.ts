@@ -109,8 +109,9 @@ export class SesionService {
       case 'SUPERVISOR':
         return '/clientes-pendientes';
       case 'METRE':
+        return '/metre/espera';
       case 'MOZO':
-        return '/mesas';
+        return '/mozo/pedidos';
       case 'COCINERO':
       case 'CANTINERO':
         return '/carta';

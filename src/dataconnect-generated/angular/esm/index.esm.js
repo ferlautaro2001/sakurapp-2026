@@ -1,4 +1,4 @@
-import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listEsperaRef, listEncuestasRef } from '../../';
+import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
 import { DataConnect, CallerSdkTypeEnum } from '@angular/fire/data-connect';
 import { injectDataConnectQuery, injectDataConnectMutation } from '@tanstack-query-firebase/angular/data-connect';
 import { inject, EnvironmentInjector } from '@angular/core';
@@ -46,6 +46,18 @@ export function injectUpdateEstadoEspera(args, injector) {
   return injectDataConnectMutation(updateEstadoEsperaRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
+export function injectConfirmarPedido(args, injector) {
+  return injectDataConnectMutation(confirmarPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectRegistrarIntentoJuego(args, injector) {
+  return injectDataConnectMutation(registrarIntentoJuegoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectAplicarDescuentoJuego(args, injector) {
+  return injectDataConnectMutation(aplicarDescuentoJuegoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
 export function injectListProductos(options, injector) {
   const finalInjector = injector || inject(EnvironmentInjector);
   const dc = finalInjector.get(DataConnect);
@@ -89,6 +101,18 @@ export function injectListPedidosActivos(options, injector) {
     const addOpn = options && options();
     return {
       queryFn: () =>  listPedidosActivosRef(dc),
+      ...addOpn
+    };
+  }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectListPedidoItems(options, injector) {
+  const finalInjector = injector || inject(EnvironmentInjector);
+  const dc = finalInjector.get(DataConnect);
+  return injectDataConnectQuery(() => {
+    const addOpn = options && options();
+    return {
+      queryFn: () =>  listPedidoItemsRef(dc),
       ...addOpn
     };
   }, finalInjector, CallerSdkTypeEnum.GeneratedAngular);

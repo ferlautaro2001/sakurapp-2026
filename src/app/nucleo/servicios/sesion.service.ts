@@ -1,4 +1,5 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
@@ -21,6 +22,8 @@ export class SesionService {
 
   readonly usuario = signal<Usuario | null>(null);
   readonly autenticado = computed(() => this.usuario() !== null);
+  readonly mesaActivaId = signal<string | null>(null);
+  readonly mesaActivaNumero = signal<number | null>(null);
   readonly esAdministrador = computed(() => {
     const u = this.usuario();
     return u !== null && PERFILES_ADMIN.includes(u.perfil);
@@ -29,6 +32,7 @@ export class SesionService {
     const u = this.usuario();
     return u?.perfil === 'CLIENTE_REGISTRADO' || u?.perfil === 'CLIENTE_ANONIMO';
   });
+
 
   /** Ingreso estricto con correo electrónico y contraseña validados contra Firebase Authentication. */
   async ingresar(email: string, clave: string): Promise<ResultadoIngreso> {
@@ -67,6 +71,30 @@ export class SesionService {
     return { ok: true, usuario };
   }
 
+  /** Almacena la sesión de mesa activa en el estado local del cliente (TASK-5.3.2.2). */
+  async establecerMesaActiva(mesaId: string, mesaNumero: number): Promise<void> {
+    this.mesaActivaId.set(mesaId);
+    this.mesaActivaNumero.set(mesaNumero);
+    try {
+      await Preferences.set({ key: 'sk.mesa_activa_id', value: mesaId });
+      await Preferences.set({ key: 'sk.mesa_activa_numero', value: String(mesaNumero) });
+    } catch {
+      // Entorno no nativo: almacenamiento reactivo en memoria
+    }
+  }
+
+  /** Limpia la vinculación con la mesa activa. */
+  async limpiarMesaActiva(): Promise<void> {
+    this.mesaActivaId.set(null);
+    this.mesaActivaNumero.set(null);
+    try {
+      await Preferences.remove({ key: 'sk.mesa_activa_id' });
+      await Preferences.remove({ key: 'sk.mesa_activa_numero' });
+    } catch {
+      //
+    }
+  }
+
   /** Recupera la sesión guardada al abrir la aplicación. */
   async restaurar(): Promise<Usuario | null> {
     const id = await this.almacen.leerSesion();
@@ -84,6 +112,18 @@ export class SesionService {
 
     this.usuario.set(usuario);
     this.notificaciones.registrarSesion(usuario.id);
+
+    try {
+      const mesaId = (await Preferences.get({ key: 'sk.mesa_activa_id' })).value;
+      const mesaNum = (await Preferences.get({ key: 'sk.mesa_activa_numero' })).value;
+      if (mesaId && mesaNum) {
+        this.mesaActivaId.set(mesaId);
+        this.mesaActivaNumero.set(Number(mesaNum));
+      }
+    } catch {
+      //
+    }
+
     return usuario;
   }
 
@@ -91,8 +131,10 @@ export class SesionService {
   async cerrar(): Promise<void> {
     this.usuario.set(null);
     this.notificaciones.registrarSesion(null);
+    await this.limpiarMesaActiva();
     await this.almacen.borrarSesion();
   }
+
 
   /**
    * Pantalla de inicio de cada perfil.

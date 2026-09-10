@@ -263,3 +263,25 @@ mutation AplicarDescuentoJuego(
     }
   )
 }
+
+# US-5.3 · Asignación atómica de mesa libre al comensal en lista de espera.
+mutation AsignarMesaCliente(
+  $esperaId: UUID!
+  $mesaId: UUID!
+  $clienteId: UUID!
+) @auth(level: PUBLIC, insecureReason: "Asignación transaccional de mesa por el metre.") {
+  espera_update(
+    id: $esperaId
+    data: {
+      mesaAsignadaId: $mesaId
+      estado: ASIGNADO
+    }
+  )
+  mesa_update(
+    id: $mesaId
+    data: {
+      clienteActualId: $clienteId
+    }
+  )
+}
+

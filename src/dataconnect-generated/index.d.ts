@@ -379,6 +379,18 @@ export interface UpdateEstadoEsperaVariables {
   estado: EstadoEspera;
 }
 
+export interface AsignarMesaClienteData {
+  espera_update?: Espera_Key | null;
+  mesa_update?: Mesa_Key | null;
+}
+
+export interface AsignarMesaClienteVariables {
+  esperaId: UUIDString;
+  mesaId: UUIDString;
+  clienteId: UUIDString;
+}
+
+
 export interface UpdateEstadoMesaData {
   mesa_update?: Mesa_Key | null;
 }
@@ -550,6 +562,19 @@ export const updateEstadoEsperaRef: UpdateEstadoEsperaRef;
 
 export function updateEstadoEspera(vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
 export function updateEstadoEspera(dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+
+interface AsignarMesaClienteRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  operationName: string;
+}
+export const asignarMesaClienteRef: AsignarMesaClienteRef;
+
+export function asignarMesaCliente(vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+export function asignarMesaCliente(dc: DataConnect, vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+
 
 interface ConfirmarPedidoRef {
   /* Allow users to create refs without passing in DataConnect */

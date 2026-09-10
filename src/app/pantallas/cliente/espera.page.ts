@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelos/enums';
@@ -6,6 +6,7 @@ import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
+
 
 /**
  * US-5.1 · el lugar del comensal, de punta a punta de su espera. Entra entera
@@ -101,9 +102,25 @@ import { QrService } from '../../nucleo/servicios/qr.service';
         </div>
       }
 
+      @if (modalErrorMesa(); as err) {
+        <lm-modal
+          titulo="Mesa incorrecta"
+          [mensaje]="err.mensaje"
+          rotuloConfirmar="Entendido"
+          [conCancelar]="false"
+          tono="peligro"
+          icono="wrong_location"
+          [detalle]="[
+            { rotulo: 'Tu mesa asignada', valor: 'Mesa ' + err.mesaCorrectaNumero }
+          ]"
+          (confirmar)="modalErrorMesa.set(null)"
+        />
+      }
+
       <lm-barra-inferior [items]="secciones()" activo="lugar" />
     </div>
   `,
+
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
@@ -149,7 +166,10 @@ export class ClienteEsperaPage extends PaginaConSesion {
   private readonly escaner = inject(EscanerService);
   private readonly qr = inject(QrService);
 
+  protected readonly modalErrorMesa = signal<{ mensaje: string; mesaCorrectaNumero: number } | null>(null);
+
   protected readonly entrada = computed(() => {
+
     const id = this.usuario()?.id;
     return id ? this.espera.activaDe(id) : undefined;
   });
@@ -253,22 +273,38 @@ export class ClienteEsperaPage extends PaginaConSesion {
       return;
     }
 
-    if (contenido.mesaId !== entrada.mesaAsignadaId) {
+    // TASK-5.3.2.1 · Validación estricta con respuesta háptica de error
+    const valida = await this.mesas.validarMesaEscaneada(contenido.mesaId, entrada.mesaAsignadaId);
+    if (!valida) {
       const otra = this.mesas.porId(contenido.mesaId);
-      this.avisos.error(
-        otra ? `Esa es la mesa ${otra.numero}` : 'Esa no es tu mesa',
-        `La tuya es la mesa ${numero}. Buscá ese número en el salón.`,
-      );
+      const mensaje = otra
+        ? `Escaneaste el código QR de la Mesa ${otra.numero}. Tu mesa asignada por el Metre es la Mesa ${numero}.`
+        : `El código QR escaneado no corresponde a tu mesa. Tu mesa asignada es la Mesa ${numero}.`;
+
+      this.modalErrorMesa.set({
+        mensaje,
+        mesaCorrectaNumero: numero,
+      });
       return;
     }
 
-    await this.cargando.conEsperaMinima('Vinculándote con tu mesa…', () =>
-      this.espera.vincularConLaMesa(entrada.id),
-    );
-    this.avisos.exito(`Estás en la mesa ${numero}`, 'Quedaste vinculado con tu mesa.');
+    // TASK-5.3.2.2 · Vinculación y conmutación de disponibilidad a OCUPADA
+    try {
+      await this.cargando.conEsperaMinima('Vinculándote con tu mesa…', async () => {
+        await this.mesas.cambiarEstado(entrada.mesaAsignadaId!, 'OCUPADA');
+        await this.sesion.establecerMesaActiva(entrada.mesaAsignadaId!, numero);
+        await this.espera.vincularConLaMesa(entrada.id);
+      });
+
+      this.avisos.exito(`Estás en la mesa ${numero}`, 'Quedaste vinculado con tu mesa.');
+    } catch (err: any) {
+      console.error('⚠️ Error al vincularse con la mesa:', err);
+      this.avisos.error('No se pudo vincular la mesa', err?.message || 'Ocurrió un error al registrar tu mesa.');
+    }
   }
 
   protected async actualizar(): Promise<void> {
+
     await this.cargando.conEsperaMinima('Consultando la lista de espera…', async () => undefined, 500);
     this.avisos.info('Lista actualizada', this.mensajeFila());
   }

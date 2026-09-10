@@ -67,7 +67,10 @@ export interface Mesa {
   estado: EstadoMesa;
   fotoUrl: string;
   qrCodeUrl: string;
+  clienteActualId?: string | null;
+  clienteActualUid?: string | null;
 }
+
 
 export interface AltaMesa {
   numero: number;

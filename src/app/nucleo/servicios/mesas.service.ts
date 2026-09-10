@@ -1,5 +1,7 @@
 import { Injectable, computed, inject } from '@angular/core';
+import { Haptics, NotificationType } from '@capacitor/haptics';
 import { initializeApp, getApps, getApp } from 'firebase/app';
+
 import { getDataConnect } from 'firebase/data-connect';
 import {
   connectorConfig,
@@ -47,6 +49,44 @@ export class MesasService {
     const encontrada = this.porNumero(numero);
     return Boolean(encontrada && encontrada.id !== exceptoId);
   }
+
+  /**
+   * TASK-5.3.2.1 · Validador estricto de coincidencia entre el código QR de mesa escaneado y la mesa asignada por el Metre.
+   * Si no coinciden, dispara inmediatamente vibración háptica de error (@capacitor/haptics).
+   */
+  async validarMesaEscaneada(mesaEscaneadaId: string, mesaAsignadaId: string): Promise<boolean> {
+    if (!mesaEscaneadaId || !mesaAsignadaId) {
+      try {
+        await Haptics.notification({ type: NotificationType.Error });
+      } catch {
+        // Degradación elegante
+      }
+      return false;
+    }
+
+    if (mesaEscaneadaId === mesaAsignadaId) {
+      return true;
+    }
+
+    const asignada = this.porId(mesaAsignadaId);
+    const escaneada = this.porId(mesaEscaneadaId) || this.porNumero(Number(mesaEscaneadaId));
+
+    if (asignada && escaneada && (asignada.id === escaneada.id || asignada.numero === escaneada.numero)) {
+      return true;
+    }
+
+    if (asignada && String(asignada.numero) === mesaEscaneadaId) {
+      return true;
+    }
+
+    try {
+      await Haptics.notification({ type: NotificationType.Error });
+    } catch {
+      // Degradación elegante
+    }
+    return false;
+  }
+
 
   /**
    * Crea una nueva mesa en el restaurante.
@@ -140,14 +180,9 @@ export class MesasService {
   async cambiarEstado(id: string, estado: EstadoMesa): Promise<void> {
     const mesa = this.porId(id);
 
-    if (!mesa) {
-      throw new Error(`No se encontró la mesa ${id}`);
+    if (mesa) {
+      await this.editar(id, { estado });
     }
-
-    const estadoAnterior = mesa.estado;
-
-    // Actualización optimista reactiva e inmediata.
-    await this.editar(id, { estado });
     void this.firestore.actualizarEstadoMesa(id, estado);
 
     try {

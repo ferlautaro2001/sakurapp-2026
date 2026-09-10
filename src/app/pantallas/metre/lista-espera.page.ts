@@ -1,14 +1,15 @@
 import { DatePipe } from '@angular/common';
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { Espera } from '../../nucleo/modelos/modelos';
+import { Espera, Mesa } from '../../nucleo/modelos/modelos';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
+import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
 
 /** Lista de espera en tiempo real para el metre. */
 @Component({
   selector: 'lm-metre-lista-espera',
-  imports: [DatePipe, ...UI],
+  imports: [DatePipe, AsignarMesaModalComponent, ...UI],
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
@@ -43,6 +44,12 @@ import { PaginaConSesion } from '../pagina-base';
                 </span>
                 <span class="lm-wait__acciones">
                   <lm-icono-boton
+                    icono="table_restaurant"
+                    [rotulo]="'Asignar mesa a ' + entrada.clienteNombre"
+                    tono="primario"
+                    (presionar)="abrirAsignacion(entrada)"
+                  />
+                  <lm-icono-boton
                     icono="person_remove"
                     [rotulo]="'Quitar a ' + entrada.clienteNombre + ' de la lista'"
                     tono="peligro"
@@ -63,14 +70,24 @@ import { PaginaConSesion } from '../pagina-base';
         }
       </div>
 
+      @if (entradaParaAsignar(); as seleccionada) {
+        <lm-asignar-mesa-modal
+          [clienteNombre]="seleccionada.clienteNombre"
+          (asignar)="confirmarAsignacion(seleccionada, $event)"
+          (cancelar)="entradaParaAsignar.set(null)"
+        />
+      }
+
       <lm-barra-inferior [items]="secciones()" activo="espera" />
     </div>
   `,
+
   styles: [':host{display:flex;flex:1;min-height:0}'],
 })
 export class MetreListaEsperaPage extends PaginaConSesion implements OnInit {
   private readonly espera = inject(EsperaService);
   protected readonly busqueda = signal('');
+  protected readonly entradaParaAsignar = signal<Espera | null>(null);
 
   protected readonly visibles = computed(() => {
     const texto = this.busqueda().trim().toLocaleLowerCase('es-AR');
@@ -78,6 +95,7 @@ export class MetreListaEsperaPage extends PaginaConSesion implements OnInit {
       !texto || entrada.clienteNombre.toLocaleLowerCase('es-AR').includes(texto),
     );
   });
+
 
   ngOnInit(): void {
     void this.espera.iniciar();
@@ -107,4 +125,29 @@ export class MetreListaEsperaPage extends PaginaConSesion implements OnInit {
     await this.cargando.conEsperaMinima('Actualizando la lista…', () => this.espera.quitar(entrada.id), 350);
     this.avisos.info(`${entrada.clienteNombre} salió de la lista`, 'Su turno quedó cancelado.');
   }
+
+  protected abrirAsignacion(entrada: Espera): void {
+    this.entradaParaAsignar.set(entrada);
+  }
+
+  protected async confirmarAsignacion(entrada: Espera, mesa: Mesa): Promise<void> {
+    this.entradaParaAsignar.set(null);
+    try {
+      await this.cargando.conEsperaMinima(
+        `Asignando mesa ${mesa.numero}…`,
+        () => this.espera.asignarMesa(entrada, mesa),
+        400,
+      );
+      this.avisos.exito(
+        `Mesa ${mesa.numero} asignada`,
+        `Se le notificó a ${entrada.clienteNombre} y se bloqueó la mesa.`,
+      );
+    } catch (err: any) {
+      this.avisos.error(
+        'No se pudo asignar la mesa',
+        err?.message || 'La mesa ya fue tomada o no se encuentra disponible.',
+      );
+    }
+  }
 }
+

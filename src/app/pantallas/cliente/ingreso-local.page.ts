@@ -176,15 +176,27 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
     const cliente = this.usuario();
     if (!cliente) return;
 
-    await this.cargando.conEsperaMinima('Anotándote en la lista de espera…', () => this.espera.anotar(cliente));
+    try {
+      await this.cargando.conEsperaMinima('Anotándote en la lista de espera…', () => this.espera.anotar(cliente));
+    } catch (err: any) {
+      console.error('⚠️ Error al anotarse en la lista de espera:', err);
+      this.avisos.error('No se pudo registrar tu llegada', err?.message || 'Revisá la conexión con el salón.');
+      return;
+    }
 
-    const metres = this.usuarios.todos().filter((u) => u.perfil === 'METRE');
-    await this.notificaciones.enviar(
-      metres.map((u) => u.id),
-      'Un nuevo comensal está esperando',
-      `${this.usuarios.nombreCompleto(cliente)} se anotó en la lista de espera.`,
-      ['/metre/espera'],
-    );
+    try {
+      const metres = this.usuarios.todos().filter((u) => u.perfil === 'METRE');
+      if (metres.length) {
+        await this.notificaciones.enviar(
+          metres.map((u) => u.id),
+          'Un nuevo comensal está esperando',
+          `${this.usuarios.nombreCompleto(cliente)} se anotó en la lista de espera.`,
+          ['/metre/espera'],
+        );
+      }
+    } catch (notifErr) {
+      console.warn('⚠️ No se pudo enviar notificación push al metre:', notifErr);
+    }
 
     this.avisos.exito('Estás en la fila', 'El metre ya recibió tu llegada.');
     await this.router.navigate(['/cliente/espera'], { replaceUrl: true });

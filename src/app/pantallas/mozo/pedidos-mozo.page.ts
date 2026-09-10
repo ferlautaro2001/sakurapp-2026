@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { ROTULO_ESTADO_PEDIDO, sectorDe } from '../../nucleo/modelos/enums';
 import { Pedido } from '../../nucleo/modelos/modelos';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
+import { ChatService } from '../../nucleo/servicios/chat.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
@@ -14,6 +15,37 @@ import { PaginaConSesion } from '../pagina-base';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
       <div class="lm-body lm-body--gap12">
+        @if (chat.conversacionesActivas().length) {
+          <div class="consultas-mesas" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <span style="display: flex; align-items: center; gap: 8px;">
+                <lm-icono nombre="forum" [tamano]="20" color="var(--sk-verde, #1B7A4C)" />
+                <b style="color: var(--text-title); font-size: 15px;">Consultas en vivo de mesas</b>
+              </span>
+              <lm-chip estado="reservada">{{ chat.conversacionesActivas().length }}</lm-chip>
+            </div>
+
+            <div class="lm-list" style="display: flex; flex-direction: column; gap: 8px;">
+              @for (conv of chat.conversacionesActivas(); track conv.mesaId) {
+                <div class="lm-card" style="padding: 12px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--sk-verde, #1B7A4C);">
+                  <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <b style="color: var(--text-title); font-size: 14px;">Mesa {{ conv.mesaNumero }}</b>
+                    <small style="color: var(--text-muted); font-size: 11px;">{{ conv.actualizadoEn | date: 'HH:mm' }}</small>
+                  </div>
+                  <span style="color: var(--text-body); font-size: 13px;">
+                    <b [style.color]="conv.ultimoRol === 'MOZO' ? 'var(--sk-verde)' : 'var(--action-primary)'">{{ conv.ultimoRemitente }}:</b> {{ conv.ultimoMensaje }}
+                  </span>
+                  <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
+                    <lm-boton variante="secondary" icono="chat" [ancho]="false" (presionar)="ir(['/mesas', conv.mesaId, 'chat'])">
+                      Responder
+                    </lm-boton>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <lm-titulo [contador]="pedidos.pendientesConfirmacion().length" bajada="Pedidos que esperan confirmación">
           Pedidos del salón
         </lm-titulo>
@@ -69,9 +101,11 @@ import { PaginaConSesion } from '../pagina-base';
 })
 export class PedidosMozoPage extends PaginaConSesion implements OnInit {
   protected readonly pedidos = inject(PedidosService);
+  protected readonly chat = inject(ChatService);
 
   ngOnInit(): void {
     this.pedidos.iniciar();
+    this.chat.iniciarEscuchaConversaciones();
   }
 
   protected rotulo(pedido: Pedido): string {

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import {
   collection,
@@ -12,9 +12,21 @@ import { RolMensaje } from '../modelos/enums';
 import { MensajeChat, Mesa, Usuario } from '../modelos/modelos';
 import { FirestoreService } from './firestore.service';
 import { NotificacionesService } from './notificaciones.service';
+import { UsuariosService } from './usuarios.service';
+import { EsperaService } from './espera.service';
 
 /** Colección base de conversaciones por mesa en Firestore ('sakurapp'). */
 const COLECCION_CHAT = 'conversaciones_chat';
+
+/** Resumen de conversación viva por mesa para el panel del mozo y supervisores. */
+export interface ConversacionMesa {
+  mesaId: string;
+  mesaNumero: number;
+  ultimoMensaje: string;
+  ultimoRemitente: string;
+  ultimoRol: RolMensaje;
+  actualizadoEn: string;
+}
 
 /**
  * Servicio de Chat en Tiempo Real entre Cliente y Mozo (US-6.2).
@@ -28,7 +40,49 @@ const COLECCION_CHAT = 'conversaciones_chat';
 export class ChatService {
   private readonly firestore = inject(FirestoreService);
   private readonly notificaciones = inject(NotificacionesService);
+  private readonly usuarios = inject(UsuariosService);
+  private readonly espera = inject(EsperaService);
   private audioCtx: AudioContext | null = null;
+
+  readonly conversacionesActivas = signal<ConversacionMesa[]>([]);
+  private escuchaConversaciones: Unsubscribe | null = null;
+
+  /**
+   * Inicia la escucha reactiva de todas las conversaciones activas para los mozos en servicio.
+   */
+  iniciarEscuchaConversaciones(): Unsubscribe {
+    if (this.escuchaConversaciones) return this.escuchaConversaciones;
+
+    const db = this.firestore.obtenerDb();
+    const colRef = collection(db, COLECCION_CHAT);
+
+    this.escuchaConversaciones = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const lista: ConversacionMesa[] = [];
+        snapshot.forEach((docSnap) => {
+          const d = docSnap.data();
+          if (d['mesaId'] && d['ultimoMensaje']) {
+            lista.push({
+              mesaId: d['mesaId'],
+              mesaNumero: Number(d['mesaNumero']) || 0,
+              ultimoMensaje: d['ultimoMensaje'],
+              ultimoRemitente: d['ultimoRemitente'] || '',
+              ultimoRol: (d['ultimoRol'] as RolMensaje) || 'CLIENTE',
+              actualizadoEn: d['actualizadoEn'] || '',
+            });
+          }
+        });
+        lista.sort((a, b) => (b.actualizadoEn || '').localeCompare(a.actualizadoEn || ''));
+        this.conversacionesActivas.set(lista);
+      },
+      (error) => {
+        console.warn('⚠️ Error escuchando conversaciones activas de chat:', error);
+      },
+    );
+
+    return this.escuchaConversaciones;
+  }
 
   /**
    * Escucha los mensajes en tiempo real de una mesa específica.
@@ -154,16 +208,33 @@ export class ChatService {
 
     // 3. Despacho de Notificaciones Push (TASK-6.2.1.2 & TASK-6.2.2.1)
     if (!esMozo) {
-      // Consulta del comensal: Notificar a todos los mozos en servicio
+      // Consulta del comensal: Notificar a todos los mozos en servicio vía FCM
       await this.firestore.encolarNotificacion({
         destinatarioRol: 'MOZO',
         titulo: `Consulta en Mesa ${mesa.numero}`,
         cuerpo: `${remitenteNombre}: ${textoLimpio}`,
         ruta: `/mesas/${mesa.id}/chat`,
       });
+
+      // Notificación in-app y alerta para mozos activos en sesión local
+      const mozoIds = this.usuarios.todos().filter((u) => u.perfil === 'MOZO').map((u) => u.id);
+      if (mozoIds.length) {
+        await this.notificaciones.enviar(
+          mozoIds,
+          `Consulta en Mesa ${mesa.numero}`,
+          `${remitenteNombre}: ${textoLimpio}`,
+          ['/mesas', mesa.id, 'chat'],
+        );
+      }
     } else {
       // Respuesta del mozo: Notificar al comensal de la mesa
-      const destinatarioUid = clienteDestinatarioUid || (mesa as any).clienteActual?.uid;
+      let destinatarioUid = clienteDestinatarioUid || mesa.clienteActualUid || mesa.clienteActualId;
+
+      if (!destinatarioUid) {
+        const enEspera = this.espera.lista().find((e) => e.mesaAsignadaId === mesa.id);
+        destinatarioUid = enEspera?.clienteUid || enEspera?.clienteId || null;
+      }
+
       if (destinatarioUid) {
         await this.firestore.encolarNotificacion({
           destinatarioUid,
@@ -171,6 +242,15 @@ export class ChatService {
           cuerpo: textoLimpio,
           ruta: `/mesas/${mesa.id}/chat`,
         });
+
+        await this.notificaciones.enviar(
+          [destinatarioUid],
+          `Mozo ${remitenteNombre} · Mesa ${mesa.numero}`,
+          textoLimpio,
+          ['/mesas', mesa.id, 'chat'],
+        );
+      } else {
+        console.warn(`⚠️ No se pudo determinar el comensal de la mesa ${mesa.numero} para enviar la notificación push`);
       }
     }
 

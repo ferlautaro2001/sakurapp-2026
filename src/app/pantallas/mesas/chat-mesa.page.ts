@@ -12,11 +12,13 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Unsubscribe } from 'firebase/firestore';
+import { doc, getDoc, Unsubscribe } from 'firebase/firestore';
 import { ROTULO_ROL_MENSAJE, RolMensaje } from '../../nucleo/modelos/enums';
 import { MensajeChat, Mesa } from '../../nucleo/modelos/modelos';
 import { ChatService } from '../../nucleo/servicios/chat.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { EsperaService } from '../../nucleo/servicios/espera.service';
+import { FirestoreService } from '../../nucleo/servicios/firestore.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
@@ -57,7 +59,12 @@ const SUGERENCIAS_MOZO = [
         </div>
 
         <div class="chat-header__info">
-          <span class="chat-header__titulo">Mesa {{ mesaNumero() }}</span>
+          <span class="chat-header__titulo">
+            Mesa {{ mesaNumero() }}
+            @if (esMozo() && clienteDestinatario()?.clienteNombre) {
+              · {{ clienteDestinatario()!.clienteNombre }}
+            }
+          </span>
           <span class="chat-header__subtitulo">
             <span class="chat-header__punto-en-vivo"></span>
             Sala en tiempo real con el personal
@@ -498,15 +505,32 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
 
   private readonly chatService = inject(ChatService);
   private readonly mesasService = inject(MesasService);
+  private readonly esperaService = inject(EsperaService);
+  private readonly firestore = inject(FirestoreService);
 
   private desuscribirChat: Unsubscribe | null = null;
+  private readonly mesaDirecta = signal<Mesa | null>(null);
+
+  protected readonly clienteDestinatario = computed(() => {
+    const mesaId = this.id();
+    return this.esperaService.lista().find((e) => e.mesaAsignadaId === mesaId && e.estado !== 'CANCELADO');
+  });
 
   protected readonly mesa = computed<Mesa | undefined>(() => {
     const mesaId = this.id();
-    return this.mesasService.porId(mesaId) || this.mesasService.todas().find((m) => m.id === mesaId);
+    const deStore =
+      this.mesasService.porId(mesaId) ||
+      this.mesasService.porNumero(Number(mesaId)) ||
+      this.mesasService.todas().find((m) => m.id === mesaId);
+    return deStore || this.mesaDirecta() || undefined;
   });
 
-  protected readonly mesaNumero = computed<number>(() => this.mesa()?.numero ?? 0);
+  protected readonly mesaNumero = computed<number>(() => {
+    const m = this.mesa();
+    if (m) return m.numero;
+    const num = Number(this.id());
+    return isNaN(num) ? (this.clienteDestinatario()?.mesaAsignadaNumero ?? 0) : num;
+  });
 
   protected readonly esMozo = computed<boolean>(() => this.usuario()?.perfil === 'MOZO');
 
@@ -525,6 +549,34 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     if (!usuarioActual) {
       void this.router.navigate(['/login']);
       return;
+    }
+
+    void this.mesasService.sincronizar();
+    void this.esperaService.iniciar();
+
+    // Si la mesa no está cargada en el store reactivo, cargarla directamente de Firestore
+    if (!this.mesa()) {
+      try {
+        const db = this.firestore.obtenerDb();
+        void getDoc(doc(db, 'mesas', mesaId)).then((snap) => {
+          if (snap.exists()) {
+            const data = snap.data();
+            this.mesaDirecta.set({
+              id: snap.id,
+              numero: Number(data['numero']) || 0,
+              cantidadComensales: Number(data['cantidadComensales']) || 2,
+              tipo: data['tipo'] || 'ESTANDAR',
+              estado: data['estado'] || 'OCUPADA',
+              fotoUrl: data['fotoUrl'] || '',
+              qrCodeUrl: data['qrCodeUrl'] || '',
+              clienteActualId: data['clienteActualId'] || null,
+              clienteActualUid: data['clienteActualUid'] || null,
+            });
+          }
+        });
+      } catch {
+        // Fallback no bloqueante
+      }
     }
 
     // Suscripción reactiva en tiempo real (AC-6.2.1 y AC-6.2.2)
@@ -576,16 +628,27 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     if (!contenido || this.enviando()) return;
 
     const actual = this.usuario();
-    const mesaActual = this.mesa();
-
-    if (!actual || !mesaActual) {
-      this.avisos.error('Error al enviar', 'No se pudo identificar la mesa o tu usuario.');
+    if (!actual) {
+      this.avisos.error('Error al enviar', 'No se pudo identificar tu usuario.');
       return;
     }
 
+    const mesaActual = this.mesa() || {
+      id: this.id(),
+      numero: this.mesaNumero() || 1,
+      cantidadComensales: 4,
+      tipo: 'ESTANDAR' as const,
+      estado: 'OCUPADA' as const,
+      fotoUrl: '',
+      qrCodeUrl: '',
+    };
+
     this.enviando.set(true);
     try {
-      await this.chatService.enviarMensaje(mesaActual, actual, contenido);
+      const comensal = this.clienteDestinatario();
+      const clienteUid = comensal?.clienteUid || comensal?.clienteId || null;
+
+      await this.chatService.enviarMensaje(mesaActual, actual, contenido, clienteUid);
       this.texto.set('');
       setTimeout(() => this.scrollAlFondo(), 50);
     } catch (err: any) {

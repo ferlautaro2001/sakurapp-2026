@@ -103,6 +103,30 @@ mutation CreatePedido(
   )
 }
 
+# AC-7.1.2 · Guarda cada producto asociado al pedido.
+mutation CreatePedidoItem(
+  $pedidoId: UUID!
+  $productoId: UUID!
+  $cantidad: Int!
+  $precioUnitario: Float!
+  $subtotal: Float!
+  $sector: Sector!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Alta de productos asociados a un pedido."
+) {
+  pedidoItem_insert(
+    data: {
+      pedidoId: $pedidoId
+      productoId: $productoId
+      cantidad: $cantidad
+      precioUnitario: $precioUnitario
+      subtotal: $subtotal
+      sector: $sector
+    }
+  )
+}
+
 mutation CreateEncuesta(
   $clienteId: UUID!
   $pedidoId: UUID!

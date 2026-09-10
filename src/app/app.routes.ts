@@ -166,6 +166,22 @@ export const routes: Routes = [
       import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
   },
   {
+    path: 'cliente/estado-pedido/:id',
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil(
+        'CLIENTE_REGISTRADO',
+        'CLIENTE_ANONIMO',
+      ),
+    ],
+    loadComponent: () =>
+      import(
+        './pantallas/cliente/estado-pedido.page'
+      ).then(
+        (m) => m.EstadoPedidoPage,
+      ),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

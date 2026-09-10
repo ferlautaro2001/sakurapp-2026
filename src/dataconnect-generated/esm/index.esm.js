@@ -120,6 +120,18 @@ export function createPedido(dcOrVars, vars) {
   return executeMutation(createPedidoRef(dcInstance, inputVars));
 }
 
+export const createPedidoItemRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'CreatePedidoItem', inputVars);
+}
+createPedidoItemRef.operationName = 'CreatePedidoItem';
+
+export function createPedidoItem(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(createPedidoItemRef(dcInstance, inputVars));
+}
+
 export const createEncuestaRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

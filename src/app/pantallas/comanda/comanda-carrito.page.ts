@@ -1,7 +1,8 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { CarritoService } from '../../nucleo/servicios/carrito.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
@@ -124,7 +125,7 @@ import { PaginaConSesion } from '../pagina-base';
             <strong>{{ precio(carrito.importeTotal()) }}</strong>
           </span>
 
-          <span>
+        <span>
             <small>TIEMPO ESTIMADO</small>
             <strong>
               <lm-icono nombre="schedule" [tamano]="19" />
@@ -134,11 +135,21 @@ import { PaginaConSesion } from '../pagina-base';
         </span>
 
         <lm-boton
-          icono="restaurant_menu"
+          icono="send"
+          [deshabilitado]="
+            !carrito.items().length || enviando()
+          "
+          (presionar)="finalizarPedido()"
+        >
+          Finalizar y enviar pedido
+        </lm-boton>
+
+        <lm-texto-boton
+          enfasis="claro"
           (presionar)="volverCarta()"
         >
           Seguir eligiendo
-        </lm-boton>
+        </lm-texto-boton>
       </section>
     </div>
   `,
@@ -318,6 +329,9 @@ export class ComandaCarritoPage extends PaginaConSesion {
   protected readonly carrito = inject(CarritoService);
   private readonly route = inject(ActivatedRoute);
   private readonly mesas = inject(MesasService);
+  private readonly pedidos = inject(PedidosService);
+
+  protected readonly enviando = signal(false);
 
   protected readonly mesaId =
     this.route.snapshot.queryParamMap.get('mesaId') ??
@@ -347,6 +361,107 @@ export class ComandaCarritoPage extends PaginaConSesion {
 
   protected precio(valor: number): string {
     return `$ ${valor.toLocaleString('es-AR')}`;
+  }
+
+  protected async finalizarPedido(): Promise<void> {
+    const mesa = this.mesaActiva();
+    const cliente = this.usuario();
+    const items = this.carrito.items();
+
+    if (!mesa || !cliente) {
+      this.avisos.error(
+        'No pudimos identificar la mesa',
+        'Volvé a escanear el código QR de tu mesa.',
+      );
+      return;
+    }
+
+    if (!items.length) {
+      this.avisos.error(
+        'Tu carrito está vacío',
+        'Agregá al menos un producto antes de enviar el pedido.',
+      );
+      return;
+    }
+
+    const confirmado = await this.preguntar({
+      titulo: '¿Enviás este pedido?',
+      mensaje:
+        'El pedido llegará al mozo para que lo revise y confirme. Todavía no será enviado a Cocina ni a Bar.',
+      confirmar: 'Enviar pedido',
+      tono: 'exito',
+      icono: 'send',
+      detalle: [
+        {
+          rotulo: 'Mesa',
+          valor: `Mesa ${mesa.numero}`,
+        },
+        {
+          rotulo: 'Productos',
+          valor: `${this.carrito.cantidadTotal()} unidades`,
+        },
+        {
+          rotulo: 'Total',
+          valor: this.precio(
+            this.carrito.importeTotal(),
+          ),
+        },
+        {
+          rotulo: 'Tiempo estimado',
+          valor: `${this.carrito.tiempoEstimado()} minutos`,
+        },
+      ],
+    });
+
+    if (!confirmado) {
+      return;
+    }
+
+    this.enviando.set(true);
+
+    try {
+      const pedido =
+        await this.cargando.conEsperaMinima(
+          'Enviando el pedido al mozo…',
+          () =>
+            this.pedidos.crearPendiente(
+              mesa,
+              cliente,
+              items,
+              this.carrito.tiempoEstimado(),
+              this.carrito.importeTotal(),
+            ),
+        );
+
+      // Solo se vacía después de guardar correctamente.
+      this.carrito.vaciar();
+
+      this.avisos.exito(
+        'Pedido enviado',
+        `El pedido de la mesa ${mesa.numero} está esperando la confirmación del mozo.`,
+      );
+
+      await this.router.navigate(
+        ['/cliente/estado-pedido', pedido.id],
+        {
+          replaceUrl: true,
+        },
+      );
+    } catch (error) {
+      console.error(
+        'No se pudo enviar el pedido:',
+        error,
+      );
+
+      this.avisos.error(
+        'No pudimos enviar el pedido',
+        error instanceof Error
+          ? error.message
+          : 'Revisá la conexión e intentá nuevamente.',
+      );
+    } finally {
+      this.enviando.set(false);
+    }
   }
 
   protected volverCarta(): void {

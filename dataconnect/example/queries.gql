@@ -52,9 +52,12 @@ query ListPedidosActivos @auth(level: PUBLIC, insecureReason: "Monitoreo de pedi
   pedidos(orderBy: [{ timestampCreacion: DESC }]) {
     id
     mesa {
+      id
       numero
     }
     cliente {
+      id
+      uid
       nombre
       apellido
     }
@@ -64,6 +67,22 @@ query ListPedidosActivos @auth(level: PUBLIC, insecureReason: "Monitoreo de pedi
     tiempoEstimado
     totalFinal
     timestampCreacion
+  }
+}
+
+query ListPedidoItems @auth(level: PUBLIC, insecureReason: "Derivación de productos de pedidos activos.") {
+  pedidoItems {
+    id
+    pedido { id }
+    producto {
+      id
+      nombre
+      tipo
+    }
+    cantidad
+    precioUnitario
+    subtotal
+    sector
   }
 }
 

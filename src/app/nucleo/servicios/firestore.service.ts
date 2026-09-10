@@ -12,11 +12,21 @@ import {
   query,
   where,
   addDoc,
+  runTransaction,
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, Producto, Usuario } from '../modelos/modelos';
-import { EstadoMesa, EstadoUsuario, Perfil, Sector, TipoMesa, TipoProducto } from '../modelos/enums';
+import { Mesa, Pedido, PedidoItem, Producto, Usuario } from '../modelos/modelos';
+import {
+  EstadoMesa,
+  EstadoPedido,
+  EstadoSector,
+  EstadoUsuario,
+  Perfil,
+  Sector,
+  TipoMesa,
+  TipoProducto,
+} from '../modelos/enums';
 
 export interface NotificacionCola {
   id?: string;
@@ -339,5 +349,131 @@ export class FirestoreService {
       console.warn('⚠️ Error actualizando producto en Firestore:', err);
     }
   }
+
+  /** Mantiene sincronizados en tiempo real los pedidos operativos del salón. */
+  escucharPedidos(callback: (pedidos: Pedido[]) => void): Unsubscribe {
+    const colRef = collection(this.obtenerDb(), 'pedidos');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const pedidos = snapshot.docs
+          .map((docSnap) => pedidoDesdeFirestore(docSnap.id, docSnap.data()))
+          .sort((a, b) => b.timestampCreacion.localeCompare(a.timestampCreacion));
+        callback(pedidos);
+      },
+      (error) => console.warn('⚠️ Error en listener de pedidos Firestore:', error),
+    );
+  }
+
+  /** Publica un pedido pendiente para su seguimiento en tiempo real. */
+  async guardarPedidoPendiente(pedido: Pedido): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedido.id),
+      pedido,
+    );
+  }
+
+  /** Publica el pedido completo y sus sectores al momento de confirmarlo. */
+  async confirmarPedido(pedido: Pedido): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedido.id),
+      { ...pedido, confirmadoEn: new Date().toISOString() },
+      { merge: true },
+    );
+  }
+
+  /**
+   * Registra el único intento permitido y aplica su descuento de forma atómica.
+   * La transacción evita dos premios si el usuario toca el botón dos veces.
+   */
+  async registrarIntentoJuego(
+    pedidoId: string,
+    clienteId: string,
+    descuento: number,
+  ): Promise<{ aplicado: boolean; totalFinal: number }> {
+    const db = this.obtenerDb();
+    const pedidoRef = doc(db, 'pedidos', pedidoId);
+    const intentoRef = doc(db, 'intentosJuego', `${pedidoId}-${clienteId}`);
+
+    return runTransaction(db, async (transaccion) => {
+      const snapshot = await transaccion.get(pedidoRef);
+      if (!snapshot.exists()) throw new Error('El pedido ya no existe.');
+
+      const datos = snapshot.data();
+      if (datos['juegoIntentado'] === true) {
+        return { aplicado: false, totalFinal: Number(datos['totalFinal']) || 0 };
+      }
+
+      const totalBruto = Number(datos['totalBruto']) || Number(datos['totalFinal']) || 0;
+      const montoDescuentoJuego = redondearImporte((totalBruto * descuento) / 100);
+      const totalFinal = redondearImporte(Math.max(0, totalBruto - montoDescuentoJuego));
+      const timestamp = new Date().toISOString();
+
+      transaccion.update(pedidoRef, {
+        juegoIntentado: true,
+        descuentoJuego: descuento,
+        montoDescuentoJuego,
+        totalFinal,
+        juegoIntentadoEn: timestamp,
+      });
+      transaccion.set(intentoRef, {
+        pedidoId,
+        clienteId,
+        tipoJuego: 'SAKURA',
+        numeroIntento: 1,
+        gano: descuento > 0,
+        descuentoOtorgado: descuento,
+        timestamp,
+      });
+
+      return { aplicado: true, totalFinal };
+    });
+  }
+}
+
+function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedido {
+  const items = Array.isArray(datos['items'])
+    ? datos['items'].map((item, indice) => itemDesdeFirestore(item, `${id}-${indice}`))
+    : [];
+
+  return {
+    id,
+    mesaId: String(datos['mesaId'] ?? ''),
+    mesaNumero: Number(datos['mesaNumero']) || 0,
+    clienteId: String(datos['clienteId'] ?? ''),
+    clienteUid: String(datos['clienteUid'] ?? datos['clienteId'] ?? ''),
+    clienteNombre: String(datos['clienteNombre'] ?? 'Comensal'),
+    estadoGlobal: (datos['estadoGlobal'] as EstadoPedido) || 'SELECCIONANDO',
+    estadoCocina: (datos['estadoCocina'] as EstadoSector) || 'NO_APLICA',
+    estadoBar: (datos['estadoBar'] as EstadoSector) || 'NO_APLICA',
+    tiempoEstimado: Number(datos['tiempoEstimado']) || 0,
+    totalBruto: Number(datos['totalBruto']) || 0,
+    descuentoJuego: Number(datos['descuentoJuego']) || 0,
+    montoDescuentoJuego: Number(datos['montoDescuentoJuego']) || 0,
+    totalFinal: Number(datos['totalFinal']) || Number(datos['totalBruto']) || 0,
+    confirmadoPorId: datos['confirmadoPorId'] ? String(datos['confirmadoPorId']) : null,
+    juegoIntentado: datos['juegoIntentado'] === true,
+    timestampCreacion: String(datos['timestampCreacion'] ?? new Date(0).toISOString()),
+    items,
+  };
+}
+
+function itemDesdeFirestore(valor: unknown, idAlternativo: string): PedidoItem {
+  const item = (valor && typeof valor === 'object' ? valor : {}) as Record<string, unknown>;
+  const tipo = (item['tipo'] as TipoProducto) || 'COMIDA';
+  return {
+    id: String(item['id'] ?? idAlternativo),
+    productoId: String(item['productoId'] ?? ''),
+    productoNombre: String(item['productoNombre'] ?? item['nombre'] ?? 'Producto'),
+    tipo,
+    sector: (item['sector'] as Sector) || (tipo === 'BEBIDA' ? 'BAR' : 'COCINA'),
+    cantidad: Math.max(1, Number(item['cantidad']) || 1),
+    precioUnitario: Number(item['precioUnitario']) || 0,
+    subtotal: Number(item['subtotal']) || 0,
+  };
+}
+
+function redondearImporte(valor: number): number {
+  return Math.round(valor * 100) / 100;
 }
 

@@ -1,171 +1,375 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Haptics, NotificationType } from '@capacitor/haptics';
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getDataConnect } from 'firebase/data-connect';
 import {
+  aplicarDescuentoJuego,
+  confirmarPedido,
   connectorConfig,
+  EstadoSector as DcEstadoSector,
+  listPedidoItems,
+  listPedidosActivos,
+  registrarIntentoJuego,
   createPedido,
   createPedidoItem,
-  listPedidosActivos,
   EstadoPedido as DcEstadoPedido,
   Sector as DcSector,
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
+import { sectorDe } from '../modelos/enums';
+import { Mesa, Pedido, Usuario } from '../modelos/modelos';
 import { ItemCarrito } from './carrito.service';
 import { FirestoreService } from './firestore.service';
-import { Mesa, Usuario } from '../modelos/modelos';
+import { NotificacionesService } from './notificaciones.service';
+import { UsuariosService } from './usuarios.service';
 
-export interface PedidoCreado {
-  id: string;
-  mesaId: string;
-  mesaNumero: number;
-  clienteId: string;
-  estado: 'PENDIENTE_CONFIRMACION';
-  tiempoEstimado: number;
-  total: number;
-  creadoEn: string;
-}
-
+/** Confirmación, seguimiento y premio no acumulativo de pedidos. */
 @Injectable({ providedIn: 'root' })
 export class PedidosService {
   private readonly firestore = inject(FirestoreService);
+  private readonly notificaciones = inject(NotificacionesService);
+  private readonly usuarios = inject(UsuariosService);
+  private dejarDeEscuchar: (() => void) | null = null;
+  private readonly pedidosFirestore = signal<Pedido[]>([]);
+  private readonly pedidosSql = signal<Pedido[]>([]);
 
-  readonly ultimoPedido = signal<PedidoCreado | null>(null);
+  readonly todos = computed(() => {
+    const porId = new Map(this.pedidosSql().map((pedido) => [pedido.id, pedido]));
+    for (const pedido of this.pedidosFirestore()) porId.set(pedido.id, pedido);
+    return [...porId.values()].sort((a, b) => b.timestampCreacion.localeCompare(a.timestampCreacion));
+  });
+  readonly pendientesConfirmacion = computed(() =>
+    this.todos().filter((pedido) => pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION'),
+  );
 
-  async crearPendiente(
+  iniciar(): void {
+    if (this.dejarDeEscuchar) return;
+    this.dejarDeEscuchar = this.firestore.escucharPedidos((pedidos) => this.pedidosFirestore.set(pedidos));
+    void this.cargarDesdeSql();
+  }
+
+  porId(id: string): Pedido | undefined {
+    return this.todos().find((pedido) => pedido.id === id);
+  }
+
+  activoDe(cliente: Usuario | null | undefined): Pedido | undefined {
+    if (!cliente) return undefined;
+    return this.todos().find(
+      (pedido) =>
+        (pedido.clienteId === cliente.id ||
+          pedido.clienteUid === cliente.uid ||
+          pedido.clienteUid === cliente.id) &&
+        pedido.estadoGlobal !== 'CERRADO' &&
+        pedido.estadoGlobal !== 'RECHAZADO',
+    );
+  }
+
+async crearPendiente(
     mesa: Mesa,
     cliente: Usuario,
     items: ItemCarrito[],
     tiempoEstimado: number,
     total: number,
-  ): Promise<PedidoCreado> {
+    ): Promise<Pedido> {
     if (!items.length) {
-      throw new Error('El carrito está vacío.');
+        throw new Error('El carrito está vacío.');
     }
 
     if (!esUuid(mesa.id)) {
-      throw new Error(
+        throw new Error(
         'La mesa todavía no está sincronizada con Cloud SQL.',
-      );
+        );
     }
 
     if (!esUuid(cliente.id)) {
-      throw new Error(
+        throw new Error(
         'El cliente todavía no está sincronizado con Cloud SQL.',
-      );
+        );
     }
 
     const productoSinSincronizar = items.find(
-      (item) => !esUuid(item.producto.id),
+        (item) => !esUuid(item.producto.id),
     );
 
     if (productoSinSincronizar) {
-      throw new Error(
+        throw new Error(
         `${productoSinSincronizar.producto.nombre} todavía no está sincronizado con Cloud SQL.`,
-      );
+        );
     }
 
-    const app = getApps().length
-      ? getApp()
-      : initializeApp(environment.firebase);
-
-    const dc = getDataConnect(app, connectorConfig);
+    const dc = this.dataConnect();
     const creadoEn = new Date().toISOString();
 
-    // El pedido queda esperando que lo confirme el mozo.
-    // Cocina y Bar permanecen en NO_APLICA por defecto.
     const respuesta = await createPedido(dc, {
-      mesaId: mesa.id,
-      clienteId: cliente.id,
-      estadoGlobal: DcEstadoPedido.PENDIENTE_CONFIRMACION,
-      tiempoEstimado,
-      totalBruto: total,
-      descuentoJuego: 0,
-      montoDescuentoJuego: 0,
-      porcentajePropina: 0,
-      montoPropina: 0,
-      totalFinal: total,
-      timestampCreacion: creadoEn,
+        mesaId: mesa.id,
+        clienteId: cliente.id,
+        estadoGlobal: DcEstadoPedido.PENDIENTE_CONFIRMACION,
+        tiempoEstimado,
+        totalBruto: total,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        porcentajePropina: 0,
+        montoPropina: 0,
+        totalFinal: total,
+        timestampCreacion: creadoEn,
     });
 
     const pedidoId = respuesta.data.pedido_insert.id;
+    const pedidoItems: Pedido['items'] = [];
 
-    // Guardar todos los productos y sus cantidades.
     for (const item of items) {
-      await createPedidoItem(dc, {
+        const sector = sectorDe(item.producto.tipo);
+
+        const respuestaItem = await createPedidoItem(dc, {
         pedidoId,
         productoId: item.producto.id,
         cantidad: item.cantidad,
         precioUnitario: item.producto.precio,
-        subtotal:
-          item.producto.precio * item.cantidad,
-        sector: item.producto.sector as DcSector,
-      });
+        subtotal: item.producto.precio * item.cantidad,
+        sector: sector as DcSector,
+        });
+
+        pedidoItems.push({
+        id: respuestaItem.data.pedidoItem_insert.id,
+        productoId: item.producto.id,
+        productoNombre: item.producto.nombre,
+        tipo: item.producto.tipo,
+        sector,
+        cantidad: item.cantidad,
+        precioUnitario: item.producto.precio,
+        subtotal: item.producto.precio * item.cantidad,
+        });
     }
 
-    const pedido: PedidoCreado = {
-      id: pedidoId,
-      mesaId: mesa.id,
-      mesaNumero: mesa.numero,
-      clienteId: cliente.id,
-      estado: 'PENDIENTE_CONFIRMACION',
-      tiempoEstimado,
-      total,
-      creadoEn,
+    const pedido: Pedido = {
+        id: pedidoId,
+        mesaId: mesa.id,
+        mesaNumero: mesa.numero,
+        clienteId: cliente.id,
+        clienteUid: cliente.uid || cliente.id,
+        clienteNombre: [
+        cliente.nombre,
+        cliente.apellido ?? '',
+        ].join(' ').trim(),
+        estadoGlobal: 'PENDIENTE_CONFIRMACION',
+        estadoCocina: 'NO_APLICA',
+        estadoBar: 'NO_APLICA',
+        tiempoEstimado,
+        totalBruto: total,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: total,
+        confirmadoPorId: null,
+        juegoIntentado: false,
+        timestampCreacion: creadoEn,
+        items: pedidoItems,
     };
 
-    this.ultimoPedido.set(pedido);
+    await this.firestore.guardarPedidoPendiente(pedido);
 
-    // El modelo actual todavía no relaciona una mesa con un mozo
-    // específico. Por eso la notificación se dirige al rol MOZO.
+    this.pedidosSql.update((actuales) => [
+        pedido,
+        ...actuales.filter((actual) => actual.id !== pedido.id),
+    ]);
+
     await this.firestore.encolarNotificacion({
-      destinatarioRol: 'MOZO',
-      titulo: '🌸 Nuevo pedido pendiente',
-      cuerpo: `La mesa ${mesa.numero} envió un pedido y espera confirmación.`,
-      ruta: '/mesas',
+        destinatarioRol: 'MOZO',
+        titulo: '🌸 Nuevo pedido pendiente',
+        cuerpo:
+        `La mesa ${mesa.numero} envió un pedido y espera confirmación.`,
+        ruta: '/mozo/pedidos',
     });
 
     return pedido;
+    }
+
+  /** Deriva los ítems por tipo, confirma y avisa sólo al personal necesario. */
+  async confirmar(pedido: Pedido, confirmador: Usuario): Promise<void> {
+    if (pedido.estadoGlobal !== 'PENDIENTE_CONFIRMACION') {
+      throw new Error('Este pedido ya fue procesado.');
+    }
+    if (!pedido.items.length) {
+      throw new Error('El pedido no tiene productos para confirmar.');
+    }
+
+    const itemsSectorizados = pedido.items.map((item) => ({ ...item, sector: sectorDe(item.tipo) }));
+    const sectores = new Set(itemsSectorizados.map((item) => item.sector));
+    const hayCocina = sectores.has('COCINA');
+    const hayBar = sectores.has('BAR');
+
+    await this.confirmarEnSql(pedido.id, confirmador.id, hayCocina, hayBar);
+
+    await this.firestore.confirmarPedido({
+      ...pedido,
+      estadoGlobal: 'CONFIRMADO',
+      estadoCocina: hayCocina ? 'PENDIENTE' : 'NO_APLICA',
+      estadoBar: hayBar ? 'PENDIENTE' : 'NO_APLICA',
+      confirmadoPorId: confirmador.id,
+      items: itemsSectorizados,
+    });
+
+    const mensaje = `Mesa ${pedido.mesaNumero}: ${pedido.items.length} producto${pedido.items.length === 1 ? '' : 's'} para preparar.`;
+    if (hayCocina) {
+      await this.notificaciones.enviar(
+        this.destinatarios('COCINERO'),
+        'Nueva comanda de Cocina',
+        mensaje,
+        ['/carta'],
+      );
+    }
+    if (hayBar) {
+      await this.notificaciones.enviar(
+        this.destinatarios('CANTINERO'),
+        'Nueva comanda de Bar',
+        mensaje,
+        ['/carta'],
+      );
+    }
+
+    void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
   }
 
-  async buscarPorId(
-    pedidoId: string,
-  ): Promise<PedidoCreado | null> {
-    const guardado = this.ultimoPedido();
-
-    if (guardado?.id === pedidoId) {
-      return guardado;
+  /** Resuelve el único intento del cliente: puede obtener 0, 10, 15 o 20 %. */
+  async jugar(pedido: Pedido, cliente: Usuario): Promise<number> {
+    if (!this.juegosHabilitados(pedido)) {
+      throw new Error('El juego no está habilitado para este pedido.');
+    }
+    if (pedido.juegoIntentado) {
+      throw new Error('Ya usaste el único intento de este pedido.');
     }
 
-    const app = getApps().length
-      ? getApp()
-      : initializeApp(environment.firebase);
+    const premios = [0, 10, 15, 20] as const;
+    const numero = new Uint32Array(1);
+    crypto.getRandomValues(numero);
+    const descuento = premios[numero[0] % premios.length];
+    const resultado = await this.firestore.registrarIntentoJuego(pedido.id, cliente.id, descuento);
+    if (!resultado.aplicado) throw new Error('Ya usaste el único intento de este pedido.');
+    await this.registrarJuegoEnSql(pedido, cliente, descuento, resultado.totalFinal);
+    return descuento;
+  }
 
-    const dc = getDataConnect(app, connectorConfig);
-    const respuesta = await listPedidosActivos(dc);
-
-    const encontrado = respuesta.data.pedidos.find(
-      (pedido) => pedido.id === pedidoId,
+  juegosHabilitados(pedido: Pedido | undefined): boolean {
+    if (!pedido) return false;
+    return !['SELECCIONANDO', 'PENDIENTE_CONFIRMACION', 'RECHAZADO', 'CERRADO'].includes(
+      pedido.estadoGlobal,
     );
+  }
 
-    if (!encontrado) {
-      return null;
+  private destinatarios(perfil: 'COCINERO' | 'CANTINERO'): string[] {
+    return this.usuarios
+      .todos()
+      .filter((usuario) => usuario.perfil === perfil && usuario.estado === 'APROBADO' && usuario.activo)
+      .map((usuario) => usuario.uid || usuario.id);
+  }
+
+  private async cargarDesdeSql(): Promise<void> {
+    try {
+      const dc = this.dataConnect();
+      const [pedidosRes, itemsRes] = await Promise.all([listPedidosActivos(dc), listPedidoItems(dc)]);
+      const pedidosSql = pedidosRes?.data?.pedidos ?? [];
+      const itemsSql = itemsRes?.data?.pedidoItems ?? [];
+
+      const activos: Pedido[] = [];
+      for (const pedido of pedidosSql) {
+        if (pedido.estadoGlobal === 'CERRADO' || pedido.estadoGlobal === 'RECHAZADO') continue;
+        const items = itemsSql
+          .filter((item) => item.pedido.id === pedido.id)
+          .map((item) => ({
+            id: item.id,
+            productoId: item.producto.id,
+            productoNombre: item.producto.nombre,
+            tipo: item.producto.tipo as Pedido['items'][number]['tipo'],
+            sector: sectorDe(item.producto.tipo as Pedido['items'][number]['tipo']),
+            cantidad: item.cantidad,
+            precioUnitario: item.precioUnitario,
+            subtotal: item.subtotal,
+          }));
+        const totalBruto = redondearImporte(items.reduce((total, item) => total + item.subtotal, 0));
+
+        activos.push({
+          id: pedido.id,
+          mesaId: pedido.mesa.id,
+          mesaNumero: pedido.mesa.numero,
+          clienteId: pedido.cliente.id,
+          clienteUid: pedido.cliente.uid,
+          clienteNombre: [pedido.cliente.nombre, pedido.cliente.apellido ?? ''].join(' ').trim(),
+          estadoGlobal: pedido.estadoGlobal as Pedido['estadoGlobal'],
+          estadoCocina: pedido.estadoCocina as Pedido['estadoCocina'],
+          estadoBar: pedido.estadoBar as Pedido['estadoBar'],
+          tiempoEstimado: pedido.tiempoEstimado,
+          totalBruto,
+          descuentoJuego: 0,
+          montoDescuentoJuego: 0,
+          totalFinal: pedido.totalFinal,
+          confirmadoPorId: null,
+          juegoIntentado: false,
+          timestampCreacion: pedido.timestampCreacion,
+          items,
+        });
+      }
+      this.pedidosSql.set(activos);
+    } catch (error) {
+      console.warn('⚠️ No se pudieron cargar pedidos de Cloud SQL; continúa la escucha Firestore:', error);
     }
+  }
 
-    return {
-      id: encontrado.id,
-      mesaId: '',
-      mesaNumero: encontrado.mesa.numero,
-      clienteId: '',
-      estado: 'PENDIENTE_CONFIRMACION',
-      tiempoEstimado: encontrado.tiempoEstimado,
-      total: encontrado.totalFinal,
-      creadoEn: encontrado.timestampCreacion,
-    };
+  private async confirmarEnSql(
+    pedidoId: string,
+    confirmadorId: string,
+    hayCocina: boolean,
+    hayBar: boolean,
+  ): Promise<void> {
+    if (!esUuid(pedidoId) || !esUuid(confirmadorId)) return;
+    try {
+      const dc = this.dataConnect();
+      await confirmarPedido(dc, {
+        id: pedidoId,
+        estadoCocina: hayCocina ? DcEstadoSector.PENDIENTE : DcEstadoSector.NO_APLICA,
+        estadoBar: hayBar ? DcEstadoSector.PENDIENTE : DcEstadoSector.NO_APLICA,
+        confirmadoPorId: confirmadorId,
+      });
+    } catch (error) {
+      console.warn('⚠️ No se pudo confirmar el pedido en Cloud SQL; se sincronizará por Firestore:', error);
+    }
+  }
+
+  private async registrarJuegoEnSql(
+    pedido: Pedido,
+    cliente: Usuario,
+    descuento: number,
+    totalFinal: number,
+  ): Promise<void> {
+    if (!esUuid(pedido.id) || !esUuid(cliente.id)) return;
+    try {
+      const dc = this.dataConnect();
+      await registrarIntentoJuego(dc, {
+        pedidoId: pedido.id,
+        clienteId: cliente.id,
+        gano: descuento > 0,
+        descuentoOtorgado: descuento,
+      });
+      await aplicarDescuentoJuego(dc, {
+        id: pedido.id,
+        descuentoJuego: descuento,
+        montoDescuentoJuego: redondearImporte((pedido.totalBruto * descuento) / 100),
+        totalFinal,
+      });
+    } catch (error) {
+      console.warn('⚠️ No se pudo guardar el intento en Cloud SQL; quedó registrado en Firestore:', error);
+    }
+  }
+
+  private dataConnect() {
+    const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+    return getDataConnect(app, connectorConfig);
   }
 }
 
-    function esUuid(valor: string): boolean {
-    const compacto = valor.replaceAll('-', '');
+function esUuid(valor: string): boolean {
+  const compacto = valor.replaceAll('-', '');
+  return /^[0-9a-f]{32}$/i.test(compacto);
+}
 
-    return /^[0-9a-f]{32}$/i.test(compacto);
-    }
+function redondearImporte(valor: number): number {
+  return Math.round(valor * 100) / 100;
+}

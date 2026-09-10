@@ -1,4 +1,14 @@
-import { EstadoEspera, EstadoMesa, EstadoUsuario, Perfil, Sector, TipoMesa, TipoProducto } from './enums';
+import {
+  EstadoEspera,
+  EstadoMesa,
+  EstadoPedido,
+  EstadoSector,
+  EstadoUsuario,
+  Perfil,
+  Sector,
+  TipoMesa,
+  TipoProducto,
+} from './enums';
 
 /**
  * Entidad Usuario para el MVP (v0).
@@ -122,4 +132,37 @@ export interface RespuestaEncuesta {
   recomendaria: boolean;
   aspectoFavorito: string;
   fecha: string;
+}
+
+export interface PedidoItem {
+  id: string;
+  productoId: string;
+  productoNombre: string;
+  tipo: TipoProducto;
+  sector: Sector;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+/** Pedido operativo compartido por el mozo, el cliente, Cocina y Bar. */
+export interface Pedido {
+  id: string;
+  mesaId: string;
+  mesaNumero: number;
+  clienteId: string;
+  clienteUid: string;
+  clienteNombre: string;
+  estadoGlobal: EstadoPedido;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+  tiempoEstimado: number;
+  totalBruto: number;
+  descuentoJuego: number;
+  montoDescuentoJuego: number;
+  totalFinal: number;
+  confirmadoPorId: string | null;
+  juegoIntentado: boolean;
+  timestampCreacion: string;
+  items: PedidoItem[];
 }

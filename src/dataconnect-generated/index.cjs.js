@@ -251,6 +251,48 @@ exports.updateEstadoEspera = function updateEstadoEspera(dcOrVars, vars) {
 }
 ;
 
+const confirmarPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ConfirmarPedido', inputVars);
+}
+confirmarPedidoRef.operationName = 'ConfirmarPedido';
+exports.confirmarPedidoRef = confirmarPedidoRef;
+
+exports.confirmarPedido = function confirmarPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(confirmarPedidoRef(dcInstance, inputVars));
+}
+;
+
+const registrarIntentoJuegoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'RegistrarIntentoJuego', inputVars);
+}
+registrarIntentoJuegoRef.operationName = 'RegistrarIntentoJuego';
+exports.registrarIntentoJuegoRef = registrarIntentoJuegoRef;
+
+exports.registrarIntentoJuego = function registrarIntentoJuego(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(registrarIntentoJuegoRef(dcInstance, inputVars));
+}
+;
+
+const aplicarDescuentoJuegoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AplicarDescuentoJuego', inputVars);
+}
+aplicarDescuentoJuegoRef.operationName = 'AplicarDescuentoJuego';
+exports.aplicarDescuentoJuegoRef = aplicarDescuentoJuegoRef;
+
+exports.aplicarDescuentoJuego = function aplicarDescuentoJuego(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(aplicarDescuentoJuegoRef(dcInstance, inputVars));
+}
+;
+
 const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();
@@ -308,6 +350,21 @@ exports.listPedidosActivos = function listPedidosActivos(dcOrOptions, options) {
   
   const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
   return executeQuery(listPedidosActivosRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
+}
+;
+
+const listPedidoItemsRef = (dc) => {
+  const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
+  dcInstance._useGeneratedSdk();
+  return queryRef(dcInstance, 'ListPedidoItems');
+}
+listPedidoItemsRef.operationName = 'ListPedidoItems';
+exports.listPedidoItemsRef = listPedidoItemsRef;
+
+exports.listPedidoItems = function listPedidoItems(dcOrOptions, options) {
+  
+  const { dc: dcInstance, vars: inputVars, options: inputOpts } = validateArgsWithOptions(connectorConfig, dcOrOptions, options, undefined,false, false);
+  return executeQuery(listPedidoItemsRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
 

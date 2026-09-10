@@ -144,6 +144,18 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'metre/espera',
+    canActivate: [guardiaSesion, guardiaPerfil('METRE')],
+    loadComponent: () =>
+      import('./pantallas/metre/lista-espera.page').then((m) => m.MetreListaEsperaPage),
+  },
+  {
+    path: 'mozo/pedidos',
+    canActivate: [guardiaSesion, guardiaPerfil('MOZO')],
+    loadComponent: () =>
+      import('./pantallas/mozo/pedidos-mozo.page').then((m) => m.PedidosMozoPage),
+  },
+  {
     // US-5.1 · punto 9 · el comensal escanea el código de ingreso al salón y
     // queda anotado en la lista de espera. Hasta que el metre le asigne una
     // mesa, lo único habilitado son los resultados de las encuestas anteriores.
@@ -166,7 +178,23 @@ export const routes: Routes = [
       import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
   },
   {
-    path: 'cliente/estado-pedido/:id',
+  path: 'cliente/estado-pedido/:id',
+  canActivate: [
+    guardiaSesion,
+    guardiaPerfil(
+      'CLIENTE_REGISTRADO',
+      'CLIENTE_ANONIMO',
+    ),
+  ],
+  loadComponent: () =>
+    import(
+      './pantallas/cliente/estado-pedido.page'
+    ).then(
+      (m) => m.EstadoPedidoPage,
+    ),
+  },
+  {
+    path: 'cliente/estado-pedido',
     canActivate: [
       guardiaSesion,
       guardiaPerfil(
@@ -180,6 +208,11 @@ export const routes: Routes = [
       ).then(
         (m) => m.EstadoPedidoPage,
       ),
+  },
+  {
+    path: 'juegos',
+    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    loadComponent: () => import('./pantallas/cliente/juegos.page').then((m) => m.JuegosPage),
   },
   {
     path: '**',

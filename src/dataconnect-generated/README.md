@@ -14,6 +14,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*ListMesas*](#listmesas)
   - [*ListUsuarios*](#listusuarios)
   - [*ListPedidosActivos*](#listpedidosactivos)
+  - [*ListPedidoItems*](#listpedidoitems)
   - [*ListEspera*](#listespera)
   - [*ListEncuestas*](#listencuestas)
 - [**Mutations**](#mutations)
@@ -21,6 +22,7 @@ This README will guide you through the process of using the generated JavaScript
   - [*CreateUsuario*](#createusuario)
   - [*CreateMesa*](#createmesa)
   - [*CreatePedido*](#createpedido)
+  - [*CreatePedidoItem*](#createpedidoitem)
   - [*CreateEncuesta*](#createencuesta)
   - [*UpdateEstadoUsuario*](#updateestadousuario)
   - [*UpdateEstadoMesa*](#updateestadomesa)
@@ -28,6 +30,9 @@ This README will guide you through the process of using the generated JavaScript
   - [*UpdateActivoProducto*](#updateactivoproducto)
   - [*CreateEspera*](#createespera)
   - [*UpdateEstadoEspera*](#updateestadoespera)
+  - [*ConfirmarPedido*](#confirmarpedido)
+  - [*RegistrarIntentoJuego*](#registrarintentojuego)
+  - [*AplicarDescuentoJuego*](#aplicardescuentojuego)
 
 # Accessing the connector
 A connector is a collection of Queries and Mutations. One SDK is generated for each connector - this SDK is generated for the connector `example`. You can find more information about connectors in the [Data Connect documentation](https://firebase.google.com/docs/data-connect#how-does).
@@ -425,12 +430,15 @@ export interface ListPedidosActivosData {
   pedidos: ({
     id: UUIDString;
     mesa: {
+      id: UUIDString;
       numero: number;
-    };
+    } & Mesa_Key;
     cliente: {
+      id: UUIDString;
+      uid: string;
       nombre: string;
       apellido?: string | null;
-    };
+    } & User_Key;
     estadoGlobal: EstadoPedido;
     estadoCocina: EstadoSector;
     estadoBar: EstadoSector;
@@ -488,6 +496,111 @@ console.log(data.pedidos);
 executeQuery(ref).then((response) => {
   const data = response.data;
   console.log(data.pedidos);
+});
+```
+
+## ListPedidoItems
+You can execute the `ListPedidoItems` query using the following action shortcut function, or by calling `executeQuery()` after calling the following `QueryRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+listPedidoItems(options?: ExecuteQueryOptions): QueryPromise<ListPedidoItemsData, undefined>;
+
+interface ListPedidoItemsRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListPedidoItemsData, undefined>;
+}
+export const listPedidoItemsRef: ListPedidoItemsRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `QueryRef` function.
+```typescript
+listPedidoItems(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListPedidoItemsData, undefined>;
+
+interface ListPedidoItemsRef {
+  ...
+  (dc: DataConnect): QueryRef<ListPedidoItemsData, undefined>;
+}
+export const listPedidoItemsRef: ListPedidoItemsRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the listPedidoItemsRef:
+```typescript
+const name = listPedidoItemsRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ListPedidoItems` query has no variables.
+### Return Type
+Recall that executing the `ListPedidoItems` query returns a `QueryPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ListPedidoItemsData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ListPedidoItemsData {
+  pedidoItems: ({
+    id: UUIDString;
+    pedido: {
+      id: UUIDString;
+    } & Pedido_Key;
+    producto: {
+      id: UUIDString;
+      nombre: string;
+      tipo: TipoProducto;
+    } & Producto_Key;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    sector: Sector;
+  } & PedidoItem_Key)[];
+}
+```
+### Using `ListPedidoItems`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, listPedidoItems } from '@dataconnect/generated';
+
+
+// Call the `listPedidoItems()` function to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await listPedidoItems();
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await listPedidoItems(dataConnect);
+
+console.log(data.pedidoItems);
+
+// Or, you can use the `Promise` API.
+listPedidoItems().then((response) => {
+  const data = response.data;
+  console.log(data.pedidoItems);
+});
+```
+
+### Using `ListPedidoItems`'s `QueryRef` function
+
+```typescript
+import { getDataConnect, executeQuery } from 'firebase/data-connect';
+import { connectorConfig, listPedidoItemsRef } from '@dataconnect/generated';
+
+
+// Call the `listPedidoItemsRef()` function to get a reference to the query.
+const ref = listPedidoItemsRef();
+
+// You can also pass in a `DataConnect` instance to the `QueryRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = listPedidoItemsRef(dataConnect);
+
+// Call `executeQuery()` on the reference to execute the query.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeQuery(ref);
+
+console.log(data.pedidoItems);
+
+// Or, you can use the `Promise` API.
+executeQuery(ref).then((response) => {
+  const data = response.data;
+  console.log(data.pedidoItems);
 });
 ```
 
@@ -771,15 +884,15 @@ import { connectorConfig, createProducto, CreateProductoVariables } from '@datac
 
 // The `CreateProducto` mutation requires an argument of type `CreateProductoVariables`:
 const createProductoVars: CreateProductoVariables = {
-  nombre: ..., 
-  descripcion: ..., 
-  precio: ..., 
-  tiempoElaboracion: ..., 
-  tipo: ..., 
-  sector: ..., 
-  foto1: ..., 
-  foto2: ..., 
-  foto3: ..., 
+  nombre: ...,
+  descripcion: ...,
+  precio: ...,
+  tiempoElaboracion: ...,
+  tipo: ...,
+  sector: ...,
+  foto1: ...,
+  foto2: ...,
+  foto3: ...,
 };
 
 // Call the `createProducto()` function to execute the mutation.
@@ -809,15 +922,15 @@ import { connectorConfig, createProductoRef, CreateProductoVariables } from '@da
 
 // The `CreateProducto` mutation requires an argument of type `CreateProductoVariables`:
 const createProductoVars: CreateProductoVariables = {
-  nombre: ..., 
-  descripcion: ..., 
-  precio: ..., 
-  tiempoElaboracion: ..., 
-  tipo: ..., 
-  sector: ..., 
-  foto1: ..., 
-  foto2: ..., 
-  foto3: ..., 
+  nombre: ...,
+  descripcion: ...,
+  precio: ...,
+  tiempoElaboracion: ...,
+  tipo: ...,
+  sector: ...,
+  foto1: ...,
+  foto2: ...,
+  foto3: ...,
 };
 
 // Call the `createProductoRef()` function to get a reference to the mutation.
@@ -904,15 +1017,15 @@ import { connectorConfig, createUsuario, CreateUsuarioVariables } from '@datacon
 
 // The `CreateUsuario` mutation requires an argument of type `CreateUsuarioVariables`:
 const createUsuarioVars: CreateUsuarioVariables = {
-  uid: ..., 
-  nombre: ..., 
+  uid: ...,
+  nombre: ...,
   apellido: ..., // optional
   dni: ..., // optional
   cuil: ..., // optional
   email: ..., // optional
-  perfil: ..., 
-  fotoUrl: ..., 
-  estado: ..., 
+  perfil: ...,
+  fotoUrl: ...,
+  estado: ...,
 };
 
 // Call the `createUsuario()` function to execute the mutation.
@@ -942,15 +1055,15 @@ import { connectorConfig, createUsuarioRef, CreateUsuarioVariables } from '@data
 
 // The `CreateUsuario` mutation requires an argument of type `CreateUsuarioVariables`:
 const createUsuarioVars: CreateUsuarioVariables = {
-  uid: ..., 
-  nombre: ..., 
+  uid: ...,
+  nombre: ...,
   apellido: ..., // optional
   dni: ..., // optional
   cuil: ..., // optional
   email: ..., // optional
-  perfil: ..., 
-  fotoUrl: ..., 
-  estado: ..., 
+  perfil: ...,
+  fotoUrl: ...,
+  estado: ...,
 };
 
 // Call the `createUsuarioRef()` function to get a reference to the mutation.
@@ -1034,12 +1147,12 @@ import { connectorConfig, createMesa, CreateMesaVariables } from '@dataconnect/g
 
 // The `CreateMesa` mutation requires an argument of type `CreateMesaVariables`:
 const createMesaVars: CreateMesaVariables = {
-  numero: ..., 
-  cantidadComensales: ..., 
-  tipo: ..., 
-  estado: ..., 
-  fotoUrl: ..., 
-  qrCodeUrl: ..., 
+  numero: ...,
+  cantidadComensales: ...,
+  tipo: ...,
+  estado: ...,
+  fotoUrl: ...,
+  qrCodeUrl: ...,
 };
 
 // Call the `createMesa()` function to execute the mutation.
@@ -1069,12 +1182,12 @@ import { connectorConfig, createMesaRef, CreateMesaVariables } from '@dataconnec
 
 // The `CreateMesa` mutation requires an argument of type `CreateMesaVariables`:
 const createMesaVars: CreateMesaVariables = {
-  numero: ..., 
-  cantidadComensales: ..., 
-  tipo: ..., 
-  estado: ..., 
-  fotoUrl: ..., 
-  qrCodeUrl: ..., 
+  numero: ...,
+  cantidadComensales: ...,
+  tipo: ...,
+  estado: ...,
+  fotoUrl: ...,
+  qrCodeUrl: ...,
 };
 
 // Call the `createMesaRef()` function to get a reference to the mutation.
@@ -1163,17 +1276,17 @@ import { connectorConfig, createPedido, CreatePedidoVariables } from '@dataconne
 
 // The `CreatePedido` mutation requires an argument of type `CreatePedidoVariables`:
 const createPedidoVars: CreatePedidoVariables = {
-  mesaId: ..., 
-  clienteId: ..., 
-  estadoGlobal: ..., 
-  tiempoEstimado: ..., 
-  totalBruto: ..., 
-  descuentoJuego: ..., 
-  montoDescuentoJuego: ..., 
-  porcentajePropina: ..., 
-  montoPropina: ..., 
-  totalFinal: ..., 
-  timestampCreacion: ..., 
+  mesaId: ...,
+  clienteId: ...,
+  estadoGlobal: ...,
+  tiempoEstimado: ...,
+  totalBruto: ...,
+  descuentoJuego: ...,
+  montoDescuentoJuego: ...,
+  porcentajePropina: ...,
+  montoPropina: ...,
+  totalFinal: ...,
+  timestampCreacion: ...,
 };
 
 // Call the `createPedido()` function to execute the mutation.
@@ -1203,17 +1316,17 @@ import { connectorConfig, createPedidoRef, CreatePedidoVariables } from '@dataco
 
 // The `CreatePedido` mutation requires an argument of type `CreatePedidoVariables`:
 const createPedidoVars: CreatePedidoVariables = {
-  mesaId: ..., 
-  clienteId: ..., 
-  estadoGlobal: ..., 
-  tiempoEstimado: ..., 
-  totalBruto: ..., 
-  descuentoJuego: ..., 
-  montoDescuentoJuego: ..., 
-  porcentajePropina: ..., 
-  montoPropina: ..., 
-  totalFinal: ..., 
-  timestampCreacion: ..., 
+  mesaId: ...,
+  clienteId: ...,
+  estadoGlobal: ...,
+  tiempoEstimado: ...,
+  totalBruto: ...,
+  descuentoJuego: ...,
+  montoDescuentoJuego: ...,
+  porcentajePropina: ...,
+  montoPropina: ...,
+  totalFinal: ...,
+  timestampCreacion: ...,
 };
 
 // Call the `createPedidoRef()` function to get a reference to the mutation.
@@ -1235,6 +1348,130 @@ console.log(data.pedido_insert);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.pedido_insert);
+});
+```
+
+## CreatePedidoItem
+You can execute the `CreatePedidoItem` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+createPedidoItem(vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
+
+interface CreatePedidoItemRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+}
+export const createPedidoItemRef: CreatePedidoItemRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+createPedidoItem(dc: DataConnect, vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
+
+interface CreatePedidoItemRef {
+  ...
+  (dc: DataConnect, vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+}
+export const createPedidoItemRef: CreatePedidoItemRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the createPedidoItemRef:
+```typescript
+const name = createPedidoItemRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `CreatePedidoItem` mutation requires an argument of type `CreatePedidoItemVariables`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface CreatePedidoItemVariables {
+  pedidoId: UUIDString;
+  productoId: UUIDString;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  sector: Sector;
+}
+```
+### Return Type
+Recall that executing the `CreatePedidoItem` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `CreatePedidoItemData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface CreatePedidoItemData {
+  pedidoItem_insert: PedidoItem_Key;
+}
+```
+### Using `CreatePedidoItem`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, createPedidoItem, CreatePedidoItemVariables } from '@dataconnect/generated';
+
+// The `CreatePedidoItem` mutation requires an argument of type `CreatePedidoItemVariables`:
+const createPedidoItemVars: CreatePedidoItemVariables = {
+  pedidoId: ...,
+  productoId: ...,
+  cantidad: ...,
+  precioUnitario: ...,
+  subtotal: ...,
+  sector: ...,
+};
+
+// Call the `createPedidoItem()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await createPedidoItem(createPedidoItemVars);
+// Variables can be defined inline as well.
+const { data } = await createPedidoItem({ pedidoId: ..., productoId: ..., cantidad: ..., precioUnitario: ..., subtotal: ..., sector: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await createPedidoItem(dataConnect, createPedidoItemVars);
+
+console.log(data.pedidoItem_insert);
+
+// Or, you can use the `Promise` API.
+createPedidoItem(createPedidoItemVars).then((response) => {
+  const data = response.data;
+  console.log(data.pedidoItem_insert);
+});
+```
+
+### Using `CreatePedidoItem`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, createPedidoItemRef, CreatePedidoItemVariables } from '@dataconnect/generated';
+
+// The `CreatePedidoItem` mutation requires an argument of type `CreatePedidoItemVariables`:
+const createPedidoItemVars: CreatePedidoItemVariables = {
+  pedidoId: ...,
+  productoId: ...,
+  cantidad: ...,
+  precioUnitario: ...,
+  subtotal: ...,
+  sector: ...,
+};
+
+// Call the `createPedidoItemRef()` function to get a reference to the mutation.
+const ref = createPedidoItemRef(createPedidoItemVars);
+// Variables can be defined inline as well.
+const ref = createPedidoItemRef({ pedidoId: ..., productoId: ..., cantidad: ..., precioUnitario: ..., subtotal: ..., sector: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = createPedidoItemRef(dataConnect, createPedidoItemVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.pedidoItem_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.pedidoItem_insert);
 });
 ```
 
@@ -1300,15 +1537,15 @@ import { connectorConfig, createEncuesta, CreateEncuestaVariables } from '@datac
 
 // The `CreateEncuesta` mutation requires an argument of type `CreateEncuestaVariables`:
 const createEncuestaVars: CreateEncuestaVariables = {
-  clienteId: ..., 
-  pedidoId: ..., 
-  mesaId: ..., 
-  calificacionMozo: ..., 
-  nivelLimpieza: ..., 
-  recomendaria: ..., 
-  aspectoFavorito: ..., 
+  clienteId: ...,
+  pedidoId: ...,
+  mesaId: ...,
+  calificacionMozo: ...,
+  nivelLimpieza: ...,
+  recomendaria: ...,
+  aspectoFavorito: ...,
   comentarios: ..., // optional
-  timestamp: ..., 
+  timestamp: ...,
 };
 
 // Call the `createEncuesta()` function to execute the mutation.
@@ -1338,15 +1575,15 @@ import { connectorConfig, createEncuestaRef, CreateEncuestaVariables } from '@da
 
 // The `CreateEncuesta` mutation requires an argument of type `CreateEncuestaVariables`:
 const createEncuestaVars: CreateEncuestaVariables = {
-  clienteId: ..., 
-  pedidoId: ..., 
-  mesaId: ..., 
-  calificacionMozo: ..., 
-  nivelLimpieza: ..., 
-  recomendaria: ..., 
-  aspectoFavorito: ..., 
+  clienteId: ...,
+  pedidoId: ...,
+  mesaId: ...,
+  calificacionMozo: ...,
+  nivelLimpieza: ...,
+  recomendaria: ...,
+  aspectoFavorito: ...,
   comentarios: ..., // optional
-  timestamp: ..., 
+  timestamp: ...,
 };
 
 // Call the `createEncuestaRef()` function to get a reference to the mutation.
@@ -1426,8 +1663,8 @@ import { connectorConfig, updateEstadoUsuario, UpdateEstadoUsuarioVariables } fr
 
 // The `UpdateEstadoUsuario` mutation requires an argument of type `UpdateEstadoUsuarioVariables`:
 const updateEstadoUsuarioVars: UpdateEstadoUsuarioVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoUsuario()` function to execute the mutation.
@@ -1457,8 +1694,8 @@ import { connectorConfig, updateEstadoUsuarioRef, UpdateEstadoUsuarioVariables }
 
 // The `UpdateEstadoUsuario` mutation requires an argument of type `UpdateEstadoUsuarioVariables`:
 const updateEstadoUsuarioVars: UpdateEstadoUsuarioVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoUsuarioRef()` function to get a reference to the mutation.
@@ -1538,8 +1775,8 @@ import { connectorConfig, updateEstadoMesa, UpdateEstadoMesaVariables } from '@d
 
 // The `UpdateEstadoMesa` mutation requires an argument of type `UpdateEstadoMesaVariables`:
 const updateEstadoMesaVars: UpdateEstadoMesaVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoMesa()` function to execute the mutation.
@@ -1569,8 +1806,8 @@ import { connectorConfig, updateEstadoMesaRef, UpdateEstadoMesaVariables } from 
 
 // The `UpdateEstadoMesa` mutation requires an argument of type `UpdateEstadoMesaVariables`:
 const updateEstadoMesaVars: UpdateEstadoMesaVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoMesaRef()` function to get a reference to the mutation.
@@ -1658,16 +1895,16 @@ import { connectorConfig, updateProducto, UpdateProductoVariables } from '@datac
 
 // The `UpdateProducto` mutation requires an argument of type `UpdateProductoVariables`:
 const updateProductoVars: UpdateProductoVariables = {
-  id: ..., 
-  nombre: ..., 
-  descripcion: ..., 
-  precio: ..., 
-  tiempoElaboracion: ..., 
-  tipo: ..., 
-  sector: ..., 
-  foto1: ..., 
-  foto2: ..., 
-  foto3: ..., 
+  id: ...,
+  nombre: ...,
+  descripcion: ...,
+  precio: ...,
+  tiempoElaboracion: ...,
+  tipo: ...,
+  sector: ...,
+  foto1: ...,
+  foto2: ...,
+  foto3: ...,
 };
 
 // Call the `updateProducto()` function to execute the mutation.
@@ -1697,16 +1934,16 @@ import { connectorConfig, updateProductoRef, UpdateProductoVariables } from '@da
 
 // The `UpdateProducto` mutation requires an argument of type `UpdateProductoVariables`:
 const updateProductoVars: UpdateProductoVariables = {
-  id: ..., 
-  nombre: ..., 
-  descripcion: ..., 
-  precio: ..., 
-  tiempoElaboracion: ..., 
-  tipo: ..., 
-  sector: ..., 
-  foto1: ..., 
-  foto2: ..., 
-  foto3: ..., 
+  id: ...,
+  nombre: ...,
+  descripcion: ...,
+  precio: ...,
+  tiempoElaboracion: ...,
+  tipo: ...,
+  sector: ...,
+  foto1: ...,
+  foto2: ...,
+  foto3: ...,
 };
 
 // Call the `updateProductoRef()` function to get a reference to the mutation.
@@ -1786,8 +2023,8 @@ import { connectorConfig, updateActivoProducto, UpdateActivoProductoVariables } 
 
 // The `UpdateActivoProducto` mutation requires an argument of type `UpdateActivoProductoVariables`:
 const updateActivoProductoVars: UpdateActivoProductoVariables = {
-  id: ..., 
-  activo: ..., 
+  id: ...,
+  activo: ...,
 };
 
 // Call the `updateActivoProducto()` function to execute the mutation.
@@ -1817,8 +2054,8 @@ import { connectorConfig, updateActivoProductoRef, UpdateActivoProductoVariables
 
 // The `UpdateActivoProducto` mutation requires an argument of type `UpdateActivoProductoVariables`:
 const updateActivoProductoVars: UpdateActivoProductoVariables = {
-  id: ..., 
-  activo: ..., 
+  id: ...,
+  activo: ...,
 };
 
 // Call the `updateActivoProductoRef()` function to get a reference to the mutation.
@@ -1897,7 +2134,7 @@ import { connectorConfig, createEspera, CreateEsperaVariables } from '@dataconne
 
 // The `CreateEspera` mutation requires an argument of type `CreateEsperaVariables`:
 const createEsperaVars: CreateEsperaVariables = {
-  clienteId: ..., 
+  clienteId: ...,
 };
 
 // Call the `createEspera()` function to execute the mutation.
@@ -1927,7 +2164,7 @@ import { connectorConfig, createEsperaRef, CreateEsperaVariables } from '@dataco
 
 // The `CreateEspera` mutation requires an argument of type `CreateEsperaVariables`:
 const createEsperaVars: CreateEsperaVariables = {
-  clienteId: ..., 
+  clienteId: ...,
 };
 
 // Call the `createEsperaRef()` function to get a reference to the mutation.
@@ -2007,8 +2244,8 @@ import { connectorConfig, updateEstadoEspera, UpdateEstadoEsperaVariables } from
 
 // The `UpdateEstadoEspera` mutation requires an argument of type `UpdateEstadoEsperaVariables`:
 const updateEstadoEsperaVars: UpdateEstadoEsperaVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoEspera()` function to execute the mutation.
@@ -2038,8 +2275,8 @@ import { connectorConfig, updateEstadoEsperaRef, UpdateEstadoEsperaVariables } f
 
 // The `UpdateEstadoEspera` mutation requires an argument of type `UpdateEstadoEsperaVariables`:
 const updateEstadoEsperaVars: UpdateEstadoEsperaVariables = {
-  id: ..., 
-  estado: ..., 
+  id: ...,
+  estado: ...,
 };
 
 // Call the `updateEstadoEsperaRef()` function to get a reference to the mutation.
@@ -2061,6 +2298,360 @@ console.log(data.espera_update);
 executeMutation(ref).then((response) => {
   const data = response.data;
   console.log(data.espera_update);
+});
+```
+
+## ConfirmarPedido
+You can execute the `ConfirmarPedido` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+confirmarPedido(vars: ConfirmarPedidoVariables): MutationPromise<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+
+interface ConfirmarPedidoRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ConfirmarPedidoVariables): MutationRef<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+}
+export const confirmarPedidoRef: ConfirmarPedidoRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+confirmarPedido(dc: DataConnect, vars: ConfirmarPedidoVariables): MutationPromise<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+
+interface ConfirmarPedidoRef {
+  ...
+  (dc: DataConnect, vars: ConfirmarPedidoVariables): MutationRef<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+}
+export const confirmarPedidoRef: ConfirmarPedidoRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the confirmarPedidoRef:
+```typescript
+const name = confirmarPedidoRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `ConfirmarPedido` mutation requires an argument of type `ConfirmarPedidoVariables`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface ConfirmarPedidoVariables {
+  id: UUIDString;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+  confirmadoPorId: UUIDString;
+}
+```
+### Return Type
+Recall that executing the `ConfirmarPedido` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `ConfirmarPedidoData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface ConfirmarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+```
+### Using `ConfirmarPedido`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, confirmarPedido, ConfirmarPedidoVariables } from '@dataconnect/generated';
+
+// The `ConfirmarPedido` mutation requires an argument of type `ConfirmarPedidoVariables`:
+const confirmarPedidoVars: ConfirmarPedidoVariables = {
+  id: ...,
+  estadoCocina: ...,
+  estadoBar: ...,
+  confirmadoPorId: ...,
+};
+
+// Call the `confirmarPedido()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await confirmarPedido(confirmarPedidoVars);
+// Variables can be defined inline as well.
+const { data } = await confirmarPedido({ id: ..., estadoCocina: ..., estadoBar: ..., confirmadoPorId: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await confirmarPedido(dataConnect, confirmarPedidoVars);
+
+console.log(data.pedido_update);
+
+// Or, you can use the `Promise` API.
+confirmarPedido(confirmarPedidoVars).then((response) => {
+  const data = response.data;
+  console.log(data.pedido_update);
+});
+```
+
+### Using `ConfirmarPedido`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, confirmarPedidoRef, ConfirmarPedidoVariables } from '@dataconnect/generated';
+
+// The `ConfirmarPedido` mutation requires an argument of type `ConfirmarPedidoVariables`:
+const confirmarPedidoVars: ConfirmarPedidoVariables = {
+  id: ...,
+  estadoCocina: ...,
+  estadoBar: ...,
+  confirmadoPorId: ...,
+};
+
+// Call the `confirmarPedidoRef()` function to get a reference to the mutation.
+const ref = confirmarPedidoRef(confirmarPedidoVars);
+// Variables can be defined inline as well.
+const ref = confirmarPedidoRef({ id: ..., estadoCocina: ..., estadoBar: ..., confirmadoPorId: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = confirmarPedidoRef(dataConnect, confirmarPedidoVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.pedido_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.pedido_update);
+});
+```
+
+## RegistrarIntentoJuego
+You can execute the `RegistrarIntentoJuego` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+registrarIntentoJuego(vars: RegistrarIntentoJuegoVariables): MutationPromise<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+
+interface RegistrarIntentoJuegoRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RegistrarIntentoJuegoVariables): MutationRef<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+}
+export const registrarIntentoJuegoRef: RegistrarIntentoJuegoRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+registrarIntentoJuego(dc: DataConnect, vars: RegistrarIntentoJuegoVariables): MutationPromise<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+
+interface RegistrarIntentoJuegoRef {
+  ...
+  (dc: DataConnect, vars: RegistrarIntentoJuegoVariables): MutationRef<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+}
+export const registrarIntentoJuegoRef: RegistrarIntentoJuegoRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the registrarIntentoJuegoRef:
+```typescript
+const name = registrarIntentoJuegoRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `RegistrarIntentoJuego` mutation requires an argument of type `RegistrarIntentoJuegoVariables`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface RegistrarIntentoJuegoVariables {
+  pedidoId: UUIDString;
+  clienteId: UUIDString;
+  gano: boolean;
+  descuentoOtorgado: number;
+}
+```
+### Return Type
+Recall that executing the `RegistrarIntentoJuego` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `RegistrarIntentoJuegoData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface RegistrarIntentoJuegoData {
+  intentoJuego_insert: IntentoJuego_Key;
+}
+```
+### Using `RegistrarIntentoJuego`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, registrarIntentoJuego, RegistrarIntentoJuegoVariables } from '@dataconnect/generated';
+
+// The `RegistrarIntentoJuego` mutation requires an argument of type `RegistrarIntentoJuegoVariables`:
+const registrarIntentoJuegoVars: RegistrarIntentoJuegoVariables = {
+  pedidoId: ...,
+  clienteId: ...,
+  gano: ...,
+  descuentoOtorgado: ...,
+};
+
+// Call the `registrarIntentoJuego()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await registrarIntentoJuego(registrarIntentoJuegoVars);
+// Variables can be defined inline as well.
+const { data } = await registrarIntentoJuego({ pedidoId: ..., clienteId: ..., gano: ..., descuentoOtorgado: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await registrarIntentoJuego(dataConnect, registrarIntentoJuegoVars);
+
+console.log(data.intentoJuego_insert);
+
+// Or, you can use the `Promise` API.
+registrarIntentoJuego(registrarIntentoJuegoVars).then((response) => {
+  const data = response.data;
+  console.log(data.intentoJuego_insert);
+});
+```
+
+### Using `RegistrarIntentoJuego`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, registrarIntentoJuegoRef, RegistrarIntentoJuegoVariables } from '@dataconnect/generated';
+
+// The `RegistrarIntentoJuego` mutation requires an argument of type `RegistrarIntentoJuegoVariables`:
+const registrarIntentoJuegoVars: RegistrarIntentoJuegoVariables = {
+  pedidoId: ...,
+  clienteId: ...,
+  gano: ...,
+  descuentoOtorgado: ...,
+};
+
+// Call the `registrarIntentoJuegoRef()` function to get a reference to the mutation.
+const ref = registrarIntentoJuegoRef(registrarIntentoJuegoVars);
+// Variables can be defined inline as well.
+const ref = registrarIntentoJuegoRef({ pedidoId: ..., clienteId: ..., gano: ..., descuentoOtorgado: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = registrarIntentoJuegoRef(dataConnect, registrarIntentoJuegoVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.intentoJuego_insert);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.intentoJuego_insert);
+});
+```
+
+## AplicarDescuentoJuego
+You can execute the `AplicarDescuentoJuego` mutation using the following action shortcut function, or by calling `executeMutation()` after calling the following `MutationRef` function, both of which are defined in [dataconnect-generated/index.d.ts](./index.d.ts):
+```typescript
+aplicarDescuentoJuego(vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+
+interface AplicarDescuentoJuegoRef {
+  ...
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AplicarDescuentoJuegoVariables): MutationRef<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+}
+export const aplicarDescuentoJuegoRef: AplicarDescuentoJuegoRef;
+```
+You can also pass in a `DataConnect` instance to the action shortcut function or `MutationRef` function.
+```typescript
+aplicarDescuentoJuego(dc: DataConnect, vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+
+interface AplicarDescuentoJuegoRef {
+  ...
+  (dc: DataConnect, vars: AplicarDescuentoJuegoVariables): MutationRef<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+}
+export const aplicarDescuentoJuegoRef: AplicarDescuentoJuegoRef;
+```
+
+If you need the name of the operation without creating a ref, you can retrieve the operation name by calling the `operationName` property on the aplicarDescuentoJuegoRef:
+```typescript
+const name = aplicarDescuentoJuegoRef.operationName;
+console.log(name);
+```
+
+### Variables
+The `AplicarDescuentoJuego` mutation requires an argument of type `AplicarDescuentoJuegoVariables`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+
+```typescript
+export interface AplicarDescuentoJuegoVariables {
+  id: UUIDString;
+  descuentoJuego: number;
+  montoDescuentoJuego: number;
+  totalFinal: number;
+}
+```
+### Return Type
+Recall that executing the `AplicarDescuentoJuego` mutation returns a `MutationPromise` that resolves to an object with a `data` property.
+
+The `data` property is an object of type `AplicarDescuentoJuegoData`, which is defined in [dataconnect-generated/index.d.ts](./index.d.ts). It has the following fields:
+```typescript
+export interface AplicarDescuentoJuegoData {
+  pedido_update?: Pedido_Key | null;
+}
+```
+### Using `AplicarDescuentoJuego`'s action shortcut function
+
+```typescript
+import { getDataConnect } from 'firebase/data-connect';
+import { connectorConfig, aplicarDescuentoJuego, AplicarDescuentoJuegoVariables } from '@dataconnect/generated';
+
+// The `AplicarDescuentoJuego` mutation requires an argument of type `AplicarDescuentoJuegoVariables`:
+const aplicarDescuentoJuegoVars: AplicarDescuentoJuegoVariables = {
+  id: ...,
+  descuentoJuego: ...,
+  montoDescuentoJuego: ...,
+  totalFinal: ...,
+};
+
+// Call the `aplicarDescuentoJuego()` function to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await aplicarDescuentoJuego(aplicarDescuentoJuegoVars);
+// Variables can be defined inline as well.
+const { data } = await aplicarDescuentoJuego({ id: ..., descuentoJuego: ..., montoDescuentoJuego: ..., totalFinal: ..., });
+
+// You can also pass in a `DataConnect` instance to the action shortcut function.
+const dataConnect = getDataConnect(connectorConfig);
+const { data } = await aplicarDescuentoJuego(dataConnect, aplicarDescuentoJuegoVars);
+
+console.log(data.pedido_update);
+
+// Or, you can use the `Promise` API.
+aplicarDescuentoJuego(aplicarDescuentoJuegoVars).then((response) => {
+  const data = response.data;
+  console.log(data.pedido_update);
+});
+```
+
+### Using `AplicarDescuentoJuego`'s `MutationRef` function
+
+```typescript
+import { getDataConnect, executeMutation } from 'firebase/data-connect';
+import { connectorConfig, aplicarDescuentoJuegoRef, AplicarDescuentoJuegoVariables } from '@dataconnect/generated';
+
+// The `AplicarDescuentoJuego` mutation requires an argument of type `AplicarDescuentoJuegoVariables`:
+const aplicarDescuentoJuegoVars: AplicarDescuentoJuegoVariables = {
+  id: ...,
+  descuentoJuego: ...,
+  montoDescuentoJuego: ...,
+  totalFinal: ...,
+};
+
+// Call the `aplicarDescuentoJuegoRef()` function to get a reference to the mutation.
+const ref = aplicarDescuentoJuegoRef(aplicarDescuentoJuegoVars);
+// Variables can be defined inline as well.
+const ref = aplicarDescuentoJuegoRef({ id: ..., descuentoJuego: ..., montoDescuentoJuego: ..., totalFinal: ..., });
+
+// You can also pass in a `DataConnect` instance to the `MutationRef` function.
+const dataConnect = getDataConnect(connectorConfig);
+const ref = aplicarDescuentoJuegoRef(dataConnect, aplicarDescuentoJuegoVars);
+
+// Call `executeMutation()` on the reference to execute the mutation.
+// You can use the `await` keyword to wait for the promise to resolve.
+const { data } = await executeMutation(ref);
+
+console.log(data.pedido_update);
+
+// Or, you can use the `Promise` API.
+executeMutation(ref).then((response) => {
+  const data = response.data;
+  console.log(data.pedido_update);
 });
 ```
 

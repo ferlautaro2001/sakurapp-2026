@@ -100,6 +100,10 @@ import { QrService } from '../../nucleo/servicios/qr.service';
         <div class="lm-actionbar">
           <lm-boton icono="refresh" (presionar)="actualizar()">Actualizar mi lugar</lm-boton>
         </div>
+      } @else if (vinculado() && entrada()?.mesaAsignadaId) {
+        <div class="lm-actionbar">
+          <lm-boton icono="chat" (presionar)="abrirChatMozo()">Consulta al mozo</lm-boton>
+        </div>
       }
 
       @if (modalErrorMesa(); as err) {
@@ -308,4 +312,13 @@ export class ClienteEsperaPage extends PaginaConSesion {
     await this.cargando.conEsperaMinima('Consultando la lista de espera…', async () => undefined, 500);
     this.avisos.info('Lista actualizada', this.mensajeFila());
   }
+
+  /** Abre la sala de chat en vivo con el mozo asignado a la mesa (US-6.2). */
+  protected abrirChatMozo(): void {
+    const entrada = this.entrada();
+    if (entrada?.mesaAsignadaId) {
+      this.ir(['/mesas', entrada.mesaAsignadaId, 'chat']);
+    }
+  }
 }
+

@@ -112,3 +112,11 @@ export const ROTULO_ESTADO_ESPERA: Record<EstadoEspera, string> = {
   CANCELADO: 'Fuera de la lista',
   FINALIZADO: 'Sentado en su mesa',
 };
+
+export type RolMensaje = 'CLIENTE' | 'MOZO';
+
+export const ROTULO_ROL_MENSAJE: Record<RolMensaje, string> = {
+  CLIENTE: 'Cliente',
+  MOZO: 'Mozo',
+};
+

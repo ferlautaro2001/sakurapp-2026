@@ -5,6 +5,7 @@ import {
   EstadoSector,
   EstadoUsuario,
   Perfil,
+  RolMensaje,
   Sector,
   TipoMesa,
   TipoProducto,
@@ -169,3 +170,17 @@ export interface Pedido {
   timestampCreacion: string;
   items: PedidoItem[];
 }
+
+/** Mensaje de consulta o respuesta en la sala de chat de la mesa (US-6.2). */
+export interface MensajeChat {
+  id: string;
+  mesaId: string;
+  mesaNumero: number;
+  remitenteId: string;
+  remitenteNombre: string;
+  remitenteRol: RolMensaje;
+  texto: string;
+  timestamp: string;
+  leido: boolean;
+}
+

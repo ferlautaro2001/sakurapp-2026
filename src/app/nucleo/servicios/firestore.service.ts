@@ -418,6 +418,14 @@ export class FirestoreService {
     );
   }
 
+  /** Publica un pedido pendiente para su seguimiento en tiempo real. */
+  async guardarPedidoPendiente(pedido: Pedido): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedido.id),
+      pedido,
+    );
+  }
+
   /** Publica el pedido completo y sus sectores al momento de confirmarlo. */
   async confirmarPedido(pedido: Pedido): Promise<void> {
     await setDoc(

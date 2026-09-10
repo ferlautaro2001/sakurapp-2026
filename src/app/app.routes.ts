@@ -106,6 +106,22 @@ export const routes: Routes = [
       ),
   },
     {
+    path: 'comanda/carrito',
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil(
+        'CLIENTE_REGISTRADO',
+        'CLIENTE_ANONIMO',
+      ),
+    ],
+    loadComponent: () =>
+      import(
+        './pantallas/comanda/comanda-carrito.page'
+      ).then(
+        (m) => m.ComandaCarritoPage,
+      ),
+  },
+    {
     path: 'carta/:id',
     canActivate: [guardiaSesion],
     loadComponent: () =>
@@ -170,10 +186,36 @@ export const routes: Routes = [
       import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
   },
   {
+  path: 'cliente/estado-pedido/:id',
+  canActivate: [
+    guardiaSesion,
+    guardiaPerfil(
+      'CLIENTE_REGISTRADO',
+      'CLIENTE_ANONIMO',
+    ),
+  ],
+  loadComponent: () =>
+    import(
+      './pantallas/cliente/estado-pedido.page'
+    ).then(
+      (m) => m.EstadoPedidoPage,
+    ),
+  },
+  {
     path: 'cliente/estado-pedido',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil(
+        'CLIENTE_REGISTRADO',
+        'CLIENTE_ANONIMO',
+      ),
+    ],
     loadComponent: () =>
-      import('./pantallas/cliente/estado-pedido.page').then((m) => m.EstadoPedidoPage),
+      import(
+        './pantallas/cliente/estado-pedido.page'
+      ).then(
+        (m) => m.EstadoPedidoPage,
+      ),
   },
   {
     path: 'juegos',

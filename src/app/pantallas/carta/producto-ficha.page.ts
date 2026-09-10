@@ -4,6 +4,8 @@ import { Producto } from '../../nucleo/modelos/modelos';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
+import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { CarritoService } from '../../nucleo/servicios/carrito.service';
 
 @Component({
   selector: 'lm-producto-ficha',
@@ -14,13 +16,27 @@ import { PaginaConSesion } from '../pagina-base';
         titulo="Detalle del producto"
         conVolver
         (volver)="volver()"
-      />
+      >
+        @if (mesaActiva(); as mesa) {
+          <span
+            accion
+            class="mesa-activa"
+          >
+            <lm-icono
+              nombre="table_restaurant"
+              [tamano]="18"
+              color="#FFFFFF"
+            />
+            Mesa {{ mesa.numero }}
+          </span>
+        }
+      </lm-encabezado>
 
       <div class="lm-body lm-body--gap14">
         @if (producto(); as producto) {
           <section aria-label="Fotografías del producto">
             <div
-              class="lm-carousel__marco"
+              class="lm-carousel__marco sk-carrusel-fotos"
               [style.height.px]="320"
               [style.background-image]="
                 fotoActual() ? 'url(' + fotoActual() + ')' : null
@@ -76,6 +92,11 @@ import { PaginaConSesion } from '../pagina-base';
                     class="sk-flor"
                     [class.on]="$index === indiceActual()"
                     [attr.aria-label]="'Ver la foto ' + ($index + 1)"
+                    [attr.aria-current]="
+                      $index === indiceActual()
+                        ? 'true'
+                        : null
+                    "
                     (click)="irAFoto($index)"
                   >
                     <img
@@ -128,30 +149,44 @@ import { PaginaConSesion } from '../pagina-base';
       </div>
 
       <div class="lm-actionbar">
-        <div class="lm-actionbar">
-            @if (puedeGestionar()) {
-                <lm-boton
-                icono="edit"
-                (presionar)="editar()"
-                >
-                Editar producto
-                </lm-boton>
+        @if (puedeGestionar()) {
+          <lm-boton
+            icono="edit"
+            (presionar)="editar()"
+          >
+            Editar producto
+          </lm-boton>
 
-                <lm-texto-boton
-                enfasis="peligro"
-                (presionar)="quitar()"
-                >
-                Quitar de la carta
-                </lm-texto-boton>
-            } @else {
-                <lm-boton
-                icono="arrow_back"
-                (presionar)="volver()"
-                >
-                Volver a la carta
-                </lm-boton>
-            }
-        </div>
+          <lm-texto-boton
+            enfasis="peligro"
+            (presionar)="quitar()"
+          >
+            Quitar de la carta
+          </lm-texto-boton>
+        } @else if (puedeAgregar()) {
+          <lm-boton
+            icono="add_shopping_cart"
+            (presionar)="agregarAlCarrito()"
+          >
+            Agregar al carrito
+          </lm-boton>
+
+          @if (carrito.cantidadTotal() > 0) {
+            <lm-texto-boton
+              (presionar)="verCarrito()"
+            >
+              Ver carrito ({{ carrito.cantidadTotal() }})
+            </lm-texto-boton>
+          }
+        } @else {
+          <lm-boton
+            icono="arrow_back"
+            (presionar)="volver()"
+          >
+            Volver a la carta
+          </lm-boton>
+        }
+      </div>
     </div>
   `,
   styles: [
@@ -160,6 +195,37 @@ import { PaginaConSesion } from '../pagina-base';
         display: flex;
         flex: 1;
         min-height: 0;
+      }
+
+      .mesa-activa {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.72);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.18);
+        color: #ffffff;
+        font: var(--type-body-small);
+        font-weight: 800;
+        white-space: nowrap;
+      }
+
+      .sk-carrusel-fotos {
+        background-color: #fff7f8;
+        background-position: center;
+        background-size: contain;
+        background-repeat: no-repeat;
+        border: 2px solid rgba(112, 10, 49, 0.22);
+      }
+
+      .lm-carousel__puntos {
+        width: max-content;
+        margin: 8px auto 0;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.88);
+        box-shadow: 0 2px 8px rgba(38, 4, 17, 0.28);
       }
 
       .detalle {
@@ -224,6 +290,7 @@ import { PaginaConSesion } from '../pagina-base';
         padding: 14px;
         border-radius: var(--radius-field);
         background: var(--surface-sunken);
+        border: 2px solid rgba(112, 10, 49, 0.16);
       }
 
       .datos small {
@@ -245,7 +312,18 @@ import { PaginaConSesion } from '../pagina-base';
 export class ProductoFichaPage extends PaginaConSesion {
   private readonly route = inject(ActivatedRoute);
   private readonly productos = inject(ProductosService);
+  private readonly mesas = inject(MesasService);
+  protected readonly carrito = inject(CarritoService);
   private readonly posicionFoto = signal(0);
+
+  protected readonly mesaId =
+    this.route.snapshot.queryParamMap.get('mesaId');
+
+  protected readonly mesaActiva = computed(() =>
+    this.mesaId
+      ? this.mesas.porId(this.mesaId)
+      : undefined,
+  );
 
   protected readonly producto = computed(() => {
     const id = this.route.snapshot.paramMap.get('id');
@@ -260,6 +338,19 @@ export class ProductoFichaPage extends PaginaConSesion {
         producto !== undefined &&
         producto.tipo !== 'BEBIDA'
         );
+    });
+
+  protected readonly puedeAgregar = computed(() => {
+      const perfil = this.sesion.usuario()?.perfil;
+      const producto = this.producto();
+
+      return (
+        (perfil === 'CLIENTE_REGISTRADO' ||
+          perfil === 'CLIENTE_ANONIMO') &&
+        Boolean(this.mesaId) &&
+        producto !== undefined &&
+        producto.disponible
+      );
     });
 
   protected readonly fotos = computed(() =>
@@ -326,57 +417,91 @@ protected async quitar(): Promise<void> {
   }
 
   const seguro = await this.preguntar({
-    titulo: '¿Quitás este producto de la carta?',
-    mensaje:
-      'El producto dejará de mostrarse, pero sus datos se conservarán.',
-    confirmar: 'Quitar de la carta',
-    tono: 'peligro',
-    icono: 'delete',
-    detalle: [
-      {
-        rotulo: 'Producto',
-        valor: producto.nombre,
-      },
-      {
-        rotulo: 'Categoría',
-        valor: this.rotuloTipo(producto),
-      },
-    ],
-  });
+      titulo: '¿Quitás este producto de la carta?',
+      mensaje:
+        'El producto dejará de mostrarse, pero sus datos se conservarán.',
+      confirmar: 'Quitar de la carta',
+      tono: 'peligro',
+      icono: 'delete',
+      detalle: [
+        {
+          rotulo: 'Producto',
+          valor: producto.nombre,
+        },
+        {
+          rotulo: 'Categoría',
+          valor: this.rotuloTipo(producto),
+        },
+      ],
+    });
 
-  if (!seguro) {
-    return;
-  }
+    if (!seguro) {
+      return;
+    }
 
-  try {
-    await this.cargando.conEsperaMinima(
-      'Quitando el producto de la carta...',
-      () =>
-        this.productos.quitarDeLaCarta(
-          producto.id,
-        ),
-    );
+    try {
+      await this.cargando.conEsperaMinima(
+        'Quitando el producto de la carta...',
+        () =>
+          this.productos.quitarDeLaCarta(
+            producto.id,
+          ),
+      );
+
+      this.avisos.exito(
+        'Producto quitado',
+        `${producto.nombre} ya no aparece en la carta.`,
+      );
+
+      this.ir(['/carta']);
+    } catch (error) {
+      console.error(
+        'No se pudo quitar el producto:',
+        error,
+      );
+
+      this.avisos.error(
+        'No pudimos quitar el producto',
+        'Revisá la conexión e intentá nuevamente.',
+        );
+      }
+    }
+
+  protected agregarAlCarrito(): void {
+    const producto = this.producto();
+
+    if (!producto || !this.mesaId) {
+      return;
+    }
+
+    this.carrito.iniciarMesa(this.mesaId);
+    this.carrito.agregar(producto);
 
     this.avisos.exito(
-      'Producto quitado',
-      `${producto.nombre} ya no aparece en la carta.`,
-    );
+      'Producto agregado',
+      `${producto.nombre} se agregó al carrito.`,
+      );
+    }
 
-    this.ir(['/carta']);
-  } catch (error) {
-    console.error(
-      'No se pudo quitar el producto:',
-      error,
-    );
-
-    this.avisos.error(
-      'No pudimos quitar el producto',
-      'Revisá la conexión e intentá nuevamente.',
+  protected verCarrito(): void {
+    void this.router.navigate(
+        ['/comanda/carrito'],
+        {
+          queryParams: this.mesaId
+            ? { mesaId: this.mesaId }
+            : undefined,
+      },
     );
   }
-}
 
   protected volver(): void {
-    this.ir(['/carta']);
+    void this.router.navigate(
+      ['/carta'],
+      {
+        queryParams: this.mesaId
+          ? { mesaId: this.mesaId }
+          : undefined,
+      },
+    );
   }
 }

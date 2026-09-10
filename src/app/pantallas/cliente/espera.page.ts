@@ -101,7 +101,8 @@ import { QrService } from '../../nucleo/servicios/qr.service';
           <lm-boton icono="refresh" (presionar)="actualizar()">Actualizar mi lugar</lm-boton>
         </div>
       } @else if (vinculado() && entrada()?.mesaAsignadaId) {
-        <div class="lm-actionbar">
+        <div class="lm-actionbar lm-actionbar--split">
+          <lm-boton icono="restaurant_menu" (presionar)="irCarta()">Explorar la carta</lm-boton>
           <lm-boton icono="chat" (presionar)="abrirChatMozo()">Consulta al mozo</lm-boton>
         </div>
       }
@@ -300,15 +301,37 @@ export class ClienteEsperaPage extends PaginaConSesion {
         await this.espera.vincularConLaMesa(entrada.id);
       });
 
-      this.avisos.exito(`Estás en la mesa ${numero}`, 'Quedaste vinculado con tu mesa.');
+      this.avisos.exito(`Estás en la mesa ${numero}`, 'Ya podés explorar la carta.');
+
+      await this.router.navigate(['/carta'], {
+        queryParams: {
+          mesaId: entrada.mesaAsignadaId,
+        },
+        replaceUrl: true,
+      });
     } catch (err: any) {
       console.error('⚠️ Error al vincularse con la mesa:', err);
       this.avisos.error('No se pudo vincular la mesa', err?.message || 'Ocurrió un error al registrar tu mesa.');
     }
   }
 
-  protected async actualizar(): Promise<void> {
+  protected irCarta(): void {
+    const mesaId = this.entrada()?.mesaAsignadaId;
 
+    if (!mesaId) {
+      this.avisos.error(
+        'No pudimos identificar tu mesa',
+        'Actualizá la pantalla e intentá nuevamente.',
+      );
+      return;
+    }
+
+    void this.router.navigate(['/carta'], {
+      queryParams: { mesaId },
+    });
+  }
+
+  protected async actualizar(): Promise<void> {
     await this.cargando.conEsperaMinima('Consultando la lista de espera…', async () => undefined, 500);
     this.avisos.info('Lista actualizada', this.mensajeFila());
   }

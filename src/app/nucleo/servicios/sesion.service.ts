@@ -8,6 +8,7 @@ import { Usuario } from '../modelos/modelos';
 import { PERFILES_ADMIN, Perfil } from '../modelos/enums';
 import { UsuariosService } from './usuarios.service';
 import { NotificacionesService } from './notificaciones.service';
+import { FirestoreService } from './firestore.service';
 
 export type ResultadoIngreso =
   | { ok: true; usuario: Usuario }
@@ -19,6 +20,7 @@ export class SesionService {
   private readonly almacen = inject(AlmacenService);
   private readonly usuarios = inject(UsuariosService);
   private readonly notificaciones = inject(NotificacionesService);
+  private readonly firestore = inject(FirestoreService);
 
   readonly usuario = signal<Usuario | null>(null);
   readonly autenticado = computed(() => this.usuario() !== null);
@@ -66,8 +68,15 @@ export class SesionService {
     if (usuario.estado === 'RECHAZADO') return { ok: false, motivo: 'RECHAZADO' };
 
     this.usuario.set(usuario);
-    this.notificaciones.registrarSesion(usuario.id);
+
+    await this.firestore.guardarUsuario(usuario);
+
+    this.notificaciones.registrarSesion(
+      usuario.uid || usuario.id,
+    );
+
     await this.almacen.guardarSesion(usuario);
+
     return { ok: true, usuario };
   }
 
@@ -111,7 +120,12 @@ export class SesionService {
     }
 
     this.usuario.set(usuario);
-    this.notificaciones.registrarSesion(usuario.id);
+
+    await this.firestore.guardarUsuario(usuario);
+
+    this.notificaciones.registrarSesion(
+      usuario.uid || usuario.id,
+    );
 
     try {
       const mesaId = (await Preferences.get({ key: 'sk.mesa_activa_id' })).value;

@@ -10,10 +10,15 @@ import {
   listPedidoItems,
   listPedidosActivos,
   registrarIntentoJuego,
+  createPedido,
+  createPedidoItem,
+  EstadoPedido as DcEstadoPedido,
+  Sector as DcSector,
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { sectorDe } from '../modelos/enums';
-import { Pedido, Usuario } from '../modelos/modelos';
+import { Mesa, Pedido, Usuario } from '../modelos/modelos';
+import { ItemCarrito } from './carrito.service';
 import { FirestoreService } from './firestore.service';
 import { NotificacionesService } from './notificaciones.service';
 import { UsuariosService } from './usuarios.service';
@@ -58,6 +63,125 @@ export class PedidosService {
         pedido.estadoGlobal !== 'RECHAZADO',
     );
   }
+
+async crearPendiente(
+    mesa: Mesa,
+    cliente: Usuario,
+    items: ItemCarrito[],
+    tiempoEstimado: number,
+    total: number,
+    ): Promise<Pedido> {
+    if (!items.length) {
+        throw new Error('El carrito está vacío.');
+    }
+
+    if (!esUuid(mesa.id)) {
+        throw new Error(
+        'La mesa todavía no está sincronizada con Cloud SQL.',
+        );
+    }
+
+    if (!esUuid(cliente.id)) {
+        throw new Error(
+        'El cliente todavía no está sincronizado con Cloud SQL.',
+        );
+    }
+
+    const productoSinSincronizar = items.find(
+        (item) => !esUuid(item.producto.id),
+    );
+
+    if (productoSinSincronizar) {
+        throw new Error(
+        `${productoSinSincronizar.producto.nombre} todavía no está sincronizado con Cloud SQL.`,
+        );
+    }
+
+    const dc = this.dataConnect();
+    const creadoEn = new Date().toISOString();
+
+    const respuesta = await createPedido(dc, {
+        mesaId: mesa.id,
+        clienteId: cliente.id,
+        estadoGlobal: DcEstadoPedido.PENDIENTE_CONFIRMACION,
+        tiempoEstimado,
+        totalBruto: total,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        porcentajePropina: 0,
+        montoPropina: 0,
+        totalFinal: total,
+        timestampCreacion: creadoEn,
+    });
+
+    const pedidoId = respuesta.data.pedido_insert.id;
+    const pedidoItems: Pedido['items'] = [];
+
+    for (const item of items) {
+        const sector = sectorDe(item.producto.tipo);
+
+        const respuestaItem = await createPedidoItem(dc, {
+        pedidoId,
+        productoId: item.producto.id,
+        cantidad: item.cantidad,
+        precioUnitario: item.producto.precio,
+        subtotal: item.producto.precio * item.cantidad,
+        sector: sector as DcSector,
+        });
+
+        pedidoItems.push({
+        id: respuestaItem.data.pedidoItem_insert.id,
+        productoId: item.producto.id,
+        productoNombre: item.producto.nombre,
+        tipo: item.producto.tipo,
+        sector,
+        cantidad: item.cantidad,
+        precioUnitario: item.producto.precio,
+        subtotal: item.producto.precio * item.cantidad,
+        });
+    }
+
+    const pedido: Pedido = {
+        id: pedidoId,
+        mesaId: mesa.id,
+        mesaNumero: mesa.numero,
+        clienteId: cliente.id,
+        clienteUid: cliente.uid || cliente.id,
+        clienteNombre: [
+        cliente.nombre,
+        cliente.apellido ?? '',
+        ].join(' ').trim(),
+        estadoGlobal: 'PENDIENTE_CONFIRMACION',
+        estadoCocina: 'NO_APLICA',
+        estadoBar: 'NO_APLICA',
+        tiempoEstimado,
+        totalBruto: total,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: total,
+        confirmadoPorId: null,
+        juegoIntentado: false,
+        timestampCreacion: creadoEn,
+        items: pedidoItems,
+    };
+
+    await this.firestore.guardarPedidoPendiente(pedido);
+
+    this.pedidosSql.update((actuales) => [
+        pedido,
+        ...actuales.filter((actual) => actual.id !== pedido.id),
+    ]);
+
+    await this.firestore.encolarNotificacion({
+        destinatarioRol: 'MOZO',
+        titulo: '🌸 Nuevo pedido pendiente',
+        cuerpo:
+        `La mesa ${mesa.numero} envió un pedido y espera confirmación.`,
+        ruta: '/mozo/pedidos',
+    });
+
+    return pedido;
+    }
 
   /** Deriva los ítems por tipo, confirma y avisa sólo al personal necesario. */
   async confirmar(pedido: Pedido, confirmador: Usuario): Promise<void> {
@@ -242,7 +366,8 @@ export class PedidosService {
 }
 
 function esUuid(valor: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor);
+  const compacto = valor.replaceAll('-', '');
+  return /^[0-9a-f]{32}$/i.test(compacto);
 }
 
 function redondearImporte(valor: number): number {

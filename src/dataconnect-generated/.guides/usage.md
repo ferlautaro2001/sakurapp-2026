@@ -11,7 +11,7 @@ The generated SDK creates injectable wrapper functions.
 
 Here's an example:
 ```
-import { injectCreateProducto, injectCreateUsuario, injectCreateMesa, injectCreatePedido, injectCreateEncuesta, injectUpdateEstadoUsuario, injectUpdateEstadoMesa, injectUpdateProducto, injectUpdateActivoProducto, injectCreateEspera } from '@dataconnect/generated/angular';
+import { injectCreateProducto, injectCreateUsuario, injectCreateMesa, injectCreatePedido, injectCreatePedidoItem, injectCreateEncuesta, injectUpdateEstadoUsuario, injectUpdateEstadoMesa, injectUpdateProducto, injectUpdateActivoProducto } from '@dataconnect/generated/angular';
 
 @Component({
   selector: 'my-component',
@@ -23,12 +23,12 @@ class MyComponent {
   private readonly CreateUsuarioOperation = injectCreateUsuario(createUsuarioVars);
   private readonly CreateMesaOperation = injectCreateMesa(createMesaVars);
   private readonly CreatePedidoOperation = injectCreatePedido(createPedidoVars);
+  private readonly CreatePedidoItemOperation = injectCreatePedidoItem(createPedidoItemVars);
   private readonly CreateEncuestaOperation = injectCreateEncuesta(createEncuestaVars);
   private readonly UpdateEstadoUsuarioOperation = injectUpdateEstadoUsuario(updateEstadoUsuarioVars);
   private readonly UpdateEstadoMesaOperation = injectUpdateEstadoMesa(updateEstadoMesaVars);
   private readonly UpdateProductoOperation = injectUpdateProducto(updateProductoVars);
   private readonly UpdateActivoProductoOperation = injectUpdateActivoProducto(updateActivoProductoVars);
-  private readonly CreateEsperaOperation = injectCreateEspera(createEsperaVars);
   }
 ```
 
@@ -71,7 +71,7 @@ If a user is not using a supported framework, they can use the generated SDK dir
 Here's an example of how to use it with the first 5 operations:
 
 ```js
-import { createProducto, createUsuario, createMesa, createPedido, createEncuesta, updateEstadoUsuario, updateEstadoMesa, updateProducto, updateActivoProducto, createEspera } from '@dataconnect/generated';
+import { createProducto, createUsuario, createMesa, createPedido, createPedidoItem, createEncuesta, updateEstadoUsuario, updateEstadoMesa, updateProducto, updateActivoProducto } from '@dataconnect/generated';
 
 
 // Operation CreateProducto:  For variables, look at type CreateProductoVars in ../index.d.ts
@@ -85,6 +85,9 @@ const { data } = await CreateMesa(dataConnect, createMesaVars);
 
 // Operation CreatePedido:  For variables, look at type CreatePedidoVars in ../index.d.ts
 const { data } = await CreatePedido(dataConnect, createPedidoVars);
+
+// Operation CreatePedidoItem:  For variables, look at type CreatePedidoItemVars in ../index.d.ts
+const { data } = await CreatePedidoItem(dataConnect, createPedidoItemVars);
 
 // Operation CreateEncuesta:  For variables, look at type CreateEncuestaVars in ../index.d.ts
 const { data } = await CreateEncuesta(dataConnect, createEncuestaVars);
@@ -100,9 +103,6 @@ const { data } = await UpdateProducto(dataConnect, updateProductoVars);
 
 // Operation UpdateActivoProducto:  For variables, look at type UpdateActivoProductoVars in ../index.d.ts
 const { data } = await UpdateActivoProducto(dataConnect, updateActivoProductoVars);
-
-// Operation CreateEspera:  For variables, look at type CreateEsperaVars in ../index.d.ts
-const { data } = await CreateEspera(dataConnect, createEsperaVars);
 
 
 ```

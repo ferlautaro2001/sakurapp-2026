@@ -48,83 +48,168 @@ export class NotificacionesService {
   }
 
   async iniciar(): Promise<void> {
-    if (this.iniciado) return;
-    this.iniciado = true;
+  if (this.iniciado) return;
+  this.iniciado = true;
 
-    if (!Capacitor.isNativePlatform()) {
-      return;
+  if (!Capacitor.isNativePlatform()) {
+    return;
+  }
+
+  // 1. Configurar canales locales.
+  try {
+    const estadoLocal =
+      await LocalNotifications.checkPermissions();
+
+    this.permitido =
+      estadoLocal.display === 'granted';
+
+    if (!this.permitido) {
+      const pedido =
+        await LocalNotifications.requestPermissions();
+
+      this.permitido =
+        pedido.display === 'granted';
     }
 
-    // 1. Configurar canales locales
-    try {
-      const estadoLocal = await LocalNotifications.checkPermissions();
-      this.permitido = estadoLocal.display === 'granted';
-      if (!this.permitido) {
-        const pedido = await LocalNotifications.requestPermissions();
-        this.permitido = pedido.display === 'granted';
-      }
+    await LocalNotifications.createChannel({
+      id: CANAL,
+      name: 'Salón SakurApp',
+      description:
+        'Avisos y notificaciones del salón',
+      importance: 5,
+      visibility: 1,
+      lights: true,
+      lightColor: '#C72657',
+      vibration: true,
+    });
+  } catch (err) {
+    console.warn(
+      '⚠️ LocalNotifications error:',
+      err,
+    );
+  }
 
-      await LocalNotifications.createChannel({
-        id: CANAL,
-        name: 'Salón SakurApp',
-        description: 'Avisos y notificaciones del salón',
-        importance: 5,
-        visibility: 1,
-        lights: true,
-        lightColor: '#C72657',
-        vibration: true,
-      });
-    } catch (err) {
-      console.warn('⚠️ LocalNotifications error:', err);
+  // 2. Configurar PushNotifications nativo (FCM).
+  try {
+    let pushPerm =
+      await PushNotifications.checkPermissions();
+
+    if (pushPerm.receive !== 'granted') {
+      pushPerm =
+        await PushNotifications.requestPermissions();
     }
 
-    // 2. Configurar PushNotifications nativo (FCM)
-    try {
-      let pushPerm = await PushNotifications.checkPermissions();
-      if (pushPerm.receive !== 'granted') {
-        pushPerm = await PushNotifications.requestPermissions();
-      }
+    if (pushPerm.receive === 'granted') {
+      // Primero se instala el listener que recibe el token.
+      await PushNotifications.addListener(
+        'registration',
+        (token: Token) => {
+          console.log(
+            '📲 Token Push FCM registrado con éxito:',
+            token.value,
+          );
 
-      if (pushPerm.receive === 'granted') {
-        await PushNotifications.register();
-
-        await PushNotifications.addListener('registration', (token: Token) => {
-          console.log('📲 Token Push FCM registrado con éxito:', token.value);
           this.pushToken.set(token.value);
-          const u = this.enSesion();
-          if (u) {
-            void this.firestore.registrarFcmToken(u, token.value);
+
+          const usuarioUid = this.enSesion();
+
+          if (usuarioUid) {
+            void this.firestore.registrarFcmToken(
+              usuarioUid,
+              token.value,
+            );
           }
-        });
+        },
+      );
 
-        await PushNotifications.addListener('registrationError', (error: any) => {
-          console.warn('⚠️ Error al registrar token push:', error);
-        });
+      await PushNotifications.addListener(
+        'registrationError',
+        (error: unknown) => {
+          console.warn(
+            '⚠️ Error al registrar token push:',
+            error,
+          );
+        },
+      );
 
-        await PushNotifications.addListener('pushNotificationReceived', (notification: PushNotificationSchema) => {
-          console.log('🔔 Push recibida en primer plano:', notification);
-          void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
+      await PushNotifications.addListener(
+        'pushNotificationReceived',
+        (notification: PushNotificationSchema) => {
+          console.log(
+            '🔔 Push recibida en primer plano:',
+            notification,
+          );
+
+          void Haptics.notification({
+            type: NotificationType.Success,
+          }).catch(() => undefined);
+
           const aviso: AvisoPush = {
             id: this.siguienteId++,
-            titulo: notification.title || 'Aviso SakurApp',
+            titulo:
+              notification.title ||
+              'Aviso SakurApp',
             cuerpo: notification.body || '',
             recibidoEn: new Date().toISOString(),
             leido: false,
           };
-          this.ultimoAviso.set(aviso);
-        });
 
-        await PushNotifications.addListener('pushNotificationActionPerformed', (action: ActionPerformed) => {
-          console.log('👉 Notificación push tocada:', action);
-          const ruta = action.notification.data?.ruta;
-          if (ruta) {
-            void this.router.navigate(Array.isArray(ruta) ? ruta : [ruta]);
+          this.ultimoAviso.set(aviso);
+          if (this.permitido) {
+            void LocalNotifications.schedule({
+              notifications: [
+                {
+                  id: aviso.id,
+                  channelId: CANAL,
+                  title: aviso.titulo,
+                  body: aviso.cuerpo,
+                  smallIcon: 'ic_stat_sakura',
+                  largeIcon: 'ic_launcher',
+                  extra: {
+                    ruta: notification.data?.ruta,
+                  },
+                },
+              ],
+            }).catch((error) => {
+              console.warn(
+                '⚠️ No se pudo mostrar la push recibida:',
+                error,
+              );
+            });
           }
-        });
-      }
-    } catch (err) {
-      console.warn('⚠️ PushNotifications error:', err);
+        },
+      );
+
+      await PushNotifications.addListener(
+        'pushNotificationActionPerformed',
+        (action: ActionPerformed) => {
+          console.log(
+            '👉 Notificación push tocada:',
+            action,
+          );
+
+          const ruta =
+            action.notification.data?.ruta;
+
+          if (ruta) {
+            void this.router.navigate(
+              Array.isArray(ruta)
+                ? ruta
+                : [ruta],
+            );
+          }
+        },
+      );
+
+      // Se registra después de instalar los listeners.
+      await PushNotifications.register();
     }
+  } catch (err) {
+    console.warn(
+      '⚠️ PushNotifications error:',
+      err,
+    );
+  }
   }
 
   /**

@@ -145,6 +145,19 @@ export interface CreatePedidoData {
   pedido_insert: Pedido_Key;
 }
 
+export interface CreatePedidoItemData {
+  pedidoItem_insert: PedidoItem_Key;
+}
+
+export interface CreatePedidoItemVariables {
+  pedidoId: UUIDString;
+  productoId: UUIDString;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  sector: Sector;
+}
+
 export interface CreatePedidoVariables {
   mesaId: UUIDString;
   clienteId: UUIDString;
@@ -466,6 +479,18 @@ export const createPedidoRef: CreatePedidoRef;
 
 export function createPedido(vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
 export function createPedido(dc: DataConnect, vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
+
+interface CreatePedidoItemRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+  operationName: string;
+}
+export const createPedidoItemRef: CreatePedidoItemRef;
+
+export function createPedidoItem(vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
+export function createPedidoItem(dc: DataConnect, vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
 
 interface CreateEncuestaRef {
   /* Allow users to create refs without passing in DataConnect */

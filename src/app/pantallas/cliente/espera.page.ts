@@ -100,6 +100,16 @@ import { QrService } from '../../nucleo/servicios/qr.service';
           <lm-boton icono="refresh" (presionar)="actualizar()">Actualizar mi lugar</lm-boton>
         </div>
       }
+        @else if (vinculado()) {
+          <div class="lm-actionbar">
+            <lm-boton
+              icono="restaurant_menu"
+              (presionar)="irCarta()"
+            >
+              Explorar la carta
+            </lm-boton>
+          </div>
+        }
 
       <lm-barra-inferior [items]="secciones()" activo="lugar" />
     </div>
@@ -262,14 +272,49 @@ export class ClienteEsperaPage extends PaginaConSesion {
       return;
     }
 
-    await this.cargando.conEsperaMinima('Vinculándote con tu mesa…', () =>
-      this.espera.vincularConLaMesa(entrada.id),
+    await this.cargando.conEsperaMinima(
+      'Vinculándote con tu mesa…',
+      () => this.espera.vincularConLaMesa(entrada.id),
     );
-    this.avisos.exito(`Estás en la mesa ${numero}`, 'Quedaste vinculado con tu mesa.');
+
+    this.avisos.exito(
+      `Estás en la mesa ${numero}`,
+      'Ya podés explorar la carta.',
+    );
+
+    await this.router.navigate(
+      ['/carta'],
+      {
+        queryParams: {
+          mesaId: entrada.mesaAsignadaId,
+        },
+        replaceUrl: true,
+      },
+    );
+  }
+
+  protected irCarta(): void {
+    const mesaId =
+      this.entrada()?.mesaAsignadaId;
+
+    if (!mesaId) {
+      this.avisos.error(
+        'No pudimos identificar tu mesa',
+        'Actualizá la pantalla e intentá nuevamente.',
+      );
+      return;
+    }
+
+    void this.router.navigate(['/carta'], {
+      queryParams: { mesaId },
+    });
   }
 
   protected async actualizar(): Promise<void> {
-    await this.cargando.conEsperaMinima('Consultando la lista de espera…', async () => undefined, 500);
-    this.avisos.info('Lista actualizada', this.mensajeFila());
+    await this.cargando.conEsperaMinima(
+      'Consultando la lista de espera…',
+      async () => undefined,
+      500,
+    );
   }
 }

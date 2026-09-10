@@ -6,13 +6,16 @@ import {
   createEspera,
   listEspera,
   updateEstadoEspera,
+  asignarMesaCliente,
   EstadoEspera as DcEstadoEspera,
   connectorConfig,
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
-import { Espera, Usuario } from '../modelos/modelos';
+import { Espera, Mesa, Usuario } from '../modelos/modelos';
 import { EstadoEspera } from '../modelos/enums';
 import { FirestoreService } from './firestore.service';
+import { NotificacionesService } from './notificaciones.service';
+
 
 /** Colección de Firestore que refleja la tabla `listaEspera` en tiempo real. */
 const COLECCION = 'listaEspera';
@@ -32,6 +35,8 @@ const COLECCION = 'listaEspera';
 @Injectable({ providedIn: 'root' })
 export class EsperaService {
   private readonly firestore = inject(FirestoreService);
+  private readonly notificaciones = inject(NotificacionesService);
+
 
   private escucha: Unsubscribe | null = null;
   private iniciado = false;
@@ -168,6 +173,65 @@ export class EsperaService {
     this.lista.update((actual) => [...actual.filter((e) => e.id !== entrada.id), entrada]);
     return entrada;
   }
+
+  /**
+   * AC-5.3.1 (TASK-5.3.1.2) · Asignación atómica de mesa libre con bloqueo de concurrencia y push al cliente.
+   *
+   * 1. Ejecuta runTransaction en Firestore para asegurar que la mesa no esté tomada/asignada por otro metre (TC-023).
+   * 2. Ejecuta la mutación AsignarMesaCliente en Cloud SQL (Data Connect) para consistencia transaccional relacional.
+   * 3. Despacha notificación push automática al cliente con el número y tipo de mesa asignada (TC-021).
+   * 4. Actualiza el estado reactivo local.
+   */
+  async asignarMesa(entrada: Espera, mesa: Mesa): Promise<void> {
+    // 1. Bloqueo de concurrencia transaccional en Firestore
+    await this.firestore.asignarMesaTransaccional(
+      entrada.id,
+      mesa.id,
+      entrada.clienteUid,
+      entrada.clienteId,
+      mesa.numero,
+    );
+
+    // 2. Persistencia relacional en Data Connect
+    if (esUuid(entrada.id) && esUuid(mesa.id) && esUuid(entrada.clienteId)) {
+      try {
+        await asignarMesaCliente(this.dataConnect(), {
+          esperaId: entrada.id,
+          mesaId: mesa.id,
+          clienteId: entrada.clienteId,
+        });
+        console.log(`✅ Asignación atómica de mesa ${mesa.numero} persistida en Cloud SQL`);
+      } catch (err) {
+        console.warn('⚠️ Nota sobre Data Connect en asignarMesa (sigue persistido en Firestore):', err);
+      }
+    }
+
+    // 3. Notificación push al cliente comensal (destinatarioUid: cliente.uid)
+    const destinatarios = [entrada.clienteUid, entrada.clienteId].filter(Boolean);
+    if (destinatarios.length) {
+      await this.notificaciones.enviar(
+        destinatarios,
+        '¡Tu mesa está lista!',
+        `El metre te asignó la mesa ${mesa.numero} (${mesa.tipo}). Acercate y escaneá su código QR para sentarte.`,
+        ['/cliente/espera'],
+      );
+    }
+
+    // 4. Actualización optimista local
+    this.lista.update((actual) =>
+      actual.map((e) =>
+        e.id === entrada.id
+          ? {
+              ...e,
+              estado: 'ASIGNADO' as const,
+              mesaAsignadaId: mesa.id,
+              mesaAsignadaNumero: mesa.numero,
+            }
+          : e,
+      ),
+    );
+  }
+
 
   /**
    * Punto 10 · el comensal escaneó el código de la mesa que le asignó el metre

@@ -77,6 +77,14 @@ export const routes: Routes = [
     loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
   },
   {
+    path: 'mesas/:id/chat',
+    canActivate: [
+      guardiaSesion,
+      guardiaPerfil('MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO', 'DUENO', 'SUPERVISOR'),
+    ],
+    loadComponent: () => import('./pantallas/mesas/chat-mesa.page').then((m) => m.ChatMesaPage),
+  },
+  {
     path: 'mesas/:id/qr',
     canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
     loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),

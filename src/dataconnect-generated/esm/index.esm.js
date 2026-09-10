@@ -216,6 +216,19 @@ export function updateEstadoEspera(dcOrVars, vars) {
   return executeMutation(updateEstadoEsperaRef(dcInstance, inputVars));
 }
 
+export const asignarMesaClienteRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AsignarMesaCliente', inputVars);
+}
+asignarMesaClienteRef.operationName = 'AsignarMesaCliente';
+
+export function asignarMesaCliente(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(asignarMesaClienteRef(dcInstance, inputVars));
+}
+
+
 export const confirmarPedidoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();

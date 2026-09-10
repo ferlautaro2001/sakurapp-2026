@@ -94,7 +94,10 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         />
 
         @if (mesa()) {
-          <lm-separador rotulo="Código de la mesa" />
+          <lm-separador rotulo="Atención y códigos" />
+          <lm-boton variante="secondary" icono="forum" (presionar)="ir(['/mesas', mesa()!.id, 'chat'])">
+            Abrir chat de la mesa
+          </lm-boton>
           <lm-boton variante="secondary" icono="qr_code_2" (presionar)="ir(['/mesas', mesa()!.id, 'qr'])">
             Ver el código QR de la mesa
           </lm-boton>

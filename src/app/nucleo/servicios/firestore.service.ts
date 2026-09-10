@@ -269,6 +269,59 @@ export class FirestoreService {
   }
 
   /**
+   * Asigna una mesa a un comensal con bloqueo de concurrencia transaccional (AC-5.3.1 / TC-023).
+   * Si la mesa ya no está VACIA o ya fue asignada por otro metre, la transacción falla y aborta.
+   */
+  async asignarMesaTransaccional(
+    esperaId: string,
+    mesaId: string,
+    clienteUid: string,
+    clienteId: string,
+    mesaNumero: number
+  ): Promise<void> {
+    const db = this.obtenerDb();
+    await runTransaction(db, async (transaction) => {
+      const mesaRef = doc(db, 'mesas', mesaId);
+      const esperaRef = doc(db, 'listaEspera', esperaId);
+
+      const mesaDoc = await transaction.get(mesaRef);
+      if (mesaDoc.exists()) {
+        const mesaData = mesaDoc.data();
+        if (mesaData['estado'] !== 'VACIA' || mesaData['clienteActualId']) {
+          throw new Error(`La mesa ${mesaNumero} ya no se encuentra libre.`);
+        }
+      }
+
+      const esperaDoc = await transaction.get(esperaRef);
+      if (esperaDoc.exists()) {
+        const esperaData = esperaDoc.data();
+        if (esperaData['estado'] !== 'ESPERANDO') {
+          throw new Error(`El comensal ya no está en lista de espera.`);
+        }
+      }
+
+      transaction.update(mesaRef, {
+        clienteActualId: clienteId,
+        clienteActualUid: clienteUid,
+        asignadaEn: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      transaction.set(
+        esperaRef,
+        {
+          estado: 'ASIGNADO',
+          mesaAsignadaId: mesaId,
+          mesaAsignadaNumero: mesaNumero,
+          asignadaEn: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+    });
+  }
+
+
+  /**
    * Escucha en tiempo real la colección de productos ('sakurapp').
    * Permite que la carta refleje altas, bajas y modificaciones al instante.
    */

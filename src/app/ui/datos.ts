@@ -187,17 +187,28 @@ export class FilaPendienteComponent {
         </span>
         <span class="lm-mesa__pie">
           <lm-chip [estado]="mesa().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
-          @if (conQr()) {
+          <span style="display: flex; gap: 6px; align-items: center;">
             <span
               class="lm-mesa__qr"
               role="button"
               tabindex="0"
-              [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
-              (click)="verQr($event)"
+              [attr.aria-label]="'Abrir sala de chat de la mesa ' + mesa().numero"
+              (click)="verChat($event)"
             >
-              <lm-icono nombre="qr_code_2" [tamano]="18" color="var(--action-primary)" />
+              <lm-icono nombre="forum" [tamano]="18" color="var(--sk-verde)" />
             </span>
-          }
+            @if (conQr()) {
+              <span
+                class="lm-mesa__qr"
+                role="button"
+                tabindex="0"
+                [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
+                (click)="verQr($event)"
+              >
+                <lm-icono nombre="qr_code_2" [tamano]="18" color="var(--action-primary)" />
+              </span>
+            }
+          </span>
         </span>
       </span>
     </button>
@@ -209,6 +220,7 @@ export class TarjetaMesaComponent {
   readonly conQr = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
   readonly abrirQr = output<void>();
+  readonly abrirChat = output<void>();
 
   protected iconoTipo(): string {
     return ICONO_TIPO_MESA[this.mesa().tipo];
@@ -222,6 +234,10 @@ export class TarjetaMesaComponent {
   protected verQr(evento: Event): void {
     evento.stopPropagation();
     this.abrirQr.emit();
+  }
+  protected verChat(evento: Event): void {
+    evento.stopPropagation();
+    this.abrirChat.emit();
   }
 }
 

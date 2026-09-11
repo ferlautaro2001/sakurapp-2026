@@ -8,10 +8,25 @@ import { Perfil } from '../nucleo/modelos/enums';
  * el trabajo, sin resúmenes intermedios. Los perfiles que tienen una sola
  * pantalla no llevan barra.
  */
-export function navegacionDe(perfil: Perfil | undefined, pedidoConfirmado = false): ItemNavegacion[] {
+export function navegacionDe(
+  perfil: Perfil | undefined,
+  pedidoConfirmado = false,
+  /**
+   * US-7.2 · el mozo le devolvió la comanda. Los juegos siguen apagados —no
+   * hay nada confirmado todavía— pero "Mi pedido" tiene que estar a mano: es
+   * donde lee el motivo y desde donde corrige.
+   */
+  pedidoDevuelto = false,
+): ItemNavegacion[] {
   return SECCIONES(perfil)
     .filter((item) => RUTAS_IMPLEMENTADAS.includes(item.ruta))
-    .filter((item) => pedidoConfirmado || !['/cliente/estado-pedido', '/juegos'].includes(item.ruta));
+    .filter((item) => {
+      // La consigna es explícita: los descuentos de los juegos son para el
+      // cliente registrado, el anónimo no.
+      if (item.ruta === '/juegos') return pedidoConfirmado && perfil === 'CLIENTE_REGISTRADO';
+      if (item.ruta === '/cliente/estado-pedido') return pedidoConfirmado || pedidoDevuelto;
+      return true;
+    });
 }
 
 /**
@@ -23,6 +38,7 @@ export function navegacionDe(perfil: Perfil | undefined, pedidoConfirmado = fals
  * sola, sin tocar nada más.
  */
 const RUTAS_IMPLEMENTADAS: string[] = [
+  '/carta',
   '/clientes-pendientes',
   '/mesas',
   '/metre/espera',

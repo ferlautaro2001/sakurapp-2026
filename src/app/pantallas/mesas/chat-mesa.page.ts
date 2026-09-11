@@ -108,7 +108,7 @@ const SUGERENCIAS_MOZO = [
               <!-- Remitente y Rol -->
               <header class="burbuja__encabezado">
                 <span class="burbuja__nombre" [class.burbuja__nombre--mozo]="m.remitenteRol === 'MOZO'">
-                  {{ esPropio(m) ? 'Vos' : m.remitenteNombre }}
+                  {{ esMismoRemitente(m) ? 'Vos' : m.remitenteNombre }}
                 </span>
                 <span class="burbuja__rol-etiqueta" [class.burbuja__rol-etiqueta--mozo]="m.remitenteRol === 'MOZO'">
                   {{ rotuloRol(m.remitenteRol) }}
@@ -349,15 +349,18 @@ const SUGERENCIAS_MOZO = [
         color: var(--text-body);
       }
 
-      /* Burbuja del usuario actual (tono verde WhatsApp / Sakura) */
+      /* Burbuja del usuario actual (verde auténtico WhatsApp) */
+      .chat-fila--propio .burbuja,
       .burbuja--propio {
-        background: var(--sk-verde-fondo, #DCF1E5);
+        background: #DCF8C6 !important;
         border-bottom-right-radius: 3px;
+        color: #111B21;
       }
 
       .chat-fila--otro .burbuja {
-        background: var(--surface-card, #FDECEF);
+        background: #FFFFFF !important;
         border-bottom-left-radius: 3px;
+        color: #111B21;
       }
 
       .burbuja__encabezado {
@@ -398,7 +401,7 @@ const SUGERENCIAS_MOZO = [
         margin: 0;
         font: var(--type-body);
         line-height: 1.35;
-        color: var(--text-body);
+        color: #111B21;
         text-wrap: pretty;
       }
 
@@ -572,6 +575,9 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
               clienteActualId: data['clienteActualId'] || null,
               clienteActualUid: data['clienteActualUid'] || null,
             });
+            if (snap.id && snap.id !== this.idEscuchando) {
+              this.iniciarEscucha(snap.id, usuarioActual.id);
+            }
           }
         });
       } catch {
@@ -579,10 +585,23 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
       }
     }
 
-    // Suscripción reactiva en tiempo real (AC-6.2.1 y AC-6.2.2)
+    // Suscripción reactiva en tiempo real al ID canónico de la mesa (AC-6.2.1 y AC-6.2.2)
+    const idMesaInicial = this.mesa()?.id || mesaId;
+    this.iniciarEscucha(idMesaInicial, usuarioActual.id);
+  }
+
+  private idEscuchando: string | null = null;
+
+  private iniciarEscucha(idMesa: string, usuarioId: string): void {
+    if (this.idEscuchando === idMesa && this.desuscribirChat) return;
+    if (this.desuscribirChat) {
+      this.desuscribirChat();
+      this.desuscribirChat = null;
+    }
+    this.idEscuchando = idMesa;
     this.desuscribirChat = this.chatService.escucharMensajes(
-      mesaId,
-      usuarioActual.id,
+      idMesa,
+      usuarioId,
       (mensajesActualizados) => {
         this.mensajes.set(mensajesActualizados);
         setTimeout(() => this.scrollAlFondo(), 60);
@@ -609,9 +628,33 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     }
   }
 
+  protected esMismoRemitente(mensaje: MensajeChat): boolean {
+    const actual = this.usuario();
+    if (!actual) return false;
+    return mensaje.remitenteId === actual.id || mensaje.remitenteId === actual.uid;
+  }
+
   protected esPropio(mensaje: MensajeChat): boolean {
     const actual = this.usuario();
-    return mensaje.remitenteId === actual?.id || mensaje.remitenteId === actual?.uid;
+    if (!actual) return false;
+
+    // 1. Coincidencia directa por identificador del usuario
+    if (mensaje.remitenteId === actual.id || mensaje.remitenteId === actual.uid) {
+      return true;
+    }
+
+    // 2. Coincidencia por rol: cada rol ve en verde su propio mensaje, igual que en WhatsApp
+    const esPersonal = actual.perfil === 'MOZO' || actual.perfil === 'SUPERVISOR' || actual.perfil === 'DUENO';
+    if (esPersonal && mensaje.remitenteRol === 'MOZO') {
+      return true;
+    }
+
+    const esCliente = actual.perfil === 'CLIENTE_REGISTRADO' || actual.perfil === 'CLIENTE_ANONIMO';
+    if (esCliente && mensaje.remitenteRol === 'CLIENTE') {
+      return true;
+    }
+
+    return false;
   }
 
   protected rotuloRol(rol: RolMensaje): string {

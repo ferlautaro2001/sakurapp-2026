@@ -73,6 +73,7 @@ export class SesionService {
 
     this.notificaciones.registrarSesion(
       usuario.uid || usuario.id,
+      usuario.perfil,
     );
 
     await this.almacen.guardarSesion(usuario);
@@ -125,6 +126,7 @@ export class SesionService {
 
     this.notificaciones.registrarSesion(
       usuario.uid || usuario.id,
+      usuario.perfil,
     );
 
     try {
@@ -143,8 +145,12 @@ export class SesionService {
 
   /** Cierra la sesión y borra la credencial guardada en el dispositivo. */
   async cerrar(): Promise<void> {
+    const actual = this.usuario();
+    if (actual) {
+      void this.firestore.removerFcmToken(actual.uid || actual.id);
+    }
     this.usuario.set(null);
-    this.notificaciones.registrarSesion(null);
+    this.notificaciones.registrarSesion(null, null);
     await this.limpiarMesaActiva();
     await this.almacen.borrarSesion();
   }

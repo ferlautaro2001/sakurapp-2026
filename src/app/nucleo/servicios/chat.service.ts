@@ -106,6 +106,18 @@ export class ChatService {
 
         snapshot.forEach((docSnap) => {
           const d = docSnap.data();
+          const rawTs = d['timestamp'];
+          let ts = '';
+          if (typeof rawTs === 'string') {
+            ts = rawTs;
+          } else if (rawTs && typeof rawTs.toDate === 'function') {
+            ts = rawTs.toDate().toISOString();
+          } else if (rawTs && typeof rawTs.seconds === 'number') {
+            ts = new Date(rawTs.seconds * 1000).toISOString();
+          } else {
+            ts = new Date().toISOString();
+          }
+
           const msj: MensajeChat = {
             id: docSnap.id,
             mesaId: d['mesaId'] || mesaId,
@@ -114,14 +126,21 @@ export class ChatService {
             remitenteNombre: d['remitenteNombre'] || 'Usuario',
             remitenteRol: (d['remitenteRol'] as RolMensaje) || 'CLIENTE',
             texto: d['texto'] || '',
-            timestamp: d['timestamp'] || new Date().toISOString(),
+            timestamp: ts,
             leido: Boolean(d['leido']),
           };
           mensajes.push(msj);
         });
 
-        // Orden cronológico ascendente (los más viejos arriba, más recientes abajo)
-        mensajes.sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        // Orden cronológico estricto (los más antiguos arriba, más recientes abajo intercalados)
+        mensajes.sort((a, b) => {
+          const tA = new Date(a.timestamp).getTime();
+          const tB = new Date(b.timestamp).getTime();
+          if (isNaN(tA) || isNaN(tB)) {
+            return a.timestamp.localeCompare(b.timestamp);
+          }
+          return tA - tB;
+        });
 
         // Si se agregó un mensaje que no es del usuario actual después de la carga inicial
         if (!primeraCarga && snapshot.docChanges().some((c) => c.type === 'added')) {

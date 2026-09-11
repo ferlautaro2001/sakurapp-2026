@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { PushNotifications, Token, ActionPerformed, PushNotificationSchema } from '@capacitor/push-notifications';
+import { Perfil } from '../modelos/enums';
 import { FirestoreService } from './firestore.service';
 
 export interface AvisoPush {
@@ -31,6 +32,7 @@ export class NotificacionesService {
 
   private siguienteId = 1;
   private readonly enSesion = signal<string | null>(null);
+  private readonly rolEnSesion = signal<Perfil | null>(null);
   private readonly bandejas = signal<Record<string, AvisoPush[]>>({});
 
   readonly ultimoAviso = signal<AvisoPush | null>(null);
@@ -39,8 +41,9 @@ export class NotificacionesService {
   private permitido = false;
   private iniciado = false;
 
-  registrarSesion(usuarioId: string | null): void {
+  registrarSesion(usuarioId: string | null, rol?: Perfil | null): void {
     this.enSesion.set(usuarioId);
+    this.rolEnSesion.set(rol ?? null);
     const token = this.pushToken();
     if (usuarioId && token) {
       void this.firestore.registrarFcmToken(usuarioId, token);
@@ -139,6 +142,38 @@ export class NotificacionesService {
             '🔔 Push recibida en primer plano:',
             notification,
           );
+
+          // Verificar si la notificación está dirigida a un rol o UID específico
+          const data = notification.data || {};
+          const rolDestino = (data['destinatarioRol'] || data['rol'] || '').trim();
+          const uidDestino = (data['destinatarioUid'] || data['uid'] || '').trim();
+          const rolActual = this.rolEnSesion();
+          const uidActual = this.enSesion();
+
+          if (!uidActual) {
+            console.log('🔇 Notificación push descartada: no hay sesión activa en este dispositivo');
+            return;
+          }
+
+          if (rolDestino) {
+            const coincideRol =
+              rolDestino === rolActual ||
+              (rolDestino === 'CLIENTE' &&
+                (rolActual === 'CLIENTE_REGISTRADO' || rolActual === 'CLIENTE_ANONIMO'));
+            if (!coincideRol) {
+              console.log(
+                `🔇 Notificación push descartada: rol destino ${rolDestino} no coincide con rol actual ${rolActual}`,
+              );
+              return;
+            }
+          }
+
+          if (uidDestino && uidDestino !== uidActual) {
+            console.log(
+              `🔇 Notificación push descartada: UID destino ${uidDestino} no coincide con UID actual ${uidActual}`,
+            );
+            return;
+          }
 
           void Haptics.notification({
             type: NotificationType.Success,
@@ -251,6 +286,8 @@ export class NotificacionesService {
       void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
     }
 
+    // Excluyente: sólo emitir alerta o notificación local si el usuario en sesión es uno de los destinatarios
+    if (!esParaSesionActual) return;
     if (!Capacitor.isNativePlatform() || !this.permitido) return;
 
     try {
@@ -269,6 +306,55 @@ export class NotificacionesService {
       });
     } catch (err) {
       console.warn('⚠️ No se pudo disparar notificación de sistema:', err);
+    }
+  }
+
+  /**
+   * Envía un aviso dirigido exclusivamente al rol indicado (US-3.2).
+   * Solo los usuarios con este perfil recibirán la notificación push y local.
+   */
+  async enviarPorRol(rol: Perfil, titulo: string, cuerpo: string, ruta?: string[]): Promise<void> {
+    void this.firestore.encolarNotificacion({
+      destinatarioRol: rol,
+      titulo,
+      cuerpo,
+      ruta: ruta ? ruta.join('/') : undefined,
+    });
+
+    const rolActual = this.rolEnSesion();
+    const esParaSesionActual = rolActual === rol;
+
+    if (esParaSesionActual) {
+      const aviso: AvisoPush = {
+        id: this.siguienteId++,
+        titulo,
+        cuerpo,
+        ruta,
+        recibidoEn: new Date().toISOString(),
+        leido: false,
+      };
+      this.ultimoAviso.set(aviso);
+      void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
+
+      if (Capacitor.isNativePlatform() && this.permitido) {
+        try {
+          await LocalNotifications.schedule({
+            notifications: [
+              {
+                id: aviso.id,
+                channelId: CANAL,
+                title: titulo,
+                body: cuerpo,
+                smallIcon: 'ic_stat_sakura',
+                largeIcon: 'ic_launcher',
+                extra: { ruta },
+              },
+            ],
+          });
+        } catch (err) {
+          console.warn('⚠️ No se pudo disparar notificación de sistema:', err);
+        }
+      }
     }
   }
 

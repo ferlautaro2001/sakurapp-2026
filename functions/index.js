@@ -34,36 +34,19 @@ exports.procesarColaPush = onDocumentCreated(
     try {
       const tokensSet = new Set();
 
-      // 1. Si el destinatario es un rol específico (SUPERVISOR, DUENO, COCINERO, etc.)
-      if (data.destinatarioRol) {
-        const usuariosSnapshot = await db
-          .collection("usuarios")
-          .where("perfil", "==", data.destinatarioRol)
-          .get();
-
-        usuariosSnapshot.forEach((docSnap) => {
-          const u = docSnap.data();
-          if (u.fcmToken && typeof u.fcmToken === "string") {
-            tokensSet.add(u.fcmToken);
-          }
-          if (u.pushToken && typeof u.pushToken === "string") {
-            tokensSet.add(u.pushToken);
-          }
-        });
-      }
-
-      // 2. Si el destinatario es por UID directo
+      // Prioridad 1: Destinatario por UID directo
       if (data.destinatarioUid) {
         const userDoc = await db.collection("usuarios").doc(data.destinatarioUid).get();
         if (userDoc.exists) {
           const u = userDoc.data();
-          if (u?.fcmToken) tokensSet.add(u.fcmToken);
-          if (u?.pushToken) tokensSet.add(u.pushToken);
+          if (u?.activo !== false && u?.estado !== "RECHAZADO") {
+            if (u?.fcmToken && typeof u.fcmToken === "string") tokensSet.add(u.fcmToken);
+            if (u?.pushToken && typeof u.pushToken === "string") tokensSet.add(u.pushToken);
+          }
         }
       }
-
-      // 3. Si el destinatario es por email
-      if (data.destinatarioEmail) {
+      // Prioridad 2: Destinatario por Email directo
+      else if (data.destinatarioEmail) {
         const userByEmail = await db
           .collection("usuarios")
           .where("email", "==", data.destinatarioEmail.trim().toLowerCase())
@@ -71,8 +54,37 @@ exports.procesarColaPush = onDocumentCreated(
 
         userByEmail.forEach((docSnap) => {
           const u = docSnap.data();
-          if (u.fcmToken) tokensSet.add(u.fcmToken);
-          if (u.pushToken) tokensSet.add(u.pushToken);
+          if (u.activo !== false && u.estado !== "RECHAZADO") {
+            if (u.fcmToken && typeof u.fcmToken === "string") tokensSet.add(u.fcmToken);
+            if (u.pushToken && typeof u.pushToken === "string") tokensSet.add(u.pushToken);
+          }
+        });
+      }
+      // Prioridad 3: Destinatario por Rol exclusivo
+      else if (data.destinatarioRol) {
+        let usuariosSnapshot;
+        if (data.destinatarioRol === "CLIENTE") {
+          usuariosSnapshot = await db
+            .collection("usuarios")
+            .where("perfil", "in", ["CLIENTE_REGISTRADO", "CLIENTE_ANONIMO"])
+            .get();
+        } else {
+          usuariosSnapshot = await db
+            .collection("usuarios")
+            .where("perfil", "==", data.destinatarioRol)
+            .get();
+        }
+
+        usuariosSnapshot.forEach((docSnap) => {
+          const u = docSnap.data();
+          if (u.activo !== false && u.estado !== "RECHAZADO") {
+            if (u.fcmToken && typeof u.fcmToken === "string") {
+              tokensSet.add(u.fcmToken);
+            }
+            if (u.pushToken && typeof u.pushToken === "string") {
+              tokensSet.add(u.pushToken);
+            }
+          }
         });
       }
 
@@ -97,6 +109,9 @@ exports.procesarColaPush = onDocumentCreated(
         data: {
           ruta: data.ruta || "",
           notifId: event.params.notifId,
+          destinatarioRol: data.destinatarioRol || "",
+          destinatarioUid: data.destinatarioUid || "",
+          destinatarioEmail: data.destinatarioEmail || "",
           timestamp: new Date().toISOString(),
         },
         tokens,

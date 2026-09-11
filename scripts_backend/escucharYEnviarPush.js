@@ -32,26 +32,54 @@ db.collection("notificaciones_cola")
         try {
           const tokensSet = new Set();
 
-          if (data.destinatarioRol) {
-            const usersSnap = await db
-              .collection("usuarios")
-              .where("perfil", "==", data.destinatarioRol)
-              .get();
-
-            usersSnap.forEach((uDoc) => {
-              const u = uDoc.data();
-              if (u.fcmToken) tokensSet.add(u.fcmToken);
-              if (u.pushToken) tokensSet.add(u.pushToken);
-            });
-          }
-
+          // Prioridad 1: Destinatario por UID directo
           if (data.destinatarioUid) {
             const userDoc = await db.collection("usuarios").doc(data.destinatarioUid).get();
             if (userDoc.exists) {
               const u = userDoc.data();
-              if (u.fcmToken) tokensSet.add(u.fcmToken);
-              if (u.pushToken) tokensSet.add(u.pushToken);
+              if (u?.activo !== false && u?.estado !== "RECHAZADO") {
+                if (u?.fcmToken) tokensSet.add(u.fcmToken);
+                if (u?.pushToken) tokensSet.add(u.pushToken);
+              }
             }
+          }
+          // Prioridad 2: Destinatario por Email directo
+          else if (data.destinatarioEmail) {
+            const userByEmail = await db
+              .collection("usuarios")
+              .where("email", "==", data.destinatarioEmail.trim().toLowerCase())
+              .get();
+
+            userByEmail.forEach((docSnap) => {
+              const u = docSnap.data();
+              if (u.activo !== false && u.estado !== "RECHAZADO") {
+                if (u.fcmToken) tokensSet.add(u.fcmToken);
+                if (u.pushToken) tokensSet.add(u.pushToken);
+              }
+            });
+          }
+          // Prioridad 3: Destinatario por Rol exclusivo
+          else if (data.destinatarioRol) {
+            let usersSnap;
+            if (data.destinatarioRol === "CLIENTE") {
+              usersSnap = await db
+                .collection("usuarios")
+                .where("perfil", "in", ["CLIENTE_REGISTRADO", "CLIENTE_ANONIMO"])
+                .get();
+            } else {
+              usersSnap = await db
+                .collection("usuarios")
+                .where("perfil", "==", data.destinatarioRol)
+                .get();
+            }
+
+            usersSnap.forEach((uDoc) => {
+              const u = uDoc.data();
+              if (u.activo !== false && u.estado !== "RECHAZADO") {
+                if (u.fcmToken) tokensSet.add(u.fcmToken);
+                if (u.pushToken) tokensSet.add(u.pushToken);
+              }
+            });
           }
 
           const tokens = Array.from(tokensSet);
@@ -74,6 +102,9 @@ db.collection("notificaciones_cola")
             data: {
               ruta: data.ruta || "",
               notifId: notifDoc.id,
+              destinatarioRol: data.destinatarioRol || "",
+              destinatarioUid: data.destinatarioUid || "",
+              destinatarioEmail: data.destinatarioEmail || "",
             },
             tokens,
           });

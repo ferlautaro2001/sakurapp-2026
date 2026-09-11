@@ -185,15 +185,12 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
     }
 
     try {
-      const metres = this.usuarios.todos().filter((u) => u.perfil === 'METRE');
-      if (metres.length) {
-        await this.notificaciones.enviar(
-          metres.map((u) => u.id),
-          'Un nuevo comensal está esperando',
-          `${this.usuarios.nombreCompleto(cliente)} se anotó en la lista de espera.`,
-          ['/metre/espera'],
-        );
-      }
+      await this.notificaciones.enviarPorRol(
+        'METRE',
+        'Un nuevo comensal está esperando',
+        `${this.usuarios.nombreCompleto(cliente)} se anotó en la lista de espera.`,
+        ['/metre/espera'],
+      );
     } catch (notifErr) {
       console.warn('⚠️ No se pudo enviar notificación push al metre:', notifErr);
     }

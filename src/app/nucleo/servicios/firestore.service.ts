@@ -75,8 +75,25 @@ export class FirestoreService {
         const lista: Usuario[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
+          // Ignorar documentos vacíos o corruptos (como registros de tokens huérfanos sin datos de usuario)
+          if (!data || (!data['nombre'] && !data['email'] && !data['perfil'])) {
+            return;
+          }
+
+          // Resolver prioritariamente el identificador UUID de Cloud SQL PostgreSQL
+          const rawId = data['id'];
+          const esUuid = (val: string) => /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(val);
+          let idResuelto = docSnap.id;
+          if (rawId && typeof rawId === 'string' && esUuid(rawId)) {
+            idResuelto = rawId;
+          } else if (esUuid(docSnap.id)) {
+            idResuelto = docSnap.id;
+          } else if (rawId && typeof rawId === 'string') {
+            idResuelto = rawId;
+          }
+
           lista.push({
-            id: docSnap.id,
+            id: idResuelto,
             uid: data['uid'] || docSnap.id,
             nombre: data['nombre'] || '',
             apellido: data['apellido'] || null,
@@ -155,6 +172,25 @@ export class FirestoreService {
   }
 
   /**
+   * Remueve el token FCM de un usuario en Firestore cuando cierra sesión.
+   * Evita que el dispositivo reciba notificaciones dirigidas al usuario saliente.
+   */
+  async removerFcmToken(uid: string): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      const userRef = doc(db, 'usuarios', uid);
+      await updateDoc(userRef, {
+        fcmToken: null,
+        pushToken: null,
+        fcmActualizadoEn: new Date().toISOString(),
+      });
+      console.log(`📲 Token FCM removido en Firestore para UID ${uid}`);
+    } catch (err) {
+      console.warn('⚠️ Error al remover token FCM en Firestore:', err);
+    }
+  }
+
+  /**
    * Actualiza el estado (APROBADO / RECHAZADO) de un usuario en Firestore en tiempo real.
    */
   async actualizarEstadoUsuario(usuarioIdOrUid: string, estado: EstadoUsuario): Promise<void> {
@@ -206,8 +242,19 @@ export class FirestoreService {
         const lista: Mesa[] = [];
         snapshot.forEach((docSnap) => {
           const data = docSnap.data();
+          const rawId = data['id'];
+          const esUuid = (val: string) => /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(val);
+          let idResuelto = docSnap.id;
+          if (rawId && typeof rawId === 'string' && esUuid(rawId)) {
+            idResuelto = rawId;
+          } else if (esUuid(docSnap.id)) {
+            idResuelto = docSnap.id;
+          } else if (rawId && typeof rawId === 'string') {
+            idResuelto = rawId;
+          }
+
           lista.push({
-            id: docSnap.id,
+            id: idResuelto,
             numero: Number(data['numero']) || 0,
             cantidadComensales: Number(data['cantidadComensales']) || 2,
             tipo: (data['tipo'] as TipoMesa) || 'ESTANDAR',

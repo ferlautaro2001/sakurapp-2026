@@ -164,6 +164,13 @@ export const routes: Routes = [
       import('./pantallas/mozo/pedidos-mozo.page').then((m) => m.PedidosMozoPage),
   },
   {
+    // US-7.2 · punto 13 · devolver la comanda es una pantalla propia y no un
+    // modal: el mozo recorre la comanda entera marcando renglón por renglón.
+    path: 'mozo/pedidos/:id/rechazar',
+    canActivate: [guardiaSesion, guardiaPerfil('MOZO')],
+    loadComponent: () => import('./pantallas/mozo/rechazo.page').then((m) => m.MozoRechazoPage),
+  },
+  {
     // US-5.1 · punto 9 · el comensal escanea el código de ingreso al salón y
     // queda anotado en la lista de espera. Hasta que el metre le asigne una
     // mesa, lo único habilitado son los resultados de las encuestas anteriores.
@@ -218,8 +225,10 @@ export const routes: Routes = [
       ),
   },
   {
+    // Los descuentos de los juegos son sólo para el cliente registrado: el
+    // anónimo no juega, así lo pide la consigna.
     path: 'juegos',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO')],
     loadComponent: () => import('./pantallas/cliente/juegos.page').then((m) => m.JuegosPage),
   },
   {

@@ -187,28 +187,30 @@ export class FilaPendienteComponent {
         </span>
         <span class="lm-mesa__pie">
           <lm-chip [estado]="mesa().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
-          <span style="display: flex; gap: 6px; align-items: center;">
+        </span>
+        <span class="lm-mesa__acciones">
+          <span
+            class="lm-mesa__btn-accion lm-mesa__btn-accion--chat"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'Abrir sala de chat de la mesa ' + mesa().numero"
+            (click)="verChat($event)"
+          >
+            <lm-icono nombre="forum" [tamano]="24" color="var(--sk-verde)" />
+            <span class="lm-mesa__btn-texto">Chat</span>
+          </span>
+          @if (conQr()) {
             <span
-              class="lm-mesa__qr"
+              class="lm-mesa__btn-accion lm-mesa__btn-accion--qr"
               role="button"
               tabindex="0"
-              [attr.aria-label]="'Abrir sala de chat de la mesa ' + mesa().numero"
-              (click)="verChat($event)"
+              [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
+              (click)="verQr($event)"
             >
-              <lm-icono nombre="forum" [tamano]="18" color="var(--sk-verde)" />
+              <lm-icono nombre="qr_code_2" [tamano]="24" color="var(--action-primary)" />
+              <span class="lm-mesa__btn-texto">QR</span>
             </span>
-            @if (conQr()) {
-              <span
-                class="lm-mesa__qr"
-                role="button"
-                tabindex="0"
-                [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
-                (click)="verQr($event)"
-              >
-                <lm-icono nombre="qr_code_2" [tamano]="18" color="var(--action-primary)" />
-              </span>
-            }
-          </span>
+          }
         </span>
       </span>
     </button>

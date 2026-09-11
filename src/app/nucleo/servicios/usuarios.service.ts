@@ -165,12 +165,11 @@ export class UsuariosService {
     // Sincronización en tiempo real vía Cloud Firestore
     await this.firestore.actualizarEstadoUsuario(usuario.uid || usuarioId, estado);
 
-    // Encolar notificación push para despacho serverless 24/7 vía Google FCM
+    // Encolar notificación push para despacho serverless 24/7 vía Google FCM al usuario específico
     if (estado === 'APROBADO') {
       void this.firestore.encolarNotificacion({
         destinatarioUid: usuario.uid || usuario.id,
         destinatarioEmail: usuario.email ?? undefined,
-        destinatarioRol: usuario.perfil,
         titulo: '🌸 ¡Cuenta habilitada!',
         cuerpo: `Bienvenido a SakurApp, ${usuario.nombre}. Tu cuenta fue aprobada.`,
         ruta: '/login',
@@ -179,7 +178,6 @@ export class UsuariosService {
       void this.firestore.encolarNotificacion({
         destinatarioUid: usuario.uid || usuario.id,
         destinatarioEmail: usuario.email ?? undefined,
-        destinatarioRol: usuario.perfil,
         titulo: '🌸 Solicitud de registro',
         cuerpo: `Hola ${usuario.nombre}, tu registro no fue admitido en esta oportunidad.`,
         ruta: '/login',

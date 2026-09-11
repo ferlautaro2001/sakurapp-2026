@@ -506,13 +506,67 @@ body.camara-encendida .lm-header {
   background: rgba(253, 236, 239, .94); color: var(--action-primary);
   font: 700 11px/1.2 var(--font-text);
 }
-.lm-mesa__cuerpo { display: flex; flex-direction: column; gap: 6px; padding: 24px 12px 12px; flex: 1; }
+.lm-mesa__cuerpo { display: flex; flex-direction: column; gap: 8px; padding: 22px 12px 12px; flex: 1; }
 .lm-mesa__rotulo { font: var(--type-card-title); color: var(--text-title); }
 .lm-mesa__meta { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font: var(--type-caption); }
-.lm-mesa__pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
+.lm-mesa__pie { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: auto; }
+.lm-mesa__acciones {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+.lm-mesa__btn-accion {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 44px;
+  padding: 0 8px;
+  border-radius: 12px;
+  background: var(--surface-sunken);
+  border: 1.5px solid rgba(110, 18, 52, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+.lm-mesa__btn-accion:active {
+  transform: scale(0.95);
+}
+.lm-mesa__btn-accion--chat {
+  background: rgba(27, 122, 76, 0.08);
+  border-color: rgba(27, 122, 76, 0.22);
+}
+.lm-mesa__btn-accion--chat:hover {
+  background: rgba(27, 122, 76, 0.14);
+}
+.lm-mesa__btn-accion--chat:active {
+  background: rgba(27, 122, 76, 0.20);
+}
+.lm-mesa__btn-accion--qr {
+  background: rgba(235, 54, 107, 0.06);
+  border-color: rgba(235, 54, 107, 0.2);
+}
+.lm-mesa__btn-accion--qr:hover {
+  background: rgba(235, 54, 107, 0.12);
+}
+.lm-mesa__btn-accion--qr:active {
+  background: rgba(235, 54, 107, 0.18);
+}
+.lm-mesa__btn-texto {
+  font: 700 12px/1 var(--font-text);
+  color: var(--text-title);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .lm-mesa__qr {
-  display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto;
-  border-radius: 11px; background: var(--surface-sunken); border: none; cursor: pointer;
+  display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto;
+  border-radius: 12px; background: var(--surface-sunken); border: none; cursor: pointer;
 }
 
 .lm-pending {

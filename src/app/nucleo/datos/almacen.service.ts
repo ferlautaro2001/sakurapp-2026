@@ -153,9 +153,13 @@ export class AlmacenService {
             this.usuarios.update((actuales) => {
               const mapa = new Map<string, Usuario>();
               for (const u of actuales) mapa.set(u.uid || u.id, u);
+              const esUuid = (val?: string | null) =>
+                Boolean(val && /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(val));
+
               for (const u of listaFirestore) {
                 const previo = mapa.get(u.uid || u.id);
-                mapa.set(u.uid || u.id, { ...previo, ...u });
+                const idValido = esUuid(u.id) ? u.id : (esUuid(previo?.id) ? previo!.id : u.id);
+                mapa.set(u.uid || u.id, { ...previo, ...u, id: idValido });
               }
               const combinados = Array.from(mapa.values());
               void this.guardar(CLAVE.usuarios, combinados);
@@ -176,9 +180,12 @@ export class AlmacenService {
               for (const m of actuales) {
                 mapaPorNumero.set(m.numero, m);
               }
+              const esUuid = (val?: string | null) =>
+                Boolean(val && /^[0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12}$/i.test(val));
               for (const m of listaFirestoreMesas) {
                 const previo = mapaPorNumero.get(m.numero);
-                mapaPorNumero.set(m.numero, { ...previo, ...m });
+                const idValido = esUuid(m.id) ? m.id : (esUuid(previo?.id) ? previo!.id : m.id);
+                mapaPorNumero.set(m.numero, { ...previo, ...m, id: idValido });
               }
               const combinadas = Array.from(mapaPorNumero.values()).sort((a, b) => a.numero - b.numero);
               void this.guardar(CLAVE.mesas, combinadas);

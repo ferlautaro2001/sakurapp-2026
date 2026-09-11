@@ -25,7 +25,11 @@ export abstract class PaginaConSesion {
   protected readonly secciones = computed(() => {
     const usuario = this.sesion.usuario();
     const pedido = this.pedidosNavegacion.activoDe(usuario);
-    return navegacionDe(usuario?.perfil, this.pedidosNavegacion.juegosHabilitados(pedido));
+    return navegacionDe(
+      usuario?.perfil,
+      this.pedidosNavegacion.juegosHabilitados(pedido),
+      pedido?.estadoGlobal === 'RECHAZADO',
+    );
   });
 
   constructor() {

@@ -31,6 +31,19 @@ describe('CarritoService', () => {
     disponible: true,
   };
 
+  const sake: Producto = {
+    id: 'producto-sake',
+    nombre: 'Sake caliente',
+    descripcion: 'Bebida de prueba',
+    tiempoElaboracion: 3,
+    precio: 7200,
+    tipo: 'BEBIDA',
+    sector: 'BAR',
+    fotos: [],
+    activo: true,
+    disponible: true,
+  };
+
   beforeEach(() => {
     servicio = new CarritoService();
     servicio.iniciarMesa('mesa-1');
@@ -43,14 +56,24 @@ describe('CarritoService', () => {
     expect(servicio.tiempoEstimado()).toBe(0);
   });
 
-  it('calcula precio por cantidad y tiempo máximo', () => {
+  it('calcula el precio por cantidad y la demora del sector más cargado', () => {
     servicio.agregar(roll);
     servicio.agregar(roll);
     servicio.agregar(ramen);
 
     expect(servicio.cantidadTotal()).toBe(3);
     expect(servicio.importeTotal()).toBe(44800);
-    expect(servicio.tiempoEstimado()).toBe(25);
+    // Los dos son de cocina, que los hace uno después del otro: 20 + 25. Las
+    // dos unidades del roll no multiplican, salen juntas de la misma olla.
+    expect(servicio.tiempoEstimado()).toBe(45);
+  });
+
+  it('la cocina y la barra trabajan a la vez: manda el sector más cargado', () => {
+    servicio.agregar(roll); // cocina, 20 minutos
+    servicio.agregar(ramen); // cocina, 25 minutos
+    servicio.agregar(sake); // barra, 3 minutos
+
+    expect(servicio.tiempoEstimado()).toBe(45);
   });
 
   it('actualiza los totales al modificar cantidades', () => {

@@ -271,6 +271,12 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       estadoGlobal: 'PENDIENTE_CONFIRMACION',
       estadoCocina: 'NO_APLICA',
       estadoBar: 'NO_APLICA',
+      // US-7.2 · una comanda que todavía nadie devolvió: sin motivo, sin
+      // alcance y sin ningún renglón marcado.
+      motivoRechazo: null,
+      rechazadoPorNombre: null,
+      alcanceRechazo: null,
+      observaciones: [],
       tiempoEstimado: 25,
       totalBruto: 20000,
       descuentoJuego: 0,

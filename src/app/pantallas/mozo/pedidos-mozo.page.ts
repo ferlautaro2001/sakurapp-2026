@@ -73,9 +73,19 @@ import { PaginaConSesion } from '../pagina-base';
 
                 <footer>
                   <b>{{ pedido.totalFinal | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}</b>
-                  <lm-boton icono="task_alt" [ancho]="false" (presionar)="confirmar(pedido)">
-                    Confirmar pedido
-                  </lm-boton>
+                  <span class="acciones">
+                    <lm-boton
+                      variante="danger"
+                      icono="edit_note"
+                      [ancho]="false"
+                      (presionar)="abrirRechazo(pedido)"
+                    >
+                      Devolver
+                    </lm-boton>
+                    <lm-boton icono="task_alt" [ancho]="false" (presionar)="confirmar(pedido)">
+                      Confirmar
+                    </lm-boton>
+                  </span>
                 </footer>
               </article>
             }
@@ -94,9 +104,12 @@ import { PaginaConSesion } from '../pagina-base';
     header,footer,.item{display:flex;align-items:center;justify-content:space-between;gap:12px}
     header span{display:grid;gap:2px}header b{font:var(--type-card-title);color:var(--text-title)}
     header small,.item small{font:var(--type-caption);color:var(--text-muted)}
-    .items{display:grid;gap:8px;padding-block:12px;border-block:1px solid var(--border-subtle)}
+    .items{display:grid;gap:8px;padding-block:12px;border-block:1px solid var(--border-divider)}
     .item span{font:var(--type-body-small);color:var(--text-body)}.item small{text-transform:capitalize}
     footer>b{font:var(--type-card-title);color:var(--text-title)}
+    /* Confirmar y devolver, en la misma fila y separados: la decisión se toma
+       adentro de la comanda, sin salir de la lista. */
+    .acciones{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:flex-end}
   `],
 })
 export class PedidosMozoPage extends PaginaConSesion implements OnInit {
@@ -137,6 +150,17 @@ export class PedidosMozoPage extends PaginaConSesion implements OnInit {
     } catch (error) {
       this.avisos.error('No pudimos confirmar el pedido', mensajeDe(error));
     }
+  }
+
+  /**
+   * US-7.2 · AC-7.2.1 · abre la pantalla que pide el motivo.
+   *
+   * Devolver no pasa por la confirmación genérica desde acá: la pantalla de
+   * devolución es la que marca los productos, pide el motivo y recién ahí
+   * pregunta, así el mozo no confirma dos veces lo mismo.
+   */
+  protected abrirRechazo(pedido: Pedido): void {
+    this.ir(['/mozo/pedidos', pedido.id, 'rechazar']);
   }
 }
 

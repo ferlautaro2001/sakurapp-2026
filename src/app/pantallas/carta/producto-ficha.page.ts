@@ -6,6 +6,8 @@ import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { CarritoService } from '../../nucleo/servicios/carrito.service';
+import { PedidosService } from '../../nucleo/servicios/pedidos.service';
+import { MarcaRechazo } from '../../nucleo/modelos/enums';
 
 @Component({
   selector: 'lm-producto-ficha',
@@ -164,8 +166,22 @@ import { CarritoService } from '../../nucleo/servicios/carrito.service';
             Quitar de la carta
           </lm-texto-boton>
         } @else if (puedeAgregar()) {
+          @if (marca(); as marcado) {
+            <lm-banner
+              [tono]="marcado === 'CAMBIAR' ? 'error' : 'info'"
+              [titulo]="
+                marcado === 'CAMBIAR'
+                  ? 'El mozo no puede prepararlo'
+                  : 'Hay menos de lo que pediste'
+              "
+            >
+              {{ avisoDeMarca() }}
+            </lm-banner>
+          }
+
           <lm-boton
             icono="add_shopping_cart"
+            [deshabilitado]="marca() !== null"
             (presionar)="agregarAlCarrito()"
           >
             Agregar al carrito
@@ -313,6 +329,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   private readonly route = inject(ActivatedRoute);
   private readonly productos = inject(ProductosService);
   private readonly mesas = inject(MesasService);
+  private readonly pedidos = inject(PedidosService);
   protected readonly carrito = inject(CarritoService);
   private readonly posicionFoto = signal(0);
 
@@ -352,6 +369,34 @@ export class ProductoFichaPage extends PaginaConSesion {
         producto.disponible
       );
     });
+
+  /**
+   * US-7.2 · AC-7.2.2 · la marca que el mozo le puso a este producto al
+   * devolver la comanda, si es que se la puso.
+   *
+   * Mientras el comensal está corrigiendo, la carta tiene que decir lo mismo
+   * que el pedido: agregar de nuevo lo que el mozo marcó en rojo, o sumarle
+   * unidades a un amarillo, va justo en contra de lo que le pidieron. Se
+   * entera acá y no al volver al carrito.
+   */
+  protected readonly marca = computed<MarcaRechazo | null>(() => {
+    const producto = this.producto();
+    if (!producto) return null;
+
+    const enEdicion = this.carrito.pedidoEnEdicion();
+    if (!enEdicion) return null;
+
+    const devuelto = this.pedidos.porId(enEdicion);
+    if (devuelto?.estadoGlobal !== 'RECHAZADO') return null;
+
+    return this.pedidos.marcaDe(devuelto, producto.id);
+  });
+
+  protected avisoDeMarca(): string {
+    return this.marca() === 'CAMBIAR'
+      ? 'El mozo lo marcó porque hoy no lo pueden preparar. Elegí otra cosa para tu pedido.'
+      : 'El mozo avisó que hay menos de lo que pediste, así que no podés sumar más unidades. Bajá la cantidad desde tu pedido.';
+  }
 
   protected readonly fotos = computed(() =>
     (this.producto()?.fotos ?? []).filter(Boolean),
@@ -471,6 +516,17 @@ protected async quitar(): Promise<void> {
     const producto = this.producto();
 
     if (!producto || !this.mesaId) {
+      return;
+    }
+
+    const marcado = this.marca();
+    if (marcado) {
+      this.avisos.error(
+        marcado === 'CAMBIAR'
+          ? 'El mozo no puede prepararlo'
+          : 'No podés sumar más unidades',
+        this.avisoDeMarca(),
+      );
       return;
     }
 

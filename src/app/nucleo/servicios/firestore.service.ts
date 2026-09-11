@@ -16,12 +16,14 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, Pedido, PedidoItem, Producto, Usuario } from '../modelos/modelos';
+import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario } from '../modelos/modelos';
 import {
+  AlcanceRechazo,
   EstadoMesa,
   EstadoPedido,
   EstadoSector,
   EstadoUsuario,
+  MarcaRechazo,
   Perfil,
   Sector,
   TipoMesa,
@@ -483,6 +485,57 @@ export class FirestoreService {
   }
 
   /**
+   * US-7.2 · AC-7.2.1 · devuelve la comanda con el motivo que escribió el mozo.
+   *
+   * Es una escritura sola sobre el mismo documento que ya escuchan la pantalla
+   * del mozo y la del comensal: el teléfono de la mesa lo ve en el momento,
+   * sin volver a pedir nada.
+   */
+  async rechazarPedido(
+    pedidoId: string,
+    motivo: string,
+    mozoNombre: string,
+    alcance: AlcanceRechazo | null,
+    observaciones: ObservacionItem[],
+  ): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedidoId),
+      {
+        estadoGlobal: 'RECHAZADO',
+        estadoCocina: 'NO_APLICA',
+        estadoBar: 'NO_APLICA',
+        motivoRechazo: motivo,
+        rechazadoPorNombre: mozoNombre,
+        alcanceRechazo: alcance,
+        observaciones,
+        rechazadoEn: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
+  /**
+   * US-7.2 · AC-7.2.2 · el comensal corrigió la comanda y la manda de nuevo.
+   *
+   * Vuelve a esperar la confirmación del mozo con los renglones que quedaron,
+   * y sin el motivo anterior: lo que el mozo va a revisar ahora es otra cosa.
+   */
+  async reenviarPedido(pedido: Pedido): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedido.id),
+      {
+        ...pedido,
+        estadoGlobal: 'PENDIENTE_CONFIRMACION',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        reenviadoEn: new Date().toISOString(),
+      },
+    );
+  }
+
+  /**
    * Registra el único intento permitido y aplica su descuento de forma atómica.
    * La transacción evita dos premios si el usuario toca el botón dos veces.
    */
@@ -546,6 +599,12 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
     estadoGlobal: (datos['estadoGlobal'] as EstadoPedido) || 'SELECCIONANDO',
     estadoCocina: (datos['estadoCocina'] as EstadoSector) || 'NO_APLICA',
     estadoBar: (datos['estadoBar'] as EstadoSector) || 'NO_APLICA',
+    motivoRechazo: datos['motivoRechazo'] ? String(datos['motivoRechazo']) : null,
+    rechazadoPorNombre: datos['rechazadoPorNombre'] ? String(datos['rechazadoPorNombre']) : null,
+    alcanceRechazo: (datos['alcanceRechazo'] as AlcanceRechazo) || null,
+    observaciones: Array.isArray(datos['observaciones'])
+      ? datos['observaciones'].map(observacionDesdeFirestore)
+      : [],
     tiempoEstimado: Number(datos['tiempoEstimado']) || 0,
     totalBruto: Number(datos['totalBruto']) || 0,
     descuentoJuego: Number(datos['descuentoJuego']) || 0,
@@ -555,6 +614,15 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
     juegoIntentado: datos['juegoIntentado'] === true,
     timestampCreacion: String(datos['timestampCreacion'] ?? new Date(0).toISOString()),
     items,
+  };
+}
+
+function observacionDesdeFirestore(valor: unknown): ObservacionItem {
+  const observacion = (valor && typeof valor === 'object' ? valor : {}) as Record<string, unknown>;
+  return {
+    productoId: String(observacion['productoId'] ?? ''),
+    marca: (observacion['marca'] as MarcaRechazo) || 'CAMBIAR',
+    cantidadAlMarcar: Math.max(1, Number(observacion['cantidadAlMarcar']) || 1),
   };
 }
 

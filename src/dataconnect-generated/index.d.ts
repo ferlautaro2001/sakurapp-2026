@@ -88,6 +88,25 @@ export interface AplicarDescuentoJuegoVariables {
   totalFinal: number;
 }
 
+export interface AsignarMesaClienteData {
+  espera_update?: Espera_Key | null;
+  mesa_update?: Mesa_Key | null;
+}
+
+export interface AsignarMesaClienteVariables {
+  esperaId: UUIDString;
+  mesaId: UUIDString;
+  clienteId: UUIDString;
+}
+
+export interface BorrarItemsPedidoData {
+  pedidoItem_deleteMany: number;
+}
+
+export interface BorrarItemsPedidoVariables {
+  pedidoId: UUIDString;
+}
+
 export interface ConfirmarPedidoData {
   pedido_update?: Pedido_Key | null;
 }
@@ -363,6 +382,26 @@ export interface Producto_Key {
   __typename?: 'Producto_Key';
 }
 
+export interface RechazarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface RechazarPedidoVariables {
+  id: UUIDString;
+  motivoRechazo: string;
+}
+
+export interface ReenviarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface ReenviarPedidoVariables {
+  id: UUIDString;
+  tiempoEstimado: number;
+  totalBruto: number;
+  totalFinal: number;
+}
+
 export interface RegistrarIntentoJuegoData {
   intentoJuego_insert: IntentoJuego_Key;
 }
@@ -391,18 +430,6 @@ export interface UpdateEstadoEsperaVariables {
   id: UUIDString;
   estado: EstadoEspera;
 }
-
-export interface AsignarMesaClienteData {
-  espera_update?: Espera_Key | null;
-  mesa_update?: Mesa_Key | null;
-}
-
-export interface AsignarMesaClienteVariables {
-  esperaId: UUIDString;
-  mesaId: UUIDString;
-  clienteId: UUIDString;
-}
-
 
 export interface UpdateEstadoMesaData {
   mesa_update?: Mesa_Key | null;
@@ -588,19 +615,6 @@ export const updateEstadoEsperaRef: UpdateEstadoEsperaRef;
 export function updateEstadoEspera(vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
 export function updateEstadoEspera(dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
 
-interface AsignarMesaClienteRef {
-  /* Allow users to create refs without passing in DataConnect */
-  (vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
-  /* Allow users to pass in custom DataConnect instances */
-  (dc: DataConnect, vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
-  operationName: string;
-}
-export const asignarMesaClienteRef: AsignarMesaClienteRef;
-
-export function asignarMesaCliente(vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
-export function asignarMesaCliente(dc: DataConnect, vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
-
-
 interface ConfirmarPedidoRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: ConfirmarPedidoVariables): MutationRef<ConfirmarPedidoData, ConfirmarPedidoVariables>;
@@ -636,6 +650,54 @@ export const aplicarDescuentoJuegoRef: AplicarDescuentoJuegoRef;
 
 export function aplicarDescuentoJuego(vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
 export function aplicarDescuentoJuego(dc: DataConnect, vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+
+interface AsignarMesaClienteRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  operationName: string;
+}
+export const asignarMesaClienteRef: AsignarMesaClienteRef;
+
+export function asignarMesaCliente(vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+export function asignarMesaCliente(dc: DataConnect, vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+
+interface RechazarPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RechazarPedidoVariables): MutationRef<RechazarPedidoData, RechazarPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: RechazarPedidoVariables): MutationRef<RechazarPedidoData, RechazarPedidoVariables>;
+  operationName: string;
+}
+export const rechazarPedidoRef: RechazarPedidoRef;
+
+export function rechazarPedido(vars: RechazarPedidoVariables): MutationPromise<RechazarPedidoData, RechazarPedidoVariables>;
+export function rechazarPedido(dc: DataConnect, vars: RechazarPedidoVariables): MutationPromise<RechazarPedidoData, RechazarPedidoVariables>;
+
+interface ReenviarPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ReenviarPedidoVariables): MutationRef<ReenviarPedidoData, ReenviarPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ReenviarPedidoVariables): MutationRef<ReenviarPedidoData, ReenviarPedidoVariables>;
+  operationName: string;
+}
+export const reenviarPedidoRef: ReenviarPedidoRef;
+
+export function reenviarPedido(vars: ReenviarPedidoVariables): MutationPromise<ReenviarPedidoData, ReenviarPedidoVariables>;
+export function reenviarPedido(dc: DataConnect, vars: ReenviarPedidoVariables): MutationPromise<ReenviarPedidoData, ReenviarPedidoVariables>;
+
+interface BorrarItemsPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: BorrarItemsPedidoVariables): MutationRef<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: BorrarItemsPedidoVariables): MutationRef<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+  operationName: string;
+}
+export const borrarItemsPedidoRef: BorrarItemsPedidoRef;
+
+export function borrarItemsPedido(vars: BorrarItemsPedidoVariables): MutationPromise<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+export function borrarItemsPedido(dc: DataConnect, vars: BorrarItemsPedidoVariables): MutationPromise<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */

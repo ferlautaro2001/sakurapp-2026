@@ -33,6 +33,36 @@ export type EstadoPedido =
 
 export type EstadoSector = 'NO_APLICA' | 'PENDIENTE' | 'EN_PREPARACION' | 'LISTO';
 
+/** US-7.2 · qué tan a fondo tiene que rehacer la comanda el comensal. */
+export type AlcanceRechazo = 'PARCIAL' | 'TOTAL';
+
+/**
+ * US-7.2 · cómo marca el mozo un producto al devolver la comanda.
+ *
+ *  - `CANTIDAD` (amarillo) → hay, pero no tanto: el comensal tiene que bajar
+ *    la cantidad. No puede reenviar sin haberla bajado al menos una vez.
+ *  - `CAMBIAR` (rojo) → directamente no va: lo saca o lo cambia por otra cosa.
+ *    No puede reenviar mientras siga en la comanda.
+ */
+export type MarcaRechazo = 'CANTIDAD' | 'CAMBIAR';
+
+/** Cómo se le nombra la marca al comensal, que es quien tiene que corregir. */
+export const ROTULO_MARCA_RECHAZO: Record<MarcaRechazo, string> = {
+  CANTIDAD: 'Hay menos de lo que pediste',
+  CAMBIAR: 'No lo podemos preparar',
+};
+
+/** Cómo se le nombra la marca al mozo, en su idioma: lo que vio en la cocina. */
+export const ROTULO_MARCA_MOZO: Record<MarcaRechazo, string> = {
+  CANTIDAD: 'Cantidad insuficiente',
+  CAMBIAR: 'Sin stock',
+};
+
+export const ROTULO_ALCANCE_RECHAZO: Record<AlcanceRechazo, string> = {
+  PARCIAL: 'Modificación parcial',
+  TOTAL: 'Modificación total',
+};
+
 export const ROTULO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
   SELECCIONANDO: 'Seleccionando productos',
   PENDIENTE_CONFIRMACION: 'Esperando confirmación',

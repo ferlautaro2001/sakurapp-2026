@@ -39,6 +39,10 @@ You can also follow the instructions from the [Data Connect documentation](https
   - [*ConfirmarPedido*](#confirmarpedido)
   - [*RegistrarIntentoJuego*](#registrarintentojuego)
   - [*AplicarDescuentoJuego*](#aplicardescuentojuego)
+  - [*AsignarMesaCliente*](#asignarmesacliente)
+  - [*RechazarPedido*](#rechazarpedido)
+  - [*ReenviarPedido*](#reenviarpedido)
+  - [*BorrarItemsPedido*](#borraritemspedido)
 
 # TanStack Query Firebase & TanStack Angular Query
 This SDK provides [Angular](https://angular.dev/) injectors generated specific to your application, for the operations found in the connector `example`. These injectors are generated using [TanStack Query Firebase](https://react-query-firebase.invertase.dev/) by our partners at Invertase, a library built on top of [TanStack Angular Query v5](https://tanstack.com/query/v5/docs/framework/angular/overview) and [AngularFire](https://github.com/angular/angularfire/tree/main).
@@ -723,7 +727,7 @@ Recall that calling the `CreateProducto` Mutation injector returns a `CreateData
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreateProducto` Mutation is of type `CreateProductoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -786,15 +790,15 @@ export class MyComponent {
   executeMutation() {
     // The `CreateProducto` Mutation requires an argument of type `CreateProductoVariables`:
     const createProductoVars: CreateProductoVariables = {
-      nombre: ...,
-      descripcion: ...,
-      precio: ...,
-      tiempoElaboracion: ...,
-      tipo: ...,
-      sector: ...,
-      foto1: ...,
-      foto2: ...,
-      foto3: ...,
+      nombre: ..., 
+      descripcion: ..., 
+      precio: ..., 
+      tiempoElaboracion: ..., 
+      tipo: ..., 
+      sector: ..., 
+      foto1: ..., 
+      foto2: ..., 
+      foto3: ..., 
     };
     this.mutation.mutate(createProductoVars);
     // Variables can be defined inline as well.
@@ -836,7 +840,7 @@ Recall that calling the `CreateUsuario` Mutation injector returns a `CreateDataC
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreateUsuario` Mutation is of type `CreateUsuarioData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -899,15 +903,15 @@ export class MyComponent {
   executeMutation() {
     // The `CreateUsuario` Mutation requires an argument of type `CreateUsuarioVariables`:
     const createUsuarioVars: CreateUsuarioVariables = {
-      uid: ...,
-      nombre: ...,
+      uid: ..., 
+      nombre: ..., 
       apellido: ..., // optional
       dni: ..., // optional
       cuil: ..., // optional
       email: ..., // optional
-      perfil: ...,
-      fotoUrl: ...,
-      estado: ...,
+      perfil: ..., 
+      fotoUrl: ..., 
+      estado: ..., 
     };
     this.mutation.mutate(createUsuarioVars);
     // Variables can be defined inline as well.
@@ -946,7 +950,7 @@ Recall that calling the `CreateMesa` Mutation injector returns a `CreateDataConn
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreateMesa` Mutation is of type `CreateMesaData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1009,12 +1013,12 @@ export class MyComponent {
   executeMutation() {
     // The `CreateMesa` Mutation requires an argument of type `CreateMesaVariables`:
     const createMesaVars: CreateMesaVariables = {
-      numero: ...,
-      cantidadComensales: ...,
-      tipo: ...,
-      estado: ...,
-      fotoUrl: ...,
-      qrCodeUrl: ...,
+      numero: ..., 
+      cantidadComensales: ..., 
+      tipo: ..., 
+      estado: ..., 
+      fotoUrl: ..., 
+      qrCodeUrl: ..., 
     };
     this.mutation.mutate(createMesaVars);
     // Variables can be defined inline as well.
@@ -1058,7 +1062,7 @@ Recall that calling the `CreatePedido` Mutation injector returns a `CreateDataCo
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreatePedido` Mutation is of type `CreatePedidoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1121,17 +1125,17 @@ export class MyComponent {
   executeMutation() {
     // The `CreatePedido` Mutation requires an argument of type `CreatePedidoVariables`:
     const createPedidoVars: CreatePedidoVariables = {
-      mesaId: ...,
-      clienteId: ...,
-      estadoGlobal: ...,
-      tiempoEstimado: ...,
-      totalBruto: ...,
-      descuentoJuego: ...,
-      montoDescuentoJuego: ...,
-      porcentajePropina: ...,
-      montoPropina: ...,
-      totalFinal: ...,
-      timestampCreacion: ...,
+      mesaId: ..., 
+      clienteId: ..., 
+      estadoGlobal: ..., 
+      tiempoEstimado: ..., 
+      totalBruto: ..., 
+      descuentoJuego: ..., 
+      montoDescuentoJuego: ..., 
+      porcentajePropina: ..., 
+      montoPropina: ..., 
+      totalFinal: ..., 
+      timestampCreacion: ..., 
     };
     this.mutation.mutate(createPedidoVars);
     // Variables can be defined inline as well.
@@ -1170,7 +1174,7 @@ Recall that calling the `CreatePedidoItem` Mutation injector returns a `CreateDa
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreatePedidoItem` Mutation is of type `CreatePedidoItemData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1233,12 +1237,12 @@ export class MyComponent {
   executeMutation() {
     // The `CreatePedidoItem` Mutation requires an argument of type `CreatePedidoItemVariables`:
     const createPedidoItemVars: CreatePedidoItemVariables = {
-      pedidoId: ...,
-      productoId: ...,
-      cantidad: ...,
-      precioUnitario: ...,
-      subtotal: ...,
-      sector: ...,
+      pedidoId: ..., 
+      productoId: ..., 
+      cantidad: ..., 
+      precioUnitario: ..., 
+      subtotal: ..., 
+      sector: ..., 
     };
     this.mutation.mutate(createPedidoItemVars);
     // Variables can be defined inline as well.
@@ -1280,7 +1284,7 @@ Recall that calling the `CreateEncuesta` Mutation injector returns a `CreateData
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreateEncuesta` Mutation is of type `CreateEncuestaData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1343,15 +1347,15 @@ export class MyComponent {
   executeMutation() {
     // The `CreateEncuesta` Mutation requires an argument of type `CreateEncuestaVariables`:
     const createEncuestaVars: CreateEncuestaVariables = {
-      clienteId: ...,
-      pedidoId: ...,
-      mesaId: ...,
-      calificacionMozo: ...,
-      nivelLimpieza: ...,
-      recomendaria: ...,
-      aspectoFavorito: ...,
+      clienteId: ..., 
+      pedidoId: ..., 
+      mesaId: ..., 
+      calificacionMozo: ..., 
+      nivelLimpieza: ..., 
+      recomendaria: ..., 
+      aspectoFavorito: ..., 
       comentarios: ..., // optional
-      timestamp: ...,
+      timestamp: ..., 
     };
     this.mutation.mutate(createEncuestaVars);
     // Variables can be defined inline as well.
@@ -1386,7 +1390,7 @@ Recall that calling the `UpdateEstadoUsuario` Mutation injector returns a `Creat
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `UpdateEstadoUsuario` Mutation is of type `UpdateEstadoUsuarioData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1449,8 +1453,8 @@ export class MyComponent {
   executeMutation() {
     // The `UpdateEstadoUsuario` Mutation requires an argument of type `UpdateEstadoUsuarioVariables`:
     const updateEstadoUsuarioVars: UpdateEstadoUsuarioVariables = {
-      id: ...,
-      estado: ...,
+      id: ..., 
+      estado: ..., 
     };
     this.mutation.mutate(updateEstadoUsuarioVars);
     // Variables can be defined inline as well.
@@ -1485,7 +1489,7 @@ Recall that calling the `UpdateEstadoMesa` Mutation injector returns a `CreateDa
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `UpdateEstadoMesa` Mutation is of type `UpdateEstadoMesaData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1548,8 +1552,8 @@ export class MyComponent {
   executeMutation() {
     // The `UpdateEstadoMesa` Mutation requires an argument of type `UpdateEstadoMesaVariables`:
     const updateEstadoMesaVars: UpdateEstadoMesaVariables = {
-      id: ...,
-      estado: ...,
+      id: ..., 
+      estado: ..., 
     };
     this.mutation.mutate(updateEstadoMesaVars);
     // Variables can be defined inline as well.
@@ -1592,7 +1596,7 @@ Recall that calling the `UpdateProducto` Mutation injector returns a `CreateData
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `UpdateProducto` Mutation is of type `UpdateProductoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1655,16 +1659,16 @@ export class MyComponent {
   executeMutation() {
     // The `UpdateProducto` Mutation requires an argument of type `UpdateProductoVariables`:
     const updateProductoVars: UpdateProductoVariables = {
-      id: ...,
-      nombre: ...,
-      descripcion: ...,
-      precio: ...,
-      tiempoElaboracion: ...,
-      tipo: ...,
-      sector: ...,
-      foto1: ...,
-      foto2: ...,
-      foto3: ...,
+      id: ..., 
+      nombre: ..., 
+      descripcion: ..., 
+      precio: ..., 
+      tiempoElaboracion: ..., 
+      tipo: ..., 
+      sector: ..., 
+      foto1: ..., 
+      foto2: ..., 
+      foto3: ..., 
     };
     this.mutation.mutate(updateProductoVars);
     // Variables can be defined inline as well.
@@ -1699,7 +1703,7 @@ Recall that calling the `UpdateActivoProducto` Mutation injector returns a `Crea
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `UpdateActivoProducto` Mutation is of type `UpdateActivoProductoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1762,8 +1766,8 @@ export class MyComponent {
   executeMutation() {
     // The `UpdateActivoProducto` Mutation requires an argument of type `UpdateActivoProductoVariables`:
     const updateActivoProductoVars: UpdateActivoProductoVariables = {
-      id: ...,
-      activo: ...,
+      id: ..., 
+      activo: ..., 
     };
     this.mutation.mutate(updateActivoProductoVars);
     // Variables can be defined inline as well.
@@ -1797,7 +1801,7 @@ Recall that calling the `CreateEspera` Mutation injector returns a `CreateDataCo
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `CreateEspera` Mutation is of type `CreateEsperaData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1860,7 +1864,7 @@ export class MyComponent {
   executeMutation() {
     // The `CreateEspera` Mutation requires an argument of type `CreateEsperaVariables`:
     const createEsperaVars: CreateEsperaVariables = {
-      clienteId: ...,
+      clienteId: ..., 
     };
     this.mutation.mutate(createEsperaVars);
     // Variables can be defined inline as well.
@@ -1895,7 +1899,7 @@ Recall that calling the `UpdateEstadoEspera` Mutation injector returns a `Create
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `UpdateEstadoEspera` Mutation is of type `UpdateEstadoEsperaData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -1958,8 +1962,8 @@ export class MyComponent {
   executeMutation() {
     // The `UpdateEstadoEspera` Mutation requires an argument of type `UpdateEstadoEsperaVariables`:
     const updateEstadoEsperaVars: UpdateEstadoEsperaVariables = {
-      id: ...,
-      estado: ...,
+      id: ..., 
+      estado: ..., 
     };
     this.mutation.mutate(updateEstadoEsperaVars);
     // Variables can be defined inline as well.
@@ -1996,7 +2000,7 @@ Recall that calling the `ConfirmarPedido` Mutation injector returns a `CreateDat
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `ConfirmarPedido` Mutation is of type `ConfirmarPedidoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -2059,10 +2063,10 @@ export class MyComponent {
   executeMutation() {
     // The `ConfirmarPedido` Mutation requires an argument of type `ConfirmarPedidoVariables`:
     const confirmarPedidoVars: ConfirmarPedidoVariables = {
-      id: ...,
-      estadoCocina: ...,
-      estadoBar: ...,
-      confirmadoPorId: ...,
+      id: ..., 
+      estadoCocina: ..., 
+      estadoBar: ..., 
+      confirmadoPorId: ..., 
     };
     this.mutation.mutate(confirmarPedidoVars);
     // Variables can be defined inline as well.
@@ -2099,7 +2103,7 @@ Recall that calling the `RegistrarIntentoJuego` Mutation injector returns a `Cre
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `RegistrarIntentoJuego` Mutation is of type `RegistrarIntentoJuegoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -2162,10 +2166,10 @@ export class MyComponent {
   executeMutation() {
     // The `RegistrarIntentoJuego` Mutation requires an argument of type `RegistrarIntentoJuegoVariables`:
     const registrarIntentoJuegoVars: RegistrarIntentoJuegoVariables = {
-      pedidoId: ...,
-      clienteId: ...,
-      gano: ...,
-      descuentoOtorgado: ...,
+      pedidoId: ..., 
+      clienteId: ..., 
+      gano: ..., 
+      descuentoOtorgado: ..., 
     };
     this.mutation.mutate(registrarIntentoJuegoVars);
     // Variables can be defined inline as well.
@@ -2202,7 +2206,7 @@ Recall that calling the `AplicarDescuentoJuego` Mutation injector returns a `Cre
 
 To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
 
-To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation.
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
 
 To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `AplicarDescuentoJuego` Mutation is of type `AplicarDescuentoJuegoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
 ```javascript
@@ -2265,10 +2269,10 @@ export class MyComponent {
   executeMutation() {
     // The `AplicarDescuentoJuego` Mutation requires an argument of type `AplicarDescuentoJuegoVariables`:
     const aplicarDescuentoJuegoVars: AplicarDescuentoJuegoVariables = {
-      id: ...,
-      descuentoJuego: ...,
-      montoDescuentoJuego: ...,
-      totalFinal: ...,
+      id: ..., 
+      descuentoJuego: ..., 
+      montoDescuentoJuego: ..., 
+      totalFinal: ..., 
     };
     this.mutation.mutate(aplicarDescuentoJuegoVars);
     // Variables can be defined inline as well.
@@ -2279,6 +2283,407 @@ export class MyComponent {
 
     // You can also pass in a `AplicarDescuentoJuegoOptions` object (not function) to `CreateDataConnectMutationResult.mutate()`.
     this.mutation.mutate(aplicarDescuentoJuegoVars, this.options());
+  }
+}
+```
+
+## AsignarMesaCliente
+You can execute the `AsignarMesaCliente` Mutation using the `CreateDataConnectMutationResult` object returned by the following Mutation injector (which is defined in [dataconnect-generated/angular/index.d.ts](./index.d.ts)):
+```javascript
+injectAsignarMesaCliente(options?: AsignarMesaClienteOptions, injector?: Injector): CreateDataConnectMutationResult<AsignarMesaClienteData, AsignarMesaClienteVariables, AsignarMesaClienteVariables>;
+```
+
+### Variables
+The `AsignarMesaCliente` Mutation requires an argument of type `AsignarMesaClienteVariables`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+
+```javascript
+export interface AsignarMesaClienteVariables {
+  esperaId: UUIDString;
+  mesaId: UUIDString;
+  clienteId: UUIDString;
+}
+```
+### Return Type
+Recall that calling the `AsignarMesaCliente` Mutation injector returns a `CreateDataConnectMutationResult` object. This object holds the state of your Mutation, including whether the Mutation is loading, has completed, or has succeeded/failed, among other things.
+
+To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
+
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
+
+To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `AsignarMesaCliente` Mutation is of type `AsignarMesaClienteData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+```javascript
+export interface AsignarMesaClienteData {
+  espera_update?: Espera_Key | null;
+  mesa_update?: Mesa_Key | null;
+}
+```
+
+You can also call `CreateDataConnectMutationResult.mutateAsync()`, which executes the Mutation and returns a promise with the data returned from the Mutation. To learn more, see the [TanStack Angular Query documentation](https://tanstack.com/query/latest/docs/framework/angular/guides/mutations#promises).
+
+To learn more about the `CreateDataConnectMutationResult` object, see the [TanStack Query Firebase documentation](https://docs.page/invertase/tanstack-query-firebase/angular/data-connect/functions/injectDataConnectMutation) and the [TanStack Angular Query documentation](https://tanstack.com/query/v5/docs/framework/angular/reference/functions/injectmutation).
+
+### Using `AsignarMesaCliente`'s Mutation injector
+
+```javascript
+... // other imports
+import { connectorConfig, AsignarMesaClienteVariables } from '@dataconnect/generated';
+import { injectAsignarMesaCliente, AsignarMesaClienteOptions } from '@dataconnect/generated/angular'
+import { DataConnect } from '@angular/fire/data-connect';
+import { initializeApp } from '@angular/fire/app';
+
+@Component({
+  ... // other component fields
+  template: `
+    <!-- You can render your component dynamically based on the status of the Mutation. -->
+    @if (mutation.isPending()) {
+      Loading...
+    }
+    @if (mutation.error()) {
+      An error has occurred: {{ mutation.error() }}
+    }
+    <!-- If the Mutation is successful, you can access the data returned using
+      the CreateDataConnectMutationResult.data() function. -->
+    @if (mutation.data(); as data) {
+      <!-- Use your data to display something -->
+      <div>Mutation successful!</div>
+    }
+    <!-- Let's create a button that executes our mutation when clicked. -->
+    <button
+      (disabled)="mutation.isPending()"
+      (click)="executeMutation()"
+    >
+      {{ mutation.isPending() ? 'Pending...' : 'Mutate!' }}
+    </button>
+  `,
+})
+export class MyComponent {
+  // Call the Mutation injector function to get a `CreateDataConnectMutationResult` object which holds the state of your Mutation.
+  mutation = injectAsignarMesaCliente();
+
+  // You can also pass in a `AsignarMesaClienteOptions` function (not object) to the Mutation injector function.
+  options: AsignarMesaClienteOptions = () => {
+    return {
+      onSuccess: () => { console.log('Mutation succeeded!'); }
+    };
+  };
+  mutation = injectAsignarMesaCliente(this.options);
+
+  // After calling the Mutation injector function, you must call `CreateDataConnectMutationResult.mutate()` to execute the Mutation.
+  executeMutation() {
+    // The `AsignarMesaCliente` Mutation requires an argument of type `AsignarMesaClienteVariables`:
+    const asignarMesaClienteVars: AsignarMesaClienteVariables = {
+      esperaId: ..., 
+      mesaId: ..., 
+      clienteId: ..., 
+    };
+    this.mutation.mutate(asignarMesaClienteVars);
+    // Variables can be defined inline as well.
+    this.mutation.mutate({ esperaId: ..., mesaId: ..., clienteId: ..., });
+
+    // You can call `CreateDataConnectMutationResult.mutateAsync()` to execute the Mutation and return a promise with the data returned from the Mutation.
+    this.mutation.mutateAsync(asignarMesaClienteVars);
+
+    // You can also pass in a `AsignarMesaClienteOptions` object (not function) to `CreateDataConnectMutationResult.mutate()`.
+    this.mutation.mutate(asignarMesaClienteVars, this.options());
+  }
+}
+```
+
+## RechazarPedido
+You can execute the `RechazarPedido` Mutation using the `CreateDataConnectMutationResult` object returned by the following Mutation injector (which is defined in [dataconnect-generated/angular/index.d.ts](./index.d.ts)):
+```javascript
+injectRechazarPedido(options?: RechazarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<RechazarPedidoData, RechazarPedidoVariables, RechazarPedidoVariables>;
+```
+
+### Variables
+The `RechazarPedido` Mutation requires an argument of type `RechazarPedidoVariables`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+
+```javascript
+export interface RechazarPedidoVariables {
+  id: UUIDString;
+  motivoRechazo: string;
+}
+```
+### Return Type
+Recall that calling the `RechazarPedido` Mutation injector returns a `CreateDataConnectMutationResult` object. This object holds the state of your Mutation, including whether the Mutation is loading, has completed, or has succeeded/failed, among other things.
+
+To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
+
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
+
+To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `RechazarPedido` Mutation is of type `RechazarPedidoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+```javascript
+export interface RechazarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+```
+
+You can also call `CreateDataConnectMutationResult.mutateAsync()`, which executes the Mutation and returns a promise with the data returned from the Mutation. To learn more, see the [TanStack Angular Query documentation](https://tanstack.com/query/latest/docs/framework/angular/guides/mutations#promises).
+
+To learn more about the `CreateDataConnectMutationResult` object, see the [TanStack Query Firebase documentation](https://docs.page/invertase/tanstack-query-firebase/angular/data-connect/functions/injectDataConnectMutation) and the [TanStack Angular Query documentation](https://tanstack.com/query/v5/docs/framework/angular/reference/functions/injectmutation).
+
+### Using `RechazarPedido`'s Mutation injector
+
+```javascript
+... // other imports
+import { connectorConfig, RechazarPedidoVariables } from '@dataconnect/generated';
+import { injectRechazarPedido, RechazarPedidoOptions } from '@dataconnect/generated/angular'
+import { DataConnect } from '@angular/fire/data-connect';
+import { initializeApp } from '@angular/fire/app';
+
+@Component({
+  ... // other component fields
+  template: `
+    <!-- You can render your component dynamically based on the status of the Mutation. -->
+    @if (mutation.isPending()) {
+      Loading...
+    }
+    @if (mutation.error()) {
+      An error has occurred: {{ mutation.error() }}
+    }
+    <!-- If the Mutation is successful, you can access the data returned using
+      the CreateDataConnectMutationResult.data() function. -->
+    @if (mutation.data(); as data) {
+      <!-- Use your data to display something -->
+      <div>Mutation successful!</div>
+    }
+    <!-- Let's create a button that executes our mutation when clicked. -->
+    <button
+      (disabled)="mutation.isPending()"
+      (click)="executeMutation()"
+    >
+      {{ mutation.isPending() ? 'Pending...' : 'Mutate!' }}
+    </button>
+  `,
+})
+export class MyComponent {
+  // Call the Mutation injector function to get a `CreateDataConnectMutationResult` object which holds the state of your Mutation.
+  mutation = injectRechazarPedido();
+
+  // You can also pass in a `RechazarPedidoOptions` function (not object) to the Mutation injector function.
+  options: RechazarPedidoOptions = () => {
+    return {
+      onSuccess: () => { console.log('Mutation succeeded!'); }
+    };
+  };
+  mutation = injectRechazarPedido(this.options);
+
+  // After calling the Mutation injector function, you must call `CreateDataConnectMutationResult.mutate()` to execute the Mutation.
+  executeMutation() {
+    // The `RechazarPedido` Mutation requires an argument of type `RechazarPedidoVariables`:
+    const rechazarPedidoVars: RechazarPedidoVariables = {
+      id: ..., 
+      motivoRechazo: ..., 
+    };
+    this.mutation.mutate(rechazarPedidoVars);
+    // Variables can be defined inline as well.
+    this.mutation.mutate({ id: ..., motivoRechazo: ..., });
+
+    // You can call `CreateDataConnectMutationResult.mutateAsync()` to execute the Mutation and return a promise with the data returned from the Mutation.
+    this.mutation.mutateAsync(rechazarPedidoVars);
+
+    // You can also pass in a `RechazarPedidoOptions` object (not function) to `CreateDataConnectMutationResult.mutate()`.
+    this.mutation.mutate(rechazarPedidoVars, this.options());
+  }
+}
+```
+
+## ReenviarPedido
+You can execute the `ReenviarPedido` Mutation using the `CreateDataConnectMutationResult` object returned by the following Mutation injector (which is defined in [dataconnect-generated/angular/index.d.ts](./index.d.ts)):
+```javascript
+injectReenviarPedido(options?: ReenviarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<ReenviarPedidoData, ReenviarPedidoVariables, ReenviarPedidoVariables>;
+```
+
+### Variables
+The `ReenviarPedido` Mutation requires an argument of type `ReenviarPedidoVariables`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+
+```javascript
+export interface ReenviarPedidoVariables {
+  id: UUIDString;
+  tiempoEstimado: number;
+  totalBruto: number;
+  totalFinal: number;
+}
+```
+### Return Type
+Recall that calling the `ReenviarPedido` Mutation injector returns a `CreateDataConnectMutationResult` object. This object holds the state of your Mutation, including whether the Mutation is loading, has completed, or has succeeded/failed, among other things.
+
+To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
+
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
+
+To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `ReenviarPedido` Mutation is of type `ReenviarPedidoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+```javascript
+export interface ReenviarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+```
+
+You can also call `CreateDataConnectMutationResult.mutateAsync()`, which executes the Mutation and returns a promise with the data returned from the Mutation. To learn more, see the [TanStack Angular Query documentation](https://tanstack.com/query/latest/docs/framework/angular/guides/mutations#promises).
+
+To learn more about the `CreateDataConnectMutationResult` object, see the [TanStack Query Firebase documentation](https://docs.page/invertase/tanstack-query-firebase/angular/data-connect/functions/injectDataConnectMutation) and the [TanStack Angular Query documentation](https://tanstack.com/query/v5/docs/framework/angular/reference/functions/injectmutation).
+
+### Using `ReenviarPedido`'s Mutation injector
+
+```javascript
+... // other imports
+import { connectorConfig, ReenviarPedidoVariables } from '@dataconnect/generated';
+import { injectReenviarPedido, ReenviarPedidoOptions } from '@dataconnect/generated/angular'
+import { DataConnect } from '@angular/fire/data-connect';
+import { initializeApp } from '@angular/fire/app';
+
+@Component({
+  ... // other component fields
+  template: `
+    <!-- You can render your component dynamically based on the status of the Mutation. -->
+    @if (mutation.isPending()) {
+      Loading...
+    }
+    @if (mutation.error()) {
+      An error has occurred: {{ mutation.error() }}
+    }
+    <!-- If the Mutation is successful, you can access the data returned using
+      the CreateDataConnectMutationResult.data() function. -->
+    @if (mutation.data(); as data) {
+      <!-- Use your data to display something -->
+      <div>Mutation successful!</div>
+    }
+    <!-- Let's create a button that executes our mutation when clicked. -->
+    <button
+      (disabled)="mutation.isPending()"
+      (click)="executeMutation()"
+    >
+      {{ mutation.isPending() ? 'Pending...' : 'Mutate!' }}
+    </button>
+  `,
+})
+export class MyComponent {
+  // Call the Mutation injector function to get a `CreateDataConnectMutationResult` object which holds the state of your Mutation.
+  mutation = injectReenviarPedido();
+
+  // You can also pass in a `ReenviarPedidoOptions` function (not object) to the Mutation injector function.
+  options: ReenviarPedidoOptions = () => {
+    return {
+      onSuccess: () => { console.log('Mutation succeeded!'); }
+    };
+  };
+  mutation = injectReenviarPedido(this.options);
+
+  // After calling the Mutation injector function, you must call `CreateDataConnectMutationResult.mutate()` to execute the Mutation.
+  executeMutation() {
+    // The `ReenviarPedido` Mutation requires an argument of type `ReenviarPedidoVariables`:
+    const reenviarPedidoVars: ReenviarPedidoVariables = {
+      id: ..., 
+      tiempoEstimado: ..., 
+      totalBruto: ..., 
+      totalFinal: ..., 
+    };
+    this.mutation.mutate(reenviarPedidoVars);
+    // Variables can be defined inline as well.
+    this.mutation.mutate({ id: ..., tiempoEstimado: ..., totalBruto: ..., totalFinal: ..., });
+
+    // You can call `CreateDataConnectMutationResult.mutateAsync()` to execute the Mutation and return a promise with the data returned from the Mutation.
+    this.mutation.mutateAsync(reenviarPedidoVars);
+
+    // You can also pass in a `ReenviarPedidoOptions` object (not function) to `CreateDataConnectMutationResult.mutate()`.
+    this.mutation.mutate(reenviarPedidoVars, this.options());
+  }
+}
+```
+
+## BorrarItemsPedido
+You can execute the `BorrarItemsPedido` Mutation using the `CreateDataConnectMutationResult` object returned by the following Mutation injector (which is defined in [dataconnect-generated/angular/index.d.ts](./index.d.ts)):
+```javascript
+injectBorrarItemsPedido(options?: BorrarItemsPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<BorrarItemsPedidoData, BorrarItemsPedidoVariables, BorrarItemsPedidoVariables>;
+```
+
+### Variables
+The `BorrarItemsPedido` Mutation requires an argument of type `BorrarItemsPedidoVariables`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+
+```javascript
+export interface BorrarItemsPedidoVariables {
+  pedidoId: UUIDString;
+}
+```
+### Return Type
+Recall that calling the `BorrarItemsPedido` Mutation injector returns a `CreateDataConnectMutationResult` object. This object holds the state of your Mutation, including whether the Mutation is loading, has completed, or has succeeded/failed, among other things.
+
+To check the status of a Mutation, use the `CreateDataConnectMutationResult.status()` function. You can also check for pending / success / error status using the `CreateDataConnectMutationResult.isPending()`, `CreateDataConnectMutationResult.isSuccess()`, and `CreateDataConnectMutationResult.isError()` functions.
+
+To execute the Mutation, call `CreateDataConnectMutationResult.mutate()`. This function executes the Mutation, but does not return the data from the Mutation. 
+
+To access the data returned by a Mutation, use the `CreateDataConnectMutationResult.data()` function. The data for the `BorrarItemsPedido` Mutation is of type `BorrarItemsPedidoData`, which is defined in [dataconnect-generated/index.d.ts](../index.d.ts). It has the following fields:
+```javascript
+export interface BorrarItemsPedidoData {
+  pedidoItem_deleteMany: number;
+}
+```
+
+You can also call `CreateDataConnectMutationResult.mutateAsync()`, which executes the Mutation and returns a promise with the data returned from the Mutation. To learn more, see the [TanStack Angular Query documentation](https://tanstack.com/query/latest/docs/framework/angular/guides/mutations#promises).
+
+To learn more about the `CreateDataConnectMutationResult` object, see the [TanStack Query Firebase documentation](https://docs.page/invertase/tanstack-query-firebase/angular/data-connect/functions/injectDataConnectMutation) and the [TanStack Angular Query documentation](https://tanstack.com/query/v5/docs/framework/angular/reference/functions/injectmutation).
+
+### Using `BorrarItemsPedido`'s Mutation injector
+
+```javascript
+... // other imports
+import { connectorConfig, BorrarItemsPedidoVariables } from '@dataconnect/generated';
+import { injectBorrarItemsPedido, BorrarItemsPedidoOptions } from '@dataconnect/generated/angular'
+import { DataConnect } from '@angular/fire/data-connect';
+import { initializeApp } from '@angular/fire/app';
+
+@Component({
+  ... // other component fields
+  template: `
+    <!-- You can render your component dynamically based on the status of the Mutation. -->
+    @if (mutation.isPending()) {
+      Loading...
+    }
+    @if (mutation.error()) {
+      An error has occurred: {{ mutation.error() }}
+    }
+    <!-- If the Mutation is successful, you can access the data returned using
+      the CreateDataConnectMutationResult.data() function. -->
+    @if (mutation.data(); as data) {
+      <!-- Use your data to display something -->
+      <div>Mutation successful!</div>
+    }
+    <!-- Let's create a button that executes our mutation when clicked. -->
+    <button
+      (disabled)="mutation.isPending()"
+      (click)="executeMutation()"
+    >
+      {{ mutation.isPending() ? 'Pending...' : 'Mutate!' }}
+    </button>
+  `,
+})
+export class MyComponent {
+  // Call the Mutation injector function to get a `CreateDataConnectMutationResult` object which holds the state of your Mutation.
+  mutation = injectBorrarItemsPedido();
+
+  // You can also pass in a `BorrarItemsPedidoOptions` function (not object) to the Mutation injector function.
+  options: BorrarItemsPedidoOptions = () => {
+    return {
+      onSuccess: () => { console.log('Mutation succeeded!'); }
+    };
+  };
+  mutation = injectBorrarItemsPedido(this.options);
+
+  // After calling the Mutation injector function, you must call `CreateDataConnectMutationResult.mutate()` to execute the Mutation.
+  executeMutation() {
+    // The `BorrarItemsPedido` Mutation requires an argument of type `BorrarItemsPedidoVariables`:
+    const borrarItemsPedidoVars: BorrarItemsPedidoVariables = {
+      pedidoId: ..., 
+    };
+    this.mutation.mutate(borrarItemsPedidoVars);
+    // Variables can be defined inline as well.
+    this.mutation.mutate({ pedidoId: ..., });
+
+    // You can call `CreateDataConnectMutationResult.mutateAsync()` to execute the Mutation and return a promise with the data returned from the Mutation.
+    this.mutation.mutateAsync(borrarItemsPedidoVars);
+
+    // You can also pass in a `BorrarItemsPedidoOptions` object (not function) to `CreateDataConnectMutationResult.mutate()`.
+    this.mutation.mutate(borrarItemsPedidoVars, this.options());
   }
 }
 ```

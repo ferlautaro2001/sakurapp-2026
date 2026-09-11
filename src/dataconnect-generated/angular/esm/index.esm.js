@@ -1,4 +1,4 @@
-import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
+import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, asignarMesaClienteRef, rechazarPedidoRef, reenviarPedidoRef, borrarItemsPedidoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
 import { DataConnect, CallerSdkTypeEnum } from '@angular/fire/data-connect';
 import { injectDataConnectQuery, injectDataConnectMutation } from '@tanstack-query-firebase/angular/data-connect';
 import { inject, EnvironmentInjector } from '@angular/core';
@@ -60,6 +60,22 @@ export function injectRegistrarIntentoJuego(args, injector) {
 
 export function injectAplicarDescuentoJuego(args, injector) {
   return injectDataConnectMutation(aplicarDescuentoJuegoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectAsignarMesaCliente(args, injector) {
+  return injectDataConnectMutation(asignarMesaClienteRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectRechazarPedido(args, injector) {
+  return injectDataConnectMutation(rechazarPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectReenviarPedido(args, injector) {
+  return injectDataConnectMutation(reenviarPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectBorrarItemsPedido(args, injector) {
+  return injectDataConnectMutation(borrarItemsPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 export function injectListProductos(options, injector) {

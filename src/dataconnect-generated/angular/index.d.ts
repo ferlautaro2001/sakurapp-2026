@@ -1,4 +1,4 @@
-import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreatePedidoItemData, CreatePedidoItemVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateProductoData, UpdateProductoVariables, UpdateActivoProductoData, UpdateActivoProductoVariables, CreateEsperaData, CreateEsperaVariables, UpdateEstadoEsperaData, UpdateEstadoEsperaVariables, ConfirmarPedidoData, ConfirmarPedidoVariables, RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables, AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData, ListPedidoItemsData, ListEsperaData, ListEncuestasData } from '../';
+import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreatePedidoItemData, CreatePedidoItemVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateProductoData, UpdateProductoVariables, UpdateActivoProductoData, UpdateActivoProductoVariables, CreateEsperaData, CreateEsperaVariables, UpdateEstadoEsperaData, UpdateEstadoEsperaVariables, ConfirmarPedidoData, ConfirmarPedidoVariables, RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables, AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables, AsignarMesaClienteData, AsignarMesaClienteVariables, RechazarPedidoData, RechazarPedidoVariables, ReenviarPedidoData, ReenviarPedidoVariables, BorrarItemsPedidoData, BorrarItemsPedidoVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData, ListPedidoItemsData, ListEsperaData, ListEncuestasData } from '../';
 import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise} from '@angular/fire/data-connect';
 import { CreateQueryResult, CreateMutationResult} from '@tanstack/angular-query-experimental';
 import { CreateDataConnectQueryResult, CreateDataConnectQueryOptions, CreateDataConnectMutationResult, DataConnectMutationOptionsUndefinedMutationFn } from '@tanstack-query-firebase/angular/data-connect';
@@ -49,6 +49,18 @@ export function injectRegistrarIntentoJuego(options?: RegistrarIntentoJuegoOptio
 
 type AplicarDescuentoJuegoOptions = DataConnectMutationOptionsUndefinedMutationFn<AplicarDescuentoJuegoData, FirebaseError, AplicarDescuentoJuegoVariables>;
 export function injectAplicarDescuentoJuego(options?: AplicarDescuentoJuegoOptions, injector?: Injector): CreateDataConnectMutationResult<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables, AplicarDescuentoJuegoVariables>;
+
+type AsignarMesaClienteOptions = DataConnectMutationOptionsUndefinedMutationFn<AsignarMesaClienteData, FirebaseError, AsignarMesaClienteVariables>;
+export function injectAsignarMesaCliente(options?: AsignarMesaClienteOptions, injector?: Injector): CreateDataConnectMutationResult<AsignarMesaClienteData, AsignarMesaClienteVariables, AsignarMesaClienteVariables>;
+
+type RechazarPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<RechazarPedidoData, FirebaseError, RechazarPedidoVariables>;
+export function injectRechazarPedido(options?: RechazarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<RechazarPedidoData, RechazarPedidoVariables, RechazarPedidoVariables>;
+
+type ReenviarPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<ReenviarPedidoData, FirebaseError, ReenviarPedidoVariables>;
+export function injectReenviarPedido(options?: ReenviarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<ReenviarPedidoData, ReenviarPedidoVariables, ReenviarPedidoVariables>;
+
+type BorrarItemsPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<BorrarItemsPedidoData, FirebaseError, BorrarItemsPedidoVariables>;
+export function injectBorrarItemsPedido(options?: BorrarItemsPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<BorrarItemsPedidoData, BorrarItemsPedidoVariables, BorrarItemsPedidoVariables>;
 
 export type ListProductosOptions = () => Omit<CreateDataConnectQueryOptions<ListProductosData, undefined>, 'queryFn'>;
 export function injectListProductos(options?: ListProductosOptions, injector?: Injector): CreateDataConnectQueryResult<ListProductosData, undefined>;

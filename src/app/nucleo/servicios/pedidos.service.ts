@@ -13,6 +13,9 @@ import {
   registrarIntentoJuego,
   createPedido,
   createPedidoItem,
+  borrarItemsPedido,
+  rechazarPedido,
+  reenviarPedido,
   createUsuario,
   listUsuarios,
   listMesas,
@@ -22,8 +25,15 @@ import {
   Sector as DcSector,
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
-import { sectorDe } from '../modelos/enums';
-import { Mesa, Pedido, Usuario } from '../modelos/modelos';
+import { MarcaRechazo, sectorDe } from '../modelos/enums';
+import { Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
+import {
+  alcanceDe,
+  itemsACambiar,
+  itemsSinBajar,
+  marcaDe,
+  trabaParaReenviar,
+} from '../modelos/rechazo';
 import { nuevoId } from '../datos/semilla';
 import { AlmacenService } from '../datos/almacen.service';
 import { ItemCarrito } from './carrito.service';
@@ -69,8 +79,7 @@ export class PedidosService {
           pedido.clienteUid === cliente.uid ||
           pedido.clienteUid === cliente.id ||
           (cliente.uid && pedido.clienteId === cliente.uid)) &&
-        pedido.estadoGlobal !== 'CERRADO' &&
-        pedido.estadoGlobal !== 'RECHAZADO',
+        pedido.estadoGlobal !== 'CERRADO',
     );
   }
 
@@ -181,6 +190,10 @@ export class PedidosService {
       estadoGlobal: 'PENDIENTE_CONFIRMACION',
       estadoCocina: 'NO_APLICA',
       estadoBar: 'NO_APLICA',
+      motivoRechazo: null,
+      rechazadoPorNombre: null,
+      alcanceRechazo: null,
+      observaciones: [],
       tiempoEstimado,
       totalBruto: total,
       descuentoJuego: 0,
@@ -257,6 +270,111 @@ export class PedidosService {
     void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
   }
 
+  /**
+   * US-7.2 · AC-7.2.1 · el mozo devuelve la comanda con un motivo.
+   *
+   * El motivo es obligatorio —lo valida el formulario del modal— y viaja tal
+   * cual al teléfono del comensal: es lo único que le dice qué tiene que
+   * cambiar. La comanda no llega a ningún sector: se devuelve antes.
+   */
+  async rechazar(
+    pedido: Pedido,
+    mozo: Usuario,
+    motivo: string,
+    observaciones: ObservacionItem[] = [],
+  ): Promise<void> {
+    if (pedido.estadoGlobal !== 'PENDIENTE_CONFIRMACION') {
+      throw new Error('Este pedido ya fue procesado.');
+    }
+
+    const motivoLimpio = motivo.trim();
+    if (!motivoLimpio) {
+      throw new Error('No se puede devolver un pedido sin decir qué hay que cambiar.');
+    }
+
+    const mozoNombre = [mozo.nombre, mozo.apellido ?? ''].join(' ').trim() || 'el mozo';
+
+    const alcance = alcanceDe(observaciones, pedido.items.length);
+
+    // El esquema de Cloud SQL guarda el motivo; las marcas por producto viven
+    // en Firestore, que es lo que miran en vivo las dos pantallas.
+    await this.rechazarEnSql(pedido.id, motivoLimpio);
+    await this.firestore.rechazarPedido(pedido.id, motivoLimpio, mozoNombre, alcance, observaciones);
+
+    // El aviso lleva el motivo en el cuerpo: el comensal lo lee sin abrir nada.
+    await this.notificaciones.enviar(
+      [pedido.clienteUid || pedido.clienteId],
+      'Tu pedido necesita cambios',
+      motivoLimpio,
+      ['/cliente/estado-pedido', pedido.id],
+    );
+    await this.firestore.encolarNotificacion({
+      destinatarioUid: pedido.clienteUid || pedido.clienteId,
+      titulo: '🌸 Tu pedido necesita cambios',
+      cuerpo: motivoLimpio,
+      ruta: '/cliente/estado-pedido',
+    });
+
+    void Haptics.notification({ type: NotificationType.Warning }).catch(() => undefined);
+  }
+
+  /**
+   * US-7.2 · AC-7.2.2 · el comensal corrigió la comanda y la manda de nuevo.
+   *
+   * Es el mismo pedido, no uno nuevo: conserva su identificador y su hora de
+   * creación, así el mozo ve que es la comanda que él devolvió. Los renglones
+   * se reescriben enteros, porque el comensal pudo agregar, sacar y cambiar
+   * cantidades libremente.
+   */
+  async reenviar(
+    pedido: Pedido,
+    items: ItemCarrito[],
+    tiempoEstimado: number,
+    total: number,
+  ): Promise<Pedido> {
+    if (pedido.estadoGlobal !== 'RECHAZADO') {
+      throw new Error('Este pedido no está esperando correcciones.');
+    }
+    if (!items.length) {
+      throw new Error('Agregá al menos un producto antes de reenviar el pedido.');
+    }
+
+    const itemsCorregidos = await this.reescribirItemsEnSql(pedido.id, items);
+
+    const corregido: Pedido = {
+      ...pedido,
+      estadoGlobal: 'PENDIENTE_CONFIRMACION',
+      estadoCocina: 'NO_APLICA',
+      estadoBar: 'NO_APLICA',
+      motivoRechazo: null,
+      rechazadoPorNombre: null,
+      alcanceRechazo: null,
+      observaciones: [],
+      tiempoEstimado,
+      totalBruto: total,
+      totalFinal: total,
+      items: itemsCorregidos,
+    };
+
+    await this.reenviarEnSql(corregido);
+    await this.firestore.reenviarPedido(corregido);
+
+    this.pedidosSql.update((actuales) => [
+      corregido,
+      ...actuales.filter((actual) => actual.id !== corregido.id),
+    ]);
+
+    await this.firestore.encolarNotificacion({
+      destinatarioRol: 'MOZO',
+      titulo: '🌸 Pedido corregido',
+      cuerpo: `La mesa ${pedido.mesaNumero} corrigió su pedido y espera confirmación.`,
+      ruta: '/mozo/pedidos',
+    });
+
+    void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
+    return corregido;
+  }
+
   /** Resuelve el único intento del cliente: puede obtener 0, 10, 15 o 20 %. */
   async jugar(pedido: Pedido, cliente: Usuario): Promise<number> {
     if (!this.juegosHabilitados(pedido)) {
@@ -277,6 +395,26 @@ export class PedidosService {
     }
     await this.registrarJuegoEnSql(pedido, cliente, descuento, resultado.totalFinal);
     return descuento;
+  }
+
+  /**
+   * Las reglas de la comanda devuelta viven en `modelos/rechazo`, que no
+   * depende de nada: acá sólo se las acerca a las pantallas.
+   */
+  marcaDe(pedido: Pedido | undefined, productoId: string): MarcaRechazo | null {
+    return marcaDe(pedido, productoId);
+  }
+
+  itemsACambiar(pedido: Pedido | undefined, items: ItemCarrito[]): ItemCarrito[] {
+    return itemsACambiar(pedido, items);
+  }
+
+  itemsSinBajar(pedido: Pedido | undefined, items: ItemCarrito[]): ItemCarrito[] {
+    return itemsSinBajar(pedido, items);
+  }
+
+  trabaParaReenviar(pedido: Pedido | undefined, items: ItemCarrito[]): string | null {
+    return trabaParaReenviar(pedido, items);
   }
 
   juegosHabilitados(pedido: Pedido | undefined): boolean {
@@ -327,6 +465,10 @@ export class PedidosService {
           estadoGlobal: pedido.estadoGlobal as Pedido['estadoGlobal'],
           estadoCocina: pedido.estadoCocina as Pedido['estadoCocina'],
           estadoBar: pedido.estadoBar as Pedido['estadoBar'],
+          motivoRechazo: null,
+          rechazadoPorNombre: null,
+          alcanceRechazo: null,
+          observaciones: [],
           tiempoEstimado: pedido.tiempoEstimado,
           totalBruto,
           descuentoJuego: 0,
@@ -361,6 +503,75 @@ export class PedidosService {
       });
     } catch (error) {
       console.warn('⚠️ No se pudo confirmar el pedido en Cloud SQL; se sincronizará por Firestore:', error);
+    }
+  }
+
+  private async rechazarEnSql(pedidoId: string, motivo: string): Promise<void> {
+    if (!esUuid(pedidoId)) return;
+    try {
+      await rechazarPedido(this.dataConnect(), { id: pedidoId, motivoRechazo: motivo });
+    } catch (error) {
+      console.warn('⚠️ No se pudo devolver el pedido en Cloud SQL; se sincronizará por Firestore:', error);
+    }
+  }
+
+  /**
+   * Borra los renglones viejos y escribe los que quedaron.
+   *
+   * Si Cloud SQL no responde, el pedido corregido igual viaja por Firestore,
+   * que es lo que miran las pantallas; devuelve los renglones con el
+   * identificador que corresponda en cada caso.
+   */
+  private async reescribirItemsEnSql(pedidoId: string, items: ItemCarrito[]): Promise<Pedido['items']> {
+    const enLocal = (item: ItemCarrito, id: string): Pedido['items'][number] => ({
+      id,
+      productoId: item.producto.id,
+      productoNombre: item.producto.nombre,
+      tipo: item.producto.tipo,
+      sector: sectorDe(item.producto.tipo),
+      cantidad: item.cantidad,
+      precioUnitario: item.producto.precio,
+      subtotal: redondearImporte(item.producto.precio * item.cantidad),
+    });
+
+    if (!esUuid(pedidoId) || items.some((item) => !esUuid(item.producto.id))) {
+      return items.map((item, indice) => enLocal(item, `${pedidoId}-${indice}`));
+    }
+
+    try {
+      const dc = this.dataConnect();
+      await borrarItemsPedido(dc, { pedidoId });
+
+      const corregidos: Pedido['items'] = [];
+      for (const item of items) {
+        const respuesta = await createPedidoItem(dc, {
+          pedidoId,
+          productoId: item.producto.id,
+          cantidad: item.cantidad,
+          precioUnitario: item.producto.precio,
+          subtotal: redondearImporte(item.producto.precio * item.cantidad),
+          sector: sectorDe(item.producto.tipo) as DcSector,
+        });
+        corregidos.push(enLocal(item, respuesta.data.pedidoItem_insert.id));
+      }
+      return corregidos;
+    } catch (error) {
+      console.warn('⚠️ No se pudieron reescribir los productos en Cloud SQL; se sincronizarán por Firestore:', error);
+      return items.map((item, indice) => enLocal(item, `${pedidoId}-${indice}`));
+    }
+  }
+
+  private async reenviarEnSql(pedido: Pedido): Promise<void> {
+    if (!esUuid(pedido.id)) return;
+    try {
+      await reenviarPedido(this.dataConnect(), {
+        id: pedido.id,
+        tiempoEstimado: pedido.tiempoEstimado,
+        totalBruto: pedido.totalBruto,
+        totalFinal: pedido.totalFinal,
+      });
+    } catch (error) {
+      console.warn('⚠️ No se pudo reenviar el pedido en Cloud SQL; se sincronizará por Firestore:', error);
     }
   }
 

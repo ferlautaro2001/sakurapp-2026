@@ -216,19 +216,6 @@ export function updateEstadoEspera(dcOrVars, vars) {
   return executeMutation(updateEstadoEsperaRef(dcInstance, inputVars));
 }
 
-export const asignarMesaClienteRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'AsignarMesaCliente', inputVars);
-}
-asignarMesaClienteRef.operationName = 'AsignarMesaCliente';
-
-export function asignarMesaCliente(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(asignarMesaClienteRef(dcInstance, inputVars));
-}
-
-
 export const confirmarPedidoRef = (dcOrVars, vars) => {
   const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
   dcInstance._useGeneratedSdk();
@@ -263,6 +250,54 @@ aplicarDescuentoJuegoRef.operationName = 'AplicarDescuentoJuego';
 export function aplicarDescuentoJuego(dcOrVars, vars) {
   const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
   return executeMutation(aplicarDescuentoJuegoRef(dcInstance, inputVars));
+}
+
+export const asignarMesaClienteRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AsignarMesaCliente', inputVars);
+}
+asignarMesaClienteRef.operationName = 'AsignarMesaCliente';
+
+export function asignarMesaCliente(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(asignarMesaClienteRef(dcInstance, inputVars));
+}
+
+export const rechazarPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'RechazarPedido', inputVars);
+}
+rechazarPedidoRef.operationName = 'RechazarPedido';
+
+export function rechazarPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(rechazarPedidoRef(dcInstance, inputVars));
+}
+
+export const reenviarPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ReenviarPedido', inputVars);
+}
+reenviarPedidoRef.operationName = 'ReenviarPedido';
+
+export function reenviarPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(reenviarPedidoRef(dcInstance, inputVars));
+}
+
+export const borrarItemsPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'BorrarItemsPedido', inputVars);
+}
+borrarItemsPedidoRef.operationName = 'BorrarItemsPedido';
+
+export function borrarItemsPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(borrarItemsPedidoRef(dcInstance, inputVars));
 }
 
 export const listProductosRef = (dc) => {

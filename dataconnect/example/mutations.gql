@@ -309,3 +309,46 @@ mutation AsignarMesaCliente(
   )
 }
 
+
+# US-7.2 · AC-7.2.1 · el mozo devuelve la comanda para que la corrijan.
+# El motivo es obligatorio del lado de la pantalla: acá queda persistido para
+# que el comensal lo lea tal cual lo escribió el mozo.
+mutation RechazarPedido($id: UUID!, $motivoRechazo: String!)
+  @auth(level: PUBLIC, insecureReason: "Auditoría y devolución de comandas por el mozo.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: RECHAZADO
+      motivoRechazo: $motivoRechazo
+    }
+  )
+}
+
+# US-7.2 · AC-7.2.2 · el comensal corrigió la comanda y la manda de nuevo.
+# Vuelve a quedar esperando la confirmación del mozo, con los importes y la
+# demora recalculados sobre lo que quedó, y sin el motivo anterior: ya no
+# corresponde a lo que el mozo va a revisar ahora.
+mutation ReenviarPedido(
+  $id: UUID!
+  $tiempoEstimado: Int!
+  $totalBruto: Float!
+  $totalFinal: Float!
+) @auth(level: PUBLIC, insecureReason: "Reenvío de la comanda corregida por el comensal.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: PENDIENTE_CONFIRMACION
+      motivoRechazo: null
+      tiempoEstimado: $tiempoEstimado
+      totalBruto: $totalBruto
+      totalFinal: $totalFinal
+    }
+  )
+}
+
+# US-7.2 · AC-7.2.2 · los renglones viejos se borran antes de volver a
+# escribir los corregidos: la comanda que revisa el mozo es siempre la última.
+mutation BorrarItemsPedido($pedidoId: UUID!)
+  @auth(level: PUBLIC, insecureReason: "Reescritura de los productos de una comanda corregida.") {
+  pedidoItem_deleteMany(where: { pedidoId: { eq: $pedidoId } })
+}

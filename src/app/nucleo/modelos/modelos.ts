@@ -1,9 +1,11 @@
 import {
+  AlcanceRechazo,
   EstadoEspera,
   EstadoMesa,
   EstadoPedido,
   EstadoSector,
   EstadoUsuario,
+  MarcaRechazo,
   Perfil,
   RolMensaje,
   Sector,
@@ -149,6 +151,23 @@ export interface PedidoItem {
   subtotal: number;
 }
 
+/**
+ * US-7.2 · un renglón marcado por el mozo al devolver la comanda.
+ *
+ * Se identifica por el producto y no por el renglón: al reenviar, la comanda
+ * reescribe sus renglones y los identificadores cambian, pero el producto que
+ * el mozo marcó sigue siendo el mismo.
+ *
+ * Guarda la cantidad que tenía en el momento de marcarlo, que es contra lo que
+ * se verifica después: un amarillo se corrige bajando la cantidad, así que hay
+ * que saber de cuánto venía.
+ */
+export interface ObservacionItem {
+  productoId: string;
+  marca: MarcaRechazo;
+  cantidadAlMarcar: number;
+}
+
 /** Pedido operativo compartido por el mozo, el cliente, Cocina y Bar. */
 export interface Pedido {
   id: string;
@@ -160,6 +179,21 @@ export interface Pedido {
   estadoGlobal: EstadoPedido;
   estadoCocina: EstadoSector;
   estadoBar: EstadoSector;
+  /**
+   * US-7.2 · lo que el mozo escribió al devolver la comanda, tal cual, para
+   * que el comensal sepa qué tiene que cambiar ("sólo me quedan tres gyozas").
+   * Se limpia al reenviar: ya no describe lo que el mozo está por revisar.
+   */
+  motivoRechazo: string | null;
+  /** Quién la devolvió, para que el comensal sepa con quién hablar. */
+  rechazadoPorNombre: string | null;
+  /** Si hay que rehacer la comanda entera o sólo una parte. Sale de lo marcado. */
+  alcanceRechazo: AlcanceRechazo | null;
+  /**
+   * Los renglones que el mozo marcó al devolver la comanda. No se borran
+   * solos: quedan señalados en la pantalla del comensal, que es quien corrige.
+   */
+  observaciones: ObservacionItem[];
   tiempoEstimado: number;
   totalBruto: number;
   descuentoJuego: number;

@@ -6,6 +6,7 @@ import {
   IconoComponent,
   LogoComponent,
   ModalComponent,
+  PushComponent,
   SeparadorComponent,
   SpinnerComponent,
   TextoBotonComponent,
@@ -13,6 +14,7 @@ import {
   VacioComponent,
 } from './basicos';
 import {
+  AreaComponent,
   BuscadorComponent,
   CampoComponent,
   FiltrosComponent,
@@ -21,29 +23,43 @@ import {
   SegmentadoComponent,
   TarjetaEscaneoComponent,
 } from './formulario';
-import { BarraInferiorComponent, EncabezadoComponent } from './estructura';
+import { BarraInferiorComponent, EncabezadoComponent, PestanasComponent } from './estructura';
 import {
+  CarruselComponent,
+  FilaEsperaComponent,
   FilaPendienteComponent,
+  FilaProductoComponent,
   PlacaQrComponent,
   TarjetaMesaComponent,
   TarjetaPerfilComponent,
 } from './datos';
+import {
+  BurbujaComponent,
+  CantidadComponent,
+  FilaPedidoComponent,
+  RenglonPedidoComponent,
+  ResumenPedidoComponent,
+} from './pedidos';
 import {
   DiapositivasComponent,
   GraficoBarrasComponent,
   GraficoLineaComponent,
   GraficoTortaComponent,
 } from './graficos';
-import { DocumentoPipe } from './documento.pipe';
+import { DocumentoPipe, FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 
 export * from './basicos';
 export * from './formulario';
 export * from './estructura';
 export * from './datos';
+export * from './pedidos';
 export * from './graficos';
-export * from './documento.pipe';
+export * from './pesos.pipe';
 
-/** Componentes del sistema de diseño para v0. */
+/**
+ * Todos los componentes del sistema de diseño, listos para importar de una vez
+ * en cualquier pantalla: `imports: [...UI]`.
+ */
 export const UI = [
   IconoComponent,
   BotonComponent,
@@ -56,24 +72,37 @@ export const UI = [
   TituloComponent,
   BannerComponent,
   VacioComponent,
+  PushComponent,
   ModalComponent,
   CampoComponent,
-  FotoComponent,
+  AreaComponent,
   BuscadorComponent,
   FiltrosComponent,
   SegmentadoComponent,
   InterruptorComponent,
+  FotoComponent,
   TarjetaEscaneoComponent,
   EncabezadoComponent,
   BarraInferiorComponent,
+  PestanasComponent,
   TarjetaPerfilComponent,
-  FilaPendienteComponent,
   TarjetaMesaComponent,
+  FilaPendienteComponent,
+  FilaProductoComponent,
+  FilaEsperaComponent,
+  CarruselComponent,
   PlacaQrComponent,
   GraficoTortaComponent,
   GraficoBarrasComponent,
   GraficoLineaComponent,
   DiapositivasComponent,
+  ResumenPedidoComponent,
+  RenglonPedidoComponent,
+  FilaPedidoComponent,
+  BurbujaComponent,
+  CantidadComponent,
+  PesosPipe,
+  HoraPipe,
+  FechaHoraPipe,
   DocumentoPipe,
 ] as const;
-

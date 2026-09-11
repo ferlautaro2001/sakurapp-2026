@@ -2,18 +2,16 @@ import { Routes } from '@angular/router';
 import { guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
 
 /**
- * Rutas de SakurApp.
- *
- * No hay pantalla de tablero: al iniciar sesión, cada perfil aterriza
- * directamente en su pantalla de trabajo (ver `SesionService.rutaInicio()`).
+ * Rutas de SakurApp agrupadas por rol y flujo de trabajo.
  *
  * Flujo de ingreso:
  * 1. Splash dinámico ('')
  * 2. Presentación estática ('presentacion')
  * 3. Formulario de login ('login')
- * 4. Pantalla del perfil que abrió la sesión
+ * 4. Pantalla directa del perfil que abrió la sesión (sin tableros intermedios)
  */
 export const routes: Routes = [
+  // --- comunes ---
   {
     path: '',
     pathMatch: 'full',
@@ -27,6 +25,8 @@ export const routes: Routes = [
     path: 'login',
     loadComponent: () => import('./pantallas/comunes/login.page').then((m) => m.LoginPage),
   },
+
+  // --- alta de clientes ---
   {
     path: 'registro-cliente',
     loadComponent: () => import('./pantallas/cliente/registro-cliente.page').then((m) => m.RegistroClientePage),
@@ -43,194 +43,263 @@ export const routes: Routes = [
     path: 'estado-cuenta/:estado',
     loadComponent: () => import('./pantallas/cliente/estado-cuenta.page').then((m) => m.EstadoCuentaPage),
   },
+
+  // --- dueño y supervisor ---
   {
-    // Punto 6 · sólo el dueño y el supervisor resuelven registros de comensales.
-    path: 'clientes-pendientes',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
-    loadComponent: () =>
-      import('./pantallas/admin/clientes-pendientes.page').then((m) => m.ClientesPendientesPage),
+    path: 'dueno',
+    canActivate: [guardiaPerfil('DUENO', 'SUPERVISOR')],
+    children: [
+      {
+        path: 'registros',
+        loadComponent: () => import('./pantallas/dueno/registros.page').then((m) => m.DuenoRegistrosPage),
+      },
+      {
+        path: 'resultado/:id/:decision',
+        loadComponent: () => import('./pantallas/dueno/resultado.page').then((m) => m.DuenoResultadoPage),
+      },
+      {
+        path: 'alta-empleado',
+        loadComponent: () => import('./pantallas/dueno/alta-empleado.page').then((m) => m.AltaEmpleadoPage),
+      },
+      {
+        path: 'correos',
+        loadComponent: () => import('./pantallas/dueno/correos.page').then((m) => m.DuenoCorreosPage),
+      },
+      {
+        path: 'codigos',
+        loadComponent: () => import('./pantallas/dueno/codigos.page').then((m) => m.DuenoCodigosPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'registros' },
+    ],
   },
   {
-    // Provisorio: perfiles cuya pantalla todavía está en desarrollo.
+    path: 'clientes-pendientes',
+    redirectTo: 'dueno/registros',
+    pathMatch: 'full',
+  },
+  {
+    path: 'admin/alta-empleado',
+    redirectTo: 'dueno/alta-empleado',
+    pathMatch: 'full',
+  },
+
+  // --- mesas: dueño, supervisor, metre y mozo ---
+  {
+    path: 'mesas',
+    canActivate: [guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./pantallas/mesas/mesas.page').then((m) => m.MesasPage),
+      },
+      {
+        path: 'nueva',
+        canActivate: [guardiaPerfil('DUENO', 'SUPERVISOR')],
+        loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
+      },
+      {
+        path: ':id/chat',
+        canActivate: [guardiaPerfil('MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO', 'DUENO', 'SUPERVISOR')],
+        loadComponent: () => import('./pantallas/mesas/chat-mesa.page').then((m) => m.ChatMesaPage),
+      },
+      {
+        path: ':id/qr',
+        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./pantallas/mesas/mesa-form.page').then((m) => m.MesaFormPage),
+      },
+    ],
+  },
+  {
+    path: 'admin/alta-mesa',
+    redirectTo: 'mesas/nueva',
+    pathMatch: 'full',
+  },
+
+  // --- carta: cocina, barra, mozo y el comensal ya sentado ---
+  {
+    path: 'carta',
+    canActivate: [guardiaPerfil('COCINERO', 'CANTINERO', 'MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    children: [
+      {
+        path: '',
+        pathMatch: 'full',
+        loadComponent: () => import('./pantallas/carta/carta.page').then((m) => m.CartaPage),
+      },
+      {
+        path: 'alta-plato',
+        canActivate: [guardiaPerfil('COCINERO')],
+        loadComponent: () => import('./pantallas/cocinero/alta-plato.page').then((m) => m.AltaPlatoPage),
+      },
+      {
+        path: 'alta-bebida',
+        canActivate: [guardiaPerfil('CANTINERO')],
+        loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
+      },
+      {
+        path: ':id/editar',
+        canActivate: [guardiaPerfil('COCINERO')],
+        loadComponent: () => import('./pantallas/cocinero/alta-plato.page').then((m) => m.AltaPlatoPage),
+      },
+      {
+        path: ':id',
+        loadComponent: () => import('./pantallas/carta/producto-ficha.page').then((m) => m.ProductoFichaPage),
+      },
+    ],
+  },
+  {
+    path: 'cocinero/alta-plato',
+    redirectTo: 'carta/alta-plato',
+    pathMatch: 'full',
+  },
+  {
+    path: 'cantinero/alta-bebida',
+    redirectTo: 'carta/alta-bebida',
+    pathMatch: 'full',
+  },
+
+  // --- metre ---
+  {
+    path: 'metre',
+    canActivate: [guardiaPerfil('METRE')],
+    children: [
+      {
+        path: 'espera',
+        loadComponent: () => import('./pantallas/metre/lista-espera.page').then((m) => m.MetreListaEsperaPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'espera' },
+    ],
+  },
+
+  // --- mozo: comandas para auditar y consultas de las mesas ---
+  {
+    path: 'mozo',
+    canActivate: [guardiaPerfil('MOZO')],
+    children: [
+      {
+        path: 'pedidos',
+        pathMatch: 'full',
+        loadComponent: () => import('./pantallas/mozo/pedidos.page').then((m) => m.MozoPedidosPage),
+      },
+      {
+        path: 'pedidos/:id/rechazar',
+        loadComponent: () => import('./pantallas/mozo/rechazo.page').then((m) => m.MozoRechazoPage),
+      },
+      {
+        path: 'pedidos/:id',
+        loadComponent: () => import('./pantallas/mozo/pedido-detalle.page').then((m) => m.MozoPedidoDetallePage),
+      },
+      {
+        path: 'consultas',
+        pathMatch: 'full',
+        loadComponent: () => import('./pantallas/mozo/consultas.page').then((m) => m.MozoConsultasPage),
+      },
+      {
+        path: 'consultas/:id',
+        loadComponent: () => import('./pantallas/mozo/sala.page').then((m) => m.MozoSalaPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'pedidos' },
+    ],
+  },
+
+  // --- cocina y barra: comandas filtradas por sector ---
+  {
+    path: 'sector',
+    canActivate: [guardiaPerfil('COCINERO', 'CANTINERO')],
+    children: [
+      {
+        path: 'pedidos',
+        loadComponent: () => import('./pantallas/sector/pedidos.page').then((m) => m.SectorPedidosPage),
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'pedidos' },
+    ],
+  },
+
+  // --- cliente: ingreso, espera, pedido, consulta y minijuegos ---
+  {
+    path: 'cliente',
+    canActivate: [guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    children: [
+      {
+        path: 'ingreso',
+        loadComponent: () => import('./pantallas/cliente/ingreso-local.page').then((m) => m.ClienteIngresoLocalPage),
+      },
+      {
+        path: 'espera',
+        loadComponent: () => import('./pantallas/cliente/espera.page').then((m) => m.ClienteEsperaPage),
+      },
+      {
+        path: 'encuestas',
+        loadComponent: () =>
+          import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
+      },
+      {
+        path: 'pedido',
+        loadComponent: () => import('./pantallas/cliente/pedido.page').then((m) => m.ClientePedidoPage),
+      },
+      {
+        path: 'consulta',
+        loadComponent: () => import('./pantallas/cliente/consulta.page').then((m) => m.ClienteConsultaPage),
+      },
+      {
+        path: 'juegos',
+        children: [
+          {
+            path: '',
+            pathMatch: 'full',
+            loadComponent: () =>
+              import('./pantallas/cliente/juegos/juegos.page').then((m) => m.ClienteJuegosPage),
+          },
+          {
+            path: 'ninja-sakura',
+            loadComponent: () =>
+              import('./pantallas/cliente/juegos/ninja-sakura.page').then((m) => m.NinjaSakuraPage),
+          },
+          {
+            path: 'emparejando-sushis',
+            loadComponent: () =>
+              import('./pantallas/cliente/juegos/emparejando-sushis.page').then((m) => m.EmparejandoSushisPage),
+          },
+          {
+            path: 'tateti-sushis',
+            loadComponent: () =>
+              import('./pantallas/cliente/juegos/tateti-sushis.page').then((m) => m.TatetiSushisPage),
+          },
+        ],
+      },
+      { path: '', pathMatch: 'full', redirectTo: 'ingreso' },
+    ],
+  },
+  {
+    path: 'comanda/carrito',
+    redirectTo: 'cliente/pedido',
+    pathMatch: 'full',
+  },
+  {
+    path: 'cliente/estado-pedido',
+    redirectTo: 'cliente/pedido',
+    pathMatch: 'full',
+  },
+  {
+    path: 'cliente/estado-pedido/:id',
+    redirectTo: 'cliente/pedido',
+  },
+  {
+    path: 'juegos',
+    redirectTo: 'cliente/juegos',
+    pathMatch: 'full',
+  },
+
+  // --- fallback provisorio ---
+  {
     path: 'en-preparacion',
     canActivate: [guardiaSesion],
     loadComponent: () => import('./pantallas/comunes/en-preparacion.page').then((m) => m.EnPreparacionPage),
   },
-  {
-    path: 'admin/alta-empleado',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
-    loadComponent: () => import('./pantallas/admin/alta-empleado.page').then((m) => m.AltaEmpleadoPage),
-  },
-  {
-    path: 'admin/alta-mesa',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
-    loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
-  },
-  {
-    path: 'mesas',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
-    loadComponent: () => import('./pantallas/mesas/mesas.page').then((m) => m.MesasPage),
-  },
-  {
-    path: 'mesas/nueva',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR')],
-    loadComponent: () => import('./pantallas/admin/alta-mesa.page').then((m) => m.AltaMesaPage),
-  },
-  {
-    path: 'mesas/:id/chat',
-    canActivate: [
-      guardiaSesion,
-      guardiaPerfil('MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO', 'DUENO', 'SUPERVISOR'),
-    ],
-    loadComponent: () => import('./pantallas/mesas/chat-mesa.page').then((m) => m.ChatMesaPage),
-  },
-  {
-    path: 'mesas/:id/qr',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
-    loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
-  },
-  {
-    path: 'mesas/:id',
-    canActivate: [guardiaSesion, guardiaPerfil('DUENO', 'SUPERVISOR', 'METRE', 'MOZO')],
-    loadComponent: () => import('./pantallas/mesas/mesa-form.page').then((m) => m.MesaFormPage),
-  },
-    {
-    path: 'carta/:id/editar',
-    canActivate: [
-      guardiaSesion,
-      guardiaPerfil('COCINERO'),
-    ],
-    loadComponent: () =>
-      import('./pantallas/cocinero/alta-plato.page').then(
-        (m) => m.AltaPlatoPage,
-      ),
-  },
-    {
-    path: 'comanda/carrito',
-    canActivate: [
-      guardiaSesion,
-      guardiaPerfil(
-        'CLIENTE_REGISTRADO',
-        'CLIENTE_ANONIMO',
-      ),
-    ],
-    loadComponent: () =>
-      import(
-        './pantallas/comanda/comanda-carrito.page'
-      ).then(
-        (m) => m.ComandaCarritoPage,
-      ),
-  },
-    {
-    path: 'carta/:id',
-    canActivate: [guardiaSesion],
-    loadComponent: () =>
-      import('./pantallas/carta/producto-ficha.page').then(
-        (m) => m.ProductoFichaPage,
-      ),
-  },
-    {
-    path: 'carta',
-    canActivate: [guardiaSesion],
-    loadComponent: () =>
-      import('./pantallas/carta/carta.page').then((m) => m.CartaPage),
-  },
-  {
-    path: 'cantinero/alta-bebida',
-    canActivate: [guardiaSesion, guardiaPerfil('CANTINERO')],
-    loadComponent: () =>
-      import('./pantallas/cantinero/alta-bebida.page').then(
-        (m) => m.AltaBebidaPage,
-      ),
-  },
-  {
-    path: 'cocinero/alta-plato',
-    canActivate: [guardiaSesion, guardiaPerfil('COCINERO')],
-    loadComponent: () =>
-      import('./pantallas/cocinero/alta-plato.page').then(
-        (m) => m.AltaPlatoPage,
-      ),
-  },
-  {
-    path: 'metre/espera',
-    canActivate: [guardiaSesion, guardiaPerfil('METRE')],
-    loadComponent: () =>
-      import('./pantallas/metre/lista-espera.page').then((m) => m.MetreListaEsperaPage),
-  },
-  {
-    path: 'mozo/pedidos',
-    canActivate: [guardiaSesion, guardiaPerfil('MOZO')],
-    loadComponent: () =>
-      import('./pantallas/mozo/pedidos-mozo.page').then((m) => m.PedidosMozoPage),
-  },
-  {
-    // US-7.2 · punto 13 · devolver la comanda es una pantalla propia y no un
-    // modal: el mozo recorre la comanda entera marcando renglón por renglón.
-    path: 'mozo/pedidos/:id/rechazar',
-    canActivate: [guardiaSesion, guardiaPerfil('MOZO')],
-    loadComponent: () => import('./pantallas/mozo/rechazo.page').then((m) => m.MozoRechazoPage),
-  },
-  {
-    // US-5.1 · punto 9 · el comensal escanea el código de ingreso al salón y
-    // queda anotado en la lista de espera. Hasta que el metre le asigne una
-    // mesa, lo único habilitado son los resultados de las encuestas anteriores.
-    path: 'cliente/ingreso',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
-    loadComponent: () =>
-      import('./pantallas/cliente/ingreso-local.page').then((m) => m.ClienteIngresoLocalPage),
-  },
-  {
-    // Mi lugar en la fila: el número de orden, la mesa que le asignó el metre
-    // y el escaneo del código de esa mesa.
-    path: 'cliente/espera',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
-    loadComponent: () => import('./pantallas/cliente/espera.page').then((m) => m.ClienteEsperaPage),
-  },
-  {
-    path: 'cliente/encuestas',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
-    loadComponent: () =>
-      import('./pantallas/cliente/encuestas-previas.page').then((m) => m.ClienteEncuestasPreviasPage),
-  },
-  {
-  path: 'cliente/estado-pedido/:id',
-  canActivate: [
-    guardiaSesion,
-    guardiaPerfil(
-      'CLIENTE_REGISTRADO',
-      'CLIENTE_ANONIMO',
-    ),
-  ],
-  loadComponent: () =>
-    import(
-      './pantallas/cliente/estado-pedido.page'
-    ).then(
-      (m) => m.EstadoPedidoPage,
-    ),
-  },
-  {
-    path: 'cliente/estado-pedido',
-    canActivate: [
-      guardiaSesion,
-      guardiaPerfil(
-        'CLIENTE_REGISTRADO',
-        'CLIENTE_ANONIMO',
-      ),
-    ],
-    loadComponent: () =>
-      import(
-        './pantallas/cliente/estado-pedido.page'
-      ).then(
-        (m) => m.EstadoPedidoPage,
-      ),
-  },
-  {
-    // Los descuentos de los juegos son sólo para el cliente registrado: el
-    // anónimo no juega, así lo pide la consigna.
-    path: 'juegos',
-    canActivate: [guardiaSesion, guardiaPerfil('CLIENTE_REGISTRADO')],
-    loadComponent: () => import('./pantallas/cliente/juegos.page').then((m) => m.JuegosPage),
-  },
+
   {
     path: '**',
     redirectTo: '',

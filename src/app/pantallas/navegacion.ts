@@ -1,60 +1,52 @@
 import { ItemNavegacion } from '../ui/estructura';
-import { Perfil } from '../nucleo/modelos/enums';
+import { EstadoPedido, Perfil } from '../nucleo/modelos/enums';
+
+/**
+ * En qué momento del recorrido está el comensal. Su barra cambia con eso:
+ * antes de sentarse no existe la carta, y con el pedido mandado no existe
+ * nada más que el pedido.
+ */
+export interface ContextoNavegacion {
+  /** Ya escaneó el código de su mesa y está sentado. */
+  enMesa?: boolean;
+  /** Estado del pedido vivo, si tiene alguno. */
+  estadoPedido?: EstadoPedido | null;
+  /** Si tiene habilitados los juegos. */
+  juegosHabilitados?: boolean;
+}
 
 /**
  * Secciones de la barra inferior por perfil.
  *
  * No hay pantallas de tablero: cada sección es una de las pantallas que pide
  * el trabajo, sin resúmenes intermedios. Los perfiles que tienen una sola
- * pantalla no llevan barra.
+ * pantalla no llevan barra —el componente no la dibuja—, y eso es justamente
+ * lo que deja al comensal encerrado en su pedido mientras espera al mozo.
  */
 export function navegacionDe(
   perfil: Perfil | undefined,
-  pedidoConfirmado = false,
-  /**
-   * US-7.2 · el mozo le devolvió la comanda. Los juegos siguen apagados —no
-   * hay nada confirmado todavía— pero "Mi pedido" tiene que estar a mano: es
-   * donde lee el motivo y desde donde corrige.
-   */
+  contextoOPedidoConfirmado?: ContextoNavegacion | boolean,
   pedidoDevuelto = false,
 ): ItemNavegacion[] {
-  return SECCIONES(perfil)
-    .filter((item) => RUTAS_IMPLEMENTADAS.includes(item.ruta))
-    .filter((item) => {
-      // La consigna es explícita: los descuentos de los juegos son para el
-      // cliente registrado, el anónimo no.
-      if (item.ruta === '/juegos') return pedidoConfirmado && perfil === 'CLIENTE_REGISTRADO';
-      if (item.ruta === '/cliente/estado-pedido') return pedidoConfirmado || pedidoDevuelto;
-      return true;
-    });
-}
+  let contexto: ContextoNavegacion;
+  if (typeof contextoOPedidoConfirmado === 'boolean') {
+    contexto = {
+      enMesa: true,
+      estadoPedido: contextoOPedidoConfirmado
+        ? 'CONFIRMADO'
+        : pedidoDevuelto
+          ? 'RECHAZADO'
+          : null,
+    };
+  } else {
+    contexto = contextoOPedidoConfirmado ?? {};
+  }
 
-/**
- * Rutas que ya existen en la aplicación.
- *
- * La barra sólo dibuja las secciones que se pueden abrir: un botón que lleva a
- * una pantalla inexistente es peor que no tener el botón. A medida que cada
- * integrante del grupo sube su pantalla, suma acá su ruta y la sección aparece
- * sola, sin tocar nada más.
- */
-const RUTAS_IMPLEMENTADAS: string[] = [
-  '/carta',
-  '/clientes-pendientes',
-  '/mesas',
-  '/metre/espera',
-  '/mozo/pedidos',
-  '/cliente/espera',
-  '/cliente/encuestas',
-  '/cliente/estado-pedido',
-  '/juegos',
-];
-
-function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
   switch (perfil) {
     case 'DUENO':
     case 'SUPERVISOR':
       return [
-        { id: 'registros', rotulo: 'Registros', icono: 'how_to_reg', ruta: '/clientes-pendientes' },
+        { id: 'registros', rotulo: 'Registros', icono: 'how_to_reg', ruta: '/dueno/registros' },
         { id: 'mesas', rotulo: 'Mesas', icono: 'table_restaurant', ruta: '/mesas' },
         { id: 'codigos', rotulo: 'Códigos', icono: 'qr_code_2', ruta: '/dueno/codigos' },
         { id: 'correos', rotulo: 'Correos', icono: 'outgoing_mail', ruta: '/dueno/correos' },
@@ -67,23 +59,60 @@ function SECCIONES(perfil: Perfil | undefined): ItemNavegacion[] {
       ];
     case 'MOZO':
       return [
-        { id: 'pedidos', rotulo: 'Pedidos', icono: 'room_service', ruta: '/mozo/pedidos' },
         { id: 'mesas', rotulo: 'Mesas', icono: 'table_restaurant', ruta: '/mesas' },
+        { id: 'pedidos', rotulo: 'Pedidos', icono: 'receipt_long', ruta: '/mozo/pedidos' },
+        { id: 'consultas', rotulo: 'Consultas', icono: 'forum', ruta: '/mozo/consultas' },
         { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' },
       ];
-    // Una vez anunciado en la puerta, el comensal alterna entre su lugar en la
-    // fila y los resultados de las encuestas anteriores.
+    case 'COCINERO':
+    case 'CANTINERO':
+      return [
+        { id: 'pedidos', rotulo: 'Pedidos', icono: 'skillet', ruta: '/sector/pedidos' },
+        { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' },
+      ];
     case 'CLIENTE_REGISTRADO':
     case 'CLIENTE_ANONIMO':
-      return [
-        { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
-        { id: 'pedido', rotulo: 'Mi pedido', icono: 'receipt_long', ruta: '/cliente/estado-pedido' },
-        { id: 'juegos', rotulo: 'Juegos', icono: 'sports_esports', ruta: '/juegos' },
-        { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' },
-      ];
-    // El cocinero y el cantinero trabajan sobre una sola pantalla: una barra de
-    // una sola sección sería un adorno.
+      return navegacionDelComensal(contexto);
     default:
       return [];
+  }
+}
+
+/**
+ * La barra del comensal, que es la que más cambia.
+ *
+ *  1. En la fila → su lugar, los juegos de la espera y las encuestas.
+ *  2. Sentado, armando el pedido → su mesa, la carta y el pedido.
+ *  3. Con el pedido mandado → sólo el pedido, hasta que el mozo lo resuelva.
+ *  4. Con el pedido confirmado o posterior → el estado del pedido y los juegos.
+ */
+function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
+  const lugar: ItemNavegacion = { id: 'lugar', rotulo: 'Mi mesa', icono: 'table_restaurant', ruta: '/cliente/espera' };
+  const carta: ItemNavegacion = { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' };
+  const pedido: ItemNavegacion = { id: 'pedido', rotulo: 'Mi pedido', icono: 'receipt_long', ruta: '/cliente/pedido' };
+  const juegos: ItemNavegacion = { id: 'juegos', rotulo: 'Juegos', icono: 'sports_esports', ruta: '/cliente/juegos' };
+
+  if (!contexto.enMesa) {
+    return [
+      { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
+      juegos,
+      { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' },
+    ];
+  }
+
+  switch (contexto.estadoPedido) {
+    case 'PENDIENTE_CONFIRMACION':
+      return [pedido];
+    case 'CONFIRMADO':
+    case 'EN_PREPARACION':
+    case 'LISTO':
+    case 'ENTREGADO':
+    case 'RECIBIDO':
+    case 'CUENTA_SOLICITADA':
+    case 'PAGO_PENDIENTE':
+    case 'CERRADO':
+      return [pedido, juegos];
+    default:
+      return [lugar, carta, pedido];
   }
 }

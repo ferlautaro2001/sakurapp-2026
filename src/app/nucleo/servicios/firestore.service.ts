@@ -535,6 +535,37 @@ export class FirestoreService {
     );
   }
 
+  /** Actualiza los estados de sector y el estado global de un pedido en Firestore. */
+  async actualizarSectorPedido(
+    pedidoId: string,
+    estadoCocina: EstadoSector,
+    estadoBar: EstadoSector,
+    estadoGlobal: EstadoPedido,
+  ): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedidoId),
+      {
+        estadoCocina,
+        estadoBar,
+        estadoGlobal,
+        actualizadoEn: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
+  /** Actualiza el estado global de un pedido en Firestore. */
+  async actualizarEstadoPedido(pedidoId: string, nuevoEstado: EstadoPedido): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedidoId),
+      {
+        estadoGlobal: nuevoEstado,
+        actualizadoEn: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
   /**
    * Registra el único intento permitido y aplica su descuento de forma atómica.
    * La transacción evita dos premios si el usuario toca el botón dos veces.

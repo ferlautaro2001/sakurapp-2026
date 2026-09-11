@@ -3,9 +3,13 @@ import { Haptics, NotificationType } from '@capacitor/haptics';
 import {
   collection,
   doc,
+  getDocs,
   onSnapshot,
+  query,
   setDoc,
   Unsubscribe,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import { nuevoId } from '../datos/semilla';
 import { RolMensaje } from '../modelos/enums';
@@ -313,6 +317,26 @@ export class ChatService {
       oscilador.stop(ahora + 0.36);
     } catch {
       // Si el navegador bloquea audio sin interacción de usuario, continúa silenciosamente
+    }
+  }
+
+  /**
+   * Marca como leídos los mensajes de un rol determinado en una mesa.
+   */
+  async marcarLeidos(mesaId: string, rolParaMarcar: RolMensaje): Promise<void> {
+    try {
+      const db = this.firestore.obtenerDb();
+      const colRef = collection(db, COLECCION_CHAT, mesaId, 'mensajes');
+      const q = query(colRef, where('remitenteRol', '==', rolParaMarcar), where('leido', '==', false));
+      const snaps = await getDocs(q);
+      if (snaps.empty) return;
+      const batch = writeBatch(db);
+      snaps.forEach((d) => {
+        batch.update(d.ref, { leido: true });
+      });
+      await batch.commit();
+    } catch {
+      // Ignorar fallas si la base está en modo offline o sin permisos
     }
   }
 }

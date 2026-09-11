@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
-import { Mesa, Usuario } from '../nucleo/modelos/modelos';
+import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, numberAttribute, output, signal } from '@angular/core';
+import { Mesa, Producto, Usuario } from '../nucleo/modelos/modelos';
 import {
   ICONO_TIPO_MESA,
   ROTULO_ESTADO_MESA,
@@ -8,8 +8,9 @@ import {
   ROTULO_TIPO_MESA,
 } from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
-import { BotonComponent, ChipComponent, IconoComponent } from './basicos';
-import { DocumentoPipe } from './documento.pipe';
+import { BotonComponent, ChipComponent, IconoBotonComponent, IconoComponent } from './basicos';
+import { CantidadComponent } from './pedidos';
+import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 
 /** Tarjeta de perfil del ingreso rápido: foto o iniciales, nombre y rol. Nunca un combo. */
 @Component({
@@ -188,30 +189,6 @@ export class FilaPendienteComponent {
         <span class="lm-mesa__pie">
           <lm-chip [estado]="mesa().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
         </span>
-        <span class="lm-mesa__acciones">
-          <span
-            class="lm-mesa__btn-accion lm-mesa__btn-accion--chat"
-            role="button"
-            tabindex="0"
-            [attr.aria-label]="'Abrir sala de chat de la mesa ' + mesa().numero"
-            (click)="verChat($event)"
-          >
-            <lm-icono nombre="forum" [tamano]="24" color="var(--sk-verde)" />
-            <span class="lm-mesa__btn-texto">Chat</span>
-          </span>
-          @if (conQr()) {
-            <span
-              class="lm-mesa__btn-accion lm-mesa__btn-accion--qr"
-              role="button"
-              tabindex="0"
-              [attr.aria-label]="'Ver el código de la mesa ' + mesa().numero"
-              (click)="verQr($event)"
-            >
-              <lm-icono nombre="qr_code_2" [tamano]="24" color="var(--action-primary)" />
-              <span class="lm-mesa__btn-texto">QR</span>
-            </span>
-          }
-        </span>
       </span>
     </button>
   `,
@@ -219,10 +196,7 @@ export class FilaPendienteComponent {
 })
 export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
-  readonly conQr = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
-  readonly abrirQr = output<void>();
-  readonly abrirChat = output<void>();
 
   protected iconoTipo(): string {
     return ICONO_TIPO_MESA[this.mesa().tipo];
@@ -232,14 +206,6 @@ export class TarjetaMesaComponent {
   }
   protected rotuloEstado(): string {
     return ROTULO_ESTADO_MESA[this.mesa().estado];
-  }
-  protected verQr(evento: Event): void {
-    evento.stopPropagation();
-    this.abrirQr.emit();
-  }
-  protected verChat(evento: Event): void {
-    evento.stopPropagation();
-    this.abrirChat.emit();
   }
 }
 
@@ -259,4 +225,228 @@ export class PlacaQrComponent {
   readonly fuente = input.required<string>();
   readonly rotulo = input.required<string>();
 }
+
+/**
+ * Fila de producto de la carta: miniatura, nombre, descripción, precio y tiempo.
+ * Con controles de cantidad para el comensal.
+ */
+@Component({
+  selector: 'lm-fila-producto',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent, ChipComponent, CantidadComponent, PesosPipe],
+  template: `
+    <div
+      class="lm-product-fila"
+      [class.lm-product-fila--carrito]="conCarrito()"
+      [class.lm-product-fila--pedido]="conCarrito() && cantidad() > 0"
+    >
+      <button type="button" class="lm-product" (click)="presionar.emit()">
+        <span
+          class="lm-product__thumb"
+          [class.lm-product__thumb--apagado]="!producto().disponible"
+          [style.background-image]="portada() ? 'url(' + portada() + ')' : null"
+        >
+          @if (!portada()) {
+            <lm-icono [nombre]="glifo()" [tamano]="26" color="var(--action-accent)" />
+          }
+        </span>
+        <span class="lm-product__datos">
+          <span class="lm-product__nombre">
+            {{ producto().nombre }}
+            @if (!producto().disponible) {
+              <lm-chip estado="rechazado">Sin stock</lm-chip>
+            }
+          </span>
+          <span class="lm-product__desc">{{ producto().descripcion }}</span>
+          <span class="lm-product__pie">
+            <span class="lm-product__precio">{{ producto().precio | pesos }}</span>
+            <span class="lm-product__tiempo">
+              <lm-icono nombre="schedule" [tamano]="15" />
+              {{ producto().tiempoElaboracion }} minutos
+            </span>
+          </span>
+        </span>
+      </button>
+
+      @if (conCarrito()) {
+        <div class="lm-product__carrito">
+          <lm-cantidad
+            [cantidad]="cantidad()"
+            [nombre]="producto().nombre"
+            [permitirAgregar]="permitirAgregar()"
+            (agregar)="agregar.emit()"
+            (quitar)="quitar.emit()"
+          />
+          <span class="lm-product__subtotal">
+            {{ cantidad() > 0 ? (producto().precio * cantidad() | pesos) : '' }}
+          </span>
+        </div>
+      }
+    </div>
+  `,
+  styles: [
+    `
+      :host { display: block; }
+      .lm-product-fila--carrito {
+        display: flex; align-items: center; gap: 6px;
+        border-radius: var(--radius-card); background: var(--surface-card);
+        box-shadow: var(--shadow-card); overflow: hidden;
+        transition: box-shadow var(--dur-fast) var(--ease-standard);
+      }
+      .lm-product-fila--pedido { box-shadow: 0 0 0 2px var(--action-primary), var(--shadow-card); }
+      .lm-product-fila--carrito .lm-product { flex: 1 1 auto; min-width: 0; box-shadow: none; }
+      .lm-product__carrito {
+        flex: 0 0 98px; width: 98px; box-sizing: border-box;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 4px; padding: 8px 8px 8px 0;
+      }
+      .lm-product__subtotal {
+        min-height: 13px;
+        font: 800 13px/1 var(--font-numeric); color: var(--action-primary); white-space: nowrap;
+      }
+    `,
+  ],
+})
+export class FilaProductoComponent {
+  readonly producto = input.required<Producto>();
+  readonly conCarrito = input(false, { transform: booleanAttribute });
+  readonly cantidad = input(0, { transform: numberAttribute });
+  readonly permitirAgregar = input(true, { transform: booleanAttribute });
+  readonly presionar = output<void>();
+  readonly agregar = output<void>();
+  readonly quitar = output<void>();
+
+  protected portada(): string | null {
+    return this.producto().fotos[0] ?? null;
+  }
+  protected glifo(): string {
+    const tipo = this.producto().tipo;
+    return tipo === 'BEBIDA' ? 'local_bar' : tipo === 'POSTRE' ? 'icecream' : 'restaurant';
+  }
+}
+
+/**
+ * Fila de la lista de espera con asignación y baja de mesa.
+ */
+@Component({
+  selector: 'lm-fila-espera',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent, IconoBotonComponent, HoraPipe],
+  template: `
+    <div class="lm-wait">
+      <span class="lm-wait__pos">{{ posicion() }}</span>
+      <span
+        class="lm-avatar lm-avatar--sm"
+        [style.background-image]="cliente().fotoUrl ? 'url(' + cliente().fotoUrl + ')' : null"
+      >
+        @if (!cliente().fotoUrl) {
+          {{ usuarios.iniciales(cliente()) }}
+        }
+      </span>
+      <span class="lm-wait__datos">
+        <b>{{ usuarios.nombreCompleto(cliente()) }}</b>
+        <small>
+          <lm-icono nombre="schedule" [tamano]="15" />
+          Llegó {{ desde() | hora }} · {{ comensales() }} personas
+        </small>
+      </span>
+      <span class="lm-wait__acciones">
+        <lm-icono-boton
+          icono="table_restaurant"
+          [rotulo]="'Asignarle una mesa a ' + usuarios.nombreCompleto(cliente())"
+          tono="primario"
+          (presionar)="asignar.emit()"
+        />
+        <lm-icono-boton
+          icono="person_remove"
+          [rotulo]="'Quitar a ' + usuarios.nombreCompleto(cliente()) + ' de la lista'"
+          tono="peligro"
+          (presionar)="quitar.emit()"
+        />
+      </span>
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class FilaEsperaComponent {
+  protected readonly usuarios = inject(UsuariosService);
+  readonly cliente = input.required<Usuario>();
+  readonly posicion = input.required<number>();
+  readonly desde = input.required<string>();
+  readonly comensales = input.required<number>();
+  readonly asignar = output<void>();
+  readonly quitar = output<void>();
+}
+
+/**
+ * Carrusel de fotos centrado.
+ */
+@Component({
+  selector: 'lm-carrusel',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent],
+  template: `
+    <div>
+      <div
+        class="lm-carousel__marco"
+        [style.height.px]="alto()"
+        [style.background-image]="actual() ? 'url(' + actual() + ')' : null"
+      >
+        @if (!actual()) {
+          <span class="lm-carousel__vacio">
+            <lm-icono nombre="add_a_photo" [tamano]="30" color="var(--action-accent)" />
+            <span>Foto {{ indice() + 1 }} de {{ cantidad() }} · sin cargar</span>
+          </span>
+        }
+        @if (cantidad() > 1) {
+          <button type="button" class="lm-carousel__flecha" style="left:10px" aria-label="Foto anterior" (click)="mover(-1)">
+            <lm-icono nombre="chevron_left" [tamano]="24" color="var(--action-primary)" />
+          </button>
+          <button type="button" class="lm-carousel__flecha" style="right:10px" aria-label="Foto siguiente" (click)="mover(1)">
+            <lm-icono nombre="chevron_right" [tamano]="24" color="var(--action-primary)" />
+          </button>
+        }
+      </div>
+      @if (cantidad() > 1) {
+        <div class="lm-carousel__puntos">
+          @for (foto of fotos(); track $index) {
+            <button
+              type="button"
+              class="sk-flor"
+              [class.on]="$index === indice()"
+              [attr.aria-label]="'Ver la foto ' + ($index + 1)"
+              (click)="irA($index)"
+            >
+              <img src="assets/img/flor-2.png" alt="" />
+            </button>
+          }
+        </div>
+      }
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class CarruselComponent {
+  readonly fotos = input.required<string[]>();
+  readonly alto = input(226, { transform: numberAttribute });
+  private readonly posicion = signal(0);
+
+  protected indice(): number {
+    return Math.min(this.posicion(), Math.max(0, this.cantidad() - 1));
+  }
+  protected cantidad(): number {
+    return Math.max(1, this.fotos().length);
+  }
+  protected actual(): string | null {
+    return this.fotos()[this.indice()] ?? null;
+  }
+  protected mover(paso: number): void {
+    const n = this.cantidad();
+    this.posicion.set((this.indice() + paso + n) % n);
+  }
+  protected irA(indice: number): void {
+    this.posicion.set(indice);
+  }
+}
+
 

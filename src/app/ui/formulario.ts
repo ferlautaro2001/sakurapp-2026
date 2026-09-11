@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, input, numberAttribute, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { IconoComponent } from './basicos';
 import { mensajeDe } from '../nucleo/validacion/validadores';
@@ -21,17 +21,15 @@ import { mensajeDe } from '../nucleo/validacion/validadores';
           <lm-icono [nombre]="icono()!" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
         <input
-          [type]="tipo()"
           [formControl]="control()"
+          [type]="tipo()"
           [placeholder]="marcador()"
           [attr.inputmode]="modo()"
           [attr.maxlength]="largoMaximo()"
           [attr.autocomplete]="autocompletar()"
           [attr.enterkeyhint]="tecla()"
         />
-        @if (accesorio()) {
-          <ng-content select="[accesorio]" />
-        }
+        <ng-content select="[accesorio]" />
       </span>
       @if (error()) {
         <span class="lm-field__error">
@@ -57,6 +55,48 @@ export class CampoComponent {
   readonly autocompletar = input<string | null>('off');
   readonly tecla = input<string | null>('next');
   readonly accesorio = input(false, { transform: booleanAttribute });
+
+  protected error(): string | null {
+    return mensajeDe(this.control());
+  }
+}
+
+/** Campo de varias líneas, para descripciones. Mismo lenguaje visual que el campo simple. */
+@Component({
+  selector: 'lm-area',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, IconoComponent],
+  template: `
+    <label class="lm-field" [class.lm-field--error]="error() !== null">
+      @if (etiqueta()) {
+        <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
+      }
+      <span class="lm-field__box lm-field__box--alto">
+        @if (icono()) {
+          <lm-icono [nombre]="icono()!" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+        }
+        <textarea [formControl]="control()" [placeholder]="marcador()" [rows]="filas()" [attr.maxlength]="largoMaximo()"></textarea>
+      </span>
+      @if (error()) {
+        <span class="lm-field__error">
+          <lm-icono nombre="error" [tamano]="16" />
+          {{ error() }}
+        </span>
+      } @else if (ayuda()) {
+        <span class="lm-field__hint">{{ ayuda() }}</span>
+      }
+    </label>
+  `,
+  styles: [':host{display:block}'],
+})
+export class AreaComponent {
+  readonly control = input.required<FormControl>();
+  readonly etiqueta = input<string | null>(null);
+  readonly marcador = input('');
+  readonly icono = input<string | null>(null);
+  readonly filas = input(3, { transform: numberAttribute });
+  readonly largoMaximo = input<number | null>(240);
+  readonly ayuda = input<string | null>(null);
 
   protected error(): string | null {
     return mensajeDe(this.control());

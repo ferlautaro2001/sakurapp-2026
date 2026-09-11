@@ -50,8 +50,6 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
               <lm-tarjeta-mesa
                 [mesa]="mesa"
                 (presionar)="ir(['/mesas', mesa.id])"
-                (abrirQr)="ir(['/mesas', mesa.id, 'qr'])"
-                (abrirChat)="ir(['/mesas', mesa.id, 'chat'])"
               />
             }
           </div>

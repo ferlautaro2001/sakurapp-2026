@@ -34,6 +34,7 @@ export class IconoComponent {
       [class.lm-btn--danger]="variante() === 'danger'"
       [class.lm-btn--success]="variante() === 'success'"
       [class.lm-btn--auto]="!ancho()"
+      [class.lm-btn--compacto]="compacto()"
       [class.lm-btn--sobre-oscuro]="sobreOscuro()"
       [disabled]="deshabilitado()"
       (click)="presionar.emit()"
@@ -50,6 +51,7 @@ export class BotonComponent {
   readonly variante = input<'primary' | 'secondary' | 'ghost' | 'danger' | 'success'>('primary');
   readonly icono = input<string | null>(null);
   readonly ancho = input(true, { transform: booleanAttribute });
+  readonly compacto = input(false, { transform: booleanAttribute });
   readonly deshabilitado = input(false, { transform: booleanAttribute });
   readonly sobreOscuro = input(false, { transform: booleanAttribute });
   readonly presionar = output<void>();
@@ -96,9 +98,25 @@ export class TextoBotonComponent {
       (click)="presionar.emit()"
     >
       <lm-icono [nombre]="icono()" [tamano]="tamano()" />
+      @if (globo() > 0) {
+        <span class="lm-iconbtn__globo">{{ globo() }}</span>
+      }
     </button>
   `,
-  styles: [':host{display:inline-flex}'],
+  styles: [
+    `
+      :host { display: inline-flex; }
+      :host > button { position: relative; }
+      .lm-iconbtn__globo {
+        position: absolute; top: -2px; right: -2px;
+        min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+        display: grid; place-items: center;
+        background: var(--state-error); color: #FFFFFF;
+        font: 800 11px/1 var(--font-numeric);
+        border: 2px solid var(--bg-app);
+      }
+    `,
+  ],
 })
 export class IconoBotonComponent {
   readonly icono = input.required<string>();
@@ -106,6 +124,7 @@ export class IconoBotonComponent {
   readonly tono = input<'neutro' | 'primario' | 'peligro' | 'exito' | 'claro'>('neutro');
   readonly tamano = input(22, { transform: numberAttribute });
   readonly pegadoIzquierda = input(false, { transform: booleanAttribute });
+  readonly globo = input(0, { transform: numberAttribute });
   readonly presionar = output<void>();
 }
 

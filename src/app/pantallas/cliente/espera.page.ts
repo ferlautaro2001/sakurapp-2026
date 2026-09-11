@@ -340,7 +340,7 @@ export class ClienteEsperaPage extends PaginaConSesion {
   protected abrirChatMozo(): void {
     const entrada = this.entrada();
     if (entrada?.mesaAsignadaId) {
-      this.ir(['/mesas', entrada.mesaAsignadaId, 'chat']);
+      this.ir(['/cliente/consulta']);
     }
   }
 }

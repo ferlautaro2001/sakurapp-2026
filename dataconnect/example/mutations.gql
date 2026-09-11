@@ -352,3 +352,34 @@ mutation BorrarItemsPedido($pedidoId: UUID!)
   @auth(level: PUBLIC, insecureReason: "Reescritura de los productos de una comanda corregida.") {
   pedidoItem_deleteMany(where: { pedidoId: { eq: $pedidoId } })
 }
+
+# Avance de la comanda por el sector de cocina o barra.
+mutation AvanzarSectorPedido(
+  $id: UUID!
+  $estadoGlobal: EstadoPedido!
+  $estadoCocina: EstadoSector!
+  $estadoBar: EstadoSector!
+) @auth(level: PUBLIC, insecureReason: "Avance de preparación de pedido por sector.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: $estadoGlobal
+      estadoCocina: $estadoCocina
+      estadoBar: $estadoBar
+    }
+  )
+}
+
+# Actualización del estado global de un pedido (ej: entrega, cuenta, cierre).
+mutation ActualizarEstadoPedido(
+  $id: UUID!
+  $estadoGlobal: EstadoPedido!
+) @auth(level: PUBLIC, insecureReason: "Actualización de estado operativo del pedido.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: $estadoGlobal
+    }
+  )
+}
+

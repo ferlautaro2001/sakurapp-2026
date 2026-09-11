@@ -19,6 +19,8 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
     encolarNotificacion: ReturnType<typeof vi.fn>;
     escucharPedidos: ReturnType<typeof vi.fn>;
     guardarUsuario: ReturnType<typeof vi.fn>;
+    actualizarSectorPedido: ReturnType<typeof vi.fn>;
+    actualizarEstadoPedido: ReturnType<typeof vi.fn>;
   };
   let mockNotificaciones: {
     enviar: ReturnType<typeof vi.fn>;
@@ -99,6 +101,8 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       encolarNotificacion: vi.fn().mockResolvedValue(undefined),
       escucharPedidos: vi.fn().mockReturnValue(() => undefined),
       guardarUsuario: vi.fn().mockResolvedValue(undefined),
+      actualizarSectorPedido: vi.fn().mockResolvedValue(undefined),
+      actualizarEstadoPedido: vi.fn().mockResolvedValue(undefined),
     };
 
     mockNotificaciones = {
@@ -315,13 +319,13 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       'COCINERO',
       'Nueva comanda de Cocina',
       expect.stringContaining('Mesa 1: 2 productos para preparar.'),
-      ['/carta'],
+      ['/sector/pedidos'],
     );
     expect(mockNotificaciones.enviarPorRol).toHaveBeenCalledWith(
       'CANTINERO',
       'Nueva comanda de Bar',
       expect.stringContaining('Mesa 1: 2 productos para preparar.'),
-      ['/carta'],
+      ['/sector/pedidos'],
     );
     expect(mockFirestore.confirmarPedido).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -332,4 +336,236 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       }),
     );
   });
+
+  describe('avanzarSector', () => {
+    it('debe avanzar un sector a EN_PREPARACION y actualizar el estado global', async () => {
+      const pedidoMock: Pedido = {
+        id: 'ped-test-1',
+        mesaId: mesaMock.id,
+        mesaNumero: 1,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'CONFIRMADO',
+        estadoCocina: 'PENDIENTE',
+        estadoBar: 'PENDIENTE',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+
+      // Inyectar el pedido en el estado interno a través de escucharPedidos
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoMock]);
+
+      await service.avanzarSector('ped-test-1', 'COCINA', 'EN_PREPARACION');
+
+      expect(mockFirestore.actualizarSectorPedido).toHaveBeenCalledWith(
+        'ped-test-1',
+        'EN_PREPARACION',
+        'PENDIENTE',
+        'EN_PREPARACION',
+      );
+      expect(mockNotificaciones.enviar).toHaveBeenCalledWith(
+        [facundoAranaConUuid.uid],
+        '🌸 Cocina · Pedido',
+        'Lo de cocina está en preparación.',
+        ['/cliente/pedido'],
+      );
+    });
+
+    it('debe marcar LISTO cuando todos los sectores aplicables finalizaron y notificar a los mozos', async () => {
+      const pedidoMock: Pedido = {
+        id: 'ped-test-2',
+        mesaId: mesaMock.id,
+        mesaNumero: 1,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'EN_PREPARACION',
+        estadoCocina: 'LISTO',
+        estadoBar: 'EN_PREPARACION',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoMock]);
+
+      await service.avanzarSector('ped-test-2', 'BAR', 'LISTO');
+
+      expect(mockFirestore.actualizarSectorPedido).toHaveBeenCalledWith(
+        'ped-test-2',
+        'LISTO',
+        'LISTO',
+        'LISTO',
+      );
+      expect(mockNotificaciones.enviarPorRol).toHaveBeenCalledWith(
+        'MOZO',
+        '🌸 ¡Pedido listo! Mesa 1',
+        expect.stringContaining('Mesa 1'),
+        ['/mozo/pedidos'],
+      );
+    });
+
+    it('debe rechazar avanzar el sector si el pedido no fue confirmado por el mozo', async () => {
+      const pedidoNoConfirmado: Pedido = {
+        id: 'ped-test-3',
+        mesaId: mesaMock.id,
+        mesaNumero: 1,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'PENDIENTE_CONFIRMACION',
+        estadoCocina: 'NO_APLICA',
+        estadoBar: 'NO_APLICA',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: null,
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoNoConfirmado]);
+
+      await expect(service.avanzarSector('ped-test-3', 'COCINA', 'EN_PREPARACION')).rejects.toThrow(
+        'El pedido aún no fue confirmado por el mozo.',
+      );
+    });
+
+    it('debe rechazar transiciones que sean regresiones inválidas', async () => {
+      const pedidoListo: Pedido = {
+        id: 'ped-test-4',
+        mesaId: mesaMock.id,
+        mesaNumero: 1,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'LISTO',
+        estadoCocina: 'LISTO',
+        estadoBar: 'NO_APLICA',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoListo]);
+
+      await expect(service.avanzarSector('ped-test-4', 'COCINA', 'EN_PREPARACION')).rejects.toThrow(
+        'Transición inválida',
+      );
+    });
+  });
+
+  describe('actualizarEstadoGlobal', () => {
+    it('debe actualizar estado global y notificar al mozo cuando se solicita la cuenta', async () => {
+      const pedidoMock: Pedido = {
+        id: 'ped-test-5',
+        mesaId: mesaMock.id,
+        mesaNumero: 3,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'RECIBIDO',
+        estadoCocina: 'LISTO',
+        estadoBar: 'LISTO',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoMock]);
+
+      await service.actualizarEstadoGlobal('ped-test-5', 'CUENTA_SOLICITADA');
+
+      expect(mockFirestore.actualizarEstadoPedido).toHaveBeenCalledWith(
+        'ped-test-5',
+        'CUENTA_SOLICITADA',
+      );
+      expect(mockNotificaciones.enviarPorRol).toHaveBeenCalledWith(
+        'MOZO',
+        '🌸 Cuenta solicitada · Mesa 3',
+        'La mesa 3 solicitó la cuenta al mozo.',
+        ['/mozo/pedidos'],
+      );
+    });
+  });
 });
+

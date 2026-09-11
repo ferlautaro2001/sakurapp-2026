@@ -4,7 +4,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
-import { Usuario } from '../modelos/modelos';
+import { Mesa, Usuario } from '../modelos/modelos';
 import { PERFILES_ADMIN, Perfil } from '../modelos/enums';
 import { UsuariosService } from './usuarios.service';
 import { NotificacionesService } from './notificaciones.service';
@@ -34,6 +34,17 @@ export class SesionService {
     const u = this.usuario();
     return u?.perfil === 'CLIENTE_REGISTRADO' || u?.perfil === 'CLIENTE_ANONIMO';
   });
+
+  tienePerfil(...perfiles: Perfil[]): boolean {
+    const u = this.usuario();
+    return u !== null && perfiles.includes(u.perfil);
+  }
+
+  mesa(): Mesa | undefined {
+    const id = this.mesaActivaId();
+    if (!id) return undefined;
+    return this.almacen.mesas().find((m) => m.id === id);
+  }
 
 
   /** Ingreso estricto con correo electrónico y contraseña validados contra Firebase Authentication. */
@@ -169,14 +180,14 @@ export class SesionService {
     switch (p) {
       case 'DUENO':
       case 'SUPERVISOR':
-        return '/clientes-pendientes';
+        return '/dueno/registros';
       case 'METRE':
         return '/metre/espera';
       case 'MOZO':
         return '/mozo/pedidos';
       case 'COCINERO':
       case 'CANTINERO':
-        return '/carta';
+        return '/sector/pedidos';
       case 'CLIENTE_REGISTRADO':
       case 'CLIENTE_ANONIMO':
         // US-5.1 · lo primero y lo único que puede hacer el comensal es

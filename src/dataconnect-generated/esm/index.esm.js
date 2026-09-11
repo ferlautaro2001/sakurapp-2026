@@ -391,3 +391,28 @@ export function listEncuestas(dcOrOptions, options) {
   return executeQuery(listEncuestasRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 
+export const avanzarSectorPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AvanzarSectorPedido', inputVars);
+}
+avanzarSectorPedidoRef.operationName = 'AvanzarSectorPedido';
+
+export function avanzarSectorPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(avanzarSectorPedidoRef(dcInstance, inputVars));
+}
+
+export const actualizarEstadoPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ActualizarEstadoPedido', inputVars);
+}
+actualizarEstadoPedidoRef.operationName = 'ActualizarEstadoPedido';
+
+export function actualizarEstadoPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(actualizarEstadoPedidoRef(dcInstance, inputVars));
+}
+
+

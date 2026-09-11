@@ -33,6 +33,13 @@ export type EstadoPedido =
 
 export type EstadoSector = 'NO_APLICA' | 'PENDIENTE' | 'EN_PREPARACION' | 'LISTO';
 
+export const ROTULO_ESTADO_SECTOR: Record<EstadoSector, string> = {
+  NO_APLICA: 'No aplica',
+  PENDIENTE: 'Pendiente',
+  EN_PREPARACION: 'En preparación',
+  LISTO: 'Listo',
+};
+
 /** US-7.2 · qué tan a fondo tiene que rehacer la comanda el comensal. */
 export type AlcanceRechazo = 'PARCIAL' | 'TOTAL';
 
@@ -82,6 +89,17 @@ export function sectorDe(tipo: TipoProducto): Sector {
   return tipo === 'BEBIDA' ? 'BAR' : 'COCINA';
 }
 
+export const ROTULO_SECTOR: Record<Sector, string> = {
+  COCINA: 'Cocina',
+  BAR: 'Barra',
+};
+
+export function sectorDelPerfil(perfil: Perfil | undefined): Sector | null {
+  if (perfil === 'COCINERO') return 'COCINA';
+  if (perfil === 'CANTINERO') return 'BAR';
+  return null;
+}
+
 /** Rótulos en español rioplatense, sin abreviaturas. */
 export const ROTULO_PERFIL: Record<Perfil, string> = {
   DUENO: 'Dueño',
@@ -102,6 +120,9 @@ export const ROTULO_ESTADO_USUARIO: Record<EstadoUsuario, string> = {
 
 /** Perfiles con permisos de administración. */
 export const PERFILES_ADMIN: Perfil[] = ['DUENO', 'SUPERVISOR'];
+
+/** Perfiles operativos que un dueño o supervisor puede dar de alta como empleados. */
+export const PERFILES_EMPLEADO: Perfil[] = ['METRE', 'MOZO', 'COCINERO', 'CANTINERO'];
 
 export type TipoMesa = 'ESTANDAR' | 'VIP' | 'MOVILIDAD_REDUCIDA';
 export type EstadoMesa = 'VACIA' | 'OCUPADA' | 'INACTIVA';

@@ -24,7 +24,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   template: `
     <div class="lm-screen lm-screen--login">
       <div class="lm-body login-body">
-        <lm-logo bajada="Bienvenido" [tamano]="48" />
+        <lm-logo bajada="Bienvenido" [tamano]="38" />
         <h2 class="login-bajada">Iniciá sesión para continuar</h2>
 
         @if (error()) {
@@ -53,7 +53,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         <div class="separador-flor">
           <span class="separador-flor__linea"></span>
           <div class="separador-flor__centro">
-            <img src="assets/img/flor-2.png" width="20" height="20" alt="🌸" class="separador-flor__icono" />
+            <img src="assets/img/flor-2.png" width="18" height="18" alt="🌸" class="separador-flor__icono" />
             <span class="separador-flor__texto">Acceso rápido</span>
           </div>
           <span class="separador-flor__linea"></span>
@@ -77,8 +77,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         <div class="registro">
           <span>¿No tenés cuenta?</span>
           <lm-texto-boton enfasis="alto" (presionar)="registrarse()">Registrate</lm-texto-boton>
-          <span class="registro__separador">·</span>
-          <lm-texto-boton (presionar)="comoInvitado()">Ingresar como invitado</lm-texto-boton>
         </div>
       </div>
     </div>
@@ -93,9 +91,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         overflow: hidden;
       }
       .login-body {
-        padding-top: calc(12px + env(safe-area-inset-top));
-        padding-bottom: 8px;
-        gap: 8px;
+        padding-top: calc(8px + env(safe-area-inset-top, 8px));
+        padding-bottom: 4px;
+        gap: 6px;
         overflow-y: auto;
         overflow-x: hidden;
         flex: 1;
@@ -104,40 +102,38 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       }
       .login-bajada {
         margin: 0;
-        font: 700 16px/1.3 var(--font-text);
+        font: 700 15px/1.25 var(--font-text);
         color: var(--text-sobre-fondo);
         text-align: center;
       }
       .campos-grupo {
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: 6px;
         width: 100%;
+      }
+      /* Compactamos la altura de los campos para asegurar que entre todo en viewport móvil */
+      :host ::ng-deep .login-body .lm-field__box {
+        min-height: 44px;
+        padding: 0 14px;
       }
       /* Tipografía más legible para personas con presbicia */
       :host ::ng-deep .lm-field input {
-        font-size: 16.5px !important;
+        font-size: 15.5px !important;
         font-weight: 600 !important;
         letter-spacing: 0.01em !important;
         color: var(--text-title) !important;
       }
       :host ::ng-deep .lm-field__marcador {
-        font-size: 15px !important;
-      }
-      :host ::ng-deep .lm-profile__texto b {
-        font-size: 14.5px !important;
-        font-weight: 700 !important;
-      }
-      :host ::ng-deep .lm-profile__texto small {
-        font-size: 12px !important;
+        font-size: 14px !important;
       }
       /* Separador decorativo con flor Sakura */
       .separador-flor {
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
         width: 100%;
-        margin: 8px 0 2px;
+        margin: 4px 0 1px;
       }
       .separador-flor__linea {
         flex: 1;
@@ -147,8 +143,8 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       .separador-flor__centro {
         display: inline-flex;
         align-items: center;
-        gap: 7px;
-        padding: 4px 12px;
+        gap: 6px;
+        padding: 3px 10px;
         background: rgba(255, 255, 255, 0.85);
         border: 1px solid rgba(235, 54, 107, 0.25);
         border-radius: var(--radius-pill);
@@ -163,14 +159,14 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         to { transform: rotate(360deg); }
       }
       .separador-flor__texto {
-        font: 700 13.5px/1 var(--font-display);
+        font: 700 12px/1 var(--font-display);
         color: var(--action-primary);
         letter-spacing: 0.02em;
         text-transform: uppercase;
       }
       .login-nota {
         margin: 0;
-        font: 500 13px/1.3 var(--font-text);
+        font: 500 12px/1.25 var(--font-text);
         color: var(--text-sobre-fondo-suave);
         text-align: center;
       }
@@ -178,16 +174,37 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         gap: 4px;
         width: 100%;
       }
+      :host ::ng-deep .login-perfiles .lm-profile {
+        min-height: 40px;
+        padding: 3px 8px;
+        gap: 8px;
+      }
+      :host ::ng-deep .login-perfiles .lm-profile__avatar {
+        width: 32px;
+        height: 32px;
+      }
+      :host ::ng-deep .login-perfiles .lm-profile__avatar img {
+        width: 24px;
+        height: 24px;
+      }
+      :host ::ng-deep .login-perfiles .lm-profile__texto b {
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.2;
+      }
+      :host ::ng-deep .login-perfiles .lm-profile__texto small {
+        font-size: 11px !important;
+        line-height: 1.1;
+      }
       .login-enlace-presentacion {
         display: flex;
         justify-content: center;
-        margin-top: 4px;
-        padding-bottom: 4px;
+        margin-top: 2px;
+        padding-bottom: 2px;
       }
       .login-actionbar {
-        padding-top: 6px;
-        padding-bottom: calc(10px + env(safe-area-inset-bottom));
-        gap: 6px;
+        padding: 4px var(--gutter-screen) calc(6px + env(safe-area-inset-bottom, 6px));
+        gap: 4px;
         flex-shrink: 0;
         background: var(--bg-app);
       }
@@ -196,19 +213,15 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         align-items: center;
         justify-content: center;
         gap: 6px;
-        flex-wrap: wrap;
+        white-space: nowrap;
       }
       .registro span {
-        font: 600 14px/1.3 var(--font-text);
+        font: 600 13.5px/1.2 var(--font-text);
         color: var(--text-sobre-fondo-suave);
-      }
-      .registro__separador {
-        opacity: 0.5;
-        margin: 0 2px;
       }
       .registro lm-texto-boton {
         display: inline-block;
-        font-size: 14px;
+        font-size: 13.5px;
       }
     `,
   ],
@@ -289,10 +302,6 @@ export class LoginPage implements OnInit {
 
   protected registrarse(): void {
     void this.router.navigate(['/registro-cliente']);
-  }
-
-  protected comoInvitado(): void {
-    void this.router.navigate(['/registro-invitado']);
   }
 
   protected verPresentacion(): void {

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-export type Sonido = 'inicio' | 'cierre';
+export type Sonido = 'inicio' | 'cierre' | 'error' | 'exito' | 'escaneo' | 'aviso';
 
 /**
  * Sonidos de la aplicación.
@@ -113,7 +113,7 @@ export class SonidoService {
 const GRACIA_PANTALLA_SISTEMA = 900;
 
 /** Archivo de cada sonido. */
-const ARCHIVOS: Record<Sonido, string> = {
+const ARCHIVOS: Partial<Record<Sonido, string>> = {
   inicio: 'inicio.mp3',
   cierre: 'cierre.mp3',
 };

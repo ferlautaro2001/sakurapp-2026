@@ -23,9 +23,11 @@ import {
   EstadoUsuario as DcEstado,
   EstadoPedido as DcEstadoPedido,
   Sector as DcSector,
+  avanzarSectorPedido,
+  actualizarEstadoPedido,
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
-import { MarcaRechazo, sectorDe } from '../modelos/enums';
+import { EstadoPedido, EstadoSector, MarcaRechazo, Sector, sectorDe } from '../modelos/enums';
 import { Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
 import {
   alcanceDe,
@@ -71,14 +73,16 @@ export class PedidosService {
     return this.todos().find((pedido) => pedido.id === id);
   }
 
-  activoDe(cliente: Usuario | null | undefined): Pedido | undefined {
+  activoDe(cliente: Usuario | string | null | undefined): Pedido | undefined {
     if (!cliente) return undefined;
+    const clienteId = typeof cliente === 'string' ? cliente : cliente.id;
+    const clienteUid = typeof cliente === 'string' ? cliente : (cliente.uid || cliente.id);
     return this.todos().find(
       (pedido) =>
-        (pedido.clienteId === cliente.id ||
-          pedido.clienteUid === cliente.uid ||
-          pedido.clienteUid === cliente.id ||
-          (cliente.uid && pedido.clienteId === cliente.uid)) &&
+        (pedido.clienteId === clienteId ||
+          pedido.clienteUid === clienteUid ||
+          pedido.clienteUid === clienteId ||
+          (clienteUid && pedido.clienteId === clienteUid)) &&
         pedido.estadoGlobal !== 'CERRADO',
     );
   }
@@ -225,7 +229,11 @@ export class PedidosService {
   }
 
   /** Deriva los ítems por tipo, confirma y avisa sólo al personal necesario. */
-  async confirmar(pedido: Pedido, confirmador: Usuario): Promise<void> {
+  async confirmar(pedidoOId: Pedido | string, confirmador: Usuario): Promise<void> {
+    const pedido = typeof pedidoOId === 'string' ? this.porId(pedidoOId) : pedidoOId;
+    if (!pedido) {
+      throw new Error('No se encontró el pedido a confirmar.');
+    }
     if (pedido.estadoGlobal !== 'PENDIENTE_CONFIRMACION') {
       throw new Error('Este pedido ya fue procesado.');
     }
@@ -255,7 +263,7 @@ export class PedidosService {
         'COCINERO',
         'Nueva comanda de Cocina',
         mensaje,
-        ['/carta'],
+        ['/sector/pedidos'],
       );
     }
     if (hayBar) {
@@ -263,7 +271,7 @@ export class PedidosService {
         'CANTINERO',
         'Nueva comanda de Bar',
         mensaje,
-        ['/carta'],
+        ['/sector/pedidos'],
       );
     }
 
@@ -306,13 +314,13 @@ export class PedidosService {
       [pedido.clienteUid || pedido.clienteId],
       'Tu pedido necesita cambios',
       motivoLimpio,
-      ['/cliente/estado-pedido', pedido.id],
+      ['/cliente/pedido', pedido.id],
     );
     await this.firestore.encolarNotificacion({
       destinatarioUid: pedido.clienteUid || pedido.clienteId,
       titulo: '🌸 Tu pedido necesita cambios',
       cuerpo: motivoLimpio,
-      ruta: '/cliente/estado-pedido',
+      ruta: '/cliente/pedido',
     });
 
     void Haptics.notification({ type: NotificationType.Warning }).catch(() => undefined);
@@ -376,7 +384,7 @@ export class PedidosService {
   }
 
   /** Resuelve el único intento del cliente: puede obtener 0, 10, 15 o 20 %. */
-  async jugar(pedido: Pedido, cliente: Usuario): Promise<number> {
+  async jugar(pedido: Pedido, cliente: Usuario, descuentoEspecifico?: number): Promise<number> {
     if (!this.juegosHabilitados(pedido)) {
       throw new Error('El juego no está habilitado para este pedido.');
     }
@@ -384,10 +392,15 @@ export class PedidosService {
       throw new Error('Ya usaste el único intento de este pedido.');
     }
 
-    const premios = [0, 10, 15, 20] as const;
-    const numero = new Uint32Array(1);
-    crypto.getRandomValues(numero);
-    const descuento = premios[numero[0] % premios.length];
+    let descuento: number;
+    if (typeof descuentoEspecifico === 'number') {
+      descuento = descuentoEspecifico;
+    } else {
+      const premios = [0, 10, 15, 20] as const;
+      const numero = new Uint32Array(1);
+      crypto.getRandomValues(numero);
+      descuento = premios[numero[0] % premios.length];
+    }
     const resultado = await this.firestore.registrarIntentoJuego(pedido.id, cliente.id, descuento);
     if (!resultado.aplicado) throw new Error('Ya usaste el único intento de este pedido.');
     if (!esUuid(cliente.id)) {
@@ -423,6 +436,158 @@ export class PedidosService {
       pedido.estadoGlobal,
     );
   }
+
+  /**
+   * Avanza el estado de un sector (Cocina o Barra) para un pedido.
+   */
+  async avanzarSector(pedidoId: string, sector: Sector, nuevoEstado: EstadoSector): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+
+    if (pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION' || pedido.estadoGlobal === 'RECHAZADO') {
+      throw new Error('El pedido aún no fue confirmado por el mozo.');
+    }
+
+    const estadoActual = sector === 'COCINA' ? pedido.estadoCocina : pedido.estadoBar;
+    if (estadoActual === 'NO_APLICA') {
+      throw new Error(`El sector ${sector} no aplica para este pedido.`);
+    }
+    if (estadoActual === nuevoEstado) return;
+
+    const jerarquia: Record<EstadoSector, number> = {
+      NO_APLICA: 0,
+      PENDIENTE: 1,
+      EN_PREPARACION: 2,
+      LISTO: 3,
+    };
+    if (jerarquia[nuevoEstado] < jerarquia[estadoActual]) {
+      throw new Error(`Transición inválida de ${estadoActual} a ${nuevoEstado} para el sector ${sector}.`);
+    }
+
+    const estadoCocina = sector === 'COCINA' ? nuevoEstado : pedido.estadoCocina;
+    const estadoBar = sector === 'BAR' ? nuevoEstado : pedido.estadoBar;
+
+    const estadosAplicables: EstadoSector[] = [];
+    if (estadoCocina !== 'NO_APLICA') estadosAplicables.push(estadoCocina);
+    if (estadoBar !== 'NO_APLICA') estadosAplicables.push(estadoBar);
+
+    let nuevoEstadoGlobal = pedido.estadoGlobal;
+    if (pedido.estadoGlobal === 'CONFIRMADO' || pedido.estadoGlobal === 'EN_PREPARACION') {
+      if (estadosAplicables.length > 0) {
+        if (estadosAplicables.every((e) => e === 'LISTO')) {
+          nuevoEstadoGlobal = 'LISTO';
+        } else if (estadosAplicables.every((e) => e === 'PENDIENTE')) {
+          nuevoEstadoGlobal = 'CONFIRMADO';
+        } else {
+          nuevoEstadoGlobal = 'EN_PREPARACION';
+        }
+      }
+    }
+
+    const actualizado: Pedido = {
+      ...pedido,
+      estadoCocina,
+      estadoBar,
+      estadoGlobal: nuevoEstadoGlobal,
+    };
+
+    await this.firestore.actualizarSectorPedido(
+      pedidoId,
+      estadoCocina,
+      estadoBar,
+      nuevoEstadoGlobal,
+    );
+
+    if (esUuid(pedidoId)) {
+      try {
+        await avanzarSectorPedido(this.dataConnect(), {
+          id: pedidoId,
+          estadoGlobal: nuevoEstadoGlobal as unknown as DcEstadoPedido,
+          estadoCocina: estadoCocina as unknown as DcEstadoSector,
+          estadoBar: estadoBar as unknown as DcEstadoSector,
+        });
+      } catch (sqlErr) {
+        console.warn('⚠️ No se pudo persistir el avance de sector en Data Connect:', sqlErr);
+      }
+    }
+
+    this.pedidosSql.update((actuales) => [
+      actualizado,
+      ...actuales.filter((p) => p.id !== pedidoId),
+    ]);
+    this.pedidosFirestore.update((actuales) => [
+      actualizado,
+      ...actuales.filter((p) => p.id !== pedidoId),
+    ]);
+
+    const nombreSector = sector === 'COCINA' ? 'Cocina' : 'Barra';
+    const descSector = nuevoEstado === 'EN_PREPARACION' ? 'está en preparación' : 'está listo';
+
+    await this.notificaciones.enviar(
+      [pedido.clienteUid || pedido.clienteId],
+      `🌸 ${nombreSector} · Pedido`,
+      `Lo de ${nombreSector.toLowerCase()} ${descSector}.`,
+      ['/cliente/pedido'],
+    );
+
+    if (nuevoEstadoGlobal === 'LISTO') {
+      await this.notificaciones.enviarPorRol(
+        'MOZO',
+        `🌸 ¡Pedido listo! Mesa ${pedido.mesaNumero}`,
+        `Todos los sectores finalizaron la comanda de la Mesa ${pedido.mesaNumero}.`,
+        ['/mozo/pedidos'],
+      );
+    }
+
+    void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
+  }
+
+  /**
+   * Actualiza el estado global de un pedido (por ejemplo, RECIBIDO, CUENTA_SOLICITADA, CERRADO).
+   */
+  async actualizarEstadoGlobal(pedidoId: string, nuevoEstado: EstadoPedido): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+
+    const actualizado: Pedido = {
+      ...pedido,
+      estadoGlobal: nuevoEstado,
+    };
+
+    await this.firestore.actualizarEstadoPedido(pedidoId, nuevoEstado);
+
+    if (esUuid(pedidoId)) {
+      try {
+        await actualizarEstadoPedido(this.dataConnect(), {
+          id: pedidoId,
+          estadoGlobal: nuevoEstado as unknown as DcEstadoPedido,
+        });
+      } catch (sqlErr) {
+        console.warn('⚠️ No se pudo actualizar estado global en Data Connect:', sqlErr);
+      }
+    }
+
+    this.pedidosSql.update((actuales) => [
+      actualizado,
+      ...actuales.filter((p) => p.id !== pedidoId),
+    ]);
+    this.pedidosFirestore.update((actuales) => [
+      actualizado,
+      ...actuales.filter((p) => p.id !== pedidoId),
+    ]);
+
+    if (nuevoEstado === 'CUENTA_SOLICITADA') {
+      await this.notificaciones.enviarPorRol(
+        'MOZO',
+        `🌸 Cuenta solicitada · Mesa ${pedido.mesaNumero}`,
+        `La mesa ${pedido.mesaNumero} solicitó la cuenta al mozo.`,
+        ['/mozo/pedidos'],
+      );
+    }
+
+    void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
+  }
+
 
   private destinatarios(perfil: 'COCINERO' | 'CANTINERO'): string[] {
     return this.usuarios

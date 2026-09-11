@@ -96,3 +96,25 @@ export class BarraInferiorComponent {
     void this.router.navigate([item.ruta]);
   }
 }
+
+/** Pestañas de categoría. */
+@Component({
+  selector: 'lm-pestanas',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="lm-tabs">
+      @for (opcion of opciones(); track opcion.valor) {
+        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
+          {{ opcion.rotulo }}
+        </button>
+      }
+    </div>
+  `,
+  styles: [':host{display:block;width:100%;max-width:100%;min-width:0}'],
+})
+export class PestanasComponent {
+  readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
+  readonly valor = input.required<string>();
+  readonly cambiar = output<string>();
+}
+

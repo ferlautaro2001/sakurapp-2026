@@ -43,8 +43,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         </div>
 
         <div class="lm-actionbar">
-          <lm-boton icono="print" (presionar)="compartir()">Compartir o imprimir</lm-boton>
-          <lm-texto-boton (presionar)="volver()">Volver a mesas</lm-texto-boton>
+          <lm-boton variante="secondary" icono="arrow_back" (presionar)="volver()">Volver a mesas</lm-boton>
         </div>
       } @else {
         <div class="lm-body">
@@ -93,29 +92,6 @@ export class MesaQrPage extends PaginaConSesion implements OnInit {
     const m = this.mesa();
     if (!m) return '';
     return m.estado === 'VACIA' ? 'Vacía' : m.estado === 'OCUPADA' ? 'Ocupada' : 'Inactiva';
-  }
-
-  protected async compartir(): Promise<void> {
-    const mesa = this.mesa();
-
-    if (!mesa) {
-      return;
-    }
-
-    const imagen = this.fuenteQr() || mesa.qrCodeUrl;
-
-    const listo = await this.qr.compartir(
-      imagen,
-      `sakurapp-mesa-${mesa.numero}`,
-      `Código QR Mesa ${mesa.numero}`,
-    );
-
-    if (!listo) {
-      this.avisos.error(
-        'No pudimos compartir el código',
-        'Probá de nuevo en unos segundos.',
-      );
-    }
   }
 
   protected volver(): void {

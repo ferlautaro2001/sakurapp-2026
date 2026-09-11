@@ -783,3 +783,46 @@ export const listEncuestasRef: ListEncuestasRef;
 export function listEncuestas(options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
 export function listEncuestas(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
 
+export interface AvanzarSectorPedidoVariables {
+  id: UUIDString;
+  estadoGlobal: EstadoPedido;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+}
+
+export interface AvanzarSectorPedidoData {
+  pedido_update?: {
+    id: UUIDString;
+  } | null;
+}
+
+interface AvanzarSectorPedidoRef {
+  (vars: AvanzarSectorPedidoVariables): MutationRef<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+  (dc: DataConnect, vars: AvanzarSectorPedidoVariables): MutationRef<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+  operationName: string;
+}
+export const avanzarSectorPedidoRef: AvanzarSectorPedidoRef;
+export function avanzarSectorPedido(vars: AvanzarSectorPedidoVariables): MutationPromise<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+export function avanzarSectorPedido(dc: DataConnect, vars: AvanzarSectorPedidoVariables): MutationPromise<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+
+export interface ActualizarEstadoPedidoVariables {
+  id: UUIDString;
+  estadoGlobal: EstadoPedido;
+}
+
+export interface ActualizarEstadoPedidoData {
+  pedido_update?: {
+    id: UUIDString;
+  } | null;
+}
+
+interface ActualizarEstadoPedidoRef {
+  (vars: ActualizarEstadoPedidoVariables): MutationRef<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+  (dc: DataConnect, vars: ActualizarEstadoPedidoVariables): MutationRef<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+  operationName: string;
+}
+export const actualizarEstadoPedidoRef: ActualizarEstadoPedidoRef;
+export function actualizarEstadoPedido(vars: ActualizarEstadoPedidoVariables): MutationPromise<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+export function actualizarEstadoPedido(dc: DataConnect, vars: ActualizarEstadoPedidoVariables): MutationPromise<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+
+

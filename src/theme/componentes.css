@@ -32,6 +32,20 @@ input, textarea, select { font-family: inherit; }
   user-select: none;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role="button"],
+label,
+.sk-flor {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
 .lm-label {
   display: block;
   font: var(--type-label);
@@ -74,6 +88,36 @@ input, textarea, select { font-family: inherit; }
   opacity: .08;
   transform: rotate(14deg);
 }
+/*
+ * Pantalla florida: la sala de consultas.
+ */
+.lm-screen--florida::before {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  transform: none;
+  opacity: .16;
+  background-repeat: no-repeat;
+  background-image:
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png");
+  background-size: 52px, 150px, 70px, 84px, 108px, 116px, 62px, 68px, 126px, 128px;
+  background-position:
+    5% 1%, -6% 12%, 46% 10%, 84% 21%, 28% 33%, 10% 53%,
+    90% 46%, 64% 66%, 22% 79%, 94% 89%;
+}
+
 .lm-screen--oscura { background: var(--surface-inverse); }
 .lm-screen--limpia::before, .lm-screen--limpia::after { display: none; }
 
@@ -183,6 +227,7 @@ body.camara-encendida .lm-header {
   transition: background var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 .lm-btn--auto { width: auto; }
+.lm-btn--compacto { height: var(--touch-min); }
 .lm-btn:disabled { opacity: .46; cursor: default; }
 .lm-btn:not(:disabled):active { transform: scale(.985); }
 
@@ -463,6 +508,58 @@ body.camara-encendida .lm-header {
   color: var(--text-body);
 }
 
+/* Reglas de contraste y legibilidad dentro de tarjetas, modales y tickets */
+.lm-card .lm-label,
+.lm-card label,
+.lm-modal .lm-label,
+.lm-modal label,
+.ticket .lm-label,
+.lm-ticket .lm-label {
+  color: var(--text-muted) !important;
+}
+
+.lm-card .lm-nota,
+.lm-card .lm-parrafo,
+.lm-card small,
+.lm-modal .lm-nota,
+.lm-modal .lm-parrafo,
+.lm-modal small {
+  color: var(--text-muted);
+}
+
+.lm-card b,
+.lm-card strong,
+.lm-card h1,
+.lm-card h2,
+.lm-card h3,
+.lm-card h4,
+.lm-modal b,
+.lm-modal strong,
+.lm-modal h1,
+.lm-modal h2,
+.lm-modal h3,
+.lm-modal h4 {
+  color: var(--text-title);
+}
+
+.lm-card .lm-field .lm-label,
+.lm-modal .lm-field .lm-label {
+  color: var(--text-title) !important;
+}
+
+.lm-card .lm-field__hint,
+.lm-modal .lm-field__hint {
+  color: var(--text-muted);
+}
+
+.lm-card .lm-rule .lm-label {
+  color: var(--text-muted);
+}
+
+.lm-card .lm-rule__linea {
+  background: linear-gradient(90deg, transparent, var(--border-card), transparent);
+}
+
 .lm-stat {
   padding: 14px; border-radius: var(--radius-card);
   background: var(--surface-card); border: none;
@@ -510,64 +607,7 @@ body.camara-encendida .lm-header {
 .lm-mesa__rotulo { font: var(--type-card-title); color: var(--text-title); }
 .lm-mesa__meta { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font: var(--type-caption); }
 .lm-mesa__pie { display: flex; align-items: center; justify-content: flex-start; gap: 8px; margin-top: auto; }
-.lm-mesa__acciones {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 8px;
-}
-.lm-mesa__btn-accion {
-  flex: 1 1 0;
-  min-width: 0;
-  height: 44px;
-  padding: 0 8px;
-  border-radius: 12px;
-  background: var(--surface-sunken);
-  border: 1.5px solid rgba(110, 18, 52, 0.08);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: transform 120ms ease, background 120ms ease, box-shadow 120ms ease;
-}
-.lm-mesa__btn-accion:active {
-  transform: scale(0.95);
-}
-.lm-mesa__btn-accion--chat {
-  background: rgba(27, 122, 76, 0.08);
-  border-color: rgba(27, 122, 76, 0.22);
-}
-.lm-mesa__btn-accion--chat:hover {
-  background: rgba(27, 122, 76, 0.14);
-}
-.lm-mesa__btn-accion--chat:active {
-  background: rgba(27, 122, 76, 0.20);
-}
-.lm-mesa__btn-accion--qr {
-  background: rgba(235, 54, 107, 0.06);
-  border-color: rgba(235, 54, 107, 0.2);
-}
-.lm-mesa__btn-accion--qr:hover {
-  background: rgba(235, 54, 107, 0.12);
-}
-.lm-mesa__btn-accion--qr:active {
-  background: rgba(235, 54, 107, 0.18);
-}
-.lm-mesa__btn-texto {
-  font: 700 12px/1 var(--font-text);
-  color: var(--text-title);
-  letter-spacing: 0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.lm-mesa__qr {
-  display: grid; place-items: center; width: 42px; height: 42px; flex: 0 0 auto;
-  border-radius: 12px; background: var(--surface-sunken); border: none; cursor: pointer;
-}
+
 
 .lm-pending {
   display: flex; flex-direction: column; gap: 12px; padding: 14px;
@@ -726,11 +766,42 @@ body.camara-encendida .lm-header {
 .lm-bottomnav__rotulo { font: 600 11px/1.25 var(--font-text); text-align: center; text-wrap: balance; }
 .lm-bottomnav button.on .lm-bottomnav__rotulo { font-weight: 800; }
 
-.lm-tabs { display: flex; gap: 4px; min-width: 0; padding: 4px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); }
-.lm-tabs button {
-  flex: 1; min-height: 44px; border: none; background: transparent; cursor: pointer;
+.lm-tabs {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 3px;
   border-radius: var(--radius-pill);
-  color: var(--text-sobre-fondo); font: 600 15px/1.2 var(--font-text); padding: 0 6px;
+  background: rgba(255, 255, 255, .14);
+  border: 1px solid rgba(255, 255, 255, .3);
+  box-sizing: border-box;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lm-tabs::-webkit-scrollbar {
+  display: none;
+}
+.lm-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  color: var(--text-sobre-fondo);
+  font: 600 clamp(11.5px, 3.2vw, 14px)/1.2 var(--font-text);
+  padding: 0 3px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  letter-spacing: -0.01em;
+  transition: background var(--dur-fast), color var(--dur-fast);
 }
 .lm-tabs button.on { color: var(--action-primary); font-weight: 800; background: var(--surface-card); }
 
@@ -928,6 +999,22 @@ body.camara-encendida .lm-header {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;
 }
 .lm-modal__acciones .lm-btn { height: 50px; padding: 0 10px; }
+
+/* Fila de productos marcados: uno por renglón, alineados a la derecha como el
+   resto de los valores de la ficha, con el mismo sello de color que lleva su
+   tarjeta. El color hace la mitad del trabajo. */
+.lm-modal__marcas { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.lm-modal__marca {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: var(--type-body-small); color: var(--text-title); text-align: left;
+}
+.lm-modal__sello {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; color: #FFFFFF;
+}
+.lm-modal__sello--pendiente { background: var(--state-pending); }
+.lm-modal__sello--peligro { background: var(--state-error); }
+.lm-modal__sello--exito { background: var(--state-success); }
 
 /* Un producto sin stock sigue en la carta, pero se nota de un vistazo. */
 .lm-product__thumb--apagado { filter: grayscale(.75); opacity: .7; }

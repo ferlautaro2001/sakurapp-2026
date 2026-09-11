@@ -93,15 +93,6 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
           (cambiar)="disponible.set($event)"
         />
 
-        @if (mesa()) {
-          <lm-separador rotulo="Atención y códigos" />
-          <lm-boton variante="secondary" icono="forum" (presionar)="ir(['/mesas', mesa()!.id, 'chat'])">
-            Abrir chat de la mesa
-          </lm-boton>
-          <lm-boton variante="secondary" icono="qr_code_2" (presionar)="ir(['/mesas', mesa()!.id, 'qr'])">
-            Ver el código QR de la mesa
-          </lm-boton>
-        }
       </div>
 
       <div class="lm-actionbar">

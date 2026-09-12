@@ -8,7 +8,7 @@ import {
   output,
 } from '@angular/core';
 import { IconoComponent, BotonComponent, ChipComponent } from './basicos';
-import { HoraPipe, PesosPipe } from './pesos.pipe';
+import { FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 import { Pedido, PedidoItem } from '../nucleo/modelos/modelos';
 import { MarcaRechazo, ROTULO_ESTADO_PEDIDO, ROTULO_MARCA_RECHAZO } from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
@@ -468,12 +468,14 @@ export class FilaPedidoComponent {
 @Component({
   selector: 'lm-burbuja',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [HoraPipe],
+  imports: [FechaHoraPipe],
   template: `
     <div class="burbuja" [class.burbuja--propia]="propia()">
       <span class="burbuja__autor">{{ autor() }}</span>
       <p class="burbuja__texto">{{ texto() }}</p>
-      <span class="burbuja__hora">{{ hora() | hora }}</span>
+      <!-- Con la fecha y no sólo la hora: una consulta de ayer y una de hoy
+           a las tres de la tarde se leían iguales. -->
+      <span class="burbuja__hora">{{ hora() | fechaHora }}</span>
     </div>
   `,
   styles: [

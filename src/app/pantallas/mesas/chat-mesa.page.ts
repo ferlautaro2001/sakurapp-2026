@@ -97,7 +97,9 @@ import { PaginaConSesion } from '../pagina-base';
 
               <!-- Hora y Estado de Entrega -->
               <footer class="burbuja__pie">
-                <time class="burbuja__hora">{{ m.timestamp | date: 'HH:mm' }}</time>
+                <!-- Con la fecha: dos mensajes de días distintos a la misma
+                     hora se leían iguales. -->
+                <time class="burbuja__hora">{{ m.timestamp | date: 'dd/MM/yyyy HH:mm' }}</time>
                 @if (esPropio(m)) {
                   <lm-icono nombre="done_all" [tamano]="15" color="var(--sk-verde)" />
                 }

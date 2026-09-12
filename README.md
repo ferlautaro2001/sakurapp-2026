@@ -81,18 +81,18 @@ A continuación se indexan las capturas de pantalla de los flujos y componentes 
 
 Códigos QR funcionales requeridos por la cátedra para pruebas y corrección desde la aplicación:
 
-| Tipo de QR | Propósito / Acción | Código QR |
+| Tipo de QR | Propósito / Contenido | Código QR |
 | :--- | :--- | :---: |
-| **Ingreso al Local** | Registro en lista de espera y visualización de encuestas. | *A completar próximo sprint* |
-| **Mesa 1 (Estándar)** | Asignación y pedidos de mesa estándar. | *A completar próximo sprint* |
-| **Mesa 2 (VIP)** | Asignación y pedidos de mesa VIP. | *A completar próximo sprint* |
-| **Mesa 3 (Mov. Reducida)** | Asignación y pedidos de mesa con movilidad reducida. | *A completar próximo sprint* |
-| **Propina Excelente (20%)** | Registrar 20% de propina. | *A completar próximo sprint* |
-| **Propina Muy Bueno (15%)** | Registrar 15% de propina. | *A completar próximo sprint* |
-| **Propina Bueno (10%)** | Registrar 10% de propina. | *A completar próximo sprint* |
-| **Propina Regular (5%)** | Registrar 5% de propina. | *A completar próximo sprint* |
-| **Propina Malo (0%)** | Registrar 0% de propina. | *A completar próximo sprint* |
-| **Lector DNI (Prueba)** | Lector de código de barras DNI argentino para registro. | *A completar próximo sprint* |
+| **Ingreso al Local** | Registro en lista de espera y visualización de encuestas.<br>`SAKURAPP:INGRESO` | <img src="visuals/qr-ingreso-salon.png" width="140" alt="QR Ingreso al Local"/> |
+| **Mesa 1 (Estándar)** | Asignación y pedidos de mesa estándar.<br>`SAKURAPP:MESA:1:5789beaababa4871915f0a6daaab091f` | <img src="visuals/qr-mesa-1.png" width="140" alt="QR Mesa 1"/> |
+| **Mesa 2 (VIP)** | Asignación y pedidos de mesa VIP.<br>`SAKURAPP:MESA:2:3c5e4358468348998b390045fcbd31d7` | <img src="visuals/qr-mesa-2.png" width="140" alt="QR Mesa 2"/> |
+| **Mesa 3 (Mov. Reducida)** | Asignación y pedidos de mesa con movilidad reducida.<br>`SAKURAPP:MESA:3:b65214c7b54f4fd189e46a60d0bee9d5` | <img src="visuals/qr-mesa-3.png" width="140" alt="QR Mesa 3"/> |
+| **Propina Excelente (20%)** | Registrar 20% de propina.<br>`SAKURAPP:PROPINA:20` | <img src="visuals/qr-propina-20.png" width="140" alt="QR Propina 20%"/> |
+| **Propina Muy Bueno (15%)** | Registrar 15% de propina.<br>`SAKURAPP:PROPINA:15` | <img src="visuals/qr-propina-15.png" width="140" alt="QR Propina 15%"/> |
+| **Propina Bueno (10%)** | Registrar 10% de propina.<br>`SAKURAPP:PROPINA:10` | <img src="visuals/qr-propina-10.png" width="140" alt="QR Propina 10%"/> |
+| **Propina Regular (5%)** | Registrar 5% de propina.<br>`SAKURAPP:PROPINA:5` | <img src="visuals/qr-propina-5.png" width="140" alt="QR Propina 5%"/> |
+| **Propina Malo (0%)** | Registrar 0% de propina.<br>`SAKURAPP:PROPINA:0` | <img src="visuals/qr-propina-0.png" width="140" alt="QR Propina 0%"/> |
+| **Lector DNI (Prueba)** | Lector de código de barras DNI argentino (PDF417) para registro. | *A completar próximo sprint* |
 
 ---
 

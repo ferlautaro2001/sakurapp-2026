@@ -83,15 +83,24 @@ Códigos QR funcionales requeridos por la cátedra para pruebas y corrección de
 
 | Tipo de QR | Propósito / Contenido | Código QR |
 | :--- | :--- | :---: |
-| **Ingreso al Local** | Registro en lista de espera y visualización de encuestas.<br>`SAKURAPP:INGRESO` | <img src="visuals/qr-ingreso-salon.png" width="140" alt="QR Ingreso al Local"/> |
-| **Mesa 1 (Estándar)** | Asignación y pedidos de mesa estándar.<br>`SAKURAPP:MESA:1:5789beaababa4871915f0a6daaab091f` | <img src="visuals/qr-mesa-1.png" width="140" alt="QR Mesa 1"/> |
-| **Mesa 2 (VIP)** | Asignación y pedidos de mesa VIP.<br>`SAKURAPP:MESA:2:3c5e4358468348998b390045fcbd31d7` | <img src="visuals/qr-mesa-2.png" width="140" alt="QR Mesa 2"/> |
-| **Mesa 3 (Mov. Reducida)** | Asignación y pedidos de mesa con movilidad reducida.<br>`SAKURAPP:MESA:3:b65214c7b54f4fd189e46a60d0bee9d5` | <img src="visuals/qr-mesa-3.png" width="140" alt="QR Mesa 3"/> |
-| **Propina Excelente (20%)** | Registrar 20% de propina.<br>`SAKURAPP:PROPINA:20` | <img src="visuals/qr-propina-20.png" width="140" alt="QR Propina 20%"/> |
-| **Propina Muy Bueno (15%)** | Registrar 15% de propina.<br>`SAKURAPP:PROPINA:15` | <img src="visuals/qr-propina-15.png" width="140" alt="QR Propina 15%"/> |
-| **Propina Bueno (10%)** | Registrar 10% de propina.<br>`SAKURAPP:PROPINA:10` | <img src="visuals/qr-propina-10.png" width="140" alt="QR Propina 10%"/> |
-| **Propina Regular (5%)** | Registrar 5% de propina.<br>`SAKURAPP:PROPINA:5` | <img src="visuals/qr-propina-5.png" width="140" alt="QR Propina 5%"/> |
-| **Propina Malo (0%)** | Registrar 0% de propina.<br>`SAKURAPP:PROPINA:0` | <img src="visuals/qr-propina-0.png" width="140" alt="QR Propina 0%"/> |
+| **Ingreso al Local** | Registro en lista de espera y encuestas.<br>`SAKURAPP:INGRESO` | <img src="visuals/qr-ingreso-salon.png" width="130" alt="QR Ingreso al Local"/> |
+| **Mesa 1 (Estándar)** | Capacidad: 2 personas.<br>`SAKURAPP:MESA:1:5789beaababa4871915f0a6daaab091f` | <img src="visuals/qr-mesa-1.png" width="130" alt="QR Mesa 1"/> |
+| **Mesa 2 (Estándar)** | Capacidad: 4 personas.<br>`SAKURAPP:MESA:2:3c5e4358468348998b390045fcbd31d7` | <img src="visuals/qr-mesa-2.png" width="130" alt="QR Mesa 2"/> |
+| **Mesa 3 (Mov. Reducida)** | Capacidad: 4 personas.<br>`SAKURAPP:MESA:3:b65214c7b54f4fd189e46a60d0bee9d5` | <img src="visuals/qr-mesa-3.png" width="130" alt="QR Mesa 3"/> |
+| **Mesa 4 (VIP)** | Capacidad: 6 personas.<br>`SAKURAPP:MESA:4:94a7066ea3494bdcbedd1c2459845a15` | <img src="visuals/qr-mesa-4.png" width="130" alt="QR Mesa 4"/> |
+| **Mesa 5 (VIP)** | Capacidad: 8 personas.<br>`SAKURAPP:MESA:5:2f7aaec4773e44eea0a4a520aff439d9` | <img src="visuals/qr-mesa-5.png" width="130" alt="QR Mesa 5"/> |
+| **Mesa 6 (Estándar)** | Capacidad: 2 personas.<br>`SAKURAPP:MESA:6:26ebe315479c4e7ca161ad71cf6ebfb3` | <img src="visuals/qr-mesa-6.png" width="130" alt="QR Mesa 6"/> |
+| **Mesa 7 (Estándar)** | Capacidad: 2 personas.<br>`SAKURAPP:MESA:7:7a9ea8a4452543fab7bb4f99c6229588` | <img src="visuals/qr-mesa-7.png" width="130" alt="QR Mesa 7"/> |
+| **Mesa 8 (Estándar)** | Capacidad: 10 personas.<br>`SAKURAPP:MESA:8:7920ad78064f40c188a1ebc2942edc37` | <img src="visuals/qr-mesa-8.png" width="130" alt="QR Mesa 8"/> |
+| **Mesa 9 (Estándar)** | Capacidad: 2 personas.<br>`SAKURAPP:MESA:9:548920e39c014878947a83ef04518674` | <img src="visuals/qr-mesa-9.png" width="130" alt="QR Mesa 9"/> |
+| **Mesa 10 (Estándar)** | Capacidad: 4 personas.<br>`SAKURAPP:MESA:10:9374985bbe1b417cbe23641cbee50021` | <img src="visuals/qr-mesa-10.png" width="130" alt="QR Mesa 10"/> |
+| **Mesa 11 (VIP)** | Capacidad: 10 personas.<br>`SAKURAPP:MESA:11:c7929488007148a691185152881a3311` | <img src="visuals/qr-mesa-11.png" width="130" alt="QR Mesa 11"/> |
+| **Mesa 12 (VIP)** | Capacidad: 5 personas.<br>`SAKURAPP:MESA:12:de59b91d24cb4fdb86971a320f1d2223` | <img src="visuals/qr-mesa-12.png" width="130" alt="QR Mesa 12"/> |
+| **Propina Excelente (20%)** | Registrar 20% de propina.<br>`SAKURAPP:PROPINA:20` | <img src="visuals/qr-propina-20.png" width="130" alt="QR Propina 20%"/> |
+| **Propina Muy Bueno (15%)** | Registrar 15% de propina.<br>`SAKURAPP:PROPINA:15` | <img src="visuals/qr-propina-15.png" width="130" alt="QR Propina 15%"/> |
+| **Propina Bueno (10%)** | Registrar 10% de propina.<br>`SAKURAPP:PROPINA:10` | <img src="visuals/qr-propina-10.png" width="130" alt="QR Propina 10%"/> |
+| **Propina Regular (5%)** | Registrar 5% de propina.<br>`SAKURAPP:PROPINA:5` | <img src="visuals/qr-propina-5.png" width="130" alt="QR Propina 5%"/> |
+| **Propina Malo (0%)** | Registrar 0% de propina.<br>`SAKURAPP:PROPINA:0` | <img src="visuals/qr-propina-0.png" width="130" alt="QR Propina 0%"/> |
 | **Lector DNI (Prueba)** | Lector de código de barras DNI argentino (PDF417) para registro. | *A completar próximo sprint* |
 
 ---

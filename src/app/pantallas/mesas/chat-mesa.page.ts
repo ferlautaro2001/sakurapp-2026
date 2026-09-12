@@ -545,12 +545,12 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
       return true;
     }
 
-    // 2. Coincidencia por rol: cada rol ve en verde su propio mensaje, igual que en WhatsApp
-    const esPersonal = actual.perfil === 'MOZO' || actual.perfil === 'SUPERVISOR' || actual.perfil === 'DUENO';
-    if (esPersonal && mensaje.remitenteRol === 'MOZO') {
-      return true;
-    }
-
+    // 2. Del lado del salón NO se mira el rol: la sala la ven todos los mozos,
+    //    así que dar por propio cualquier mensaje con rol MOZO pintaba como
+    //    tuyo el de un compañero. Ahí manda el identificador y nada más.
+    //
+    //    Del lado del comensal sí alcanza el rol: en la mesa hay uno solo, y
+    //    su identificador viaja en dos formas según por dónde haya escrito.
     const esCliente = actual.perfil === 'CLIENTE_REGISTRADO' || actual.perfil === 'CLIENTE_ANONIMO';
     if (esCliente && mensaje.remitenteRol === 'CLIENTE') {
       return true;

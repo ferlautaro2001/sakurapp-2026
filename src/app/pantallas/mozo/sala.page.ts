@@ -23,10 +23,10 @@ import { Unsubscribe } from 'firebase/firestore';
           @if (mensajes().length) {
             @for (mensaje of mensajes(); track mensaje.id) {
               <lm-burbuja
-                [autor]="mensaje.remitenteRol === 'MOZO' ? (mensaje.remitenteNombre + ' · vos') : mensaje.remitenteNombre"
+                [autor]="autorDe(mensaje)"
                 [texto]="mensaje.texto"
                 [hora]="mensaje.timestamp"
-                [propia]="mensaje.remitenteRol === 'MOZO'"
+                [propia]="esMio(mensaje)"
               />
             }
           } @else {
@@ -134,6 +134,25 @@ export class MozoSalaPage extends PaginaConSesion {
 
   protected numeroMesa(): number | string {
     return this.mesa()?.numero ?? '—';
+  }
+
+  /**
+   * Si el mensaje lo escribió quien tiene la sesión abierta.
+   *
+   * Se compara contra su identificador y no contra el rol: la sala la ven
+   * todos los mozos, así que mirar el rol marcaba como propio el mensaje de
+   * cualquier compañero. El mensaje guarda a veces el id y a veces el uid del
+   * remitente, según por dónde se haya mandado, por eso se prueban los dos.
+   */
+  protected esMio(mensaje: MensajeChat): boolean {
+    const actual = this.usuario();
+    if (!actual) return false;
+    return mensaje.remitenteId === actual.id || mensaje.remitenteId === actual.uid;
+  }
+
+  /** "vos" sólo al lado del que está usando el teléfono; el resto, por su nombre. */
+  protected autorDe(mensaje: MensajeChat): string {
+    return this.esMio(mensaje) ? `${mensaje.remitenteNombre} · vos` : mensaje.remitenteNombre;
   }
 
   protected async enviar(): Promise<void> {

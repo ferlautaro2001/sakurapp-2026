@@ -24,7 +24,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   template: `
     <div class="lm-screen lm-screen--login">
       <div class="lm-body login-body">
-        <lm-logo bajada="Bienvenido" [tamano]="38" />
+        <lm-logo bajada="Bienvenido" [tamano]="30" />
         <h2 class="login-bajada">Iniciá sesión para continuar</h2>
 
         @if (error()) {
@@ -74,9 +74,11 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
 
       <div class="lm-actionbar login-actionbar">
         <lm-boton icono="login" (presionar)="ingresar()">Iniciar sesión</lm-boton>
+        <p class="registro__pregunta">¿No tenés cuenta?</p>
         <div class="registro">
-          <span>¿No tenés cuenta?</span>
           <lm-texto-boton enfasis="alto" (presionar)="registrarse()">Registrate</lm-texto-boton>
+          <span class="registro__separador">·</span>
+          <lm-texto-boton (presionar)="comoInvitado()">Ingresar como invitado</lm-texto-boton>
         </div>
       </div>
     </div>
@@ -91,14 +93,18 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         overflow: hidden;
       }
       .login-body {
-        padding-top: calc(8px + env(safe-area-inset-top, 8px));
-        padding-bottom: 4px;
-        gap: 6px;
+        padding-top: calc(6px + env(safe-area-inset-top, 6px));
+        padding-bottom: 0;
+        gap: 4px;
         overflow-y: auto;
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
         -webkit-overflow-scrolling: touch;
+        /* El formulario ocupa menos que la pantalla en un teléfono alto y todo
+           lo que sobra caía junto abajo, contra la barra. Centrado, ese aire se
+           reparte arriba y abajo. */
+        justify-content: safe center;
       }
       .login-bajada {
         margin: 0;
@@ -109,7 +115,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       .campos-grupo {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
         width: 100%;
       }
       /* Compactamos la altura de los campos para asegurar que entre todo en viewport móvil */
@@ -133,7 +139,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         align-items: center;
         gap: 8px;
         width: 100%;
-        margin: 4px 0 1px;
+        margin: 0;
       }
       .separador-flor__linea {
         flex: 1;
@@ -171,7 +177,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         text-align: center;
       }
       .login-perfiles {
-        gap: 4px;
+        gap: 3px;
         width: 100%;
       }
       :host ::ng-deep .login-perfiles .lm-profile {
@@ -199,11 +205,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       .login-enlace-presentacion {
         display: flex;
         justify-content: center;
-        margin-top: 2px;
-        padding-bottom: 2px;
       }
       .login-actionbar {
-        padding: 4px var(--gutter-screen) calc(6px + env(safe-area-inset-bottom, 6px));
+        padding: 2px var(--gutter-screen) calc(6px + env(safe-area-inset-bottom, 6px));
         gap: 4px;
         flex-shrink: 0;
         background: var(--bg-app);
@@ -213,7 +217,18 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         align-items: center;
         justify-content: center;
         gap: 6px;
+        flex-wrap: wrap;
         white-space: nowrap;
+      }
+      .registro__separador {
+        margin: 0 2px;
+        opacity: 0.5;
+      }
+      .registro__pregunta {
+        margin: 0;
+        font: 600 13px/1.2 var(--font-text);
+        color: var(--text-sobre-fondo-suave);
+        text-align: center;
       }
       .registro span {
         font: 600 13.5px/1.2 var(--font-text);
@@ -308,6 +323,11 @@ export class LoginPage implements OnInit {
 
   protected registrarse(): void {
     void this.router.navigate(['/registro-cliente']);
+  }
+
+  /** Entrar sin cuenta: sólo nombre y foto, como pide la consigna. */
+  protected comoInvitado(): void {
+    void this.router.navigate(['/registro-invitado']);
   }
 
   protected verPresentacion(): void {

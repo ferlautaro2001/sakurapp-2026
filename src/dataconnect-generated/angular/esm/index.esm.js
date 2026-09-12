@@ -1,4 +1,4 @@
-import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, asignarMesaClienteRef, rechazarPedidoRef, reenviarPedidoRef, borrarItemsPedidoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
+import { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, asignarMesaClienteRef, rechazarPedidoRef, reenviarPedidoRef, borrarItemsPedidoRef, avanzarSectorPedidoRef, actualizarEstadoPedidoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } from '../../';
 import { DataConnect, CallerSdkTypeEnum } from '@angular/fire/data-connect';
 import { injectDataConnectQuery, injectDataConnectMutation } from '@tanstack-query-firebase/angular/data-connect';
 import { inject, EnvironmentInjector } from '@angular/core';
@@ -76,6 +76,14 @@ export function injectReenviarPedido(args, injector) {
 
 export function injectBorrarItemsPedido(args, injector) {
   return injectDataConnectMutation(borrarItemsPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectAvanzarSectorPedido(args, injector) {
+  return injectDataConnectMutation(avanzarSectorPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+export function injectActualizarEstadoPedido(args, injector) {
+  return injectDataConnectMutation(actualizarEstadoPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 export function injectListProductos(options, injector) {

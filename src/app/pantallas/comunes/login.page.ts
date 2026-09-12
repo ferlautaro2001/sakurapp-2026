@@ -294,6 +294,12 @@ export class LoginPage implements OnInit {
         this.error.set('Esta cuenta se encuentra inactiva.');
         this.avisos.error('Cuenta inactiva', 'Hablá con un encargado del salón.');
         break;
+      // El problema no es de quien está intentando entrar: decirle que sus
+      // datos están mal lo manda a revisar una contraseña que está bien.
+      case 'SERVICIO':
+        this.error.set('No pudimos verificar tu contraseña: el servicio de cuentas no está respondiendo.');
+        this.avisos.error('No pudimos verificar tu contraseña', 'Probá de nuevo en un rato o entrá como invitado.');
+        break;
       default:
         this.error.set('El correo electrónico o la contraseña no son correctos.');
         this.avisos.error('Datos incorrectos', 'Revisá el correo electrónico y la contraseña.');

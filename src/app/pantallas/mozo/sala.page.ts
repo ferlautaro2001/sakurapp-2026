@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -6,13 +6,6 @@ import { ChatService } from '../../nucleo/servicios/chat.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { MensajeChat, Mesa } from '../../nucleo/modelos/modelos';
 import { Unsubscribe } from 'firebase/firestore';
-
-const SUGERENCIAS_MOZO = [
-  '¡Enseguida me acerco a la mesa!',
-  'El pedido ya está en marcha.',
-  'Preparando la cuenta en un momento.',
-  '¿Necesitan algo más?',
-];
 
 /**
  * Sala de chat en tiempo real del mozo con una mesa específica.
@@ -25,7 +18,6 @@ const SUGERENCIAS_MOZO = [
       <lm-encabezado [titulo]="'Mesa ' + numeroMesa()" conVolver (volver)="volver()" />
 
       <div class="lm-body lm-body--gap12 sala">
-        <lm-titulo bajada="Atención directa de consultas del salón">Mesa {{ numeroMesa() }}</lm-titulo>
 
         <div class="sala__hilo">
           @if (mensajes().length) {
@@ -46,16 +38,6 @@ const SUGERENCIAS_MOZO = [
           }
         </div>
 
-        <div class="sugerencias">
-          <span class="sugerencias__titulo">Respuestas rápidas:</span>
-          <div class="sugerencias__lista">
-            @for (sug of sugerencias; track sug) {
-              <button type="button" class="sug-btn" (click)="usarSugerencia(sug)">
-                {{ sug }}
-              </button>
-            }
-          </div>
-        </div>
       </div>
 
       <div class="lm-actionbar">
@@ -94,20 +76,6 @@ const SUGERENCIAS_MOZO = [
       .sala__vacia b { font: var(--type-card-title); color: var(--text-sobre-fondo); }
       .sala__vacia span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
 
-      .sugerencias {
-        flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px;
-        padding: 8px 10px; border-radius: var(--radius-card);
-        background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(8px);
-      }
-      .sugerencias__titulo { font: var(--type-caption); color: var(--text-muted); font-weight: 600; }
-      .sugerencias__lista { display: flex; flex-wrap: wrap; gap: 6px; }
-      .sug-btn {
-        border: 1px solid var(--border-card); background: var(--surface-card);
-        color: var(--text-title); font: var(--type-body-small);
-        padding: 5px 10px; border-radius: var(--radius-pill); cursor: pointer;
-        text-align: left; transition: background 0.15s ease;
-      }
-      .sug-btn:active { background: var(--surface-sunken); }
     `,
   ],
 })
@@ -119,7 +87,6 @@ export class MozoSalaPage extends PaginaConSesion {
 
   readonly id = input.required<string>();
 
-  protected readonly sugerencias = SUGERENCIAS_MOZO;
   protected readonly formulario = this.fb.nonNullable.group({ texto: [''] });
   protected readonly mensajes = signal<MensajeChat[]>([]);
 
@@ -167,11 +134,6 @@ export class MozoSalaPage extends PaginaConSesion {
 
   protected numeroMesa(): number | string {
     return this.mesa()?.numero ?? '—';
-  }
-
-  protected usarSugerencia(texto: string): void {
-    this.formulario.controls.texto.setValue(texto);
-    void this.enviar();
   }
 
   protected async enviar(): Promise<void> {

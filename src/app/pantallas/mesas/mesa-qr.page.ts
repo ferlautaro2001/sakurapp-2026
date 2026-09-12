@@ -17,7 +17,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
       @if (mesa(); as m) {
         <div class="lm-body">
-          <lm-titulo bajada="Generado automáticamente para identificación de comensales y empleados">
+          <lm-titulo>
             Mesa {{ m.numero }} · {{ tipo() }}
           </lm-titulo>
 
@@ -25,8 +25,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
           <lm-separador rotulo="Uso en salón" />
           <p class="lm-parrafo">
-            Imprimí este código y pegalo sobre la mesa física. El personal lo escanea para ver su estado y disponibilidad;
-            el comensal lo escanea para vincularse al puesto físico asignado por el metre.
+            Imprimí el código y colocalo en la mesa para que el cliente pueda escanearlo.
           </p>
 
           <div class="lm-card resumen">
@@ -48,7 +47,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
       } @else {
         <div class="lm-body">
           <lm-vacio icono="table_restaurant" titulo="No encontramos esa mesa">
-            Puede que la hayan dado de baja o que el identificador sea inválido.
+            Puede que la mesa ya no esté disponible.
             <lm-boton accion variante="secondary" [ancho]="false" (presionar)="volver()">Volver a mesas</lm-boton>
           </lm-vacio>
         </div>

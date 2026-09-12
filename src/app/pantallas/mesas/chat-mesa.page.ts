@@ -22,20 +22,6 @@ import { FirestoreService } from '../../nucleo/servicios/firestore.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
-const SUGERENCIAS_CLIENTE = [
-  '¿Podrías acercarte a la mesa?',
-  '¿Nos traés hielo y agua?',
-  'Pedir la cuenta por favor',
-  '¿Cuánto demora el pedido?',
-];
-
-const SUGERENCIAS_MOZO = [
-  '¡Enseguida me acerco a la mesa!',
-  'El pedido ya está en marcha.',
-  'Preparando la cuenta en un momento.',
-  '¿Necesitan algo más?',
-];
-
 /**
  * US-6.2 · Canal de Consulta Rápida al Mozo con Diseño WhatsApp (AC-6.2.1 y AC-6.2.2).
  *
@@ -67,7 +53,7 @@ const SUGERENCIAS_MOZO = [
           </span>
           <span class="chat-header__subtitulo">
             <span class="chat-header__punto-en-vivo"></span>
-            Sala en tiempo real con el personal
+            Consultas al mozo
           </span>
         </div>
 
@@ -80,21 +66,12 @@ const SUGERENCIAS_MOZO = [
 
       <!-- Lista de Mensajes (Diseño WhatsApp) -->
       <div #contenedorMensajes class="chat-mensajes" role="log" aria-live="polite">
-        <div class="chat-bienvenida">
-          <div class="chat-bienvenida__insignia">
-            <lm-icono nombre="forum" [tamano]="20" color="var(--action-primary)" />
-            <span>Consultas directas para la Mesa {{ mesaNumero() }}</span>
-          </div>
-          <small class="chat-bienvenida__texto">
-            Los mensajes son recibidos de inmediato por el personal en servicio y cuentan con avisos push.
-          </small>
-        </div>
 
         @if (mensajes().length === 0) {
           <div class="chat-vacio">
             <lm-icono nombre="chat_bubble_outline" [tamano]="36" color="var(--text-muted)" />
             <p>Aún no hay mensajes en esta mesa.</p>
-            <small>Escribí una consulta o tocá una de las opciones rápidas.</small>
+            <small>Escribí tu mensaje para empezar.</small>
           </div>
         }
 
@@ -130,26 +107,12 @@ const SUGERENCIAS_MOZO = [
         }
       </div>
 
-      <!-- Sugerencias Rápidas -->
-      <div class="chat-sugerencias">
-        @for (sugerencia of sugerencias(); track sugerencia) {
-          <button
-            type="button"
-            class="chat-sugerencia-chip"
-            (click)="enviarSugerencia(sugerencia)"
-            [disabled]="enviando()"
-          >
-            {{ sugerencia }}
-          </button>
-        }
-      </div>
-
       <!-- Barra de Envío Fija -->
       <footer class="chat-barra-envio">
         <input
           type="text"
           class="chat-input"
-          [placeholder]="esMozo() ? 'Responder al cliente comensal…' : 'Escribir consulta al mozo…'"
+          [placeholder]="esMozo() ? 'Responder al cliente…' : 'Escribir consulta al mozo…'"
           [(ngModel)]="texto"
           (keydown.enter)="enviar()"
           [disabled]="enviando()"
@@ -268,34 +231,6 @@ const SUGERENCIAS_MOZO = [
         flex-direction: column;
         gap: 10px;
         scroll-behavior: smooth;
-      }
-
-      .chat-bienvenida {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        gap: 4px;
-        margin: 4px 0 10px 0;
-      }
-
-      .chat-bienvenida__insignia {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 5px 12px;
-        border-radius: 20px;
-        background: rgba(255, 255, 255, 0.85);
-        color: var(--text-title);
-        font: var(--type-caption);
-        font-weight: 700;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-      }
-
-      .chat-bienvenida__texto {
-        font: var(--type-caption);
-        color: var(--text-sobre-fondo, #FFFFFF);
-        opacity: 0.85;
       }
 
       .chat-vacio {
@@ -418,38 +353,6 @@ const SUGERENCIAS_MOZO = [
         color: var(--text-muted);
       }
 
-      /* Barra de sugerencias rápidas */
-      .chat-sugerencias {
-        display: flex;
-        gap: 8px;
-        padding: 8px 12px 6px 12px;
-        overflow-x: auto;
-        white-space: nowrap;
-        scrollbar-width: none;
-      }
-
-      .chat-sugerencias::-webkit-scrollbar {
-        display: none;
-      }
-
-      .chat-sugerencia-chip {
-        border: none;
-        background: rgba(255, 255, 255, 0.9);
-        color: var(--text-title);
-        font: var(--type-caption);
-        font-weight: 600;
-        padding: 6px 12px;
-        border-radius: 16px;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: background 0.15s ease;
-      }
-
-      .chat-sugerencia-chip:active {
-        background: var(--surface-sunken);
-      }
-
       /* Barra de entrada de texto inferior */
       .chat-barra-envio {
         display: flex;
@@ -541,9 +444,6 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
   protected readonly texto = signal<string>('');
   protected readonly enviando = signal<boolean>(false);
 
-  protected readonly sugerencias = computed<string[]>(() =>
-    this.esMozo() ? SUGERENCIAS_MOZO : SUGERENCIAS_CLIENTE,
-  );
 
   ngOnInit(): void {
     const mesaId = this.id();
@@ -661,10 +561,6 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     return ROTULO_ROL_MENSAJE[rol] || rol;
   }
 
-  protected async enviarSugerencia(textoRapido: string): Promise<void> {
-    this.texto.set(textoRapido);
-    await this.enviar();
-  }
 
   protected async enviar(): Promise<void> {
     const contenido = this.texto().trim();

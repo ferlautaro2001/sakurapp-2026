@@ -51,7 +51,7 @@ export abstract class PaginaConSesion {
   protected async cerrarSesion(): Promise<void> {
     const seguro = await this.preguntar({
       titulo: '¿Cerrás la sesión?',
-      mensaje: 'Se borran las credenciales guardadas en este dispositivo y volvés a la pantalla de ingreso.',
+      mensaje: 'Vas a volver a la pantalla de ingreso.',
       confirmar: 'Cerrar sesión',
       tono: 'peligro',
       icono: 'logout',

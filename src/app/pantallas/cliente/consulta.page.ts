@@ -8,13 +8,6 @@ import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { Unsubscribe } from 'firebase/firestore';
 
-const SUGERENCIAS = [
-  '¿Podrías acercarte a la mesa?',
-  '¿Nos traés hielo y agua?',
-  'Pedir la cuenta por favor',
-  '¿Cuánto demora el pedido?',
-];
-
 /**
  * Consulta rápida al mozo del salón desde la mesa.
  */
@@ -26,7 +19,7 @@ const SUGERENCIAS = [
       <lm-encabezado titulo="Consulta al mozo" conVolver (volver)="volverAlMenu()" />
 
       <div class="lm-body lm-body--gap12 sala">
-        <lm-titulo [bajada]="bajada()">Mesa {{ numeroMesa() }}</lm-titulo>
+        <lm-titulo>Mesa {{ numeroMesa() }}</lm-titulo>
 
         <div class="sala__hilo">
           @if (mensajes().length) {
@@ -42,23 +35,11 @@ const SUGERENCIAS = [
             <div class="sala__vacia">
               <lm-icono nombre="forum" [tamano]="34" color="var(--action-accent)" />
               <b>Preguntá lo que necesites</b>
-              <span>Tu consulta le llega a todos los mozos del salón y te contesta el primero que se libere.</span>
+              <span>Un mozo te responderá por acá.</span>
             </div>
           }
         </div>
 
-        @if (!mensajes().length) {
-          <div class="sugerencias">
-            <span class="sugerencias__titulo">Consultas rápidas:</span>
-            <div class="sugerencias__lista">
-              @for (sug of sugerencias; track sug) {
-                <button type="button" class="sug-btn" (click)="usarSugerencia(sug)">
-                  {{ sug }}
-                </button>
-              }
-            </div>
-          </div>
-        }
       </div>
 
       <div class="lm-actionbar">
@@ -97,20 +78,6 @@ const SUGERENCIAS = [
       .sala__vacia b { font: var(--type-card-title); color: var(--text-sobre-fondo); }
       .sala__vacia span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
 
-      .sugerencias {
-        flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px;
-        padding: 10px; border-radius: var(--radius-card);
-        background: rgba(255, 255, 255, 0.45); backdrop-filter: blur(8px);
-      }
-      .sugerencias__titulo { font: var(--type-caption); color: var(--text-muted); font-weight: 600; }
-      .sugerencias__lista { display: flex; flex-wrap: wrap; gap: 6px; }
-      .sug-btn {
-        border: 1px solid var(--border-card); background: var(--surface-card);
-        color: var(--text-title); font: var(--type-body-small);
-        padding: 6px 12px; border-radius: var(--radius-pill); cursor: pointer;
-        text-align: left; transition: background 0.15s ease;
-      }
-      .sug-btn:active { background: var(--surface-sunken); }
     `,
   ],
 })
@@ -121,7 +88,6 @@ export class ClienteConsultaPage extends PaginaConSesion {
   private readonly mesas = inject(MesasService);
   private readonly destroyRef = inject(DestroyRef);
 
-  protected readonly sugerencias = SUGERENCIAS;
   protected readonly formulario = this.fb.nonNullable.group({ texto: [''] });
   protected readonly mensajes = signal<MensajeChat[]>([]);
 
@@ -176,17 +142,8 @@ export class ClienteConsultaPage extends PaginaConSesion {
     });
   }
 
-  protected bajada(): string {
-    return 'Conversación directa con el personal de mozos';
-  }
-
   protected numeroMesa(): number | string {
     return this.mesa()?.numero ?? this.sesion.mesaActivaNumero() ?? '—';
-  }
-
-  protected usarSugerencia(texto: string): void {
-    this.formulario.controls.texto.setValue(texto);
-    void this.enviar();
   }
 
   protected async enviar(): Promise<void> {
@@ -198,7 +155,6 @@ export class ClienteConsultaPage extends PaginaConSesion {
     this.formulario.controls.texto.setValue('');
     try {
       await this.chat.enviarMensaje(mesa, usuario, texto);
-      this.avisos.exito('Enviado', 'Tu consulta fue entregada al mozo.');
     } catch {
       this.avisos.error('Error', 'No se pudo enviar el mensaje. Probá de nuevo.');
       this.formulario.controls.texto.setValue(texto);

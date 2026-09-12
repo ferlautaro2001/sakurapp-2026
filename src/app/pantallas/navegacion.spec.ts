@@ -15,9 +15,9 @@ describe('navegacionDe · secciones por perfil', () => {
     expect(rutas('CANTINERO')).toEqual(['/sector/pedidos', '/carta']);
   });
 
-  it('supervisor y dueño tienen registros, mesas, códigos y correos', () => {
-    expect(rutas('SUPERVISOR')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos']);
-    expect(rutas('DUENO')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos']);
+  it('supervisor y dueño tienen registros, mesas, códigos, correos y empleados', () => {
+    expect(rutas('SUPERVISOR')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos', '/dueno/empleados']);
+    expect(rutas('DUENO')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos', '/dueno/empleados']);
   });
 
   it('metre tiene espera, mesas y registrar cliente', () => {

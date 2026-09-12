@@ -1,6 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
+import { getAuth, initializeAuth, inMemoryPersistence, createUserWithEmailAndPassword, signInAnonymously, signOut } from 'firebase/auth';
 import { getDataConnect } from 'firebase/data-connect';
 import {
   connectorConfig,
@@ -189,15 +189,13 @@ export class UsuariosService {
     return lista.find((u) => u.id === usuarioId);
   }
 
-  async crearClienteRegistrado(datos: AltaCliente): Promise<Usuario> {
+  async crearClienteRegistrado(datos: AltaCliente, conservarSesion = false): Promise<Usuario> {
     let uid = `uid-${Date.now()}`;
     try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const auth = getAuth(app);
-      const cred = await createUserWithEmailAndPassword(auth, datos.email.trim(), datos.clave);
-      uid = cred.user.uid;
+      uid = await this.crearCredencial(datos.email, datos.clave, conservarSesion);
     } catch (err) {
       console.warn('Firebase Auth registro:', err);
+      throw new Error('No pudimos crear la cuenta. Revisá el correo y la conexión e intentá de nuevo.');
     }
 
     // Subir foto a Firebase Cloud Storage
@@ -269,7 +267,7 @@ export class UsuariosService {
       ruta: '/clientes-pendientes',
     });
 
-    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios().filter((u) => u.uid !== usuario.uid), usuario]);
     return usuario;
   }
 
@@ -342,9 +340,7 @@ export class UsuariosService {
   async crearEmpleado(datos: AltaEmpleado): Promise<Usuario> {
     let uid = `uid-${Date.now()}`;
     try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const cred = await createUserWithEmailAndPassword(getAuth(app), datos.email.trim(), datos.clave);
-      uid = cred.user.uid;
+      uid = await this.crearCredencial(datos.email, datos.clave, true);
     } catch (err) {
       console.warn('Firebase Auth alta de empleado:', err);
     }
@@ -390,8 +386,24 @@ export class UsuariosService {
       console.warn('Cloud SQL alta de empleado:', err);
     }
 
-    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    await this.firestore.guardarUsuario(usuario);
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios().filter((u) => u.uid !== usuario.uid), usuario]);
     return usuario;
+  }
+
+  /** El alta desde el salón no debe reemplazar la cuenta del personal. */
+  private async crearCredencial(email: string, clave: string, conservarSesion: boolean): Promise<string> {
+    const principal = getApps().find((app) => app.name === '[DEFAULT]') ?? initializeApp(environment.firebase);
+    if (!conservarSesion) {
+      return (await createUserWithEmailAndPassword(getAuth(principal), email.trim(), clave)).user.uid;
+    }
+    const auxiliar = initializeApp(environment.firebase, `alta-${crypto.randomUUID()}`);
+    const auth = initializeAuth(auxiliar, { persistence: inMemoryPersistence });
+    try {
+      return (await createUserWithEmailAndPassword(auth, email.trim(), clave)).user.uid;
+    } finally {
+      try { await signOut(auth); } finally { await deleteApp(auxiliar); }
+    }
   }
 
   /** Ícono de sushi para el avatar. */

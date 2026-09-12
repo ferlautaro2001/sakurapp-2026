@@ -88,7 +88,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
 
         <lm-interruptor
           etiqueta="Disponible"
-          [ayuda]="disponible() ? 'La mesa se muestra como vacía en la grilla' : 'La mesa se muestra como ocupada en la grilla'"
+          [ayuda]="disponible() ? 'Lista para asignar' : 'La mesa está ocupada'"
           [activo]="disponible()"
           (cambiar)="disponible.set($event)"
         />
@@ -207,7 +207,7 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
       if (!existente) return;
       const seguro = await this.preguntar({
         titulo: '¿Cambiás la disponibilidad?',
-        mensaje: 'La grilla del salón se actualiza para todos los perfiles en el momento.',
+        mensaje: 'El personal verá el nuevo estado de la mesa.',
         confirmar: 'Guardar',
         icono: 'save',
         detalle: [
@@ -263,7 +263,7 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
       });
       if (!seguro) return;
       await this.cargando.conEsperaMinima('Guardando los cambios…', () => this.mesas.editar(existente.id, datos));
-      this.avisos.exito(`Mesa ${numero} actualizada`, 'Los cambios ya se ven en la grilla.');
+      this.avisos.exito(`Mesa ${numero} actualizada`);
       this.ir(['/mesas']);
       return;
     }

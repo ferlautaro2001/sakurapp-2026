@@ -59,7 +59,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
           <span class="separador-flor__linea"></span>
         </div>
 
-        <p class="login-nota">Tocá un perfil para entrar directamente con sus credenciales.</p>
+        <p class="login-nota">Tocá un perfil para ingresar.</p>
 
         <div class="lm-grid2 login-perfiles">
           @for (usuario of perfiles(); track usuario.id) {

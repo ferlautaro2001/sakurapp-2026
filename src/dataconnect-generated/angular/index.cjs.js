@@ -1,4 +1,4 @@
-const { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, asignarMesaClienteRef, rechazarPedidoRef, reenviarPedidoRef, borrarItemsPedidoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } = require('../');
+const { createProductoRef, createUsuarioRef, createMesaRef, createPedidoRef, createPedidoItemRef, createEncuestaRef, updateEstadoUsuarioRef, updateEstadoMesaRef, updateProductoRef, updateActivoProductoRef, createEsperaRef, updateEstadoEsperaRef, confirmarPedidoRef, registrarIntentoJuegoRef, aplicarDescuentoJuegoRef, asignarMesaClienteRef, rechazarPedidoRef, reenviarPedidoRef, borrarItemsPedidoRef, avanzarSectorPedidoRef, actualizarEstadoPedidoRef, listProductosRef, listMesasRef, listUsuariosRef, listPedidosActivosRef, listPedidoItemsRef, listEsperaRef, listEncuestasRef } = require('../');
 const { DataConnect, CallerSdkTypeEnum } = require('@angular/fire/data-connect');
 const { injectDataConnectQuery, injectDataConnectMutation } = require('@tanstack-query-firebase/angular/data-connect');
 const { inject, EnvironmentInjector } = require('@angular/core');
@@ -77,6 +77,14 @@ exports.injectReenviarPedido = function injectReenviarPedido(args, injector) {
 
 exports.injectBorrarItemsPedido = function injectBorrarItemsPedido(args, injector) {
   return injectDataConnectMutation(borrarItemsPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+exports.injectAvanzarSectorPedido = function injectAvanzarSectorPedido(args, injector) {
+  return injectDataConnectMutation(avanzarSectorPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
+}
+
+exports.injectActualizarEstadoPedido = function injectActualizarEstadoPedido(args, injector) {
+  return injectDataConnectMutation(actualizarEstadoPedidoRef, args, injector, CallerSdkTypeEnum.GeneratedAngular);
 }
 
 exports.injectListProductos = function injectListProductos(options, injector) {

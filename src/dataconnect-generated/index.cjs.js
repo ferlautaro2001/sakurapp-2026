@@ -349,6 +349,34 @@ exports.borrarItemsPedido = function borrarItemsPedido(dcOrVars, vars) {
 }
 ;
 
+const avanzarSectorPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'AvanzarSectorPedido', inputVars);
+}
+avanzarSectorPedidoRef.operationName = 'AvanzarSectorPedido';
+exports.avanzarSectorPedidoRef = avanzarSectorPedidoRef;
+
+exports.avanzarSectorPedido = function avanzarSectorPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(avanzarSectorPedidoRef(dcInstance, inputVars));
+}
+;
+
+const actualizarEstadoPedidoRef = (dcOrVars, vars) => {
+  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
+  dcInstance._useGeneratedSdk();
+  return mutationRef(dcInstance, 'ActualizarEstadoPedido', inputVars);
+}
+actualizarEstadoPedidoRef.operationName = 'ActualizarEstadoPedido';
+exports.actualizarEstadoPedidoRef = actualizarEstadoPedidoRef;
+
+exports.actualizarEstadoPedido = function actualizarEstadoPedido(dcOrVars, vars) {
+  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
+  return executeMutation(actualizarEstadoPedidoRef(dcInstance, inputVars));
+}
+;
+
 const listProductosRef = (dc) => {
   const { dc: dcInstance} = validateArgs(connectorConfig, dc, undefined);
   dcInstance._useGeneratedSdk();
@@ -453,28 +481,3 @@ exports.listEncuestas = function listEncuestas(dcOrOptions, options) {
   return executeQuery(listEncuestasRef(dcInstance, inputVars), inputOpts && { fetchPolicy: inputOpts.fetchPolicy });
 }
 ;
-
-const avanzarSectorPedidoRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'AvanzarSectorPedido', inputVars);
-}
-avanzarSectorPedidoRef.operationName = 'AvanzarSectorPedido';
-exports.avanzarSectorPedidoRef = avanzarSectorPedidoRef;
-exports.avanzarSectorPedido = function avanzarSectorPedido(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(avanzarSectorPedidoRef(dcInstance, inputVars));
-};
-
-const actualizarEstadoPedidoRef = (dcOrVars, vars) => {
-  const { dc: dcInstance, vars: inputVars} = validateArgs(connectorConfig, dcOrVars, vars, true);
-  dcInstance._useGeneratedSdk();
-  return mutationRef(dcInstance, 'ActualizarEstadoPedido', inputVars);
-}
-actualizarEstadoPedidoRef.operationName = 'ActualizarEstadoPedido';
-exports.actualizarEstadoPedidoRef = actualizarEstadoPedidoRef;
-exports.actualizarEstadoPedido = function actualizarEstadoPedido(dcOrVars, vars) {
-  const { dc: dcInstance, vars: inputVars } = validateArgs(connectorConfig, dcOrVars, vars, true);
-  return executeMutation(actualizarEstadoPedidoRef(dcInstance, inputVars));
-};
-

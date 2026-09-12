@@ -5,6 +5,8 @@ import { PaginaConSesion } from '../pagina-base';
 import { Usuario } from '../../nucleo/modelos/modelos';
 import { EstadoUsuario, ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
+import { CorreoService } from '../../nucleo/servicios/correo.service';
+import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
 import { DocumentoPipe } from '../../ui/documento.pipe';
 
 const FILTROS = ['Todos', 'Pendiente', 'Aprobado', 'Rechazado'];
@@ -32,11 +34,19 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+  <lm-icono-boton
+    accion
+    icono="person_add"
+    rotulo="Dar de alta un empleado"
+    tono="primario"
+    (presionar)="ir(['/admin/alta-empleado'])"
+  />
+</lm-encabezado>
 
       <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="pendientes().length" bajada="Tocá una tarjeta para ver la ficha completa, o aceptá y rechazá desde su fila">
-          Registros pendientes
+        <lm-titulo [contador]="pendientes().length" [bajada]="bajadaPendientes()">
+          Registro de clientes
         </lm-titulo>
 
         <lm-buscador
@@ -58,10 +68,20 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
             }
           </div>
         } @else {
-          <lm-vacio icono="how_to_reg" [titulo]="tituloVacio()">
-            {{ textoVacio() }}
-          </lm-vacio>
-        }
+  <lm-vacio icono="how_to_reg" [titulo]="tituloVacio()">
+    {{ textoVacio() }}
+
+    <lm-boton
+      accion
+      variante="secondary"
+      icono="person_add"
+      [ancho]="false"
+      (presionar)="ir(['/admin/alta-empleado'])"
+    >
+      Dar de alta un empleado
+    </lm-boton>
+  </lm-vacio>
+}
       </div>
 
       <lm-barra-inferior [items]="secciones()" activo="registros" />
@@ -71,6 +91,8 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
 })
 export class ClientesPendientesPage extends PaginaConSesion {
   private readonly usuarios = inject(UsuariosService);
+  private readonly correo = inject(CorreoService);
+  private readonly notificaciones = inject(NotificacionesService);
   /** El mismo formato de documento que muestra la fila, también en el modal. */
   private readonly documento = new DocumentoPipe();
 
@@ -81,6 +103,12 @@ export class ClientesPendientesPage extends PaginaConSesion {
   protected readonly busqueda = signal('');
 
   protected readonly pendientes = computed(() => this.usuarios.pendientes());
+  protected readonly bajadaPendientes = computed(() => {
+    const cant = this.pendientes().length;
+    if (cant === 0) return 'No hay clientes pendientes de aprobación';
+    if (cant === 1) return '1 cliente pendiente de aprobación';
+    return `${cant} clientes pendientes de aprobación`;
+  });
 
   protected readonly visibles = computed(() => {
     const filtro = this.filtro();
@@ -168,6 +196,25 @@ export class ClientesPendientesPage extends PaginaConSesion {
         aprobar ? 'Aprobando el registro…' : 'Rechazando el registro…',
         () => this.usuarios.actualizarEstadoUsuario(cliente.id, aprobar ? 'APROBADO' : 'RECHAZADO'),
       );
+
+      // US-3.2: Envío automático de correo con plantilla institucional según resolución
+      const resolutor = this.sesion.usuario();
+      if (resolutor) {
+        if (aprobar) {
+          void this.correo.enviarAprobacion(cliente, resolutor).catch((err) => {
+            console.warn('⚠️ Error al enviar correo de aprobación:', err);
+          });
+        } else {
+          void this.correo.enviarRechazo(cliente, resolutor).catch((err) => {
+            console.warn('⚠️ Error al enviar correo de rechazo:', err);
+          });
+        }
+      }
+
+      // US-3.2: Notificación push / aviso de resolución al dispositivo del cliente
+      void this.notificaciones.notificarResolucion(cliente.id, aprobar).catch((err) => {
+        console.warn('⚠️ Error al emitir notificación de resolución:', err);
+      });
 
       // La vibración alcanza como confirmación: la fila ya desapareció del
       // listado y los únicos sonidos de la aplicación son los de abrirla y

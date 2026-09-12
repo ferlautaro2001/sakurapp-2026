@@ -8,6 +8,13 @@ export type Int64String = string;
 export type DateString = string;
 
 
+export enum EstadoEspera {
+  ESPERANDO = "ESPERANDO",
+  ASIGNADO = "ASIGNADO",
+  CANCELADO = "CANCELADO",
+  FINALIZADO = "FINALIZADO",
+};
+
 export enum EstadoMesa {
   VACIA = "VACIA",
   OCUPADA = "OCUPADA",
@@ -70,6 +77,67 @@ export enum TipoProducto {
 
 
 
+export interface ActualizarEstadoPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface ActualizarEstadoPedidoVariables {
+  id: UUIDString;
+  estadoGlobal: EstadoPedido;
+}
+
+export interface AplicarDescuentoJuegoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface AplicarDescuentoJuegoVariables {
+  id: UUIDString;
+  descuentoJuego: number;
+  montoDescuentoJuego: number;
+  totalFinal: number;
+}
+
+export interface AsignarMesaClienteData {
+  espera_update?: Espera_Key | null;
+  mesa_update?: Mesa_Key | null;
+}
+
+export interface AsignarMesaClienteVariables {
+  esperaId: UUIDString;
+  mesaId: UUIDString;
+  clienteId: UUIDString;
+}
+
+export interface AvanzarSectorPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface AvanzarSectorPedidoVariables {
+  id: UUIDString;
+  estadoGlobal: EstadoPedido;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+}
+
+export interface BorrarItemsPedidoData {
+  pedidoItem_deleteMany: number;
+}
+
+export interface BorrarItemsPedidoVariables {
+  pedidoId: UUIDString;
+}
+
+export interface ConfirmarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface ConfirmarPedidoVariables {
+  id: UUIDString;
+  estadoCocina: EstadoSector;
+  estadoBar: EstadoSector;
+  confirmadoPorId: UUIDString;
+}
+
 export interface Conversacion_Key {
   id: UUIDString;
   __typename?: 'Conversacion_Key';
@@ -91,6 +159,14 @@ export interface CreateEncuestaVariables {
   timestamp: TimestampString;
 }
 
+export interface CreateEsperaData {
+  espera_insert: Espera_Key;
+}
+
+export interface CreateEsperaVariables {
+  clienteId: UUIDString;
+}
+
 export interface CreateMesaData {
   mesa_insert: Mesa_Key;
 }
@@ -106,6 +182,19 @@ export interface CreateMesaVariables {
 
 export interface CreatePedidoData {
   pedido_insert: Pedido_Key;
+}
+
+export interface CreatePedidoItemData {
+  pedidoItem_insert: PedidoItem_Key;
+}
+
+export interface CreatePedidoItemVariables {
+  pedidoId: UUIDString;
+  productoId: UUIDString;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  sector: Sector;
 }
 
 export interface CreatePedidoVariables {
@@ -169,6 +258,35 @@ export interface IntentoJuego_Key {
   __typename?: 'IntentoJuego_Key';
 }
 
+export interface ListEncuestasData {
+  encuestas: ({
+    id: UUIDString;
+    calificacionMozo: number;
+    nivelLimpieza: number;
+    recomendaria: boolean;
+    aspectoFavorito: string;
+    timestamp: TimestampString;
+  } & Encuesta_Key)[];
+}
+
+export interface ListEsperaData {
+  esperas: ({
+    id: UUIDString;
+    estado: EstadoEspera;
+    timestamp: TimestampString;
+    cliente: {
+      id: UUIDString;
+      nombre: string;
+      apellido?: string | null;
+      fotoUrl: string;
+    } & User_Key;
+    mesaAsignada?: {
+      id: UUIDString;
+      numero: number;
+    } & Mesa_Key;
+  } & Espera_Key)[];
+}
+
 export interface ListMesasData {
   mesas: ({
     id: UUIDString;
@@ -187,16 +305,37 @@ export interface ListMesasData {
   } & Mesa_Key)[];
 }
 
+export interface ListPedidoItemsData {
+  pedidoItems: ({
+    id: UUIDString;
+    pedido: {
+      id: UUIDString;
+    } & Pedido_Key;
+    producto: {
+      id: UUIDString;
+      nombre: string;
+      tipo: TipoProducto;
+    } & Producto_Key;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    sector: Sector;
+  } & PedidoItem_Key)[];
+}
+
 export interface ListPedidosActivosData {
   pedidos: ({
     id: UUIDString;
     mesa: {
+      id: UUIDString;
       numero: number;
-    };
+    } & Mesa_Key;
     cliente: {
+      id: UUIDString;
+      uid: string;
       nombre: string;
       apellido?: string | null;
-    };
+    } & User_Key;
     estadoGlobal: EstadoPedido;
     estadoCocina: EstadoSector;
     estadoBar: EstadoSector;
@@ -263,6 +402,64 @@ export interface Producto_Key {
   __typename?: 'Producto_Key';
 }
 
+export interface RechazarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface RechazarPedidoVariables {
+  id: UUIDString;
+  motivoRechazo: string;
+}
+
+export interface ReenviarPedidoData {
+  pedido_update?: Pedido_Key | null;
+}
+
+export interface ReenviarPedidoVariables {
+  id: UUIDString;
+  tiempoEstimado: number;
+  totalBruto: number;
+  totalFinal: number;
+}
+
+export interface RegistrarIntentoJuegoData {
+  intentoJuego_insert: IntentoJuego_Key;
+}
+
+export interface RegistrarIntentoJuegoVariables {
+  pedidoId: UUIDString;
+  clienteId: UUIDString;
+  gano: boolean;
+  descuentoOtorgado: number;
+}
+
+export interface UpdateActivoProductoData {
+  producto_update?: Producto_Key | null;
+}
+
+export interface UpdateActivoProductoVariables {
+  id: UUIDString;
+  activo: boolean;
+}
+
+export interface UpdateEstadoEsperaData {
+  espera_update?: Espera_Key | null;
+}
+
+export interface UpdateEstadoEsperaVariables {
+  id: UUIDString;
+  estado: EstadoEspera;
+}
+
+export interface UpdateEstadoMesaData {
+  mesa_update?: Mesa_Key | null;
+}
+
+export interface UpdateEstadoMesaVariables {
+  id: UUIDString;
+  estado: EstadoMesa;
+}
+
 export interface UpdateEstadoUsuarioData {
   user_update?: User_Key | null;
 }
@@ -270,6 +467,23 @@ export interface UpdateEstadoUsuarioData {
 export interface UpdateEstadoUsuarioVariables {
   id: UUIDString;
   estado: EstadoUsuario;
+}
+
+export interface UpdateProductoData {
+  producto_update?: Producto_Key | null;
+}
+
+export interface UpdateProductoVariables {
+  id: UUIDString;
+  nombre: string;
+  descripcion: string;
+  precio: number;
+  tiempoElaboracion: number;
+  tipo: TipoProducto;
+  sector: Sector;
+  foto1: string;
+  foto2: string;
+  foto3: string;
 }
 
 export interface User_Key {
@@ -325,6 +539,18 @@ export const createPedidoRef: CreatePedidoRef;
 export function createPedido(vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
 export function createPedido(dc: DataConnect, vars: CreatePedidoVariables): MutationPromise<CreatePedidoData, CreatePedidoVariables>;
 
+interface CreatePedidoItemRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreatePedidoItemVariables): MutationRef<CreatePedidoItemData, CreatePedidoItemVariables>;
+  operationName: string;
+}
+export const createPedidoItemRef: CreatePedidoItemRef;
+
+export function createPedidoItem(vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
+export function createPedidoItem(dc: DataConnect, vars: CreatePedidoItemVariables): MutationPromise<CreatePedidoItemData, CreatePedidoItemVariables>;
+
 interface CreateEncuestaRef {
   /* Allow users to create refs without passing in DataConnect */
   (vars: CreateEncuestaVariables): MutationRef<CreateEncuestaData, CreateEncuestaVariables>;
@@ -348,6 +574,174 @@ export const updateEstadoUsuarioRef: UpdateEstadoUsuarioRef;
 
 export function updateEstadoUsuario(vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
 export function updateEstadoUsuario(dc: DataConnect, vars: UpdateEstadoUsuarioVariables): MutationPromise<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables>;
+
+interface UpdateEstadoMesaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoMesaVariables): MutationRef<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateEstadoMesaVariables): MutationRef<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+  operationName: string;
+}
+export const updateEstadoMesaRef: UpdateEstadoMesaRef;
+
+export function updateEstadoMesa(vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+export function updateEstadoMesa(dc: DataConnect, vars: UpdateEstadoMesaVariables): MutationPromise<UpdateEstadoMesaData, UpdateEstadoMesaVariables>;
+
+interface UpdateProductoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateProductoVariables): MutationRef<UpdateProductoData, UpdateProductoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateProductoVariables): MutationRef<UpdateProductoData, UpdateProductoVariables>;
+  operationName: string;
+}
+export const updateProductoRef: UpdateProductoRef;
+
+export function updateProducto(vars: UpdateProductoVariables): MutationPromise<UpdateProductoData, UpdateProductoVariables>;
+export function updateProducto(dc: DataConnect, vars: UpdateProductoVariables): MutationPromise<UpdateProductoData, UpdateProductoVariables>;
+
+interface UpdateActivoProductoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateActivoProductoVariables): MutationRef<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateActivoProductoVariables): MutationRef<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+  operationName: string;
+}
+export const updateActivoProductoRef: UpdateActivoProductoRef;
+
+export function updateActivoProducto(vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+export function updateActivoProducto(dc: DataConnect, vars: UpdateActivoProductoVariables): MutationPromise<UpdateActivoProductoData, UpdateActivoProductoVariables>;
+
+interface CreateEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: CreateEsperaVariables): MutationRef<CreateEsperaData, CreateEsperaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: CreateEsperaVariables): MutationRef<CreateEsperaData, CreateEsperaVariables>;
+  operationName: string;
+}
+export const createEsperaRef: CreateEsperaRef;
+
+export function createEspera(vars: CreateEsperaVariables): MutationPromise<CreateEsperaData, CreateEsperaVariables>;
+export function createEspera(dc: DataConnect, vars: CreateEsperaVariables): MutationPromise<CreateEsperaData, CreateEsperaVariables>;
+
+interface UpdateEstadoEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: UpdateEstadoEsperaVariables): MutationRef<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationRef<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+  operationName: string;
+}
+export const updateEstadoEsperaRef: UpdateEstadoEsperaRef;
+
+export function updateEstadoEspera(vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+export function updateEstadoEspera(dc: DataConnect, vars: UpdateEstadoEsperaVariables): MutationPromise<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables>;
+
+interface ConfirmarPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ConfirmarPedidoVariables): MutationRef<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ConfirmarPedidoVariables): MutationRef<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+  operationName: string;
+}
+export const confirmarPedidoRef: ConfirmarPedidoRef;
+
+export function confirmarPedido(vars: ConfirmarPedidoVariables): MutationPromise<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+export function confirmarPedido(dc: DataConnect, vars: ConfirmarPedidoVariables): MutationPromise<ConfirmarPedidoData, ConfirmarPedidoVariables>;
+
+interface RegistrarIntentoJuegoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RegistrarIntentoJuegoVariables): MutationRef<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: RegistrarIntentoJuegoVariables): MutationRef<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+  operationName: string;
+}
+export const registrarIntentoJuegoRef: RegistrarIntentoJuegoRef;
+
+export function registrarIntentoJuego(vars: RegistrarIntentoJuegoVariables): MutationPromise<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+export function registrarIntentoJuego(dc: DataConnect, vars: RegistrarIntentoJuegoVariables): MutationPromise<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables>;
+
+interface AplicarDescuentoJuegoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AplicarDescuentoJuegoVariables): MutationRef<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AplicarDescuentoJuegoVariables): MutationRef<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+  operationName: string;
+}
+export const aplicarDescuentoJuegoRef: AplicarDescuentoJuegoRef;
+
+export function aplicarDescuentoJuego(vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+export function aplicarDescuentoJuego(dc: DataConnect, vars: AplicarDescuentoJuegoVariables): MutationPromise<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables>;
+
+interface AsignarMesaClienteRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AsignarMesaClienteVariables): MutationRef<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+  operationName: string;
+}
+export const asignarMesaClienteRef: AsignarMesaClienteRef;
+
+export function asignarMesaCliente(vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+export function asignarMesaCliente(dc: DataConnect, vars: AsignarMesaClienteVariables): MutationPromise<AsignarMesaClienteData, AsignarMesaClienteVariables>;
+
+interface RechazarPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: RechazarPedidoVariables): MutationRef<RechazarPedidoData, RechazarPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: RechazarPedidoVariables): MutationRef<RechazarPedidoData, RechazarPedidoVariables>;
+  operationName: string;
+}
+export const rechazarPedidoRef: RechazarPedidoRef;
+
+export function rechazarPedido(vars: RechazarPedidoVariables): MutationPromise<RechazarPedidoData, RechazarPedidoVariables>;
+export function rechazarPedido(dc: DataConnect, vars: RechazarPedidoVariables): MutationPromise<RechazarPedidoData, RechazarPedidoVariables>;
+
+interface ReenviarPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ReenviarPedidoVariables): MutationRef<ReenviarPedidoData, ReenviarPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ReenviarPedidoVariables): MutationRef<ReenviarPedidoData, ReenviarPedidoVariables>;
+  operationName: string;
+}
+export const reenviarPedidoRef: ReenviarPedidoRef;
+
+export function reenviarPedido(vars: ReenviarPedidoVariables): MutationPromise<ReenviarPedidoData, ReenviarPedidoVariables>;
+export function reenviarPedido(dc: DataConnect, vars: ReenviarPedidoVariables): MutationPromise<ReenviarPedidoData, ReenviarPedidoVariables>;
+
+interface BorrarItemsPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: BorrarItemsPedidoVariables): MutationRef<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: BorrarItemsPedidoVariables): MutationRef<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+  operationName: string;
+}
+export const borrarItemsPedidoRef: BorrarItemsPedidoRef;
+
+export function borrarItemsPedido(vars: BorrarItemsPedidoVariables): MutationPromise<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+export function borrarItemsPedido(dc: DataConnect, vars: BorrarItemsPedidoVariables): MutationPromise<BorrarItemsPedidoData, BorrarItemsPedidoVariables>;
+
+interface AvanzarSectorPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: AvanzarSectorPedidoVariables): MutationRef<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: AvanzarSectorPedidoVariables): MutationRef<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+  operationName: string;
+}
+export const avanzarSectorPedidoRef: AvanzarSectorPedidoRef;
+
+export function avanzarSectorPedido(vars: AvanzarSectorPedidoVariables): MutationPromise<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+export function avanzarSectorPedido(dc: DataConnect, vars: AvanzarSectorPedidoVariables): MutationPromise<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables>;
+
+interface ActualizarEstadoPedidoRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (vars: ActualizarEstadoPedidoVariables): MutationRef<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect, vars: ActualizarEstadoPedidoVariables): MutationRef<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+  operationName: string;
+}
+export const actualizarEstadoPedidoRef: ActualizarEstadoPedidoRef;
+
+export function actualizarEstadoPedido(vars: ActualizarEstadoPedidoVariables): MutationPromise<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
+export function actualizarEstadoPedido(dc: DataConnect, vars: ActualizarEstadoPedidoVariables): MutationPromise<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables>;
 
 interface ListProductosRef {
   /* Allow users to create refs without passing in DataConnect */
@@ -396,4 +790,40 @@ export const listPedidosActivosRef: ListPedidosActivosRef;
 
 export function listPedidosActivos(options?: ExecuteQueryOptions): QueryPromise<ListPedidosActivosData, undefined>;
 export function listPedidosActivos(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListPedidosActivosData, undefined>;
+
+interface ListPedidoItemsRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListPedidoItemsData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListPedidoItemsData, undefined>;
+  operationName: string;
+}
+export const listPedidoItemsRef: ListPedidoItemsRef;
+
+export function listPedidoItems(options?: ExecuteQueryOptions): QueryPromise<ListPedidoItemsData, undefined>;
+export function listPedidoItems(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListPedidoItemsData, undefined>;
+
+interface ListEsperaRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListEsperaData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListEsperaData, undefined>;
+  operationName: string;
+}
+export const listEsperaRef: ListEsperaRef;
+
+export function listEspera(options?: ExecuteQueryOptions): QueryPromise<ListEsperaData, undefined>;
+export function listEspera(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListEsperaData, undefined>;
+
+interface ListEncuestasRef {
+  /* Allow users to create refs without passing in DataConnect */
+  (): QueryRef<ListEncuestasData, undefined>;
+  /* Allow users to pass in custom DataConnect instances */
+  (dc: DataConnect): QueryRef<ListEncuestasData, undefined>;
+  operationName: string;
+}
+export const listEncuestasRef: ListEncuestasRef;
+
+export function listEncuestas(options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
+export function listEncuestas(dc: DataConnect, options?: ExecuteQueryOptions): QueryPromise<ListEncuestasData, undefined>;
 

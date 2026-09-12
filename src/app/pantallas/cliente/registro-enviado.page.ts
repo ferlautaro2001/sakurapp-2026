@@ -4,6 +4,12 @@ import { UI } from '../../ui';
 
 /**
  * Confirmación del envío del registro para clientes.
+ *
+ * Es la misma tarjeta que ve el comensal cuando manda el pedido y espera al
+ * mozo: título, reloj y las dos líneas que cuentan qué está pasando. Los dos
+ * momentos son el mismo —mandó algo y depende de que alguien lo revise—, así
+ * que se leen igual. Acá el reloj va más grande, al tamaño de la ficha de
+ * "estado de tu cuenta", porque esta pantalla no tiene nada más que mirar.
  */
 @Component({
   selector: 'lm-registro-enviado',
@@ -12,20 +18,18 @@ import { UI } from '../../ui';
     <div class="lm-screen">
       <div class="lm-body lm-body--centrado">
         <lm-logo [conNombre]="false" [tamano]="82" />
-        <lm-titulo>Registro enviado</lm-titulo>
-        <p class="lm-parrafo">
-          El dueño o el supervisor van a revisar tus datos. Te avisamos por correo electrónico en cuanto esté resuelto.
-        </p>
 
-        <div class="lm-card tarjeta">
-          <lm-icono nombre="hourglass_top" [tamano]="22" color="var(--action-accent)" />
-          <span>Revisión de cuenta en proceso — pendiente de aprobación</span>
+        <div class="lm-card espera">
+          <h1 class="espera__titulo">Registro enviado</h1>
+          <span class="espera__reloj">
+            <lm-icono nombre="hourglass_top" [tamano]="46" color="var(--action-primary)" />
+          </span>
+          <b>El dueño o el supervisor van a revisar tus datos</b>
+          <small>
+            Te avisamos por correo electrónico en cuanto esté resuelto. Mientras tanto podés
+            entrar como invitado.
+          </small>
         </div>
-
-        <lm-separador rotulo="Mientras esperás" />
-        <p class="lm-parrafo">
-          Podés entrar como invitado mientras el encargado revisa y aprueba tu cuenta.
-        </p>
       </div>
 
       <div class="lm-actionbar">
@@ -37,10 +41,22 @@ import { UI } from '../../ui';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .tarjeta {
-        display: flex; align-items: center; gap: 10px; padding: 14px; text-align: left;
-        font: var(--type-body-small); color: var(--text-body);
+      .espera {
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        padding: 24px 18px; text-align: center;
       }
+      .espera__titulo {
+        margin: 0 0 6px; font: var(--type-title); letter-spacing: var(--tracking-tight);
+        color: var(--text-title); text-wrap: balance;
+      }
+      /* El reloj es lo único que se mira acá, así que va al tamaño de la ficha
+         de estado de cuenta y no al de la tarjeta del pedido. */
+      .espera__reloj {
+        width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+        background: var(--surface-sunken);
+      }
+      .espera b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
+      .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
     `,
   ],
 })
@@ -54,4 +70,3 @@ export class RegistroEnviadoPage {
     void this.router.navigate(['/login'], { replaceUrl: true });
   }
 }
-

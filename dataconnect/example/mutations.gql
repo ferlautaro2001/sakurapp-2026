@@ -103,6 +103,30 @@ mutation CreatePedido(
   )
 }
 
+# AC-7.1.2 · Guarda cada producto asociado al pedido.
+mutation CreatePedidoItem(
+  $pedidoId: UUID!
+  $productoId: UUID!
+  $cantidad: Int!
+  $precioUnitario: Float!
+  $subtotal: Float!
+  $sector: Sector!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Alta de productos asociados a un pedido."
+) {
+  pedidoItem_insert(
+    data: {
+      pedidoId: $pedidoId
+      productoId: $productoId
+      cantidad: $cantidad
+      precioUnitario: $precioUnitario
+      subtotal: $subtotal
+      sector: $sector
+    }
+  )
+}
+
 mutation CreateEncuesta(
   $clienteId: UUID!
   $pedidoId: UUID!
@@ -136,3 +160,226 @@ mutation UpdateEstadoUsuario($id: UUID!, $estado: EstadoUsuario!)
   @auth(level: PUBLIC, insecureReason: "Aprobación y rechazo de comensales por dueño o supervisor.") {
   user_update(id: $id, data: { estado: $estado })
 }
+
+# AC-4.4.1 · Actualización rápida de disponibilidad de una mesa.
+mutation UpdateEstadoMesa($id: UUID!, $estado: EstadoMesa!)
+  @auth(
+    level: PUBLIC
+    insecureReason: "Actualización de disponibilidad por personal autorizado."
+  ) {
+  mesa_update(id: $id, data: { estado: $estado })
+}
+
+# Edición completa de un producto existente.
+mutation UpdateProducto(
+  $id: UUID!
+  $nombre: String!
+  $descripcion: String!
+  $precio: Float!
+  $tiempoElaboracion: Int!
+  $tipo: TipoProducto!
+  $sector: Sector!
+  $foto1: String!
+  $foto2: String!
+  $foto3: String!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Edición de productos por personal autorizado."
+) {
+  producto_update(
+    id: $id
+    data: {
+      nombre: $nombre
+      descripcion: $descripcion
+      precio: $precio
+      tiempoElaboracion: $tiempoElaboracion
+      tipo: $tipo
+      sector: $sector
+      foto1: $foto1
+      foto2: $foto2
+      foto3: $foto3
+    }
+  )
+}
+
+# Baja lógica: conserva el producto en la base, pero lo oculta de la carta.
+mutation UpdateActivoProducto(
+  $id: UUID!
+  $activo: Boolean!
+) @auth(
+  level: PUBLIC
+  insecureReason: "Alta o baja lógica de productos por personal autorizado."
+) {
+  producto_update(
+    id: $id
+    data: {
+      activo: $activo
+    }
+  )
+}
+
+# US-5.1 · TASK-5.1.1.1 · el comensal escanea el código de ingreso al salón y
+# queda anotado en la lista de espera. Nace siempre en ESPERANDO: la mesa la
+# asigna después el metre, nunca el propio cliente.
+mutation CreateEspera($clienteId: UUID!)
+  @auth(level: PUBLIC, insecureReason: "Alta en la lista de espera al escanear el código de ingreso.") {
+  espera_insert(data: { clienteId: $clienteId, estado: ESPERANDO })
+}
+
+# US-5.1 · el comensal escaneó el código de la mesa que le asignó el metre y
+# queda sentado en ella (FINALIZADO). Es el mismo movimiento que usa el salón
+# para mover una entrada de la fila a cualquier otro estado.
+mutation UpdateEstadoEspera($id: UUID!, $estado: EstadoEspera!)
+  @auth(level: PUBLIC, insecureReason: "Avance de la entrada en la lista de espera.") {
+  espera_update(id: $id, data: { estado: $estado })
+}
+
+# US-7.3 · el mozo confirma el pedido y deja pendientes únicamente los
+# sectores que tienen productos asignados.
+mutation ConfirmarPedido(
+  $id: UUID!
+  $estadoCocina: EstadoSector!
+  $estadoBar: EstadoSector!
+  $confirmadoPorId: UUID!
+) @auth(level: PUBLIC, insecureReason: "Confirmación y derivación operativa por el mozo.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: CONFIRMADO
+      estadoCocina: $estadoCocina
+      estadoBar: $estadoBar
+      confirmadoPorId: $confirmadoPorId
+    }
+  )
+}
+
+# US-7.3 · primer y único intento no acumulativo del cliente.
+mutation RegistrarIntentoJuego(
+  $pedidoId: UUID!
+  $clienteId: UUID!
+  $gano: Boolean!
+  $descuentoOtorgado: Int!
+) @auth(level: PUBLIC, insecureReason: "Registro del intento de juego del comensal.") {
+  intentoJuego_insert(
+    data: {
+      pedidoId: $pedidoId
+      clienteId: $clienteId
+      tipoJuego: "SAKURA"
+      numeroIntento: 1
+      gano: $gano
+      descuentoOtorgado: $descuentoOtorgado
+    }
+  )
+}
+
+mutation AplicarDescuentoJuego(
+  $id: UUID!
+  $descuentoJuego: Int!
+  $montoDescuentoJuego: Float!
+  $totalFinal: Float!
+) @auth(level: PUBLIC, insecureReason: "Aplicación del premio no acumulativo al pedido.") {
+  pedido_update(
+    id: $id
+    data: {
+      descuentoJuego: $descuentoJuego
+      montoDescuentoJuego: $montoDescuentoJuego
+      totalFinal: $totalFinal
+    }
+  )
+}
+
+# US-5.3 · Asignación atómica de mesa libre al comensal en lista de espera.
+mutation AsignarMesaCliente(
+  $esperaId: UUID!
+  $mesaId: UUID!
+  $clienteId: UUID!
+) @auth(level: PUBLIC, insecureReason: "Asignación transaccional de mesa por el metre.") {
+  espera_update(
+    id: $esperaId
+    data: {
+      mesaAsignadaId: $mesaId
+      estado: ASIGNADO
+    }
+  )
+  mesa_update(
+    id: $mesaId
+    data: {
+      clienteActualId: $clienteId
+    }
+  )
+}
+
+
+# US-7.2 · AC-7.2.1 · el mozo devuelve la comanda para que la corrijan.
+# El motivo es obligatorio del lado de la pantalla: acá queda persistido para
+# que el comensal lo lea tal cual lo escribió el mozo.
+mutation RechazarPedido($id: UUID!, $motivoRechazo: String!)
+  @auth(level: PUBLIC, insecureReason: "Auditoría y devolución de comandas por el mozo.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: RECHAZADO
+      motivoRechazo: $motivoRechazo
+    }
+  )
+}
+
+# US-7.2 · AC-7.2.2 · el comensal corrigió la comanda y la manda de nuevo.
+# Vuelve a quedar esperando la confirmación del mozo, con los importes y la
+# demora recalculados sobre lo que quedó, y sin el motivo anterior: ya no
+# corresponde a lo que el mozo va a revisar ahora.
+mutation ReenviarPedido(
+  $id: UUID!
+  $tiempoEstimado: Int!
+  $totalBruto: Float!
+  $totalFinal: Float!
+) @auth(level: PUBLIC, insecureReason: "Reenvío de la comanda corregida por el comensal.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: PENDIENTE_CONFIRMACION
+      motivoRechazo: null
+      tiempoEstimado: $tiempoEstimado
+      totalBruto: $totalBruto
+      totalFinal: $totalFinal
+    }
+  )
+}
+
+# US-7.2 · AC-7.2.2 · los renglones viejos se borran antes de volver a
+# escribir los corregidos: la comanda que revisa el mozo es siempre la última.
+mutation BorrarItemsPedido($pedidoId: UUID!)
+  @auth(level: PUBLIC, insecureReason: "Reescritura de los productos de una comanda corregida.") {
+  pedidoItem_deleteMany(where: { pedidoId: { eq: $pedidoId } })
+}
+
+# Avance de la comanda por el sector de cocina o barra.
+mutation AvanzarSectorPedido(
+  $id: UUID!
+  $estadoGlobal: EstadoPedido!
+  $estadoCocina: EstadoSector!
+  $estadoBar: EstadoSector!
+) @auth(level: PUBLIC, insecureReason: "Avance de preparación de pedido por sector.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: $estadoGlobal
+      estadoCocina: $estadoCocina
+      estadoBar: $estadoBar
+    }
+  )
+}
+
+# Actualización del estado global de un pedido (ej: entrega, cuenta, cierre).
+mutation ActualizarEstadoPedido(
+  $id: UUID!
+  $estadoGlobal: EstadoPedido!
+) @auth(level: PUBLIC, insecureReason: "Actualización de estado operativo del pedido.") {
+  pedido_update(
+    id: $id
+    data: {
+      estadoGlobal: $estadoGlobal
+    }
+  )
+}
+

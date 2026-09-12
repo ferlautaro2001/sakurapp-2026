@@ -1,4 +1,4 @@
-import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData } from '../';
+import { CreateProductoData, CreateProductoVariables, CreateUsuarioData, CreateUsuarioVariables, CreateMesaData, CreateMesaVariables, CreatePedidoData, CreatePedidoVariables, CreatePedidoItemData, CreatePedidoItemVariables, CreateEncuestaData, CreateEncuestaVariables, UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateProductoData, UpdateProductoVariables, UpdateActivoProductoData, UpdateActivoProductoVariables, CreateEsperaData, CreateEsperaVariables, UpdateEstadoEsperaData, UpdateEstadoEsperaVariables, ConfirmarPedidoData, ConfirmarPedidoVariables, RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables, AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables, AsignarMesaClienteData, AsignarMesaClienteVariables, RechazarPedidoData, RechazarPedidoVariables, ReenviarPedidoData, ReenviarPedidoVariables, BorrarItemsPedidoData, BorrarItemsPedidoVariables, AvanzarSectorPedidoData, AvanzarSectorPedidoVariables, ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables, ListProductosData, ListMesasData, ListUsuariosData, ListPedidosActivosData, ListPedidoItemsData, ListEsperaData, ListEncuestasData } from '../';
 import { ConnectorConfig, DataConnect, QueryRef, QueryPromise, ExecuteQueryOptions, MutationRef, MutationPromise} from '@angular/fire/data-connect';
 import { CreateQueryResult, CreateMutationResult} from '@tanstack/angular-query-experimental';
 import { CreateDataConnectQueryResult, CreateDataConnectQueryOptions, CreateDataConnectMutationResult, DataConnectMutationOptionsUndefinedMutationFn } from '@tanstack-query-firebase/angular/data-connect';
@@ -17,11 +17,56 @@ export function injectCreateMesa(options?: CreateMesaOptions, injector?: Injecto
 type CreatePedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<CreatePedidoData, FirebaseError, CreatePedidoVariables>;
 export function injectCreatePedido(options?: CreatePedidoOptions, injector?: Injector): CreateDataConnectMutationResult<CreatePedidoData, CreatePedidoVariables, CreatePedidoVariables>;
 
+type CreatePedidoItemOptions = DataConnectMutationOptionsUndefinedMutationFn<CreatePedidoItemData, FirebaseError, CreatePedidoItemVariables>;
+export function injectCreatePedidoItem(options?: CreatePedidoItemOptions, injector?: Injector): CreateDataConnectMutationResult<CreatePedidoItemData, CreatePedidoItemVariables, CreatePedidoItemVariables>;
+
 type CreateEncuestaOptions = DataConnectMutationOptionsUndefinedMutationFn<CreateEncuestaData, FirebaseError, CreateEncuestaVariables>;
 export function injectCreateEncuesta(options?: CreateEncuestaOptions, injector?: Injector): CreateDataConnectMutationResult<CreateEncuestaData, CreateEncuestaVariables, CreateEncuestaVariables>;
 
 type UpdateEstadoUsuarioOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoUsuarioData, FirebaseError, UpdateEstadoUsuarioVariables>;
 export function injectUpdateEstadoUsuario(options?: UpdateEstadoUsuarioOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoUsuarioData, UpdateEstadoUsuarioVariables, UpdateEstadoUsuarioVariables>;
+
+type UpdateEstadoMesaOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoMesaData, FirebaseError, UpdateEstadoMesaVariables>;
+export function injectUpdateEstadoMesa(options?: UpdateEstadoMesaOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoMesaData, UpdateEstadoMesaVariables, UpdateEstadoMesaVariables>;
+
+type UpdateProductoOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateProductoData, FirebaseError, UpdateProductoVariables>;
+export function injectUpdateProducto(options?: UpdateProductoOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateProductoData, UpdateProductoVariables, UpdateProductoVariables>;
+
+type UpdateActivoProductoOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateActivoProductoData, FirebaseError, UpdateActivoProductoVariables>;
+export function injectUpdateActivoProducto(options?: UpdateActivoProductoOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateActivoProductoData, UpdateActivoProductoVariables, UpdateActivoProductoVariables>;
+
+type CreateEsperaOptions = DataConnectMutationOptionsUndefinedMutationFn<CreateEsperaData, FirebaseError, CreateEsperaVariables>;
+export function injectCreateEspera(options?: CreateEsperaOptions, injector?: Injector): CreateDataConnectMutationResult<CreateEsperaData, CreateEsperaVariables, CreateEsperaVariables>;
+
+type UpdateEstadoEsperaOptions = DataConnectMutationOptionsUndefinedMutationFn<UpdateEstadoEsperaData, FirebaseError, UpdateEstadoEsperaVariables>;
+export function injectUpdateEstadoEspera(options?: UpdateEstadoEsperaOptions, injector?: Injector): CreateDataConnectMutationResult<UpdateEstadoEsperaData, UpdateEstadoEsperaVariables, UpdateEstadoEsperaVariables>;
+
+type ConfirmarPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<ConfirmarPedidoData, FirebaseError, ConfirmarPedidoVariables>;
+export function injectConfirmarPedido(options?: ConfirmarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<ConfirmarPedidoData, ConfirmarPedidoVariables, ConfirmarPedidoVariables>;
+
+type RegistrarIntentoJuegoOptions = DataConnectMutationOptionsUndefinedMutationFn<RegistrarIntentoJuegoData, FirebaseError, RegistrarIntentoJuegoVariables>;
+export function injectRegistrarIntentoJuego(options?: RegistrarIntentoJuegoOptions, injector?: Injector): CreateDataConnectMutationResult<RegistrarIntentoJuegoData, RegistrarIntentoJuegoVariables, RegistrarIntentoJuegoVariables>;
+
+type AplicarDescuentoJuegoOptions = DataConnectMutationOptionsUndefinedMutationFn<AplicarDescuentoJuegoData, FirebaseError, AplicarDescuentoJuegoVariables>;
+export function injectAplicarDescuentoJuego(options?: AplicarDescuentoJuegoOptions, injector?: Injector): CreateDataConnectMutationResult<AplicarDescuentoJuegoData, AplicarDescuentoJuegoVariables, AplicarDescuentoJuegoVariables>;
+
+type AsignarMesaClienteOptions = DataConnectMutationOptionsUndefinedMutationFn<AsignarMesaClienteData, FirebaseError, AsignarMesaClienteVariables>;
+export function injectAsignarMesaCliente(options?: AsignarMesaClienteOptions, injector?: Injector): CreateDataConnectMutationResult<AsignarMesaClienteData, AsignarMesaClienteVariables, AsignarMesaClienteVariables>;
+
+type RechazarPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<RechazarPedidoData, FirebaseError, RechazarPedidoVariables>;
+export function injectRechazarPedido(options?: RechazarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<RechazarPedidoData, RechazarPedidoVariables, RechazarPedidoVariables>;
+
+type ReenviarPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<ReenviarPedidoData, FirebaseError, ReenviarPedidoVariables>;
+export function injectReenviarPedido(options?: ReenviarPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<ReenviarPedidoData, ReenviarPedidoVariables, ReenviarPedidoVariables>;
+
+type BorrarItemsPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<BorrarItemsPedidoData, FirebaseError, BorrarItemsPedidoVariables>;
+export function injectBorrarItemsPedido(options?: BorrarItemsPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<BorrarItemsPedidoData, BorrarItemsPedidoVariables, BorrarItemsPedidoVariables>;
+
+type AvanzarSectorPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<AvanzarSectorPedidoData, FirebaseError, AvanzarSectorPedidoVariables>;
+export function injectAvanzarSectorPedido(options?: AvanzarSectorPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<AvanzarSectorPedidoData, AvanzarSectorPedidoVariables, AvanzarSectorPedidoVariables>;
+
+type ActualizarEstadoPedidoOptions = DataConnectMutationOptionsUndefinedMutationFn<ActualizarEstadoPedidoData, FirebaseError, ActualizarEstadoPedidoVariables>;
+export function injectActualizarEstadoPedido(options?: ActualizarEstadoPedidoOptions, injector?: Injector): CreateDataConnectMutationResult<ActualizarEstadoPedidoData, ActualizarEstadoPedidoVariables, ActualizarEstadoPedidoVariables>;
 
 export type ListProductosOptions = () => Omit<CreateDataConnectQueryOptions<ListProductosData, undefined>, 'queryFn'>;
 export function injectListProductos(options?: ListProductosOptions, injector?: Injector): CreateDataConnectQueryResult<ListProductosData, undefined>;
@@ -34,3 +79,12 @@ export function injectListUsuarios(options?: ListUsuariosOptions, injector?: Inj
 
 export type ListPedidosActivosOptions = () => Omit<CreateDataConnectQueryOptions<ListPedidosActivosData, undefined>, 'queryFn'>;
 export function injectListPedidosActivos(options?: ListPedidosActivosOptions, injector?: Injector): CreateDataConnectQueryResult<ListPedidosActivosData, undefined>;
+
+export type ListPedidoItemsOptions = () => Omit<CreateDataConnectQueryOptions<ListPedidoItemsData, undefined>, 'queryFn'>;
+export function injectListPedidoItems(options?: ListPedidoItemsOptions, injector?: Injector): CreateDataConnectQueryResult<ListPedidoItemsData, undefined>;
+
+export type ListEsperaOptions = () => Omit<CreateDataConnectQueryOptions<ListEsperaData, undefined>, 'queryFn'>;
+export function injectListEspera(options?: ListEsperaOptions, injector?: Injector): CreateDataConnectQueryResult<ListEsperaData, undefined>;
+
+export type ListEncuestasOptions = () => Omit<CreateDataConnectQueryOptions<ListEncuestasData, undefined>, 'queryFn'>;
+export function injectListEncuestas(options?: ListEncuestasOptions, injector?: Injector): CreateDataConnectQueryResult<ListEncuestasData, undefined>;

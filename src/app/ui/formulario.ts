@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, input, numberAttribute, output } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { IconoComponent } from './basicos';
 import { mensajeDe } from '../nucleo/validacion/validadores';
@@ -21,17 +21,15 @@ import { mensajeDe } from '../nucleo/validacion/validadores';
           <lm-icono [nombre]="icono()!" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
         <input
-          [type]="tipo()"
           [formControl]="control()"
+          [type]="tipo()"
           [placeholder]="marcador()"
           [attr.inputmode]="modo()"
           [attr.maxlength]="largoMaximo()"
           [attr.autocomplete]="autocompletar()"
           [attr.enterkeyhint]="tecla()"
         />
-        @if (accesorio()) {
-          <ng-content select="[accesorio]" />
-        }
+        <ng-content select="[accesorio]" />
       </span>
       @if (error()) {
         <span class="lm-field__error">
@@ -63,6 +61,48 @@ export class CampoComponent {
   }
 }
 
+/** Campo de varias líneas, para descripciones. Mismo lenguaje visual que el campo simple. */
+@Component({
+  selector: 'lm-area',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [ReactiveFormsModule, IconoComponent],
+  template: `
+    <label class="lm-field" [class.lm-field--error]="error() !== null">
+      @if (etiqueta()) {
+        <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
+      }
+      <span class="lm-field__box lm-field__box--alto">
+        @if (icono()) {
+          <lm-icono [nombre]="icono()!" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+        }
+        <textarea [formControl]="control()" [placeholder]="marcador()" [rows]="filas()" [attr.maxlength]="largoMaximo()"></textarea>
+      </span>
+      @if (error()) {
+        <span class="lm-field__error">
+          <lm-icono nombre="error" [tamano]="16" />
+          {{ error() }}
+        </span>
+      } @else if (ayuda()) {
+        <span class="lm-field__hint">{{ ayuda() }}</span>
+      }
+    </label>
+  `,
+  styles: [':host{display:block}'],
+})
+export class AreaComponent {
+  readonly control = input.required<FormControl>();
+  readonly etiqueta = input<string | null>(null);
+  readonly marcador = input('');
+  readonly icono = input<string | null>(null);
+  readonly filas = input(3, { transform: numberAttribute });
+  readonly largoMaximo = input<number | null>(240);
+  readonly ayuda = input<string | null>(null);
+
+  protected error(): string | null {
+    return mensajeDe(this.control());
+  }
+}
+
 /** Contenedor centrado de foto tomada con la cámara. */
 @Component({
   selector: 'lm-foto',
@@ -74,9 +114,10 @@ export class CampoComponent {
         type="button"
         class="lm-photo__marco"
         [class.lm-photo__marco--circulo]="forma() === 'circulo'"
+        [class.lm-photo__marco--ovalo]="forma() === 'ovalo'"
         [class.lm-photo__marco--rect]="forma() === 'rectangulo'"
         [class.lm-photo__marco--cargada]="!!fuente()"
-        [style.width.px]="forma() === 'circulo' ? tamano() : null"
+        [style.width.px]="forma() === 'ovalo' ? Math.round(tamano() * 0.88) : forma() === 'circulo' ? tamano() : null"
         [style.height.px]="tamano()"
         [style.background-image]="fuente() ? 'url(' + fuente() + ')' : null"
         [style.border-color]="error() ? 'var(--state-error)' : null"
@@ -102,10 +143,11 @@ export class CampoComponent {
   styles: [':host{display:block}'],
 })
 export class FotoComponent {
+  protected readonly Math = Math;
   readonly fuente = input<string | null>(null);
   readonly etiqueta = input('Foto con cámara');
-  readonly forma = input<'circulo' | 'rectangulo'>('circulo');
-  readonly tamano = input(132, { transform: (v: any) => Number(v) || 132 });
+  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('ovalo');
+  readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
   readonly capturar = output<void>();
 }
@@ -200,3 +242,56 @@ export class FiltrosComponent {
   readonly valor = input.required<string>();
   readonly cambiar = output<string>();
 }
+
+/** Control segmentado: tipo de mesa, categoría corta. De dos a tres opciones. */
+@Component({
+  selector: 'lm-segmentado',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    @if (etiqueta()) {
+      <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
+    }
+    <div class="lm-segmented" [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',1fr)'">
+      @for (opcion of opciones(); track opcion.valor) {
+        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
+          {{ opcion.rotulo }}
+        </button>
+      }
+    </div>
+  `,
+  styles: [':host{display:block}'],
+})
+export class SegmentadoComponent {
+  readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
+  readonly valor = input.required<string>();
+  readonly etiqueta = input<string | null>(null);
+  readonly columnas = input<number | null>(null);
+  readonly cambiar = output<string>();
+}
+
+/** Interruptor de disponibilidad. Fila completa táctil. */
+@Component({
+  selector: 'lm-interruptor',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <button type="button" class="lm-toggle" (click)="cambiar.emit(!activo())">
+      <span class="lm-toggle__texto">
+        <b>{{ etiqueta() }}</b>
+        @if (ayuda()) {
+          <small>{{ ayuda() }}</small>
+        }
+      </span>
+      <span class="lm-toggle__pista" [class.on]="activo()">
+        <span class="lm-toggle__perilla"></span>
+      </span>
+    </button>
+  `,
+  styles: [':host{display:block}'],
+})
+export class InterruptorComponent {
+  readonly etiqueta = input.required<string>();
+  readonly ayuda = input<string | null>(null);
+  readonly activo = input(false, { transform: booleanAttribute });
+  readonly cambiar = output<boolean>();
+}
+

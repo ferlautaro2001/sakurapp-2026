@@ -18,9 +18,86 @@ export type EstadoUsuario = 'PENDIENTE' | 'APROBADO' | 'RECHAZADO';
 export type TipoProducto = 'COMIDA' | 'BEBIDA' | 'POSTRE';
 export type Sector = 'COCINA' | 'BAR';
 
+export type EstadoPedido =
+  | 'SELECCIONANDO'
+  | 'PENDIENTE_CONFIRMACION'
+  | 'RECHAZADO'
+  | 'CONFIRMADO'
+  | 'EN_PREPARACION'
+  | 'LISTO'
+  | 'ENTREGADO'
+  | 'RECIBIDO'
+  | 'CUENTA_SOLICITADA'
+  | 'PAGO_PENDIENTE'
+  | 'CERRADO';
+
+export type EstadoSector = 'NO_APLICA' | 'PENDIENTE' | 'EN_PREPARACION' | 'LISTO';
+
+export const ROTULO_ESTADO_SECTOR: Record<EstadoSector, string> = {
+  NO_APLICA: 'No aplica',
+  PENDIENTE: 'Pendiente',
+  EN_PREPARACION: 'En preparación',
+  LISTO: 'Listo',
+};
+
+/** US-7.2 · qué tan a fondo tiene que rehacer la comanda el comensal. */
+export type AlcanceRechazo = 'PARCIAL' | 'TOTAL';
+
+/**
+ * US-7.2 · cómo marca el mozo un producto al devolver la comanda.
+ *
+ *  - `CANTIDAD` (amarillo) → hay, pero no tanto: el comensal tiene que bajar
+ *    la cantidad. No puede reenviar sin haberla bajado al menos una vez.
+ *  - `CAMBIAR` (rojo) → directamente no va: lo saca o lo cambia por otra cosa.
+ *    No puede reenviar mientras siga en la comanda.
+ */
+export type MarcaRechazo = 'CANTIDAD' | 'CAMBIAR';
+
+/** Cómo se le nombra la marca al comensal, que es quien tiene que corregir. */
+export const ROTULO_MARCA_RECHAZO: Record<MarcaRechazo, string> = {
+  CANTIDAD: 'Hay menos de lo que pediste',
+  CAMBIAR: 'No lo podemos preparar',
+};
+
+/** Cómo se le nombra la marca al mozo, en su idioma: lo que vio en la cocina. */
+export const ROTULO_MARCA_MOZO: Record<MarcaRechazo, string> = {
+  CANTIDAD: 'Cantidad insuficiente',
+  CAMBIAR: 'Sin stock',
+};
+
+export const ROTULO_ALCANCE_RECHAZO: Record<AlcanceRechazo, string> = {
+  PARCIAL: 'Modificación parcial',
+  TOTAL: 'Modificación total',
+};
+
+export const ROTULO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
+  SELECCIONANDO: 'Seleccionando productos',
+  PENDIENTE_CONFIRMACION: 'Esperando confirmación',
+  RECHAZADO: 'Rechazado',
+  CONFIRMADO: 'Confirmado',
+  EN_PREPARACION: 'En preparación',
+  LISTO: 'Listo',
+  ENTREGADO: 'Entregado',
+  RECIBIDO: 'Recibido',
+  CUENTA_SOLICITADA: 'Cuenta solicitada',
+  PAGO_PENDIENTE: 'Pago pendiente',
+  CERRADO: 'Cerrado',
+};
+
 /** Una bebida se prepara siempre en la barra; el resto, en cocina. */
 export function sectorDe(tipo: TipoProducto): Sector {
   return tipo === 'BEBIDA' ? 'BAR' : 'COCINA';
+}
+
+export const ROTULO_SECTOR: Record<Sector, string> = {
+  COCINA: 'Cocina',
+  BAR: 'Barra',
+};
+
+export function sectorDelPerfil(perfil: Perfil | undefined): Sector | null {
+  if (perfil === 'COCINERO') return 'COCINA';
+  if (perfil === 'CANTINERO') return 'BAR';
+  return null;
 }
 
 /** Rótulos en español rioplatense, sin abreviaturas. */
@@ -43,4 +120,54 @@ export const ROTULO_ESTADO_USUARIO: Record<EstadoUsuario, string> = {
 
 /** Perfiles con permisos de administración. */
 export const PERFILES_ADMIN: Perfil[] = ['DUENO', 'SUPERVISOR'];
+
+/** Perfiles operativos que un dueño o supervisor puede dar de alta como empleados. */
+export const PERFILES_EMPLEADO: Perfil[] = ['METRE', 'MOZO', 'COCINERO', 'CANTINERO'];
+
+export type TipoMesa = 'ESTANDAR' | 'VIP' | 'MOVILIDAD_REDUCIDA';
+export type EstadoMesa = 'VACIA' | 'OCUPADA' | 'INACTIVA';
+
+export const ROTULO_TIPO_MESA: Record<TipoMesa, string> = {
+  ESTANDAR: 'Estándar',
+  VIP: 'VIP',
+  MOVILIDAD_REDUCIDA: 'Movilidad reducida',
+};
+
+export const ICONO_TIPO_MESA: Record<TipoMesa, string> = {
+  ESTANDAR: 'table_restaurant',
+  VIP: 'workspace_premium',
+  MOVILIDAD_REDUCIDA: 'accessible',
+};
+
+export const ROTULO_ESTADO_MESA: Record<EstadoMesa, string> = {
+  VACIA: 'Vacía',
+  OCUPADA: 'Ocupada',
+  INACTIVA: 'Inactiva',
+};
+
+
+/**
+ * Momentos por los que pasa un comensal en la lista de espera del salón
+ * (punto 9 del enunciado).
+ *
+ *   ESPERANDO  →  ASIGNADO  →  FINALIZADO
+ *   (en la fila) (tiene mesa) (escaneó el código de su mesa)
+ *
+ * `CANCELADO` es la salida por la puerta: lo saca el metre.
+ */
+export type EstadoEspera = 'ESPERANDO' | 'ASIGNADO' | 'CANCELADO' | 'FINALIZADO';
+
+export const ROTULO_ESTADO_ESPERA: Record<EstadoEspera, string> = {
+  ESPERANDO: 'En la fila',
+  ASIGNADO: 'Con mesa asignada',
+  CANCELADO: 'Fuera de la lista',
+  FINALIZADO: 'Sentado en su mesa',
+};
+
+export type RolMensaje = 'CLIENTE' | 'MOZO';
+
+export const ROTULO_ROL_MENSAJE: Record<RolMensaje, string> = {
+  CLIENTE: 'Cliente',
+  MOZO: 'Mozo',
+};
 

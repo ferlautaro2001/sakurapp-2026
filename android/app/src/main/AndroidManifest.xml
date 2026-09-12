@@ -7,6 +7,7 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
+        android:extractNativeLibs="true"
         android:theme="@style/AppTheme">
 
         <activity
@@ -48,7 +49,8 @@
     <!-- Notificaciones automáticas (Android 13 en adelante pide el permiso en tiempo de ejecución). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
-    <!-- La cámara es necesaria, pero no impide instalar en equipos sin autofoco. -->
-    <uses-feature android:name="android.hardware.camera" android:required="true" />
+    <!-- La cámara es necesaria, pero no impide instalar en equipos sin autofoco ni cámara trasera. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.front" android:required="false" />
 </manifest>

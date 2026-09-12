@@ -22,6 +22,8 @@ const DURACION_POR_DEFECTO = 2400;
  * - Sonido gong de inicio
  * - Transición automática a la pantalla de presentación estática
  */
+import { SesionService } from '../../nucleo/servicios/sesion.service';
+
 @Component({
   selector: 'lm-splash',
   template: `
@@ -154,6 +156,7 @@ const DURACION_POR_DEFECTO = 2400;
 export class SplashPage implements OnInit {
   private readonly router = inject(Router);
   private readonly sonido = inject(SonidoService);
+  private readonly sesion = inject(SesionService);
   protected readonly grupo = GRUPO;
 
   /**
@@ -180,7 +183,13 @@ export class SplashPage implements OnInit {
     const duracion = await this.sonido.duracion('inicio', DURACION_POR_DEFECTO);
     this.duracion.set(duracion);
 
-    setTimeout(() => void this.router.navigate(['/presentacion'], { replaceUrl: true }), duracion);
+    setTimeout(() => {
+      if (this.sesion.autenticado()) {
+        void this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
+      } else {
+        void this.router.navigate(['/presentacion'], { replaceUrl: true });
+      }
+    }, duracion);
   }
 }
 

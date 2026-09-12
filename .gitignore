@@ -73,6 +73,13 @@ Thumbs.db
 .env
 .env*.local
 src/environments/environment.ts
+*serviceAccount*.json
+scripts_backend/node_modules/
+scripts_backend/serviceAccountKey.json
+functions/node_modules/
+google-services.json
+android/app/google-services.json
+
 
 # Prompts y notas internas de desarrollo
 *.prompt.md
@@ -100,3 +107,10 @@ dataconnect-debug.log
 
 # Data Connect: esquema compilado que genera el CLI
 dataconnect/.dataconnect/
+
+# Graphify artifacts and nodes
+graphify-out/
+
+# Local agent memory
+AGENTS.md
+/remake

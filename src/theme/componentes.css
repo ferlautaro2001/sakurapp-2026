@@ -1,6 +1,6 @@
 /* SakurApp · capa de componentes
    Traducción a CSS del sistema de diseño. El fondo de todas las pantallas es
-   un rosa profundo y plano, con un pétalo de sakura apenas insinuado; encima
+   un degradado rosa con luces suaves y flores translúcidas; encima
    flotan tarjetas de color nieve. Lo que se apoya sobre el fondo va en tinta
    blanca; lo que vive dentro de una tarjeta, en ciruela. */
 
@@ -32,6 +32,20 @@ input, textarea, select { font-family: inherit; }
   user-select: none;
 }
 
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+[role="button"],
+label,
+.sk-flor {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  touch-action: manipulation;
+}
+
 .lm-label {
   display: block;
   font: var(--type-label);
@@ -55,13 +69,44 @@ input, textarea, select { font-family: inherit; }
   min-height: 0;
   overflow: hidden;
   isolation: isolate;
-  background: var(--bg-app);
+  background:
+    radial-gradient(ellipse at 62% 23%, rgba(255, 166, 198, .32), transparent 44%),
+    radial-gradient(ellipse at 2% 53%, rgba(255, 149, 189, .38), transparent 46%),
+    radial-gradient(ellipse at 100% 76%, rgba(246, 121, 168, .28), transparent 42%),
+    linear-gradient(155deg, #9d204b 0%, #b72e5d 30%, #cb4374 57%, #b42c5a 100%);
 }
 
-/* Marca de agua: un solo pétalo grande, apenas insinuado en la esquina
-   superior. Está para que el fondo plano no se sienta vacío, no para
-   decorar: por eso la opacidad es tan baja y nunca recibe toques. */
-.lm-screen::before {
+/* Flores y puntos de luz detrás del contenido, sin interceptar los toques. */
+.lm-screen:where(:not(.lm-screen--oscura))::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23f5a8c4%22%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffe7ef%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(36%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(108%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(180%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(252%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(324%2050%2050)%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%222.5%22%20fill%3D%22%23ffe7ef%22%2F%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23f5a8c4%22%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffe7ef%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(36%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(108%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(180%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(252%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(324%2050%2050)%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%222.5%22%20fill%3D%22%23ffe7ef%22%2F%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23f5a8c4%22%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffe7ef%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(36%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(108%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(180%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(252%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(324%2050%2050)%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%222.5%22%20fill%3D%22%23ffe7ef%22%2F%3E%3C%2Fsvg%3E"), url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23f5a8c4%22%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffe7ef%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(36%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(108%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(180%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(252%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(324%2050%2050)%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%222.5%22%20fill%3D%22%23ffe7ef%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 240px, 116px, 140px, 90px;
+  background-position: right -64px top 38px, left -58px top 38%, right -65px bottom 7%, left -36px bottom 18%;
+  opacity: .18;
+}
+
+.lm-screen:where(:not(.lm-screen--oscura))::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 72% 5%, rgba(255, 216, 231, .24), transparent 9px),
+    radial-gradient(circle at 42% 11%, rgba(255, 228, 238, .27), transparent 5px),
+    radial-gradient(circle at 58% 21%, rgba(255, 208, 226, .38), transparent 13px),
+    radial-gradient(circle at 96% 32%, rgba(255, 228, 238, .35), transparent 7px),
+    radial-gradient(circle at 4% 61%, rgba(255, 228, 238, .32), transparent 7px),
+    radial-gradient(circle at 98% 71%, rgba(255, 208, 226, .34), transparent 12px),
+    radial-gradient(circle at 12% 88%, rgba(255, 228, 238, .25), transparent 6px);
+}
+
+.lm-screen--oscura::before {
   content: "";
   position: absolute;
   z-index: -1;
@@ -74,7 +119,38 @@ input, textarea, select { font-family: inherit; }
   opacity: .08;
   transform: rotate(14deg);
 }
+/*
+ * Pantalla florida: la sala de consultas.
+ */
+.lm-screen--florida::before {
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  width: auto;
+  height: auto;
+  transform: none;
+  opacity: .16;
+  background-repeat: no-repeat;
+  background-image:
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-2.png"),
+    url("../assets/img/flor-1.png"),
+    url("../assets/img/flor-3.png");
+  background-size: 52px, 150px, 70px, 84px, 108px, 116px, 62px, 68px, 126px, 128px;
+  background-position:
+    5% 1%, -6% 12%, 46% 10%, 84% 21%, 28% 33%, 10% 53%,
+    90% 46%, 64% 66%, 22% 79%, 94% 89%;
+}
+
 .lm-screen--oscura { background: var(--surface-inverse); }
+.lm-screen--limpia { background: var(--bg-app); }
 .lm-screen--limpia::before, .lm-screen--limpia::after { display: none; }
 
 /* Mientras la cámara del lector está encendida, la vista web se vuelve
@@ -183,6 +259,7 @@ body.camara-encendida .lm-header {
   transition: background var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
 }
 .lm-btn--auto { width: auto; }
+.lm-btn--compacto { height: var(--touch-min); }
 .lm-btn:disabled { opacity: .46; cursor: default; }
 .lm-btn:not(:disabled):active { transform: scale(.985); }
 
@@ -316,16 +393,33 @@ body.camara-encendida .lm-header {
 }
 .lm-search input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; font: var(--type-body); color: var(--text-body); }
 
-.lm-filters { display: flex; gap: 8px; min-width: 0; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
-.lm-filters::-webkit-scrollbar { display: none; }
-.lm-filter {
-  flex: 0 0 auto; min-height: 40px; padding: 0 14px;
-  display: inline-flex; align-items: center; gap: 6px;
-  border-radius: var(--radius-pill); cursor: pointer;
-  border: 1.5px solid rgba(255, 255, 255, .55);
-  background: rgba(255, 255, 255, .14); color: var(--text-sobre-fondo);
-  font: 600 14px/1 var(--font-text); white-space: nowrap;
+.lm-filters {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  min-width: 0; padding-bottom: 2px;
 }
+.lm-filter {
+  /* Cada burbuja conserva el espacio de su texto; si no entra, pasa de fila. */
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 9px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  border: 1.5px solid rgba(255, 255, 255, .55);
+  background: rgba(255, 255, 255, .14);
+  color: var(--text-sobre-fondo);
+  font: 600 14px/1.3 var(--font-text);
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.lm-filter > lm-icono { flex: 0 0 auto; }
+
 .lm-filter--on { border-color: transparent; background: var(--surface-card); color: var(--action-primary); font-weight: 700; }
 
 .lm-segmented {
@@ -367,6 +461,7 @@ body.camara-encendida .lm-header {
   box-shadow: var(--shadow-card); padding: 0; overflow: hidden;
 }
 .lm-photo__marco--circulo { border-radius: 50%; }
+.lm-photo__marco--ovalo { border-radius: 50% / 44%; aspect-ratio: 1 / 1.15; }
 .lm-photo__marco--rect { border-radius: var(--radius-card); width: 100%; }
 .lm-photo__marco--cargada { border: 3px solid var(--surface-card); }
 .lm-photo__pie {
@@ -408,14 +503,45 @@ body.camara-encendida .lm-header {
   background: var(--sk-petalo-vivo); box-shadow: 0 0 14px var(--sk-petalo-vivo);
   animation: lm-scan 2.2s var(--ease-standard) infinite;
 }
+/* Con la cámara encendida no hay fondo propio detrás de estas dos líneas: el
+   texto se apoya sobre la imagen del salón. Va en blanco pleno, un punto más
+   grueso y con una sombra oscura que le arma el contorno, para que se lea
+   igual sobre una pared clara que sobre una mesa oscura. */
 .lm-viewfinder__rotulo {
-  font: var(--type-label); letter-spacing: var(--tracking-label);
+  font: var(--type-label); font-weight: 800; letter-spacing: var(--tracking-label);
   text-transform: uppercase; color: #FFFFFF; white-space: nowrap;
+  text-shadow: 0 1px 3px rgba(20, 4, 10, .85), 0 0 12px rgba(20, 4, 10, .6);
 }
 .lm-viewfinder__ayuda {
   display: inline-flex; align-items: center; gap: 8px; font: var(--type-body-small);
-  color: rgba(255, 255, 255, .86); max-width: 280px; text-align: center;
+  font-weight: 600; color: #FFFFFF; max-width: 280px; text-align: center;
+  text-shadow: 0 1px 3px rgba(20, 4, 10, .85), 0 0 12px rgba(20, 4, 10, .6);
 }
+
+/* Visor con la cámara encendida (`.visor`, en la cáscara de la aplicación).
+   Ahí atrás no hay fondo de la aplicación sino la imagen del salón, así que
+   TODO el texto —el botón de cancelar incluido— va en blanco pleno y con
+   contorno oscuro, y el velo alrededor del marco se cierra un poco más. */
+.visor .lm-viewfinder__marco { box-shadow: 0 0 0 9999px rgba(48, 6, 22, .74); }
+
+/* El velo no es un fondo: es la sombra desbordada del marco, y se pinta
+   ENCIMA de todo lo que venga antes en la marcación. El rótulo está arriba
+   del marco, así que sin esto le queda el velo por delante y el blanco se
+   apaga hasta quedar casi del color del fondo. Los tres textos suben una
+   capa y quedan por encima del velo. */
+.visor .lm-viewfinder__rotulo,
+.visor .lm-viewfinder__ayuda,
+.visor lm-texto-boton {
+  position: relative;
+  z-index: 1;
+}
+.visor .lm-viewfinder__rotulo,
+.visor .lm-viewfinder__ayuda,
+.visor .lm-textbtn {
+  color: #FFFFFF;
+  text-shadow: 0 1px 4px rgba(20, 4, 10, .92), 0 0 14px rgba(20, 4, 10, .7);
+}
+.visor .lm-textbtn { font-weight: 700; }
 
 /* ---------- listas y tarjetas ---------- */
 .lm-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-list); min-width: 0; }
@@ -431,6 +557,58 @@ body.camara-encendida .lm-header {
   color: var(--text-body);
 }
 
+/* Reglas de contraste y legibilidad dentro de tarjetas, modales y tickets */
+.lm-card .lm-label,
+.lm-card label,
+.lm-modal .lm-label,
+.lm-modal label,
+.ticket .lm-label,
+.lm-ticket .lm-label {
+  color: var(--text-muted) !important;
+}
+
+.lm-card .lm-nota,
+.lm-card .lm-parrafo,
+.lm-card small,
+.lm-modal .lm-nota,
+.lm-modal .lm-parrafo,
+.lm-modal small {
+  color: var(--text-muted);
+}
+
+.lm-card b,
+.lm-card strong,
+.lm-card h1,
+.lm-card h2,
+.lm-card h3,
+.lm-card h4,
+.lm-modal b,
+.lm-modal strong,
+.lm-modal h1,
+.lm-modal h2,
+.lm-modal h3,
+.lm-modal h4 {
+  color: var(--text-title);
+}
+
+.lm-card .lm-field .lm-label,
+.lm-modal .lm-field .lm-label {
+  color: var(--text-title) !important;
+}
+
+.lm-card .lm-field__hint,
+.lm-modal .lm-field__hint {
+  color: var(--text-muted);
+}
+
+.lm-card .lm-rule .lm-label {
+  color: var(--text-muted);
+}
+
+.lm-card .lm-rule__linea {
+  background: linear-gradient(90deg, transparent, var(--border-card), transparent);
+}
+
 .lm-stat {
   padding: 14px; border-radius: var(--radius-card);
   background: var(--surface-card); border: none;
@@ -440,48 +618,341 @@ body.camara-encendida .lm-header {
 .lm-stat__valor { font: var(--type-numeral); color: var(--text-title); letter-spacing: var(--tracking-tight); }
 .lm-stat__rotulo { font: var(--type-caption); color: var(--text-muted); }
 
-/* ---------- tarjeta de mesa ----------
-   Todas del mismo alto y con la misma estructura: foto arriba, número grande,
-   capacidad, tipo y disponibilidad. Sin ilustración ajena adentro. */
+/* =========================================================
+   TARJETA DE MESA
+   ========================================================= */
+
 .lm-mesa {
-  display: flex; flex-direction: column; gap: 0; padding: 0;
-  text-align: left; cursor: pointer; background: var(--surface-card);
-  border: none; border-radius: var(--radius-card); overflow: hidden;
-  box-shadow: var(--shadow-card); width: 100%; height: 100%;
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 0;
+
+  text-align: left;
+  cursor: pointer;
+
+  background: var(--surface-card);
+
+  border: 0;
+  border-radius: 18px;
+
+  overflow: hidden;
+
+  box-shadow: var(--shadow-card);
+
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
+
+.lm-mesa:active {
+  transform: scale(.98);
+}
+
+
+/* =========================================================
+   FOTO
+   ========================================================= */
+
 .lm-mesa__foto {
-  position: relative; height: 92px; flex: 0 0 auto;
-  background: var(--sk-nieve-rosa) center / cover no-repeat;
-  display: grid; place-items: center;
+  position: relative;
+
+  height: 108px;
+  flex: 0 0 108px;
+
+  /*
+   * Importante:
+   * el fondo que aparece donde recortamos la foto
+   * debe ser igual al cuerpo de la tarjeta.
+   */
+  background: var(--surface-card);
+
+  overflow: visible;
 }
+
+.lm-mesa__imagen {
+  position: absolute;
+  inset: 0;
+
+  background:
+    var(--sk-nieve-rosa)
+    center / cover
+    no-repeat;
+
+  /*
+   * Acá está el "surquito".
+   *
+   * La foto queda más baja en el centro
+   * y sube suavemente hacia los costados.
+   */
+  clip-path: ellipse(
+    110% 100%
+    at 50% 0%
+  );
+}
+
+
+/* Oscurecimiento mínimo para mejorar contraste */
+
+.lm-mesa__foto::before {
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, .04) 0%,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, .10) 100%
+    );
+
+  pointer-events: none;
+}
+
+
+/* =========================================================
+   SIN FOTO
+   ========================================================= */
+
 .lm-mesa__foto--sinfoto::after {
-  content: ""; position: absolute; inset: 0;
-  background: url("../assets/img/flor-2.png") center / 66px no-repeat;
-  opacity: .5;
+  content: "";
+
+  position: absolute;
+  inset: 0;
+
+  background:
+    url("../assets/img/flor-2.png")
+    center / 70px
+    no-repeat;
+
+  opacity: .35;
 }
-.lm-mesa__numero {
-  position: absolute; left: 10px; bottom: -18px; z-index: 1;
-  width: 46px; height: 46px; border-radius: 14px;
-  display: grid; place-items: center;
-  background: var(--action-primary); color: var(--text-on-primary);
-  font: 900 22px/1 var(--font-numeric);
-  box-shadow: var(--shadow-button);
-}
+
+
+/* =========================================================
+   TIPO DE MESA
+   ========================================================= */
+
 .lm-mesa__tipo {
-  position: absolute; top: 8px; right: 8px; z-index: 1;
-  display: inline-flex; align-items: center; gap: 4px;
-  padding: 4px 9px; border-radius: var(--radius-pill);
-  background: rgba(253, 236, 239, .94); color: var(--action-primary);
+  position: absolute;
+
+  top: 8px;
+  right: 8px;
+
+  z-index: 2;
+
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  max-width: calc(100% - 16px);
+
+  padding: 6px 10px;
+
+  border-radius: 999px;
+
+  background: rgba(253, 236, 239, .96);
+
+  color: var(--action-primary);
+
   font: 700 11px/1.2 var(--font-text);
+
+  box-shadow:
+    0 2px 7px rgba(107, 18, 52, .12);
 }
-.lm-mesa__cuerpo { display: flex; flex-direction: column; gap: 6px; padding: 24px 12px 12px; flex: 1; }
-.lm-mesa__rotulo { font: var(--type-card-title); color: var(--text-title); }
-.lm-mesa__meta { display: flex; align-items: center; gap: 5px; color: var(--text-muted); font: var(--type-caption); }
-.lm-mesa__pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: auto; }
-.lm-mesa__qr {
-  display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 auto;
-  border-radius: 11px; background: var(--surface-sunken); border: none; cursor: pointer;
+
+
+/* =========================================================
+   NÚMERO
+   ========================================================= */
+
+.lm-mesa__numero {
+  position: absolute;
+
+  left: 12px;
+  bottom: -22px;
+
+  z-index: 3;
+
+  width: 52px;
+  height: 52px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 16px;
+
+  background: var(--action-primary);
+  color: var(--text-on-primary);
+
+  font:
+    900
+    23px / 1
+    var(--font-numeric);
+
+  box-shadow:
+    0 6px 14px rgba(164, 28, 77, .28);
 }
+
+
+/* =========================================================
+   CUERPO
+   ========================================================= */
+
+.lm-mesa__cuerpo {
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  padding:
+    29px
+    12px
+    12px;
+
+  background: var(--surface-card);
+}
+
+
+/* =========================================================
+   CABECERA
+   ========================================================= */
+
+.lm-mesa__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 8px;
+}
+
+.lm-mesa__datos {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+
+/* Nombre */
+
+.lm-mesa__rotulo {
+  color: var(--text-title);
+
+  font: var(--type-card-title);
+
+  white-space: nowrap;
+}
+
+
+/* Cantidad de personas */
+
+.lm-mesa__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+
+  color: var(--text-muted);
+
+  font: var(--type-caption);
+}
+
+
+/* =========================================================
+   FLECHA
+   ========================================================= */
+
+.lm-mesa__flecha {
+  width: 36px;
+  height: 36px;
+
+  flex: 0 0 36px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  color: var(--action-primary);
+
+  background: rgba(197, 44, 95, .08);
+}
+
+
+/* =========================================================
+   ESTADO
+   ========================================================= */
+
+.lm-mesa__estado {
+  width: 100%;
+
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  margin-top: auto;
+
+  padding: 9px 12px;
+
+  border-radius: 999px;
+
+  font:
+    700
+    12px / 1
+    var(--font-text);
+}
+
+
+/* Indicador */
+
+.lm-mesa__estado-punto {
+  width: 9px;
+  height: 9px;
+
+  flex: 0 0 9px;
+
+  border-radius: 50%;
+
+  background: currentColor;
+}
+
+
+/* -------------------------
+   VACÍA
+   ------------------------- */
+
+.lm-mesa__estado--vacia {
+  color: #13885b;
+  background: #dcf6e9;
+}
+
+
+/* -------------------------
+   OCUPADA
+   ------------------------- */
+
+.lm-mesa__estado--ocupada {
+  color: #d14343;
+  background: #ffe2e2;
+}
+
+
+/* -------------------------
+   INACTIVA
+   ------------------------- */
+
+.lm-mesa__estado--inactiva {
+  color: #75656c;
+  background: #eee7ea;
+}
+
 
 .lm-pending {
   display: flex; flex-direction: column; gap: 12px; padding: 14px;
@@ -490,11 +961,12 @@ body.camara-encendida .lm-header {
 }
 .lm-pending__fila { display: flex; align-items: center; gap: 12px; }
 .lm-avatar {
-  width: 56px; height: 56px; flex: 0 0 auto; border-radius: 18px;
+  width: 54px; height: 62px; flex: 0 0 auto; border-radius: 50% / 44%;
   background: var(--avatar-1) center / cover no-repeat; color: var(--text-on-primary);
   display: grid; place-items: center; font: 700 17px/1 var(--font-text); overflow: hidden;
+  box-shadow: 0 2px 6px rgba(110, 18, 52, 0.12); border: 2px solid #FFFFFF;
 }
-.lm-avatar--sm { width: 48px; height: 48px; border-radius: 15px; font-size: 15px; }
+.lm-avatar--sm { width: 44px; height: 50px; border-radius: 50% / 44%; font-size: 14px; }
 .lm-pending__datos { flex: 1; min-width: 0; }
 .lm-pending__nombre {
   display: block; font: var(--type-card-title); color: var(--text-title);
@@ -505,25 +977,304 @@ body.camara-encendida .lm-header {
 .lm-pending__acciones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .lm-pending__acciones .lm-btn { height: 48px; padding: 0 10px; }
 
+/* =========================================================
+   TARJETA DE PRODUCTO · CARTA
+   ========================================================= */
+
 .lm-product {
-  display: flex; gap: 12px; width: 100%; padding: 12px; text-align: left; cursor: pointer;
-  background: var(--surface-card); border: none;
-  border-radius: var(--radius-card); box-shadow: var(--shadow-card); align-items: center;
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 108px minmax(0, 1fr) 34px;
+  align-items: stretch;
+  gap: 9px;
+  width: 100%;
+  min-height: 142px;
+  padding: 8px 9px 8px 8px;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid rgba(255, 255, 255, .72);
+  border-radius: 22px;
+  box-shadow: 0 7px 18px rgba(88, 12, 43, .16);
+  transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
+
+.lm-product::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  top: -7px;
+  right: 5px;
+  width: 58px;
+  height: 58px;
+  background: url("../assets/img/flor-2.png") center / contain no-repeat;
+  opacity: .17;
+  transform: rotate(9deg);
+}
+
+.lm-product:active {
+  transform: scale(.985);
+  box-shadow: 0 3px 10px rgba(88, 12, 43, .13);
+}
+
+.lm-product > * {
+  position: relative;
+  z-index: 1;
+}
+
 .lm-product__thumb {
-  width: 76px; height: 76px; flex: 0 0 auto; border-radius: var(--radius-thumb);
-  background: var(--surface-sunken) center / cover no-repeat; display: grid; place-items: center; overflow: hidden;
+  position: relative;
+  width: 108px;
+  height: 100%;
+  min-height: 124px;
+  flex: 0 0 auto;
+  border-radius: 17px;
+  background: var(--surface-sunken) center / cover no-repeat;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
 }
-.lm-product__datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
-.lm-product__nombre { font: var(--type-card-title); color: var(--text-title); min-width: 0; }
-.lm-product__nombre > :first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.lm-product__thumb--apagado { filter: saturate(.45); }
+
+.lm-product__thumb--apagado::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 247, 248, .26);
+  pointer-events: none;
+}
+
+.lm-product__flores {
+  position: absolute;
+  left: 8px;
+  bottom: 7px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.lm-product__flores img {
+  display: block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 3px rgba(38, 4, 17, .42));
+}
+
+.lm-product__flores img + img {
+  width: 17px;
+  height: 17px;
+  margin-bottom: 1px;
+  opacity: .92;
+}
+
+.lm-product__datos {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 4px 0;
+}
+
+.lm-product__nombre {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-title);
+  font: 800 14px/1.18 var(--font-display);
+}
+
+.lm-product__nombre-texto {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lm-product__nombre .lm-chip {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  font-size: 9px;
+}
+
 .lm-product__desc {
-  font: var(--type-caption); color: var(--text-muted); text-wrap: pretty;
-  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  min-width: 0;
+  color: var(--text-muted);
+  font: 500 11px/1.35 var(--font-text);
+  text-wrap: pretty;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.lm-product__pie { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 2px; }
-.lm-product__precio { font: var(--type-price); color: var(--action-primary); white-space: nowrap; }
-.lm-product__tiempo { display: flex; align-items: center; gap: 4px; font: var(--type-caption); color: var(--text-muted); white-space: nowrap; }
+
+.lm-product__pie {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: auto;
+}
+
+.lm-product__dato {
+  min-width: 0;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 7px;
+  border-radius: 13px;
+  background: rgba(232, 97, 143, .10);
+}
+
+.lm-product__dato-icono {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--action-primary);
+  background: rgba(227, 85, 133, .13);
+}
+
+.lm-product__precio {
+  min-width: 0;
+  color: var(--action-primary);
+  font: 900 15px/1 var(--font-numeric);
+  letter-spacing: -.02em;
+  white-space: nowrap;
+}
+
+.lm-product__tiempo {
+  min-width: 0;
+  color: var(--text-title);
+  font: 800 11px/1.1 var(--font-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lm-product__ir {
+  align-self: center;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--action-primary);
+  background: rgba(227, 85, 133, .12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+}
+
+/* En la carta con carrito mantenemos el control lateral existente y sólo
+   compactamos la tarjeta para no alterar la funcionalidad de cantidad. */
+.lm-product-fila--carrito .lm-product {
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 112px;
+  padding: 7px;
+  gap: 8px;
+  border-radius: var(--radius-card);
+}
+
+.lm-product-fila--carrito .lm-product__thumb {
+  width: 72px;
+  min-height: 96px;
+  border-radius: 14px;
+}
+
+.lm-product-fila--carrito .lm-product__ir,
+.lm-product-fila--carrito .lm-product::after {
+  display: none;
+}
+
+.lm-product-fila--carrito .lm-product__datos { gap: 4px; padding: 1px 0; }
+.lm-product-fila--carrito .lm-product__nombre { font-size: 12px; }
+.lm-product-fila--carrito .lm-product__desc { font-size: 10px; -webkit-line-clamp: 1; }
+.lm-product-fila--carrito .lm-product__pie { grid-template-columns: 1fr; gap: 4px; }
+.lm-product-fila--carrito .lm-product__dato { min-height: 31px; padding: 4px 6px; }
+.lm-product-fila--carrito .lm-product__dato-icono { width: 22px; height: 22px; flex-basis: 22px; }
+.lm-product-fila--carrito .lm-product__precio { font-size: 12px; }
+.lm-product-fila--carrito .lm-product__tiempo { font-size: 10px; }
+.lm-product-fila--carrito .lm-product__flores img { width: 17px; height: 17px; }
+.lm-product-fila--carrito .lm-product__flores img + img { width: 12px; height: 12px; }
+
+@media (max-width: 360px) {
+  .lm-product {
+    grid-template-columns: 98px minmax(0, 1fr) 32px;
+    gap: 7px;
+    min-height: 132px;
+    padding: 7px;
+  }
+
+  .lm-product__thumb { width: 98px; min-height: 116px; }
+  .lm-product__nombre { font-size: 13px; }
+  .lm-product__dato { gap: 4px; padding: 5px; }
+  .lm-product__dato-icono { width: 23px; height: 23px; flex-basis: 23px; }
+  .lm-product__precio { font-size: 13px; }
+  .lm-product__tiempo { font-size: 10px; }
+  .lm-product__ir { width: 32px; height: 32px; }
+}
+
+/* Acabado de la carta: el espacio de la flecha se reserva sólo en el pie. */
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product {
+  grid-template-columns: 108px minmax(0, 1fr);
+  background: linear-gradient(90deg, #ef9dbb 0%, #f9d6e2 34%, #fdf0f4 70%, #fffafb 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28), 0 7px 18px rgba(88, 12, 43, .16);
+}
+
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product::after {
+  top: 2px;
+  right: 3px;
+  width: 42px;
+  height: 42px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20100%20100%22%3E%3Cg%20fill%3D%22%23f5a8c4%22%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050%20C37%2043%2031%2024%2037%2012%20Q42%206%2050%2014%20Q58%206%2063%2012%20C69%2024%2063%2043%2050%2050Z%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23ffe7ef%22%20stroke-width%3D%221.5%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(0%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(36%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(72%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(108%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(144%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(180%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(216%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(252%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(288%2050%2050)%22%2F%3E%3Cpath%20d%3D%22M50%2050L50%2032%22%20transform%3D%22rotate(324%2050%2050)%22%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2250%22%20cy%3D%2250%22%20r%3D%222.5%22%20fill%3D%22%23ffe7ef%22%2F%3E%3C%2Fsvg%3E");
+  opacity: .58;
+  transform: rotate(12deg);
+}
+
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product__nombre {
+  padding-right: 30px;
+}
+
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product__pie {
+  margin-right: 43px;
+}
+
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product__dato {
+  background: rgba(242, 143, 180, .18);
+}
+
+.lm-product-fila:not(.lm-product-fila--carrito) .lm-product__ir {
+  position: absolute;
+  right: 9px;
+  bottom: 16px;
+  background: radial-gradient(circle at 35% 25%, #ffe9f1, #f6bfd3);
+  border: 1px solid rgba(255, 255, 255, .95);
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, .8), 0 4px 10px rgba(167, 44, 90, .16);
+}
+
+@media (max-width: 360px) {
+  .lm-product-fila:not(.lm-product-fila--carrito) .lm-product {
+    grid-template-columns: 98px minmax(0, 1fr);
+  }
+
+  .lm-product-fila:not(.lm-product-fila--carrito) .lm-product__pie {
+    margin-right: 39px;
+  }
+
+  .lm-product-fila:not(.lm-product-fila--carrito) .lm-product__ir {
+    right: 7px;
+    bottom: 16px;
+  }
+}
 
 .lm-wait {
   display: flex; align-items: center; gap: 12px; padding: 12px;
@@ -623,7 +1374,18 @@ body.camara-encendida .lm-header {
 /* ---------- navegación ---------- */
 .lm-bottomnav {
   flex: 0 0 auto; display: grid;
-  background: var(--surface-card); border-top: none;
+  background:
+  radial-gradient(
+    ellipse at 50% 0%,
+    rgba(255, 255, 255, .65),
+    transparent 75%
+  ),
+  linear-gradient(
+    180deg,
+    #ffe8f0 0%,
+    #fbd4e3 55%,
+    #f3b3cd 100%
+  );
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
   box-shadow: 0 -6px 22px rgba(110, 18, 52, .2);
   padding: 8px 8px calc(6px + env(safe-area-inset-bottom));
@@ -639,11 +1401,43 @@ body.camara-encendida .lm-header {
 .lm-bottomnav__rotulo { font: 600 11px/1.25 var(--font-text); text-align: center; text-wrap: balance; }
 .lm-bottomnav button.on .lm-bottomnav__rotulo { font-weight: 800; }
 
-.lm-tabs { display: flex; gap: 4px; min-width: 0; padding: 4px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .14); border: 1px solid rgba(255, 255, 255, .3); }
-.lm-tabs button {
-  flex: 1; min-height: 44px; border: none; background: transparent; cursor: pointer;
+.lm-tabs {
+  display: flex;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 3px;
   border-radius: var(--radius-pill);
-  color: var(--text-sobre-fondo); font: 600 15px/1.2 var(--font-text); padding: 0 6px;
+  background: linear-gradient(110deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+  border: 1px solid rgba(255, 255, 255, .38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+  box-sizing: border-box;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lm-tabs::-webkit-scrollbar {
+  display: none;
+}
+.lm-tabs button {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 38px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-pill);
+  color: var(--text-sobre-fondo);
+  font: 600 clamp(11.5px, 3.2vw, 14px)/1.2 var(--font-text);
+  padding: 0 3px;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  letter-spacing: -0.01em;
+  transition: background var(--dur-fast), color var(--dur-fast);
 }
 .lm-tabs button.on { color: var(--action-primary); font-weight: 800; background: var(--surface-card); }
 
@@ -841,6 +1635,22 @@ body.camara-encendida .lm-header {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px;
 }
 .lm-modal__acciones .lm-btn { height: 50px; padding: 0 10px; }
+
+/* Fila de productos marcados: uno por renglón, alineados a la derecha como el
+   resto de los valores de la ficha, con el mismo sello de color que lleva su
+   tarjeta. El color hace la mitad del trabajo. */
+.lm-modal__marcas { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.lm-modal__marca {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: var(--type-body-small); color: var(--text-title); text-align: left;
+}
+.lm-modal__sello {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center; color: #FFFFFF;
+}
+.lm-modal__sello--pendiente { background: var(--state-pending); }
+.lm-modal__sello--peligro { background: var(--state-error); }
+.lm-modal__sello--exito { background: var(--state-success); }
 
 /* Un producto sin stock sigue en la carta, pero se nota de un vistazo. */
 .lm-product__thumb--apagado { filter: grayscale(.75); opacity: .7; }

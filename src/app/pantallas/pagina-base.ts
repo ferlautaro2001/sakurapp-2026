@@ -4,6 +4,8 @@ import { SesionService } from '../nucleo/servicios/sesion.service';
 import { AvisosService } from '../nucleo/servicios/avisos.service';
 import { CargandoService } from '../nucleo/servicios/cargando.service';
 import { ConfirmacionService, PedidoConfirmacion } from '../nucleo/servicios/confirmacion.service';
+import { PedidosService } from '../nucleo/servicios/pedidos.service';
+import { EsperaService } from '../nucleo/servicios/espera.service';
 import { navegacionDe } from './navegacion';
 
 /**
@@ -18,9 +20,27 @@ export abstract class PaginaConSesion {
   protected readonly avisos = inject(AvisosService);
   protected readonly cargando = inject(CargandoService);
   protected readonly confirmacion = inject(ConfirmacionService);
+  protected readonly pedidosNavegacion = inject(PedidosService);
+  protected readonly esperaNavegacion = inject(EsperaService);
 
   protected readonly usuario = this.sesion.usuario;
-  protected readonly secciones = computed(() => navegacionDe(this.sesion.usuario()?.perfil));
+  protected readonly secciones = computed(() => {
+    const usuario = this.sesion.usuario();
+    const pedido = this.pedidosNavegacion.activoDe(usuario);
+    const mesa = this.sesion.mesaActivaId();
+    const esperaActiva = usuario ? this.esperaNavegacion.activaDe(usuario.id) : undefined;
+    const enMesa = Boolean(mesa || esperaActiva?.estado === 'FINALIZADO' || pedido);
+    return navegacionDe(usuario?.perfil, {
+      enMesa,
+      estadoPedido: pedido?.estadoGlobal,
+      juegosHabilitados: this.pedidosNavegacion.juegosHabilitados(pedido),
+    });
+  });
+
+  constructor() {
+    this.pedidosNavegacion.iniciar();
+    this.esperaNavegacion.iniciar();
+  }
 
   /** Pregunta antes de hacer algo que acepta, rechaza, modifica o da de baja. */
   protected preguntar(pedido: PedidoConfirmacion): Promise<boolean> {
@@ -31,16 +51,13 @@ export abstract class PaginaConSesion {
   protected async cerrarSesion(): Promise<void> {
     const seguro = await this.preguntar({
       titulo: '¿Cerrás la sesión?',
-      mensaje: 'Se borran las credenciales guardadas en este dispositivo y volvés a la pantalla de ingreso.',
+      mensaje: 'Vas a volver a la pantalla de ingreso.',
       confirmar: 'Cerrar sesión',
       tono: 'peligro',
       icono: 'logout',
     });
     if (!seguro) return;
 
-    // Sin sonido ni cartel: la consigna pide sonidos distintos al iniciar y
-    // cerrar la APLICACIÓN, no la sesión, y volver a la pantalla de ingreso ya
-    // dice por sí solo que la sesión se cerró.
     await this.cargando.conEsperaMinima('Cerrando la sesión…', () => this.sesion.cerrar(), 400);
     await this.router.navigate(['/login'], { replaceUrl: true });
   }

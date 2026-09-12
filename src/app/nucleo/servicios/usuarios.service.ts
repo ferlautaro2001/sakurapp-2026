@@ -1,6 +1,6 @@
 import { Injectable, computed, inject } from '@angular/core';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import { initializeApp, getApps, getApp, deleteApp } from 'firebase/app';
+import { getAuth, initializeAuth, inMemoryPersistence, createUserWithEmailAndPassword, signInAnonymously, signOut } from 'firebase/auth';
 import { getDataConnect } from 'firebase/data-connect';
 import {
   connectorConfig,
@@ -12,6 +12,7 @@ import {
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { AlmacenamientoService } from './almacenamiento.service';
+import { FirestoreService } from './firestore.service';
 import { Usuario, AltaCliente, AltaEmpleado } from '../modelos/modelos';
 import { EstadoUsuario, PERFILES_ADMIN, Perfil } from '../modelos/enums';
 
@@ -31,6 +32,7 @@ const ORDEN_PERFIL: Perfil[] = [
 export class UsuariosService {
   private readonly almacen = inject(AlmacenService);
   private readonly almacenamiento = inject(AlmacenamientoService);
+  private readonly firestore = inject(FirestoreService);
 
   readonly todos = computed(() => this.almacen.usuarios());
 
@@ -160,20 +162,40 @@ export class UsuariosService {
       console.warn('⚠️ No se pudo actualizar el estado en Cloud SQL Data Connect (se mantiene local):', sqlErr);
     }
 
+    // Sincronización en tiempo real vía Cloud Firestore
+    await this.firestore.actualizarEstadoUsuario(usuario.uid || usuarioId, estado);
+
+    // Encolar notificación push para despacho serverless 24/7 vía Google FCM al usuario específico
+    if (estado === 'APROBADO') {
+      void this.firestore.encolarNotificacion({
+        destinatarioUid: usuario.uid || usuario.id,
+        destinatarioEmail: usuario.email ?? undefined,
+        titulo: '🌸 ¡Cuenta habilitada!',
+        cuerpo: `Bienvenido a SakurApp, ${usuario.nombre}. Tu cuenta fue aprobada.`,
+        ruta: '/login',
+      });
+    } else if (estado === 'RECHAZADO') {
+      void this.firestore.encolarNotificacion({
+        destinatarioUid: usuario.uid || usuario.id,
+        destinatarioEmail: usuario.email ?? undefined,
+        titulo: '🌸 Solicitud de registro',
+        cuerpo: `Hola ${usuario.nombre}, tu registro no fue admitido en esta oportunidad.`,
+        ruta: '/login',
+      });
+    }
+
     const lista = this.almacen.usuarios().map((u) => (u.id === usuarioId ? { ...u, estado } : u));
     await this.almacen.guardarUsuarios(lista);
     return lista.find((u) => u.id === usuarioId);
   }
 
-  async crearClienteRegistrado(datos: AltaCliente): Promise<Usuario> {
+  async crearClienteRegistrado(datos: AltaCliente, conservarSesion = false): Promise<Usuario> {
     let uid = `uid-${Date.now()}`;
     try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const auth = getAuth(app);
-      const cred = await createUserWithEmailAndPassword(auth, datos.email.trim(), datos.clave);
-      uid = cred.user.uid;
+      uid = await this.crearCredencial(datos.email, datos.clave, conservarSesion);
     } catch (err) {
       console.warn('Firebase Auth registro:', err);
+      throw new Error('No pudimos crear la cuenta. Revisá el correo y la conexión e intentá de nuevo.');
     }
 
     // Subir foto a Firebase Cloud Storage
@@ -228,7 +250,24 @@ export class UsuariosService {
       console.warn('⚠️ No se pudo registrar en Cloud SQL Data Connect (se mantiene en almacenamiento local):', sqlErr);
     }
 
-    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    // Sincronizar nuevo cliente en Cloud Firestore (sakurapp)
+    await this.firestore.guardarUsuario(usuario);
+
+    // Encolar notificación push para Dueños y Supervisores vía Google FCM
+    void this.firestore.encolarNotificacion({
+      destinatarioRol: 'SUPERVISOR',
+      titulo: '🌸 Nuevo cliente pendiente',
+      cuerpo: `${usuario.nombre} ${usuario.apellido ?? ''} completó su registro y espera aprobación.`,
+      ruta: '/clientes-pendientes',
+    });
+    void this.firestore.encolarNotificacion({
+      destinatarioRol: 'DUENO',
+      titulo: '🌸 Nuevo cliente pendiente',
+      cuerpo: `${usuario.nombre} ${usuario.apellido ?? ''} completó su registro y espera aprobación.`,
+      ruta: '/clientes-pendientes',
+    });
+
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios().filter((u) => u.uid !== usuario.uid), usuario]);
     return usuario;
   }
 
@@ -301,9 +340,7 @@ export class UsuariosService {
   async crearEmpleado(datos: AltaEmpleado): Promise<Usuario> {
     let uid = `uid-${Date.now()}`;
     try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const cred = await createUserWithEmailAndPassword(getAuth(app), datos.email.trim(), datos.clave);
-      uid = cred.user.uid;
+      uid = await this.crearCredencial(datos.email, datos.clave, true);
     } catch (err) {
       console.warn('Firebase Auth alta de empleado:', err);
     }
@@ -349,8 +386,24 @@ export class UsuariosService {
       console.warn('Cloud SQL alta de empleado:', err);
     }
 
-    await this.almacen.guardarUsuarios([...this.almacen.usuarios(), usuario]);
+    await this.firestore.guardarUsuario(usuario);
+    await this.almacen.guardarUsuarios([...this.almacen.usuarios().filter((u) => u.uid !== usuario.uid), usuario]);
     return usuario;
+  }
+
+  /** El alta desde el salón no debe reemplazar la cuenta del personal. */
+  private async crearCredencial(email: string, clave: string, conservarSesion: boolean): Promise<string> {
+    const principal = getApps().find((app) => app.name === '[DEFAULT]') ?? initializeApp(environment.firebase);
+    if (!conservarSesion) {
+      return (await createUserWithEmailAndPassword(getAuth(principal), email.trim(), clave)).user.uid;
+    }
+    const auxiliar = initializeApp(environment.firebase, `alta-${crypto.randomUUID()}`);
+    const auth = initializeAuth(auxiliar, { persistence: inMemoryPersistence });
+    try {
+      return (await createUserWithEmailAndPassword(auth, email.trim(), clave)).user.uid;
+    } finally {
+      try { await signOut(auth); } finally { await deleteApp(auxiliar); }
+    }
   }
 
   /** Ícono de sushi para el avatar. */

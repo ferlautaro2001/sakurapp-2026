@@ -43,11 +43,12 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
                   <lm-icono [nombre]="abierto() === correo.id ? 'expand_less' : 'expand_more'" [tamano]="22" />
                 </button>
 
+                <!-- El chip alcanza: el detalle que devuelve el proveedor es
+                     diagnóstico interno y no le dice nada a quien mira. -->
                 <div class="correo__estado">
                   <lm-chip [estado]="correo.entregado ? 'aprobado' : 'pendiente'">
                     {{ correo.entregado ? 'Entregado' : 'En bandeja' }}
                   </lm-chip>
-                  <span class="lm-nota">{{ correo.detalle }}</span>
                 </div>
 
                 @if (abierto() === correo.id) {

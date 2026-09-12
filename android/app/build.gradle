@@ -16,8 +16,14 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    packagingOptions {
+        jniLibs {
+            useLegacyPackaging = true
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.debug
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
@@ -46,9 +52,22 @@ apply from: 'capacitor.build.gradle'
 
 try {
     def servicesJSON = file('google-services.json')
-    if (servicesJSON.text) {
+    if (servicesJSON.exists() && servicesJSON.text.trim().length() > 0) {
         apply plugin: 'com.google.gms.google-services'
+    } else {
+        android.defaultConfig {
+            resValue "string", "google_app_id", "1:301899482653:android:7a182293a16db7038e68f4"
+            resValue "string", "gcm_defaultSenderId", "301899482653"
+            resValue "string", "project_id", "project-48c8c6f4-0e4f-456d-889"
+            resValue "string", "google_api_key", "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+        }
     }
 } catch(Exception e) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    android.defaultConfig {
+        resValue "string", "google_app_id", "1:301899482653:android:7a182293a16db7038e68f4"
+        resValue "string", "gcm_defaultSenderId", "301899482653"
+        resValue "string", "project_id", "project-48c8c6f4-0e4f-456d-889"
+        resValue "string", "google_api_key", "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+    }
+    logger.info("google-services.json not found, fallback resources applied")
 }

@@ -89,8 +89,44 @@ export const environment = {
 `;
 }
 
-// En entorno educativo siempre se opera en modo producción con la base de datos real en un único archivo
 fs.writeFileSync(path.join(envDir, 'environment.ts'), generarContenido(true), 'utf8');
 
 console.log('✅ Archivo de entorno src/environments/environment.ts generado exitosamente desde .env (producción)');
+
+// Generar android/app/google-services.json si no existe para evitar crash de Firebase
+const androidAppDir = path.resolve(__dirname, '../android/app');
+const googleServicesPath = path.join(androidAppDir, 'google-services.json');
+if (fs.existsSync(androidAppDir) && !fs.existsSync(googleServicesPath)) {
+  const googleServicesContent = {
+    project_info: {
+      project_number: process.env.FIREBASE_MESSAGING_SENDER_ID || "301899482653",
+      project_id: process.env.FIREBASE_PROJECT_ID || "project-48c8c6f4-0e4f-456d-889",
+      storage_bucket: process.env.FIREBASE_STORAGE_BUCKET || "project-48c8c6f4-0e4f-456d-889.firebasestorage.app"
+    },
+    client: [
+      {
+        client_info: {
+          mobilesdk_app_id: "1:301899482653:android:7a182293a16db7038e68f4",
+          android_client_info: {
+            package_name: "ar.com.sakurapp.app"
+          }
+        },
+        oauth_client: [],
+        api_key: [
+          {
+            current_key: process.env.FIREBASE_API_KEY || "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+          }
+        ],
+        services: {
+          appinvite_service: {
+            other_platform_oauth_client: []
+          }
+        }
+      }
+    ],
+    configuration_version: "1"
+  };
+  fs.writeFileSync(googleServicesPath, JSON.stringify(googleServicesContent, null, 2), 'utf8');
+  console.log('✅ Archivo android/app/google-services.json generado automáticamente desde variables de entorno.');
+}
 

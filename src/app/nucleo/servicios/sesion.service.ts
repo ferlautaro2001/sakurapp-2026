@@ -12,7 +12,31 @@ import { FirestoreService } from './firestore.service';
 
 export type ResultadoIngreso =
   | { ok: true; usuario: Usuario }
-  | { ok: false; motivo: 'CREDENCIALES' | 'PENDIENTE' | 'RECHAZADO' | 'INACTIVO' };
+  | { ok: false; motivo: 'CREDENCIALES' | 'PENDIENTE' | 'RECHAZADO' | 'INACTIVO' | 'SERVICIO' };
+
+/**
+ * Códigos con los que Firebase Authentication dice "esta contraseña está mal".
+ *
+ * Cualquier otro error suyo no habla del usuario sino de que no se lo pudo
+ * verificar, y no se le puede echar la culpa a él: la clave del proyecto
+ * vencida, la red caída, o que la cuenta exista en la base pero no allá.
+ *
+ * `auth/user-not-found` queda deliberadamente afuera: quién es usuario lo dice
+ * la base, no Authentication. Si alguien está en la base y no allá, es un alta
+ * que quedó a medias —el registro se traga el error de Authentication y guarda
+ * igual—, no una contraseña equivocada.
+ */
+const ERRORES_DE_CREDENCIAL = new Set([
+  'auth/wrong-password',
+  'auth/invalid-credential',
+  'auth/invalid-email',
+  'auth/user-disabled',
+]);
+
+function esErrorDeCredencial(error: unknown): boolean {
+  const codigo = (error as { code?: string } | null)?.code;
+  return typeof codigo === 'string' && ERRORES_DE_CREDENCIAL.has(codigo);
+}
 
 /** Sesión abierta y persistencia de credenciales para v0. */
 @Injectable({ providedIn: 'root' })
@@ -47,24 +71,48 @@ export class SesionService {
   }
 
 
-  /** Ingreso estricto con correo electrónico y contraseña validados contra Firebase Authentication. */
+  /** Ingreso con correo electrónico y contraseña, validados contra Firebase Authentication. */
   async ingresar(email: string, clave: string): Promise<ResultadoIngreso> {
     const buscado = email.trim().toLocaleLowerCase();
     const usuario = this.usuarios.porCorreo(buscado);
 
     if (!usuario) return { ok: false, motivo: 'CREDENCIALES' };
 
-    // 1. Validar estrictamente contra Firebase Authentication
+    // 1. Firebase Authentication manda cuando responde.
+    let validado = false;
+    let servicioCaido = false;
     try {
       const app = getApps().length ? getApp() : initializeApp(environment.firebase);
       const auth = getAuth(app);
       await signInWithEmailAndPassword(auth, buscado, clave);
+      validado = true;
     } catch (err) {
-      // Si Firebase Auth rechaza la contraseña o no existe la cuenta, no se permite el ingreso
-      return { ok: false, motivo: 'CREDENCIALES' };
+      // La contraseña vive sólo en Authentication —la base guarda `clave` en
+      // nulo a propósito—, así que acá no hay con qué comparar: lo único que
+      // se puede saber es si el que dijo que no fue el servicio o la clave.
+      servicioCaido = !esErrorDeCredencial(err);
+      if (servicioCaido) {
+        console.warn('⚠️ Firebase Auth no pudo verificar el ingreso:', err);
+      }
     }
 
-    // 2. Abrir sesión verificando el estado de la cuenta en la base relacional
+    if (!validado) {
+      // Una cuenta en revisión o rechazada no abre ninguna sesión: lo único
+      // que falta es explicarle por qué no puede entrar, y eso no depende de
+      // la contraseña. Se le muestra su pantalla aunque Authentication no la
+      // haya podido confirmar —muchas de estas cuentas ni siquiera existen
+      // allá, porque el alta se guarda igual cuando Authentication falla—.
+      // Dejarla en "los datos son incorrectos" sería mentirle: sus datos
+      // están bien, lo que pasa es que todavía no la aprobaron.
+      if (usuario.estado === 'PENDIENTE') return { ok: false, motivo: 'PENDIENTE' };
+      if (usuario.estado === 'RECHAZADO') return { ok: false, motivo: 'RECHAZADO' };
+
+      // Una cuenta aprobada sí abriría sesión, y para eso la contraseña tiene
+      // que estar verificada de verdad. Si el servicio no contestó se lo
+      // decimos como es; si contestó que no, es que la contraseña está mal.
+      return { ok: false, motivo: servicioCaido ? 'SERVICIO' : 'CREDENCIALES' };
+    }
+
     return this.abrirSesion(usuario);
   }
 

@@ -54,10 +54,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pantallas/dueno/registros.page').then((m) => m.DuenoRegistrosPage),
       },
       {
-        path: 'resultado/:id/:decision',
-        loadComponent: () => import('./pantallas/dueno/resultado.page').then((m) => m.DuenoResultadoPage),
-      },
-      {
         path: 'alta-empleado',
         loadComponent: () => import('./pantallas/dueno/alta-empleado.page').then((m) => m.AltaEmpleadoPage),
       },

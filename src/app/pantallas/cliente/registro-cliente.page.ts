@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
@@ -11,6 +11,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
 import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
+import { SesionService } from '../../nucleo/servicios/sesion.service';
 import {
   clave,
   clavesIguales,
@@ -33,7 +34,7 @@ import {
   imports: [ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado titulo="Crear cuenta" conVolver (volver)="volver()" />
+      <lm-encabezado [titulo]="desdePersonal() ? 'Registrar cliente' : 'Crear cuenta'" conVolver (volver)="volver()" />
 
       <div class="lm-body lm-body--gap12">
         @if (resumenError()) {
@@ -106,8 +107,8 @@ import {
       </div>
 
       <div class="lm-actionbar">
-        <lm-boton icono="how_to_reg" (presionar)="registrar()">Registrarse</lm-boton>
-        <lm-texto-boton (presionar)="volver()">Ya tengo cuenta</lm-texto-boton>
+        <lm-boton icono="how_to_reg" [deshabilitado]="enviando()" (presionar)="registrar()">{{ desdePersonal() ? 'Registrar cliente' : 'Registrarse' }}</lm-boton>
+        <lm-texto-boton (presionar)="volver()">{{ desdePersonal() ? 'Volver' : 'Ya tengo cuenta' }}</lm-texto-boton>
       </div>
     </div>
   `,
@@ -117,6 +118,9 @@ export class RegistroClientePage {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly usuarios = inject(UsuariosService);
+  private readonly sesion = inject(SesionService);
+  protected readonly desdePersonal = computed(() => this.sesion.tienePerfil('METRE', 'DUENO', 'SUPERVISOR', 'MOZO', 'COCINERO', 'CANTINERO'));
+  protected readonly enviando = signal(false);
   private readonly camara = inject(CamaraService);
   private readonly escaner = inject(EscanerService);
   private readonly qr = inject(QrService);
@@ -185,6 +189,7 @@ export class RegistroClientePage {
   }
 
   protected async registrar(): Promise<void> {
+    if (this.enviando()) return;
     this.resumenError.set(null);
     marcarEnviado(this.formulario);
 
@@ -214,8 +219,10 @@ export class RegistroClientePage {
     const datos = this.formulario.getRawValue();
 
     const seguro = await this.confirmacion.pedir({
-      titulo: '¿Enviás tu registro?',
-      mensaje: 'El dueño o el supervisor lo revisan y te avisan por correo electrónico. Hasta que lo aprueben no vas a poder entrar.',
+      titulo: this.desdePersonal() ? '¿Registrás a este cliente?' : '¿Enviás tu registro?',
+      mensaje: this.desdePersonal()
+        ? 'El registro queda pendiente. El cliente recibirá la respuesta por correo.'
+        : 'Te avisaremos por correo cuando el dueño o el supervisor revise tu registro.',
       confirmar: 'Enviar registro',
       tono: 'exito',
       icono: 'how_to_reg',
@@ -226,34 +233,46 @@ export class RegistroClientePage {
         { rotulo: 'Correo', valor: datos.email },
       ],
     });
-    if (!seguro) return;
+    if (!seguro || this.enviando()) return;
 
-    const usuarioCreado = await this.cargando.conEsperaMinima('Enviando tu registro…', () =>
-      this.usuarios.crearClienteRegistrado({
-        nombre: datos.nombre,
-        apellido: datos.apellido,
-        dni: datos.dni,
-        cuil: datos.cuil,
-        email: datos.email,
-        clave: datos.clave,
-        fotoUrl: this.foto()!,
-      }),
-    );
+    this.enviando.set(true);
+    try {
+      const usuarioCreado = await this.cargando.conEsperaMinima('Enviando registro…', () =>
+        this.usuarios.crearClienteRegistrado({
+          nombre: datos.nombre,
+          apellido: datos.apellido,
+          dni: datos.dni,
+          cuil: datos.cuil,
+          email: datos.email,
+          clave: datos.clave,
+          fotoUrl: this.foto()!,
+        }, this.desdePersonal()),
+      );
 
-    // US-3.2: Envío automático de correo con plantilla "Registro Recibido"
-    void this.correo.enviarConfirmacionRegistro(usuarioCreado).catch((err) => {
-      console.warn('⚠️ Fallo en despacho de correo de registro recibido:', err);
-    });
-
-    // US-3.2: Notificación push a Dueño y Supervisor ante nuevo comensal pendiente
-    const adminIds = this.usuarios.administradores().map((u) => u.id);
-    void this.notificaciones
-      .notificarNuevoRegistro(this.usuarios.nombreCompleto(usuarioCreado), adminIds)
-      .catch((err) => {
-        console.warn('⚠️ Fallo al emitir notificación a administradores:', err);
+      // US-3.2: Envío automático de correo con plantilla "Registro Recibido"
+      void this.correo.enviarConfirmacionRegistro(usuarioCreado).catch((err) => {
+        console.warn('⚠️ Fallo en despacho de correo de registro recibido:', err);
       });
 
-    await this.router.navigate(['/registro-enviado'], { replaceUrl: true });
+      // US-3.2: Notificación push a Dueño y Supervisor ante nuevo comensal pendiente
+      const adminIds = this.usuarios.administradores().map((u) => u.id);
+      void this.notificaciones
+        .notificarNuevoRegistro(this.usuarios.nombreCompleto(usuarioCreado), adminIds)
+        .catch((err) => {
+          console.warn('⚠️ Fallo al emitir notificación a administradores:', err);
+        });
+
+      if (this.desdePersonal()) {
+        this.avisos.exito('Cliente registrado', 'Su cuenta quedó pendiente de aprobación.');
+        await this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
+      } else {
+        await this.router.navigate(['/registro-enviado'], { replaceUrl: true });
+      }
+    } catch (error) {
+      this.avisos.error('No pudimos enviar el registro', error instanceof Error ? error.message : 'Intentá de nuevo.');
+    } finally {
+      this.enviando.set(false);
+    }
   }
 
   private contarErrores(): number {
@@ -265,7 +284,7 @@ export class RegistroClientePage {
   }
 
   protected volver(): void {
-    void this.router.navigate(['/login']);
+    void this.router.navigate([this.desdePersonal() ? this.sesion.rutaInicio() : '/login']);
   }
 }
 

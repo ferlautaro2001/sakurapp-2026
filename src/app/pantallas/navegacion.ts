@@ -50,6 +50,7 @@ export function navegacionDe(
         { id: 'mesas', rotulo: 'Mesas', icono: 'table_restaurant', ruta: '/mesas' },
         { id: 'codigos', rotulo: 'Códigos', icono: 'qr_code_2', ruta: '/dueno/codigos' },
         { id: 'correos', rotulo: 'Correos', icono: 'outgoing_mail', ruta: '/dueno/correos' },
+        { id: 'empleados', rotulo: 'Empleados', icono: 'groups', ruta: '/dueno/empleados' },
       ];
     case 'METRE':
       return [

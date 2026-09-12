@@ -39,13 +39,9 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
           <lm-banner tono="error" titulo="Revisá los datos de la mesa">{{ resumenError() }}</lm-banner>
         }
 
-        <div class="sakura-badge">
-          <lm-icono nombre="table_restaurant" [tamano]="22" color="var(--action-primary)" />
-          <span>Alta oficial de puesto físico en salón con código QR identificador.</span>
-        </div>
 
         <section aria-labelledby="foto-mesa-title" class="foto-seccion">
-          <span id="foto-mesa-title" class="lm-label">Fotografía del mobiliario · Obligatoria</span>
+          <span id="foto-mesa-title" class="lm-label">Foto de la mesa · Obligatoria</span>
           <lm-foto
             [fuente]="foto()"
             forma="rectangulo"
@@ -59,7 +55,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         <lm-campo
           [control]="formulario.controls.numero"
           icono="table_restaurant"
-          etiqueta="Número de mesa (único)"
+          etiqueta="Número de mesa"
           marcador="1"
           modo="numeric"
           [largoMaximo]="3"
@@ -68,7 +64,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         <lm-campo
           [control]="formulario.controls.comensales"
           icono="group"
-          etiqueta="Cantidad de comensales (capacidad)"
+          etiqueta="Cantidad de personas"
           marcador="4"
           modo="numeric"
           [largoMaximo]="2"
@@ -82,15 +78,15 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         />
 
         <lm-interruptor
-          etiqueta="Disponible inicialmente"
-          [ayuda]="disponible() ? 'Queda registrada como VACÍA, lista para asignar' : 'Queda registrada como OCUPADA'"
+          etiqueta="Mesa disponible"
+          [ayuda]="disponible() ? 'Lista para asignar' : 'La mesa está ocupada'"
           [activo]="disponible()"
           (cambiar)="disponible.set($event)"
         />
 
-        <lm-separador rotulo="Generación de código QR" />
+        <lm-separador rotulo="Código QR" />
         <p class="lm-parrafo">
-          Al dar el alta, el código QR vectorial de alto contraste se genera de inmediato, se almacena en la nube y queda listo para proyectar o imprimir.
+          Al guardar la mesa, tendrás su código listo para imprimir.
         </p>
       </div>
 
@@ -103,9 +99,9 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
     @if (mesaCreada(); as m) {
       <lm-modal
         titulo="Mesa agregada con éxito"
-        [mensaje]="'La mesa ' + m.numero + ' ya está registrada en salón. Su código QR fue generado automáticamente.'"
+        [mensaje]="'La mesa ' + m.numero + ' ya está registrada.'"
         rotuloCancelar="Volver a mesas"
-        rotuloConfirmar="Ver QR a gran tamaño"
+        rotuloConfirmar="Ver código QR"
         tono="exito"
         icono="verified"
         [detalle]="detalleAlta(m)"
@@ -117,17 +113,6 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .sakura-badge {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        padding: 12px 14px;
-        background: var(--surface-card);
-        border: 1px solid var(--border-card);
-        border-radius: var(--radius-card);
-        font: var(--type-body-small);
-        color: var(--text-body);
-      }
       .foto-seccion {
         display: flex;
         flex-direction: column;
@@ -204,7 +189,7 @@ export class AltaMesaPage implements OnInit {
 
     const seguro = await this.confirmacion.pedir({
       titulo: '¿Confirmás el alta de la mesa?',
-      mensaje: 'Se generará su código QR automáticamente y se persistirá en Cloud SQL PostgreSQL.',
+      mensaje: 'Revisá los datos antes de agregar la mesa.',
       confirmar: 'Agregar mesa',
       tono: 'exito',
       icono: 'table_restaurant',

@@ -404,7 +404,7 @@ protected async guardar(): Promise<void> {
       : `¿Agregás este ${nombreTipo}?`,
     mensaje: this.editando
       ? 'Los cambios se actualizarán en la carta.'
-      : `El ${nombreTipo} quedará activo en el sector COCINA.`,
+      : `El ${nombreTipo} estará disponible en la carta.`,
     confirmar: this.editando
       ? 'Guardar cambios'
       : `Agregar ${nombreTipo}`,

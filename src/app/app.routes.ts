@@ -50,6 +50,10 @@ export const routes: Routes = [
     canActivate: [guardiaPerfil('DUENO', 'SUPERVISOR')],
     children: [
       {
+        path: 'empleados',
+        loadComponent: () => import('./pantallas/dueno/empleados.page').then((m) => m.DuenoEmpleadosPage),
+      },
+      {
         path: 'registros',
         loadComponent: () => import('./pantallas/dueno/registros.page').then((m) => m.DuenoRegistrosPage),
       },
@@ -166,6 +170,10 @@ export const routes: Routes = [
     path: 'metre',
     canActivate: [guardiaPerfil('METRE')],
     children: [
+      {
+        path: 'registrar',
+        loadComponent: () => import('./pantallas/cliente/registro-cliente.page').then((m) => m.RegistroClientePage),
+      },
       {
         path: 'espera',
         loadComponent: () => import('./pantallas/metre/lista-espera.page').then((m) => m.MetreListaEsperaPage),

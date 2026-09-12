@@ -67,7 +67,7 @@ export class FirestoreService {
    * Escucha en tiempo real la colección de usuarios.
    * Cualquier cambio (aprobación, nuevo registro, actualización de token) se recibe de inmediato.
    */
-  escucharUsuarios(callback: (usuarios: Usuario[]) => void): Unsubscribe {
+  escucharUsuarios(callback: (usuarios: Usuario[]) => void, alError?: () => void): Unsubscribe {
     const db = this.obtenerDb();
     const colRef = collection(db, 'usuarios');
 
@@ -115,6 +115,7 @@ export class FirestoreService {
       },
       (error) => {
         console.warn('⚠️ Error en listener en tiempo real de Firestore (sakurapp):', error);
+        alError?.();
       }
     );
   }

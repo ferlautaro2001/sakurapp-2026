@@ -229,8 +229,8 @@ export class DuenoResultadoPage extends PaginaConSesion {
   }
   protected anticipo(): string {
     return this.aprobar()
-      ? 'Se envía un correo electrónico automático de aprobación desde la casilla del restaurante y la persona aparece en el ingreso rápido.'
-      : 'Se envía un correo electrónico automático con el motivo del rechazo desde la casilla del restaurante. La persona todavía puede entrar como invitada.';
+      ? 'Le avisaremos por correo que su cuenta fue aprobada.'
+      : 'Le enviaremos el motivo por correo. Puede seguir entrando como invitado.';
   }
 
   protected volver(): void {

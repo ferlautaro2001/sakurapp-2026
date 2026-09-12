@@ -113,3 +113,4 @@ graphify-out/
 
 # Local agent memory
 AGENTS.md
+/remake

@@ -100,7 +100,7 @@ import { PaginaConSesion } from '../pagina-base';
                 <!-- Con la fecha: dos mensajes de días distintos a la misma
                      hora se leían iguales. -->
                 <time class="burbuja__hora">{{ m.timestamp | date: 'dd/MM/yyyy HH:mm' }}</time>
-                @if (esPropio(m)) {
+                @if (esMismoRemitente(m)) {
                   <lm-icono nombre="done_all" [tamano]="15" color="var(--sk-verde)" />
                 }
               </footer>
@@ -536,21 +536,27 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     return mensaje.remitenteId === actual.id || mensaje.remitenteId === actual.uid;
   }
 
+  /**
+   * De qué lado del hilo va el mensaje.
+   *
+   * Manda el rol, no la persona: la respuesta de otro mozo también es del
+   * salón y va a la derecha, junto con la propia. Si cayera a la izquierda se
+   * confundiría con lo que escribe el comensal, que es lo único que tiene que
+   * leerse enfrente. Quién escribió cada una lo dice el nombre de la burbuja.
+   */
   protected esPropio(mensaje: MensajeChat): boolean {
     const actual = this.usuario();
     if (!actual) return false;
 
-    // 1. Coincidencia directa por identificador del usuario
     if (mensaje.remitenteId === actual.id || mensaje.remitenteId === actual.uid) {
       return true;
     }
 
-    // 2. Del lado del salón NO se mira el rol: la sala la ven todos los mozos,
-    //    así que dar por propio cualquier mensaje con rol MOZO pintaba como
-    //    tuyo el de un compañero. Ahí manda el identificador y nada más.
-    //
-    //    Del lado del comensal sí alcanza el rol: en la mesa hay uno solo, y
-    //    su identificador viaja en dos formas según por dónde haya escrito.
+    const esPersonal = actual.perfil === 'MOZO' || actual.perfil === 'SUPERVISOR' || actual.perfil === 'DUENO';
+    if (esPersonal && mensaje.remitenteRol === 'MOZO') {
+      return true;
+    }
+
     const esCliente = actual.perfil === 'CLIENTE_REGISTRADO' || actual.perfil === 'CLIENTE_ANONIMO';
     if (esCliente && mensaje.remitenteRol === 'CLIENTE') {
       return true;

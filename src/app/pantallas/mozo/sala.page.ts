@@ -26,7 +26,7 @@ import { Unsubscribe } from 'firebase/firestore';
                 [autor]="autorDe(mensaje)"
                 [texto]="mensaje.texto"
                 [hora]="mensaje.timestamp"
-                [propia]="esMio(mensaje)"
+                [propia]="esDelSalon(mensaje)"
               />
             }
           } @else {
@@ -153,6 +153,17 @@ export class MozoSalaPage extends PaginaConSesion {
   /** "vos" sólo al lado del que está usando el teléfono; el resto, por su nombre. */
   protected autorDe(mensaje: MensajeChat): string {
     return this.esMio(mensaje) ? `${mensaje.remitenteNombre} · vos` : mensaje.remitenteNombre;
+  }
+
+  /**
+   * De qué lado va la burbuja: manda el rol, no la persona.
+   *
+   * La respuesta de otro mozo también es del salón y va a la derecha, con las
+   * propias. Enfrente queda sólo lo que escribe el comensal, que es con lo que
+   * no se tiene que confundir. Quién contestó lo dice el nombre de arriba.
+   */
+  protected esDelSalon(mensaje: MensajeChat): boolean {
+    return mensaje.remitenteRol === 'MOZO';
   }
 
   protected async enviar(): Promise<void> {

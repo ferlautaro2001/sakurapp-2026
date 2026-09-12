@@ -56,11 +56,23 @@ export class PedidosService {
 
   readonly todos = computed(() => {
     const porId = new Map(this.pedidosSql().map((pedido) => [pedido.id, pedido]));
-    for (const pedido of this.pedidosFirestore()) porId.set(pedido.id, pedido);
+    for (const pedido of this.pedidosFirestore()) {
+      const existente = porId.get(pedido.id);
+      if (existente && (!pedido.items || !pedido.items.length) && existente.items.length) {
+        porId.set(pedido.id, {
+          ...pedido,
+          items: existente.items,
+          totalFinal: pedido.totalFinal || existente.totalFinal,
+          totalBruto: pedido.totalBruto || existente.totalBruto,
+        });
+      } else {
+        porId.set(pedido.id, pedido);
+      }
+    }
     return [...porId.values()].sort((a, b) => b.timestampCreacion.localeCompare(a.timestampCreacion));
   });
   readonly pendientesConfirmacion = computed(() =>
-    this.todos().filter((pedido) => pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION'),
+    this.todos().filter((pedido) => pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION' && pedido.items.length > 0),
   );
 
   iniciar(): void {
@@ -619,6 +631,7 @@ export class PedidosService {
             subtotal: item.subtotal,
           }));
         const totalBruto = redondearImporte(items.reduce((total, item) => total + item.subtotal, 0));
+        if (!items.length) continue;
 
         activos.push({
           id: pedido.id,

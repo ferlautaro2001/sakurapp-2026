@@ -92,18 +92,19 @@ function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
   const carta: ItemNavegacion = { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' };
   const pedido: ItemNavegacion = { id: 'pedido', rotulo: 'Mi pedido', icono: 'receipt_long', ruta: '/cliente/pedido' };
   const juegos: ItemNavegacion = { id: 'juegos', rotulo: 'Juegos', icono: 'sports_esports', ruta: '/cliente/juegos' };
+  const encuestas: ItemNavegacion = { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' };
 
   if (!contexto.enMesa) {
     return [
       { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
       juegos,
-      { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' },
+      encuestas,
     ];
   }
 
   switch (contexto.estadoPedido) {
     case 'PENDIENTE_CONFIRMACION':
-      return [pedido];
+      return [pedido, encuestas];
     case 'CONFIRMADO':
     case 'EN_PREPARACION':
     case 'LISTO':
@@ -112,8 +113,8 @@ function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
     case 'CUENTA_SOLICITADA':
     case 'PAGO_PENDIENTE':
     case 'CERRADO':
-      return [pedido, juegos];
+      return [pedido, juegos, encuestas];
     default:
-      return [lugar, carta, pedido];
+      return [lugar, carta, pedido, encuestas];
   }
 }

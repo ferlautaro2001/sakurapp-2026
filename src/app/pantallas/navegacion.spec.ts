@@ -37,54 +37,62 @@ describe('navegacionDe · secciones por perfil', () => {
     ]);
   });
 
-  it('en la mesa sin pedido o seleccionando ve mesa, carta y pedido', () => {
+  it('en la mesa sin pedido o seleccionando ve mesa, carta, pedido y encuestas', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'SELECCIONANDO' })).toEqual([
       '/cliente/espera',
       '/carta',
       '/cliente/pedido',
+      '/cliente/encuestas',
     ]);
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: null })).toEqual([
       '/cliente/espera',
       '/carta',
       '/cliente/pedido',
+      '/cliente/encuestas',
     ]);
   });
 
-  it('con el pedido pendiente de confirmación sólo ve el pedido para esperar al mozo', () => {
+  it('con el pedido pendiente de confirmación ve el pedido y las encuestas para esperar al mozo', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'PENDIENTE_CONFIRMACION' })).toEqual([
       '/cliente/pedido',
+      '/cliente/encuestas',
     ]);
   });
 
-  it('con el pedido confirmado o posterior ve el pedido y los juegos', () => {
+  it('con el pedido confirmado o posterior ve el pedido, los juegos y las encuestas', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'CONFIRMADO' })).toEqual([
       '/cliente/pedido',
       '/cliente/juegos',
+      '/cliente/encuestas',
     ]);
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'EN_PREPARACION' })).toEqual([
       '/cliente/pedido',
       '/cliente/juegos',
+      '/cliente/encuestas',
     ]);
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'LISTO' })).toEqual([
       '/cliente/pedido',
       '/cliente/juegos',
+      '/cliente/encuestas',
     ]);
   });
 
-  it('con el pedido devuelto/rechazado vuelve a tener mesa, carta y pedido a mano', () => {
+  it('con el pedido devuelto/rechazado vuelve a tener mesa, carta, pedido y encuestas a mano', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: true, estadoPedido: 'RECHAZADO' })).toEqual([
       '/cliente/espera',
       '/carta',
       '/cliente/pedido',
+      '/cliente/encuestas',
     ]);
   });
 
   it('soporta la sobrecarga booleana histórica para retrocompatibilidad', () => {
-    expect(rutas('CLIENTE_REGISTRADO', true)).toEqual(['/cliente/pedido', '/cliente/juegos']);
+    expect(rutas('CLIENTE_REGISTRADO', true)).toEqual(['/cliente/pedido', '/cliente/juegos', '/cliente/encuestas']);
     expect(rutas('CLIENTE_REGISTRADO', false, true)).toEqual([
       '/cliente/espera',
       '/carta',
       '/cliente/pedido',
+      '/cliente/encuestas',
     ]);
   });
 });

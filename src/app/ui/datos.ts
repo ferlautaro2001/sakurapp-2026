@@ -167,30 +167,78 @@ export class FilaPendienteComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent, ChipComponent],
   template: `
-    <button type="button" class="lm-mesa" (click)="presionar.emit()">
-      <span
-        class="lm-mesa__foto"
-        [class.lm-mesa__foto--sinfoto]="!mesa().fotoUrl"
-        [style.background-image]="mesa().fotoUrl ? 'url(' + mesa().fotoUrl + ')' : null"
-      >
-        <span class="lm-mesa__tipo">
-          <lm-icono [nombre]="iconoTipo()" [tamano]="14" />
-          {{ rotuloTipo() }}
-        </span>
-        <span class="lm-mesa__numero">{{ mesa().numero }}</span>
-      </span>
+<button
+  type="button"
+  class="lm-mesa"
+  (click)="presionar.emit()"
+>
+  <!-- FOTO -->
+<span class="lm-mesa__foto">
 
-      <span class="lm-mesa__cuerpo">
-        <span class="lm-mesa__rotulo">Mesa {{ mesa().numero }}</span>
+  <span
+    class="lm-mesa__imagen"
+    [class.lm-mesa__imagen--sinfoto]="!mesa().fotoUrl"
+    [style.background-image]="
+      mesa().fotoUrl
+        ? 'url(' + mesa().fotoUrl + ')'
+        : null
+    "
+  ></span>
+
+  <span class="lm-mesa__tipo">
+    <lm-icono
+      [nombre]="iconoTipo()"
+      [tamano]="14"
+    />
+    {{ rotuloTipo() }}
+  </span>
+
+  <span class="lm-mesa__numero">
+    {{ mesa().numero }}
+  </span>
+
+</span>
+
+  <!-- CUERPO -->
+  <span class="lm-mesa__cuerpo">
+
+    <span class="lm-mesa__cabecera">
+      <span class="lm-mesa__datos">
+        <span class="lm-mesa__rotulo">
+          Mesa {{ mesa().numero }}
+        </span>
+
         <span class="lm-mesa__meta">
-          <lm-icono nombre="group" [tamano]="15" />
+          <lm-icono
+            nombre="group"
+            [tamano]="16"
+          />
           {{ mesa().cantidadComensales }} personas
         </span>
-        <span class="lm-mesa__pie">
-          <lm-chip [estado]="mesa().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
-        </span>
       </span>
-    </button>
+
+      <span class="lm-mesa__flecha">
+        <lm-icono
+          nombre="chevron_right"
+          [tamano]="19"
+        />
+      </span>
+    </span>
+
+    <!-- ESTADO -->
+    <span
+      class="lm-mesa__estado"
+      [class.lm-mesa__estado--vacia]="mesa().estado.toLowerCase() === 'vacia'"
+      [class.lm-mesa__estado--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
+      [class.lm-mesa__estado--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+    >
+      <span class="lm-mesa__estado-punto"></span>
+
+      {{ rotuloEstado() }}
+    </span>
+
+  </span>
+</button>
   `,
   styles: [':host{display:block;height:100%}'],
 })
@@ -249,22 +297,44 @@ export class PlacaQrComponent {
           @if (!portada()) {
             <lm-icono [nombre]="glifo()" [tamano]="26" color="var(--action-accent)" />
           }
+
+          <span class="lm-product__flores" aria-hidden="true">
+            <img src="assets/img/flor-2.png" alt="" />
+            <img src="assets/img/flor-2.png" alt="" />
+          </span>
         </span>
+
         <span class="lm-product__datos">
           <span class="lm-product__nombre">
-            {{ producto().nombre }}
+            <span class="lm-product__nombre-texto">{{ producto().nombre }}</span>
             @if (!producto().disponible) {
               <lm-chip estado="rechazado">Sin stock</lm-chip>
             }
           </span>
+
           <span class="lm-product__desc">{{ producto().descripcion }}</span>
+
           <span class="lm-product__pie">
-            <span class="lm-product__precio">{{ producto().precio | pesos }}</span>
-            <span class="lm-product__tiempo">
-              <lm-icono nombre="schedule" [tamano]="15" />
-              {{ producto().tiempoElaboracion }} minutos
+            <span class="lm-product__dato">
+              <span class="lm-product__dato-icono">
+                <lm-icono nombre="payments" [tamano]="18" />
+              </span>
+              <span class="lm-product__precio">{{ producto().precio | pesos }}</span>
+            </span>
+
+            <span class="lm-product__dato">
+              <span class="lm-product__dato-icono">
+                <lm-icono nombre="schedule" [tamano]="18" />
+              </span>
+              <span class="lm-product__tiempo">
+                {{ producto().tiempoElaboracion }} minutos
+              </span>
             </span>
           </span>
+        </span>
+
+        <span class="lm-product__ir" aria-hidden="true">
+          <lm-icono nombre="chevron_right" [tamano]="22" />
         </span>
       </button>
 

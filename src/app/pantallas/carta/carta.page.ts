@@ -42,7 +42,7 @@ type Categoria = 'TODOS' | TipoProducto;
       </lm-encabezado>
 
       <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Carta</lm-titulo>
+        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Carta </lm-titulo>
 
         <lm-pestanas [opciones]="pestanas" [valor]="pestana()" (cambiar)="pestana.set($any($event))" />
 

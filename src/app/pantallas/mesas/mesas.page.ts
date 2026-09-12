@@ -31,7 +31,7 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
       </lm-encabezado>
 
       <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón</lm-titulo>
+        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón </lm-titulo>
 
         <div class="resumen">
           <div class="lm-card resumen__dato">

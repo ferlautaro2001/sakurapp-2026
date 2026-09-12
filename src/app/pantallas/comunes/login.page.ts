@@ -210,7 +210,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         padding: 2px var(--gutter-screen) calc(6px + env(safe-area-inset-bottom, 6px));
         gap: 4px;
         flex-shrink: 0;
-        background: var(--bg-app);
+        background: transparent;
       }
       .registro {
         display: flex;

@@ -55,7 +55,10 @@ import { Unsubscribe } from 'firebase/firestore';
                 <lm-icono nombre="hourglass_top" [tamano]="30" color="var(--action-primary)" />
               </span>
               <b>El mozo está revisando tu pedido</b>
-              <small>Cuando lo confirme te avisamos. Si falta algo, te lo devuelve para que lo cambies.</small>
+              <small>Cuando lo confirme te avisamos. Mientras esperás podés mirar los resultados de las encuestas.</small>
+              <div style="margin-top: 12px; width: 100%;">
+                <lm-boton icono="insights" (presionar)="ir(['/cliente/encuestas'])">Ver encuestas</lm-boton>
+              </div>
             </div>
           }
 

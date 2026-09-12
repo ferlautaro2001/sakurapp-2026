@@ -109,7 +109,7 @@ export const routes: Routes = [
       },
       {
         path: ':id',
-        loadComponent: () => import('./pantallas/mesas/mesa-form.page').then((m) => m.MesaFormPage),
+        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
       },
     ],
   },

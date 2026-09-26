@@ -71,7 +71,7 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         flex-direction: column;
         align-items: center;
         justify-content: space-between;
-        padding: calc(36px + env(safe-area-inset-top)) 24px calc(28px + env(safe-area-inset-bottom));
+        padding: calc(var(--space-8) + var(--safe-top)) var(--space-6) calc(var(--space-7) + var(--safe-bottom));
         text-align: center;
         overflow: hidden;
         background: var(--gradiente-marca);
@@ -93,13 +93,17 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 20px;
+        gap: var(--space-5);
         z-index: 1;
       }
       .marca { animation: lm-rise 700ms var(--ease-out-soft) both; }
+      /* El gif viene a 120px pero el ancho del equipo manda: en un 320 el
+         logo, el nombre, la barra y los cuatro integrantes tienen que entrar
+         sin desplazamiento, porque la pantalla se va sola. */
+      .marca img { width: min(30vw, 120px); height: auto; }
       .nombre { animation: lm-rise 900ms var(--ease-out-soft) both; }
       .titulo {
-        font: 900 44px/1 var(--font-display);
+        font: 900 clamp(32px, 10.2vw, 44px)/1 var(--font-display);
         letter-spacing: var(--tracking-tight);
         color: #FFFFFF;
         text-shadow: 0 3px 10px rgba(110, 18, 52, .34);
@@ -110,7 +114,7 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         margin-top: 6px;
       }
       .barra {
-        width: 160px;
+        width: min(48vw, 160px);
         height: 5px;
         border-radius: 3px;
         background: rgba(255, 255, 255, .3);
@@ -132,9 +136,9 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         animation: lm-rise 1100ms var(--ease-out-soft) both;
       }
       .equipo__grupo {
-        font: 700 15px/1.2 var(--font-display);
+        font: 700 clamp(13.5px, 3.5vw, 15px)/1.2 var(--font-display);
         color: #FFFFFF;
-        letter-spacing: var(--tracking-wide);
+        letter-spacing: var(--tracking-label);
         text-transform: uppercase;
       }
       .equipo__lista {

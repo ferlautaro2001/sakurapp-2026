@@ -117,12 +117,12 @@ const PIENSA = 720;
 
       .marcador {
         flex: 0 0 auto;
-        display: flex; flex-direction: column; gap: 8px;
-        padding: 10px 12px; border-radius: var(--radius-card);
+        display: flex; flex-direction: column; gap: var(--space-2);
+        padding: var(--space-3); border-radius: var(--radius-card);
         background: var(--surface-card); box-shadow: var(--shadow-card);
       }
       .jugador {
-        display: flex; align-items: center; gap: 10px;
+        display: flex; align-items: center; gap: var(--space-3);
         padding: 5px 8px; border-radius: var(--radius-field);
         border: 2px solid transparent;
       }
@@ -134,22 +134,27 @@ const PIENSA = 720;
 
       .tablero {
         flex: 1 1 auto; min-height: 0; position: relative;
-        display: flex; align-items: center; justify-content: center; padding: 12px;
+        display: flex; align-items: center; justify-content: center; padding: var(--space-3);
         border-radius: var(--radius-card); box-shadow: var(--shadow-raised);
         background: linear-gradient(160deg, var(--surface-card), var(--surface-sunken));
         overflow: hidden;
         container-type: size;
       }
-      .flor { position: absolute; width: 38%; height: auto; opacity: .34; }
+      /* Las flores asoman por fuera del tablero a propósito y el
+         \`overflow:hidden\` del tablero las recorta. Van sin recibir toques:
+         se superponen al borde de las celdas y, aunque hoy pintan por debajo,
+         cualquier cambio de apilado las convertiría en un tapón sobre una
+         jugada. */
+      .flor { position: absolute; width: 38%; height: auto; opacity: .34; pointer-events: none; }
       .flor--1 { top: -6%; left: -8%; }
       .flor--2 { bottom: -8%; right: -7%; }
       .flor--3 { top: 42%; right: -12%; width: 30%; opacity: .26; }
 
       .grilla {
         position: relative;
-        display: grid; gap: 8px;
-        grid-template-columns: repeat(3, 1fr);
-        grid-template-rows: repeat(3, 1fr);
+        display: grid; gap: var(--space-2);
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-rows: repeat(3, minmax(0, 1fr));
         width: 100%;
         width: min(100%, 100cqh);
         aspect-ratio: 1;
@@ -176,18 +181,18 @@ const PIENSA = 720;
 
       .tapa {
         position: absolute; inset: 0; display: flex;
-        align-items: center; justify-content: center; padding: 18px;
+        align-items: center; justify-content: center; padding: var(--space-5);
         background: linear-gradient(160deg, rgba(255, 118, 101, .42), rgba(253, 82, 124, .34));
         border-radius: var(--radius-card);
       }
       .tapa__ficha {
         display: flex; flex-direction: column; align-items: center; gap: 7px;
-        padding: 20px 22px; max-width: 32ch; text-align: center;
+        padding: var(--space-5) var(--space-6); max-width: 32ch; text-align: center;
         border-radius: var(--radius-card); background: var(--surface-card);
         box-shadow: var(--shadow-raised);
       }
       .tapa__icono {
-        width: 62px; height: 62px; border-radius: var(--radius-pill);
+        width: clamp(48px, 15vw, 62px); height: clamp(48px, 15vw, 62px); border-radius: var(--radius-pill);
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--surface-sunken);
       }

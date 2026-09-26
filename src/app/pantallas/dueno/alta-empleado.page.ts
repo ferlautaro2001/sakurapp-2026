@@ -138,7 +138,7 @@ import {
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .persona { display: flex; gap: 14px; align-items: center; padding: 16px; }
+      .persona { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4); }
       .persona__nombre { font: var(--type-card-title); color: var(--text-title); }
       .persona__meta { font: var(--type-caption); color: var(--text-muted); margin-bottom: 6px; }
     `,

@@ -56,17 +56,21 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         align-items: center;
         justify-content: center;
         text-align: center;
-        padding-top: calc(24px + env(safe-area-inset-top));
+        padding-top: calc(var(--space-6) + var(--safe-top));
       }
       .marca {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 12px;
+        gap: var(--space-3);
       }
+      /* La pantalla no se desplaza, es un lm-body--fijo: el logo cede ancho para
+         que el nombre del grupo y los cuatro integrantes entren igual en un
+         equipo chico. */
+      .marca img { width: min(31vw, 124px); height: auto; }
       .titulo {
         margin: 0;
-        font: 900 46px/1 var(--font-display);
+        font: 900 clamp(34px, 10.7vw, 46px)/1 var(--font-display);
         letter-spacing: var(--tracking-tight);
         color: #FFFFFF;
         text-shadow: 0 3px 10px rgba(110, 18, 52, .3);
@@ -80,7 +84,7 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 12px;
+        gap: var(--space-3);
         width: 100%;
       }
       .flor__linea {
@@ -95,16 +99,16 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         position: absolute;
         left: 0;
         right: 0;
-        bottom: 12px;
+        bottom: var(--space-3);
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 8px;
       }
       .equipo__grupo {
-        font: 700 16px/1.2 var(--font-display);
+        font: 700 clamp(14px, 3.7vw, 16px)/1.2 var(--font-display);
         color: var(--text-sobre-fondo);
-        letter-spacing: var(--tracking-wide);
+        letter-spacing: var(--tracking-label);
         text-transform: uppercase;
       }
       .equipo__lista {

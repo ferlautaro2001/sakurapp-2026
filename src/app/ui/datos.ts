@@ -32,7 +32,7 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
       :host { display: block; }
       .lm-profile {
         display: flex; align-items: center; gap: 10px; width: 100%;
-        min-height: 46px; padding: 4px 10px; text-align: left; cursor: pointer;
+        min-height: var(--touch-min); padding: 4px 10px; text-align: left; cursor: pointer;
         border-radius: var(--radius-field); background: var(--surface-card);
         border: 1.5px solid var(--border-field);
         box-shadow: 0 1px 3px rgba(110, 18, 52, 0.05);
@@ -44,20 +44,29 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
         transform: scale(0.98);
       }
       .lm-profile__avatar {
-        width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
+        /* Como no se encoge, el lado tiene que bajar solo con el ancho del
+           equipo o se come el renglón del nombre. La proporción va clavada en
+           uno para que el círculo no se vuelva óvalo si el alto de la fila
+           empuja. */
+        width: clamp(30px, 8.8vw, 38px); aspect-ratio: 1; height: auto;
+        flex: 0 0 auto; border-radius: 50%;
         background: #FFFFFF;
         border: 1.5px solid rgba(185, 46, 88, 0.18);
         display: grid; place-items: center;
         overflow: hidden;
         box-shadow: 0 2px 5px rgba(110, 18, 52, 0.08);
       }
+      /* La imagen llena el círculo: acá entra tanto el sushi de reserva como la
+         foto real de la persona, y contenida al 74% la foto quedaba chica y
+         con aire a los costados. Recorta desde el centro, que es donde está la
+         cara; el sushi es cuadrado, así que no pierde nada. */
       .lm-profile__avatar img {
-        width: 28px; height: 28px; object-fit: contain; display: block;
+        width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
       }
       .lm-profile__texto { flex: 1; min-width: 0; }
       .lm-profile__texto b {
         display: block;
-        font: 700 13.5px/1.2 var(--font-display, inherit);
+        font: 700 clamp(12.5px, 3.1vw, 13.5px)/1.2 var(--font-display, inherit);
         color: var(--text-title);
         white-space: nowrap;
         overflow: hidden;
@@ -65,7 +74,7 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
       }
       .lm-profile__texto small {
         display: block;
-        font: 500 11.5px/1.2 var(--font-text, inherit);
+        font: 500 clamp(10.5px, 2.7vw, 11.5px)/1.2 var(--font-text, inherit);
         color: var(--text-muted);
       }
     `,
@@ -217,11 +226,39 @@ export class FilaPendienteComponent {
         </span>
       </span>
 
-      <span class="lm-mesa__flecha">
-        <lm-icono
-          nombre="chevron_right"
-          [tamano]="19"
-        />
+      <!--
+        Atajos de la fila. Van con el rol de botón y no como un elemento
+        button, porque la tarjeta entera ya es uno y el HTML no permite
+        anidarlos;
+        por eso cada uno frena la propagación, para que tocar el lápiz no abra
+        además la ficha que hay detrás.
+      -->
+      <span class="lm-mesa__acciones">
+        @if (conEdicion()) {
+          <span
+            class="lm-mesa__accion lm-mesa__accion--editar"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'Editar la mesa ' + mesa().numero"
+            (click)="editar($event)"
+            (keydown.enter)="editar($event)"
+            (keydown.space)="editar($event)"
+          >
+            <lm-icono nombre="edit" [tamano]="18" />
+          </span>
+        }
+
+        <span
+          class="lm-mesa__accion lm-mesa__accion--qr"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'Ver el código QR de la mesa ' + mesa().numero"
+          (click)="verQr($event)"
+          (keydown.enter)="verQr($event)"
+          (keydown.space)="verQr($event)"
+        >
+          <lm-icono nombre="qr_code_2" [tamano]="18" />
+        </span>
       </span>
     </span>
 
@@ -244,7 +281,22 @@ export class FilaPendienteComponent {
 })
 export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
+  /** El lápiz sólo lo ven los perfiles que pueden editar la mesa. */
+  readonly conEdicion = input(false, { transform: booleanAttribute });
   readonly presionar = output<void>();
+  readonly abrirQr = output<void>();
+  readonly abrirEdicion = output<void>();
+
+  protected verQr(evento: Event): void {
+    evento.preventDefault();
+    evento.stopPropagation();
+    this.abrirQr.emit();
+  }
+  protected editar(evento: Event): void {
+    evento.preventDefault();
+    evento.stopPropagation();
+    this.abrirEdicion.emit();
+  }
 
   protected iconoTipo(): string {
     return ICONO_TIPO_MESA[this.mesa().tipo];
@@ -295,13 +347,8 @@ export class PlacaQrComponent {
           [style.background-image]="portada() ? 'url(' + portada() + ')' : null"
         >
           @if (!portada()) {
-            <lm-icono [nombre]="glifo()" [tamano]="26" color="var(--action-accent)" />
+            <lm-icono [nombre]="glifo()" tamano="clamp(19px, 6vw, 26px)" color="var(--action-accent)" />
           }
-
-          <span class="lm-product__flores" aria-hidden="true">
-            <img src="assets/img/flor-2.png" alt="" />
-            <img src="assets/img/flor-2.png" alt="" />
-          </span>
         </span>
 
         <span class="lm-product__datos">
@@ -365,14 +412,18 @@ export class PlacaQrComponent {
       }
       .lm-product-fila--pedido { box-shadow: 0 0 0 2px var(--action-primary), var(--shadow-card); }
       .lm-product-fila--carrito .lm-product { flex: 1 1 auto; min-width: 0; box-shadow: none; }
+      /* La columna del carrito no se encoge nunca: si se queda en 98px fijos, en
+         un equipo de 320px le deja al nombre del producto menos de cien
+         píxeles. Baja con el ancho, igual que la miniatura de al lado. */
       .lm-product__carrito {
-        flex: 0 0 98px; width: 98px; box-sizing: border-box;
+        flex: 0 0 auto; width: clamp(78px, 23vw, 98px); box-sizing: border-box;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 4px; padding: 8px 8px 8px 0;
       }
       .lm-product__subtotal {
-        min-height: 13px;
-        font: 800 13px/1 var(--font-numeric); color: var(--action-primary); white-space: nowrap;
+        min-height: 13px; max-width: 100%;
+        font: 800 clamp(12px, 3vw, 13px)/1 var(--font-numeric); color: var(--action-primary);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
     `,
   ],
@@ -459,12 +510,12 @@ export class FilaEsperaComponent {
     <div>
       <div
         class="lm-carousel__marco"
-        [style.height.px]="alto()"
+        [style.height]="altoCss()"
         [style.background-image]="actual() ? 'url(' + actual() + ')' : null"
       >
         @if (!actual()) {
           <span class="lm-carousel__vacio">
-            <lm-icono nombre="add_a_photo" [tamano]="30" color="var(--action-accent)" />
+            <lm-icono nombre="add_a_photo" tamano="clamp(22px, 7vw, 30px)" color="var(--action-accent)" />
             <span>Foto {{ indice() + 1 }} de {{ cantidad() }} · sin cargar</span>
           </span>
         }
@@ -500,6 +551,16 @@ export class CarruselComponent {
   readonly fotos = input.required<string[]>();
   readonly alto = input(226, { transform: numberAttribute });
   private readonly posicion = signal(0);
+
+  /**
+   * El alto pedido es el techo, no una medida clavada: en un equipo angosto el
+   * marco de la foto se quedaba con más de la mitad de la pantalla y empujaba
+   * los pétalos del pie fuera de la vista.
+   */
+  protected altoCss(): string {
+    const techo = this.alto();
+    return `clamp(${Math.round(techo * 0.73)}px, ${(techo / 4.3).toFixed(1)}vw, ${techo}px)`;
+  }
 
   protected indice(): number {
     return Math.min(this.posicion(), Math.max(0, this.cantidad() - 1));

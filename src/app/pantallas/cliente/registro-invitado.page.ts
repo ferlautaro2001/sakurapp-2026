@@ -30,7 +30,14 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
           <lm-banner tono="error" titulo="Faltan datos">{{ resumenError() }}</lm-banner>
         }
 
+        <!--
+          Círculo y no óvalo: es la foto con la que el salón reconoce a la
+          persona, y el mismo recorte redondo que usa el avatar en el resto de
+          la aplicación. El óvalo la estiraba y hacía ver el ícono de la cámara
+          corrido dentro del marco.
+        -->
         <lm-foto
+          forma="circulo"
           [fuente]="foto()"
           [tamano]="148"
           etiqueta="Foto con cámara"
@@ -40,7 +47,12 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombre" marcador="Cómo te llamamos" />
 
-        <lm-separador />
+        <!--
+          El separador va con el pétalo de la marca: los tres cortes al bies
+          sueltos, a este tamaño, se leían como un glifo roto y no como un
+          remate.
+        -->
+        <lm-separador flor />
         <p class="lm-parrafo">
           La foto se utiliza para reconocerte en el restaurante. Si querés guardar tus datos permanentemente,
           registrate con una cuenta completa.
@@ -53,7 +65,33 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
       </div>
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* El formulario son cuatro cosas y dejaba media pantalla de color vacía
+         abajo. Los márgenes automáticos reparten ese aire arriba y abajo y se
+         resuelven en cero cuando el teclado achica la pantalla, así el
+         desplazamiento sigue empezando por el título. */
+      .lm-body > :first-child {
+        margin-top: auto;
+      }
+
+      .lm-body > :last-child {
+        margin-bottom: auto;
+      }
+
+      /* Es la única explicación de la pantalla y la lee alguien que acaba de
+         entrar sin cuenta: va en el cuerpo de lectura, no en el de un pie. */
+      .lm-body .lm-parrafo {
+        font: var(--type-body);
+      }
+    `,
+  ],
 })
 export class RegistroInvitadoPage {
   private readonly fb = inject(FormBuilder);

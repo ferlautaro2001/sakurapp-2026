@@ -55,7 +55,7 @@ import { UI } from '../../ui';
       :host { display: flex; flex: 1; min-height: 0; }
       .espera {
         display: flex; flex-direction: column; align-items: center; gap: 6px;
-        padding: 24px 18px; text-align: center;
+        padding: var(--space-6) var(--space-5); text-align: center;
       }
       .espera__titulo {
         margin: 0 0 6px; font: var(--type-title); letter-spacing: var(--tracking-tight);
@@ -64,7 +64,7 @@ import { UI } from '../../ui';
       /* El color lo pone el estado: ámbar mientras se revisa, rojo si no entró.
          El ícono va en blanco, que contra los dos se lee. */
       .espera__reloj {
-        width: 88px; height: 88px; border-radius: 50%; display: grid; place-items: center;
+        width: clamp(64px, 22vw, 88px); height: clamp(64px, 22vw, 88px); border-radius: 50%; display: grid; place-items: center;
       }
       .espera b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
       .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }

@@ -27,7 +27,20 @@ import { enteroEntre, largoMinimo, marcarEnviado, precio, requerido } from '../.
       <div class="lm-actionbar"><lm-boton icono="add" [deshabilitado]="guardando()" (presionar)="guardar()">Agregar bebida</lm-boton></div>
     </div>
   `,
-  styles: [`:host{display:flex;flex:1;min-height:0}.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:8px 0}.fotos lm-foto{min-width:0}`],
+  styles: [
+    `
+      :host{display:flex;flex:1;min-height:0}
+      /* minmax(0,1fr) y no 1fr: el mínimo automático de la columna es su
+         contenido, y con tres fotos eso desbordaba la fila en un equipo
+         angosto. */
+      .fotos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:8px 0}
+      .fotos lm-foto{min-width:0}
+      /* Proporción cuadrada en vez del alto fijo de 104px que lm-foto escribe
+         en el estilo del elemento: la casilla sigue el ancho de su columna en
+         lugar de quedar más alta que ancha en un equipo de 320. */
+      .fotos ::ng-deep .lm-photo__marco--rect{height:auto !important;aspect-ratio:1/1}
+    `,
+  ],
 })
 export class AltaBebidaPage {
   private readonly fb = inject(FormBuilder);

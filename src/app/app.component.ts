@@ -58,7 +58,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         <div class="modal-exito-overlay" (click)="avisos.cerrar(exito.id)">
           <div class="modal-exito" (click)="$event.stopPropagation()">
             <div class="modal-exito__icono">
-              <lm-icono nombre="check_circle" [tamano]="44" color="var(--state-success)" />
+              <lm-icono nombre="check_circle" tamano="clamp(32px, 10.2vw, 44px)" color="var(--state-success)" />
             </div>
             <h3 class="modal-exito__titulo">{{ exito.titulo }}</h3>
             @if (exito.cuerpo) {
@@ -112,8 +112,8 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 20px;
-        padding: 0 var(--gutter-screen) calc(24px + env(safe-area-inset-bottom));
+        gap: var(--space-5);
+        padding: 0 var(--gutter-screen) calc(var(--space-6) + var(--safe-bottom));
         background: transparent;
       }
       /* Modal de éxito fluido */
@@ -126,15 +126,19 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         display: flex;
         align-items: center;
         justify-content: center;
-        padding: 24px;
+        padding: var(--space-6);
         animation: fadeOverlay 200ms ease-out both;
       }
       .modal-exito {
         width: 100%;
         max-width: 320px;
+        /* Con un cuerpo largo en un equipo bajo, la tarjeta crecía más que la
+           pantalla y el botón Aceptar quedaba fuera de alcance. */
+        max-height: 100%;
+        overflow-y: auto;
         background: var(--surface-card);
         border-radius: var(--radius-modal, 24px);
-        padding: 24px 20px 18px;
+        padding: var(--space-6) var(--space-5) var(--space-5);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -144,8 +148,8 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         animation: popModal 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
       }
       .modal-exito__icono {
-        width: 64px;
-        height: 64px;
+        width: clamp(47px, 14.9vw, 64px);
+        height: clamp(47px, 14.9vw, 64px);
         border-radius: 50%;
         background: rgba(46, 125, 50, 0.12);
         display: grid;
@@ -154,22 +158,25 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       }
       .modal-exito__titulo {
         margin: 0;
-        font: 800 18px/1.2 var(--font-display);
+        font: 800 clamp(16px, 4.2vw, 18px)/1.2 var(--font-display);
         color: var(--text-title);
       }
       .modal-exito__cuerpo {
-        margin: 8px 0 16px;
-        font: 500 14px/1.4 var(--font-text);
+        margin: var(--space-2) 0 var(--space-4);
+        font: 500 clamp(13px, 3.3vw, 14px)/1.4 var(--font-text);
         color: var(--text-muted);
       }
       .modal-exito__btn {
         width: 100%;
-        height: 44px;
+        /* Mínimo y no fijo: el rótulo puede venir en dos renglones en un equipo
+           angosto, y con el alto clavado se cortaba. */
+        min-height: var(--touch-min);
+        padding: 0 var(--space-4);
         background: var(--state-success, #2E7D32);
         color: #FFFFFF;
         border: none;
         border-radius: var(--radius-pill, 999px);
-        font: 700 15px/1 var(--font-text);
+        font: var(--type-button);
         cursor: pointer;
         box-shadow: 0 3px 8px rgba(46, 125, 50, 0.3);
         transition: transform 120ms ease;

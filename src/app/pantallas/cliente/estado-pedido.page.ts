@@ -165,7 +165,10 @@ import { PaginaConSesion } from '../pagina-base';
             @if (pedidos.juegosHabilitados(actual) && !actual.juegoIntentado) {
               <lm-boton icono="sports_esports" (presionar)="ir(['/juegos'])">Jugar por un descuento</lm-boton>
             } @else if (actual.juegoIntentado) {
-              <lm-banner icono="redeem" [titulo]="actual.descuentoJuego ? 'Descuento aplicado' : 'Intento utilizado'">
+              <lm-banner
+                [tono]="actual.descuentoJuego ? 'success' : 'info'"
+                [titulo]="actual.descuentoJuego ? 'Descuento aplicado' : 'Intento utilizado'"
+              >
                 {{ actual.descuentoJuego ? 'Ganaste un ' + actual.descuentoJuego + '% para este pedido.' : 'Esta vez no hubo premio.' }}
               </lm-banner>
             }
@@ -208,23 +211,23 @@ import { PaginaConSesion } from '../pagina-base';
     </div>
   `,
   styles: [`
-    :host{display:flex;flex:1;min-height:0}.estado{padding:18px;display:flex;align-items:center;gap:14px}
-    .estado__icono{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;background:var(--action-primary);color:var(--text-on-primary)}
+    :host{display:flex;flex:1;min-height:0}.estado{padding:var(--space-5);display:flex;align-items:center;gap:var(--space-4)}
+    .estado__icono{width:clamp(46px,14vw,58px);height:clamp(46px,14vw,58px);border-radius:18px;display:grid;place-items:center;background:var(--action-primary);color:var(--text-on-primary)}
     .estado small,.sector small{font:var(--type-label);letter-spacing:var(--tracking-label);color:var(--text-muted)}
-    .estado h2{margin:3px 0;font:var(--type-section-title);color:var(--text-title)}.estado p{margin:0;color:var(--text-muted)}
-    .sector{padding:16px;display:grid;gap:5px;color:var(--action-primary)}.sector b{color:var(--text-title)}
-    .total{padding:16px;display:flex;justify-content:space-between;align-items:center}.total b{font:var(--type-card-title);color:var(--text-title)}
+    .estado h2{margin:3px 0;font:var(--type-section);color:var(--text-title)}.estado p{margin:0;color:var(--text-muted)}
+    .sector{padding:var(--space-4);display:grid;gap:5px;color:var(--action-primary)}.sector b{color:var(--text-title)}
+    .total{padding:var(--space-4);display:flex;justify-content:space-between;align-items:center}.total b{font:var(--type-card-title);color:var(--text-title)}
 
     /* US-7.2 · la comanda devuelta. El motivo es lo único que le dice al
        comensal qué cambiar, así que va grande y sobre tarjeta. */
-    .devuelto{padding:14px;border-left:4px solid var(--state-error)}
-    .devuelto__encabezado{display:flex;align-items:center;gap:10px}
+    .devuelto{padding:var(--space-4);border-left:4px solid var(--state-error)}
+    .devuelto__encabezado{display:flex;align-items:center;gap:var(--space-3)}
     .devuelto__encabezado b{display:block;font:var(--type-card-title);color:var(--state-error)}
     .devuelto__encabezado small{display:block;font:var(--type-caption);color:var(--text-muted)}
-    .devuelto__motivo{margin:10px 0 0;font:var(--type-body);color:var(--text-body);text-wrap:pretty}
+    .devuelto__motivo{margin:var(--space-3) 0 0;font:var(--type-body);color:var(--text-body);text-wrap:pretty}
 
-    .leyenda{display:flex;flex-direction:column;gap:10px;padding:14px}
-    .leyenda__item{display:flex;align-items:flex-start;gap:10px;font:var(--type-body-small);color:var(--text-body);text-wrap:pretty}
+    .leyenda{display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-4)}
+    .leyenda__item{display:flex;align-items:flex-start;gap:var(--space-3);font:var(--type-body-small);color:var(--text-body);text-wrap:pretty}
     .leyenda__item b{color:var(--text-title)}
     /* El mismo sello que llevan los renglones, para que se reconozca. */
     .leyenda__sello{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
@@ -236,7 +239,7 @@ import { PaginaConSesion } from '../pagina-base';
        sistema. Va pegado a la explicación que lo justifica. */
     .limpiar{
       display:flex;align-items:center;justify-content:center;gap:8px;
-      width:100%;min-height:var(--touch-min);padding:10px 14px;margin-top:2px;
+      width:100%;min-height:var(--touch-min);padding:var(--space-3) var(--space-4);margin-top:2px;
       border:none;border-radius:var(--radius-button);cursor:pointer;
       background:var(--state-error);color:#FFF6F5;
       font:var(--type-button);line-height:1.25;text-align:center;text-wrap:balance;
@@ -244,7 +247,7 @@ import { PaginaConSesion } from '../pagina-base';
     .limpiar:active{background:#9E1D13;transform:scale(0.99)}
 
     .renglones{display:flex;flex-direction:column;gap:8px}
-    .renglon{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-card);background:var(--surface-card);box-shadow:var(--shadow-card)}
+    .renglon{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3);border-radius:var(--radius-card);background:var(--surface-card);box-shadow:var(--shadow-card)}
     .renglon--cantidad{background:var(--state-pending-surface);box-shadow:0 0 0 2px var(--state-pending),var(--shadow-card)}
     .renglon--cambiar{background:var(--state-error-surface);box-shadow:0 0 0 2px var(--state-error),var(--shadow-card)}
     .renglon__datos{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
@@ -257,7 +260,7 @@ import { PaginaConSesion } from '../pagina-base';
     /* El control de cantidad, igual que en el carrito. */
     .cantidad{flex:0 0 auto;display:flex;align-items:center;gap:6px}
     .cantidad button{
-      width:34px;height:34px;border-radius:50%;border:none;cursor:pointer;
+      width:var(--touch-min);height:var(--touch-min);border-radius:50%;border:none;cursor:pointer;
       display:grid;place-items:center;
       background:var(--surface-sunken);color:var(--action-primary);
     }
@@ -266,7 +269,7 @@ import { PaginaConSesion } from '../pagina-base';
     .cantidad strong{min-width:18px;text-align:center;font:var(--type-card-title);color:var(--text-title)}
 
     /* El resumen permanente arriba de la acción de reenviar. */
-    .resumen{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .resumen{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
     .resumen span{display:flex;flex-direction:column;gap:2px}
     .resumen small{font:var(--type-label);letter-spacing:var(--tracking-label);color:#FFFFFF;opacity:.82}
     .resumen strong{display:flex;align-items:center;gap:6px;font:var(--type-card-title);color:#FFFFFF}

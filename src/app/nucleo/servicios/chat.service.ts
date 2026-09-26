@@ -30,6 +30,29 @@ export interface ConversacionMesa {
   ultimoRemitente: string;
   ultimoRol: RolMensaje;
   actualizadoEn: string;
+  /** Hay algo escrito del otro lado que este rol todavía no abrió. */
+  pendienteMozo: boolean;
+  pendienteCliente: boolean;
+  /** El mozo dio la consulta por resuelta. Sigue a la vista, pero sin reclamar. */
+  cerrada: boolean;
+  cerradaPor: string;
+}
+
+/**
+ * Lo no leído se resuelve comparando dos marcas de tiempo del resumen de la
+ * conversación: cuándo escribió por última vez cada lado y cuándo abrió el
+ * hilo el otro.
+ *
+ * Antes el globo rojo del panel de consultas se pintaba con el rol del último
+ * mensaje, que nunca cambia al leerlo: cualquier consulta del comensal
+ * quedaba marcada como no leída para siempre. Un par de marcas de tiempo no
+ * necesita contadores que sumar ni restar y no se desincroniza si dos mozos
+ * abren el mismo hilo a la vez: el que entra último simplemente vuelve a
+ * escribir la fecha.
+ */
+function hayPendiente(escritoEn: string, leidoEn: string): boolean {
+  if (!escritoEn) return false;
+  return !leidoEn || escritoEn > leidoEn;
 }
 
 /**
@@ -50,12 +73,24 @@ export class ChatService {
 
   readonly conversacionesActivas = signal<ConversacionMesa[]>([]);
   private escuchaConversaciones: Unsubscribe | null = null;
+  /**
+   * Cuántas pantallas están mirando la lista de conversaciones ahora mismo.
+   *
+   * La escucha es una sola para toda la aplicación, pero la piden cuatro
+   * pantallas distintas. Antes se devolvía el `Unsubscribe` compartido y la
+   * primera que se cerraba apagaba la escucha para todas; peor aún, el campo
+   * quedaba con el handle muerto, así que ninguna llamada posterior volvía a
+   * suscribirse y la bandeja se congelaba hasta recargar la aplicación. Por
+   * eso ahora se cuenta: la escucha se corta recién cuando se va el último.
+   */
+  private miradasConversaciones = 0;
 
   /**
    * Inicia la escucha reactiva de todas las conversaciones activas para los mozos en servicio.
    */
   iniciarEscuchaConversaciones(): Unsubscribe {
-    if (this.escuchaConversaciones) return this.escuchaConversaciones;
+    this.miradasConversaciones++;
+    if (this.escuchaConversaciones) return this.soltarConversaciones();
 
     const db = this.firestore.obtenerDb();
     const colRef = collection(db, COLECCION_CHAT);
@@ -67,6 +102,7 @@ export class ChatService {
         snapshot.forEach((docSnap) => {
           const d = docSnap.data();
           if (d['mesaId'] && d['ultimoMensaje']) {
+            const cerrada = Boolean(d['cerrada']);
             lista.push({
               mesaId: d['mesaId'],
               mesaNumero: Number(d['mesaNumero']) || 0,
@@ -74,6 +110,16 @@ export class ChatService {
               ultimoRemitente: d['ultimoRemitente'] || '',
               ultimoRol: (d['ultimoRol'] as RolMensaje) || 'CLIENTE',
               actualizadoEn: d['actualizadoEn'] || '',
+              // Una consulta dada por resuelta no vuelve a reclamar atención
+              // aunque el último mensaje sea del comensal.
+              pendienteMozo:
+                !cerrada && hayPendiente(d['ultimoDeCliente'] || '', d['leidoPorMozoEn'] || ''),
+              pendienteCliente: hayPendiente(
+                d['ultimoDeMozo'] || '',
+                d['leidoPorClienteEn'] || '',
+              ),
+              cerrada,
+              cerradaPor: d['cerradaPor'] || '',
             });
           }
         });
@@ -85,7 +131,25 @@ export class ChatService {
       },
     );
 
-    return this.escuchaConversaciones;
+    return this.soltarConversaciones();
+  }
+
+  /**
+   * Baja de una pantalla: sólo corta la escucha cuando se fue la última, y
+   * deja el campo en nulo para que la próxima que entre vuelva a suscribirse.
+   * Es idempotente: si una pantalla la llama dos veces, la segunda no resta.
+   */
+  private soltarConversaciones(): Unsubscribe {
+    let soltada = false;
+    return () => {
+      if (soltada) return;
+      soltada = true;
+      this.miradasConversaciones = Math.max(0, this.miradasConversaciones - 1);
+      if (this.miradasConversaciones === 0 && this.escuchaConversaciones) {
+        this.escuchaConversaciones();
+        this.escuchaConversaciones = null;
+      }
+    };
   }
 
   /**
@@ -225,6 +289,14 @@ export class ChatService {
         ultimoRemitente: remitenteNombre,
         ultimoRol: rol,
         actualizadoEn: timestamp,
+        // Cada lado deja su propia marca: es contra ella que se compara la de
+        // lectura del otro para saber si queda algo sin abrir.
+        ...(esMozo ? { ultimoDeMozo: timestamp } : { ultimoDeCliente: timestamp }),
+        // Escribir reabre: una consulta dada por resuelta a la que el comensal
+        // vuelve es una consulta abierta, y pedirle al mozo que la destrabe a
+        // mano es la forma segura de perder el mensaje.
+        cerrada: false,
+        cerradaPor: '',
       },
       { merge: true },
     );
@@ -322,8 +394,26 @@ export class ChatService {
 
   /**
    * Marca como leídos los mensajes de un rol determinado en una mesa.
+   *
+   * El `leido` de cada mensaje sirve para la tilde doble de la burbuja, pero
+   * el panel de consultas no lo mira: ese lee el resumen de la conversación.
+   * Por eso acá también se estampa la fecha de lectura del rol contrario, que
+   * es lo que apaga el globo rojo de la lista.
    */
   async marcarLeidos(mesaId: string, rolParaMarcar: RolMensaje): Promise<void> {
+    const ahora = new Date().toISOString();
+    try {
+      const db = this.firestore.obtenerDb();
+      const convRef = doc(db, COLECCION_CHAT, mesaId);
+      await setDoc(
+        convRef,
+        rolParaMarcar === 'CLIENTE' ? { leidoPorMozoEn: ahora } : { leidoPorClienteEn: ahora },
+        { merge: true },
+      );
+    } catch {
+      // Ignorar fallas si la base está en modo offline o sin permisos
+    }
+
     try {
       const db = this.firestore.obtenerDb();
       const colRef = collection(db, COLECCION_CHAT, mesaId, 'mensajes');
@@ -335,6 +425,46 @@ export class ChatService {
         batch.update(d.ref, { leido: true });
       });
       await batch.commit();
+    } catch {
+      // Ignorar fallas si la base está en modo offline o sin permisos
+    }
+  }
+
+  /**
+   * El mozo da la consulta por resuelta.
+   *
+   * No se borra nada ni se corta el hilo: el historial de la mesa sigue
+   * entero y el comensal puede seguir escribiendo. Lo único que cambia es que
+   * deja de figurar como pendiente en el panel, que era el problema real —un
+   * hilo contestado hace media hora seguía reclamando atención igual que uno
+   * recién llegado. Se reabre de dos maneras: a mano, con `reabrir`, o sola,
+   * apenas alguien vuelve a escribir.
+   */
+  async cerrarConversacion(mesaId: string, cerradaPor: string): Promise<void> {
+    await this.marcarEstadoDeCierre(mesaId, true, cerradaPor);
+  }
+
+  /** Vuelve a poner la consulta en la bandeja, sin tocar los mensajes. */
+  async reabrirConversacion(mesaId: string): Promise<void> {
+    await this.marcarEstadoDeCierre(mesaId, false, '');
+  }
+
+  private async marcarEstadoDeCierre(
+    mesaId: string,
+    cerrada: boolean,
+    cerradaPor: string,
+  ): Promise<void> {
+    try {
+      const db = this.firestore.obtenerDb();
+      await setDoc(
+        doc(db, COLECCION_CHAT, mesaId),
+        {
+          cerrada,
+          cerradaPor,
+          cerradaEn: cerrada ? new Date().toISOString() : '',
+        },
+        { merge: true },
+      );
     } catch {
       // Ignorar fallas si la base está en modo offline o sin permisos
     }

@@ -102,33 +102,81 @@
   --font-display: "Zen Maru Gothic", "Figtree", "Segoe UI", system-ui, sans-serif;
   --font-text: "Figtree", "Segoe UI", system-ui, sans-serif;
   --font-numeric: "Zen Maru Gothic", "Figtree", "Segoe UI", system-ui, sans-serif;
-  --type-display: 900 36px/1.08 var(--font-display);
-  --type-title-xl: 900 32px/1.12 var(--font-display);
-  --type-title: 700 27px/1.18 var(--font-display);
-  --type-section: 700 20px/1.28 var(--font-display);
-  --type-card-title: 700 17px/1.32 var(--font-display);
-  --type-body: 400 16px/1.5 var(--font-text);
-  --type-body-medium: 500 16px/1.5 var(--font-text);
-  --type-body-small: 400 14px/1.45 var(--font-text);
-  --type-caption: 400 13px/1.4 var(--font-text);
-  --type-label: 700 12px/1.2 var(--font-text);
-  --type-button: 700 16px/1 var(--font-text);
-  --type-price: 900 21px/1.1 var(--font-numeric);
-  --type-numeral: 900 34px/1 var(--font-numeric);
-  --type-numeral-lg: 900 48px/1 var(--font-numeric);
+  /* Tipografía fluida.
+   *
+   * Cada escala es un `clamp(piso, vw, techo)`. El techo es el valor histórico
+   * del diseño y se alcanza a los 430px de ancho, que es el celular más grande
+   * que nos importa; por debajo de eso el tamaño baja con el ancho real del
+   * dispositivo, así el texto entra en la pantalla sin una sola media query por
+   * marca ni modelo. El piso existe para que en un 320px nada quede ilegible.
+   *
+   * Los títulos y los números grandes bajan fuerte (hasta ~0,72 del techo)
+   * porque son los que desbordan; el texto de lectura baja apenas (~0,90)
+   * porque encogerlo no evita desbordes —eso lo resuelve el wrap— y sí
+   * lastima la legibilidad. */
+  --type-display: 900 clamp(26px, 8.4vw, 36px)/1.08 var(--font-display);
+  --type-title-xl: 900 clamp(23px, 7.4vw, 32px)/1.12 var(--font-display);
+  --type-title: 700 clamp(20px, 6.3vw, 27px)/1.18 var(--font-display);
+  --type-section: 700 clamp(17px, 4.7vw, 20px)/1.28 var(--font-display);
+  --type-card-title: 700 clamp(15px, 4vw, 17px)/1.32 var(--font-display);
+  /* El texto de lectura se subió un escalón entero —piso y techo— después de
+     la revisión de septiembre de 2026: en el salón la aplicación se lee a un
+     brazo de distancia y de parado, no a treinta centímetros, así que lo que
+     era legible en el escritorio no alcanzaba. Los títulos no se tocaron:
+     ya eran grandes y son los que desbordan. */
+  --type-body: 400 clamp(15px, 3.9vw, 17px)/1.5 var(--font-text);
+  --type-body-medium: 500 clamp(15px, 3.9vw, 17px)/1.5 var(--font-text);
+  --type-body-small: 400 clamp(13.5px, 3.5vw, 15px)/1.45 var(--font-text);
+  --type-caption: 400 clamp(12.5px, 3.2vw, 14px)/1.4 var(--font-text);
+  --type-label: 700 clamp(11.5px, 3vw, 13px)/1.2 var(--font-text);
+  --type-button: 700 clamp(15px, 3.9vw, 17px)/1 var(--font-text);
+  --type-price: 900 clamp(17px, 4.9vw, 21px)/1.1 var(--font-numeric);
+  --type-numeral: 900 clamp(24px, 7.9vw, 34px)/1 var(--font-numeric);
+  --type-numeral-lg: 900 clamp(31px, 11.2vw, 48px)/1 var(--font-numeric);
   --tracking-label: .13em;
   --tracking-tight: -.01em;
 
-  /* espaciado */
-  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
-  --space-5: 20px; --space-6: 24px; --space-7: 32px; --space-8: 40px; --space-9: 56px;
-  --gutter-screen: 18px;
-  --gap-list: 12px;
-  --touch-min: 48px;
-  --field-height: 56px;
-  --button-height: 56px;
-  --header-h: 64px;
-  --bottomnav-h: 74px;
+  /* Espaciado fluido, con la misma mecánica que la tipografía: el techo es el
+     valor de diseño y se alcanza a los 430px. `--space-1` queda fijo porque
+     4px no se puede encoger de forma útil. */
+  --space-1: 4px;
+  --space-2: clamp(6px, 1.9vw, 8px);
+  --space-3: clamp(9px, 2.8vw, 12px);
+  --space-4: clamp(12px, 3.7vw, 16px);
+  --space-5: clamp(14px, 4.7vw, 20px);
+  --space-6: clamp(16px, 5.6vw, 24px);
+  --space-7: clamp(20px, 7.4vw, 32px);
+  --space-8: clamp(24px, 9.3vw, 40px);
+  --space-9: clamp(32px, 13vw, 56px);
+  --gutter-screen: clamp(12px, 4.2vw, 18px);
+  --gap-list: clamp(9px, 2.8vw, 12px);
+
+  /* Métricas del chasis. `--touch-min` no baja de 44px: es el mínimo de área
+     táctil accesible y no se negocia por falta de ancho. */
+  --touch-min: clamp(44px, 11.2vw, 48px);
+  --field-height: clamp(48px, 13vw, 56px);
+  --button-height: clamp(48px, 13vw, 56px);
+  --header-h: clamp(52px, 14.9vw, 64px);
+  --bottomnav-h: clamp(60px, 17.2vw, 74px);
+
+  /* Zonas seguras del dispositivo (notch, barra de gestos). Se usan por token
+     y no con `env()` suelto para que el valor de reserva sea siempre 0px y no
+     quede un `calc()` inválido en los navegadores que no lo resuelven. */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Cajas cuadradas que antes tenían un lado fijo y se salían de pantalla en
+     los equipos angostos. Van acá para que ninguna pantalla vuelva a clavar un
+     px: son `min(vw, techo)` o `clamp()`, nunca un número suelto. */
+  --size-avatar: clamp(84px, 27vw, 116px);
+  --size-avatar-sm: clamp(34px, 10.8vw, 42px);
+  --size-avatar-header: clamp(48px, 13vw, 56px);
+  --size-thumb: clamp(80px, 25vw, 108px);
+  --size-visor: min(72vw, 236px);
+  --size-qr: min(66vw, 280px);
+  --size-icono-caja: clamp(38px, 12vw, 48px);
 
   /* forma */
   --radius-field: 14px;
@@ -159,8 +207,8 @@
 @keyframes lm-scan { 0%, 100% { transform: translateY(-88px); } 50% { transform: translateY(88px); } }
 @keyframes sk-flotar { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-10px) rotate(6deg); } }
 @keyframes sk-caer {
-  0% { transform: translate3d(0, -14vh, 0) rotate(0deg); opacity: 0; }
+  0% { transform: translate3d(0, -14dvh, 0) rotate(0deg); opacity: 0; }
   12% { opacity: .5; }
   88% { opacity: .5; }
-  100% { transform: translate3d(22px, 108vh, 0) rotate(220deg); opacity: 0; }
+  100% { transform: translate3d(22px, 108dvh, 0) rotate(220deg); opacity: 0; }
 }

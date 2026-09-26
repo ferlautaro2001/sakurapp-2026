@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { ROTULO_ESTADO_PEDIDO, sectorDe } from '../../nucleo/modelos/enums';
 import { Pedido } from '../../nucleo/modelos/modelos';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
@@ -15,24 +15,24 @@ import { PaginaConSesion } from '../pagina-base';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
       <div class="lm-body lm-body--gap12">
-        @if (chat.conversacionesActivas().length) {
+        @if (consultasAbiertas().length) {
           <div class="consultas-mesas" style="display: flex; flex-direction: column; gap: 8px; margin-bottom: 8px;">
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <span style="display: flex; align-items: center; gap: 8px;">
                 <lm-icono nombre="forum" [tamano]="20" color="var(--sk-verde, #1B7A4C)" />
-                <b style="color: var(--text-title); font-size: 15px;">Consultas en vivo de mesas</b>
+                <b style="color: var(--text-title); font: var(--type-card-title);">Consultas en vivo de mesas</b>
               </span>
-              <lm-chip estado="reservada">{{ chat.conversacionesActivas().length }}</lm-chip>
+              <lm-chip estado="reservada">{{ consultasAbiertas().length }}</lm-chip>
             </div>
 
             <div class="lm-list" style="display: flex; flex-direction: column; gap: 8px;">
-              @for (conv of chat.conversacionesActivas(); track conv.mesaId) {
-                <div class="lm-card" style="padding: 12px; display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--sk-verde, #1B7A4C);">
-                  <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <b style="color: var(--text-title); font-size: 14px;">Mesa {{ conv.mesaNumero }}</b>
-                    <small style="color: var(--text-muted); font-size: 11px;">{{ conv.actualizadoEn | date: 'HH:mm' }}</small>
+              @for (conv of consultasAbiertas(); track conv.mesaId) {
+                <div class="lm-card" style="padding: var(--space-3); display: flex; flex-direction: column; gap: 6px; border-left: 4px solid var(--sk-verde, #1B7A4C);">
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                    <b style="color: var(--text-title); font: var(--type-card-title);">Mesa {{ conv.mesaNumero }}</b>
+                    <small style="color: var(--text-muted); font: var(--type-caption);">{{ conv.actualizadoEn | date: 'HH:mm' }}</small>
                   </div>
-                  <span style="color: var(--text-body); font-size: 13px;">
+                  <span style="color: var(--text-body); font: var(--type-body-small);">
                     <b [style.color]="conv.ultimoRol === 'MOZO' ? 'var(--sk-verde)' : 'var(--action-primary)'">{{ conv.ultimoRemitente }}:</b> {{ conv.ultimoMensaje }}
                   </span>
                   <div style="display: flex; justify-content: flex-end; margin-top: 4px;">
@@ -100,26 +100,44 @@ import { PaginaConSesion } from '../pagina-base';
     </div>
   `,
   styles: [`
-    :host{display:flex;flex:1;min-height:0}.pedido{padding:16px;display:grid;gap:14px}
-    header,footer,.item{display:flex;align-items:center;justify-content:space-between;gap:12px}
+    :host{display:flex;flex:1;min-height:0}.pedido{padding:var(--space-4);display:grid;gap:var(--space-4)}
+    header,footer,.item{display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)}
+    /* Sólo el pie envuelve: el importe y los dos botones no entran juntos en un
+       renglón angosto, y bajan en bloque antes que desbordar la tarjeta. En la
+       cabecera y en los renglones el ajuste automático sacaría el sello y el
+       sector a una segunda línea en vez de dejar que el texto se acomode. */
+    footer{flex-wrap:wrap}
     header span{display:grid;gap:2px}header b{font:var(--type-card-title);color:var(--text-title)}
     header small,.item small{font:var(--type-caption);color:var(--text-muted)}
-    .items{display:grid;gap:8px;padding-block:12px;border-block:1px solid var(--border-divider)}
+    .items{display:grid;gap:8px;padding-block:var(--space-3);border-block:1px solid var(--border-divider)}
     .item span{font:var(--type-body-small);color:var(--text-body)}.item small{text-transform:capitalize}
     footer>b{font:var(--type-card-title);color:var(--text-title)}
     /* Confirmar y devolver, en la misma fila y separados: la decisión se toma
        adentro de la comanda, sin salir de la lista. */
-    .acciones{display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:flex-end}
+    .acciones{display:flex;align-items:center;gap:var(--space-5);flex-wrap:wrap;justify-content:flex-end}
   `],
 })
 export class PedidosMozoPage extends PaginaConSesion implements OnInit {
   protected readonly pedidos = inject(PedidosService);
   protected readonly chat = inject(ChatService);
+  private readonly destroyRef = inject(DestroyRef);
 
   ngOnInit(): void {
     this.pedidos.iniciar();
-    this.chat.iniciarEscuchaConversaciones();
+    // La escucha de conversaciones es una sola para toda la aplicación y está
+    // contada por referencias: darla de baja acá no apaga la de las otras
+    // pantallas que también viven del mismo listado.
+    this.destroyRef.onDestroy(this.chat.iniciarEscuchaConversaciones());
   }
+
+  /**
+   * El panel de la portada muestra lo que todavía espera respuesta: una
+   * consulta que el mozo ya dio por resuelta no tiene por qué seguir
+   * reclamando lugar arriba de los pedidos.
+   */
+  protected readonly consultasAbiertas = computed(() =>
+    this.chat.conversacionesActivas().filter((c) => !c.cerrada),
+  );
 
   protected rotulo(pedido: Pedido): string {
     return ROTULO_ESTADO_PEDIDO[pedido.estadoGlobal];

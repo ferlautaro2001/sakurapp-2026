@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { DatoFicha } from '../../ui/basicos';
 
 export interface PedidoConfirmacion {
   titulo: string;
@@ -9,8 +10,13 @@ export interface PedidoConfirmacion {
   /** Tiñe el botón de confirmación: verde para aceptar, rojo para lo destructivo. */
   tono?: 'exito' | 'peligro' | 'primario';
   icono?: string;
-  /** Datos que se muestran en la ficha del modal, para saber qué se está tocando. */
-  detalle?: { rotulo: string; valor: string }[];
+  /**
+   * Datos que se muestran en la ficha del modal, para saber qué se está
+   * tocando. Un renglón puede traer `marcas` en lugar de un valor suelto: una
+   * lista con sello de color, uno por línea, para lo que se enumera, y un
+   * `icono` que dice de qué habla la fila antes de leer el rótulo.
+   */
+  detalle?: DatoFicha[];
   /**
    * Fotografía de la persona sobre la que se decide.
    *

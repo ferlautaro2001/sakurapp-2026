@@ -45,10 +45,13 @@ import { PaginaConSesion } from '../pagina-base';
     </div>
   `,
   styles: [`
-    :host{display:flex;flex:1;min-height:0}.juego{padding:24px;display:grid;gap:16px;text-align:center;justify-items:center}
-    .flor{font-size:64px}.juego h2{margin:0;font:var(--type-section-title);color:var(--text-title)}
-    .juego p{margin:0;max-width:430px;color:var(--text-muted)}.premios{display:flex;gap:12px}
-    .premios b{padding:12px 16px;border-radius:var(--radius-field);background:var(--surface-sunken);color:var(--action-primary)}
+    :host{display:flex;flex:1;min-height:0}.juego{padding:var(--space-6);display:grid;gap:var(--space-4);text-align:center;justify-items:center}
+    .flor{font-size:clamp(46px,14.9vw,64px);line-height:1}.juego h2{margin:0;font:var(--type-section);color:var(--text-title)}
+    /* El ancho de lectura va en caracteres y no en pixeles: así no queda un
+       maximo que en un celular angosto no significa nada. */
+    .juego p{margin:0;max-width:38ch;color:var(--text-muted)}
+    .premios{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-3)}
+    .premios b{padding:var(--space-3) var(--space-4);border-radius:var(--radius-field);background:var(--surface-sunken);color:var(--action-primary)}
   `],
 })
 export class JuegosPage extends PaginaConSesion implements OnInit {

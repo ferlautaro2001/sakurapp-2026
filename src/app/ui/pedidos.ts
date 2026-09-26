@@ -6,6 +6,7 @@ import {
   input,
   numberAttribute,
   output,
+  signal,
 } from '@angular/core';
 import { IconoComponent, BotonComponent, ChipComponent } from './basicos';
 import { FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
@@ -24,6 +25,24 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
   imports: [IconoComponent, PesosPipe],
   template: `
     <div class="lm-resumen">
+      @if (hayDescuento()) {
+        <div class="lm-resumen__desglose">
+          <span class="lm-resumen__linea">
+            <small>Subtotal</small>
+            <b>{{ subtotal() | pesos }}</b>
+          </span>
+          <span class="lm-resumen__linea lm-resumen__linea--descuento">
+            <small>
+              <lm-icono nombre="redeem" [tamano]="15" color="var(--state-success)" />
+              Descuento aplicado
+              @if (porcentaje() > 0) {
+                <i>{{ porcentaje() }}%</i>
+              }
+            </small>
+            <b>&minus; {{ descuento() | pesos }}</b>
+          </span>
+        </div>
+      }
       <div class="lm-resumen__cifras">
         <span class="lm-resumen__total">
           <small>Total</small>
@@ -40,18 +59,40 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
   `,
   styles: [
     `
-      :host { display: flex; flex-direction: column; gap: 14px; }
+      :host { display: flex; flex-direction: column; gap: var(--space-4); }
       .lm-resumen {
         display: flex; flex-direction: column; gap: 10px;
-        padding: 12px 14px;
+        padding: var(--space-3) var(--space-4);
         border-radius: var(--radius-card);
         background: var(--surface-card);
         box-shadow: var(--shadow-raised);
       }
-      .lm-resumen__cifras { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+      /* El desglose se apoya sobre el total con una línea divisoria: el ojo
+         baja del subtotal al descuento y aterriza en la cifra final, que es
+         la que importa. */
+      .lm-resumen__desglose {
+        display: flex; flex-direction: column; gap: 6px;
+        padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-divider);
+      }
+      .lm-resumen__linea {
+        display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+        font: 800 clamp(13.5px, 3.5vw, 15px)/1.1 var(--font-numeric); color: var(--text-title);
+      }
+      .lm-resumen__linea small {
+        display: inline-flex; align-items: center; gap: 5px;
+        font: var(--type-caption); color: var(--text-muted);
+      }
+      .lm-resumen__linea--descuento,
+      .lm-resumen__linea--descuento small { color: var(--state-success); }
+      .lm-resumen__linea--descuento i {
+        font-style: normal; font-weight: 800;
+        padding: 1px 6px; border-radius: var(--radius-pill);
+        background: var(--state-success-surface); color: var(--state-success);
+      }
+      .lm-resumen__cifras { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
       .lm-resumen__total {
         display: flex; flex-direction: column;
-        font: 900 26px/1 var(--font-numeric); color: var(--action-primary);
+        font: 900 clamp(19px, 6vw, 26px)/1 var(--font-numeric); color: var(--action-primary);
       }
       .lm-resumen__total small {
         font: var(--type-label); letter-spacing: var(--tracking-label);
@@ -59,7 +100,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       }
       .lm-resumen__tiempo {
         display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;
-        font: 800 15px/1.1 var(--font-numeric); color: var(--text-title);
+        font: 800 clamp(13.5px, 3.5vw, 15px)/1.1 var(--font-numeric); color: var(--text-title);
       }
       .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: right; }
     `,
@@ -69,6 +110,17 @@ export class ResumenPedidoComponent {
   readonly total = input.required<number>();
   readonly tiempo = input.required<number>();
   readonly unidades = input.required<number>();
+  /** Importe antes de descuentos. En nulo, el resumen muestra sólo el total. */
+  readonly subtotal = input<number | null>(null);
+  /** Monto descontado, en pesos. */
+  readonly descuento = input(0);
+  /** Porcentaje del descuento, para rotular la línea. */
+  readonly porcentaje = input(0);
+
+  /** El desglose aparece sólo cuando hay algo que desglosar. */
+  protected hayDescuento(): boolean {
+    return this.descuento() > 0 && this.subtotal() !== null;
+  }
 }
 
 /**
@@ -112,8 +164,21 @@ export class ResumenPedidoComponent {
         background: var(--surface-sunken);
       }
       .paso {
+        position: relative;
         width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
         display: grid; place-items: center;
+      }
+      /*
+       * El botón se ve de 30px porque la pastilla vive en una columna de menos
+       * de cien píxeles, pero lo que recibe el dedo llega a los 44px de alto.
+       * Se estira sólo en vertical a propósito: si creciera a los costados, el
+       * área de quitar pisaría la de agregar, y son justo los dos toques que no
+       * se pueden confundir.
+       */
+      .paso::after,
+      .agregar::after {
+        content: ""; position: absolute; left: 0; right: 0;
+        top: calc((var(--touch-min) - 100%) / -2); bottom: calc((var(--touch-min) - 100%) / -2);
       }
       .paso--menos { background: var(--surface-card); color: var(--text-title); box-shadow: var(--shadow-card); }
       .paso--mas { background: var(--action-primary); color: #FFFFFF; }
@@ -121,9 +186,10 @@ export class ResumenPedidoComponent {
       .paso:active:not(:disabled) { transform: scale(0.92); }
       .numero {
         min-width: 20px; text-align: center;
-        font: 800 15px/1 var(--font-numeric); color: var(--text-title);
+        font: 800 clamp(13.5px, 3.5vw, 15px)/1 var(--font-numeric); color: var(--text-title);
       }
       .agregar {
+        position: relative;
         width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
         display: grid; place-items: center;
         background: var(--action-primary); color: #FFFFFF;
@@ -205,14 +271,14 @@ export class CantidadComponent {
       }
       .renglon--cantidad,
       .renglon--cambiar {
-        padding-left: 30px;
+        padding-left: var(--space-7);
         overflow: hidden;
       }
       .renglon--cantidad::before,
       .renglon--cambiar::before {
         content: "";
         position: absolute; left: -16px; top: 12px;
-        width: 64px; height: 9px;
+        width: clamp(48px, 15vw, 64px); height: 9px;
         transform: rotate(-45deg);
       }
       .renglon--cantidad {
@@ -233,7 +299,7 @@ export class CantidadComponent {
       .renglon--cantidad .renglon__insignia { background: var(--state-pending); color: #FFFFFF; }
       .renglon--cambiar .renglon__insignia { background: var(--state-error); color: #FFFFFF; }
       .renglon--cantidad .renglon__datos b,
-      .renglon--cambiar .renglon__datos b { padding-right: 30px; }
+      .renglon--cambiar .renglon__datos b { padding-right: var(--space-7); }
       .renglon__datos { min-width: 0; }
       .renglon__datos b {
         display: block; font: var(--type-card-title); color: var(--text-title); text-wrap: pretty;
@@ -245,15 +311,17 @@ export class CantidadComponent {
       .renglon__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
       .renglon__fila { display: flex; align-items: center; gap: 10px; }
       .renglon__fila .renglon__datos { flex: 1 1 auto; }
+      /* Alto mínimo y no fijo: con el alto clavado y el interlineado atado a
+         él, una cantidad de tres cifras se salía de la placa por abajo. */
       .renglon__cantidad {
-        flex: 0 0 auto; width: 42px; height: 30px; padding: 0;
+        flex: 0 0 auto; min-width: 42px; min-height: 30px; padding: 7px 6px;
         border-radius: 10px; display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
         background: var(--action-primary); color: #FFFFFF;
-        font: 800 15px/30px var(--font-numeric);
+        font: 800 clamp(13.5px, 3.5vw, 15px)/1 var(--font-numeric);
       }
       .renglon__cantidad small { font: 700 11px/1 var(--font-numeric); opacity: .8; }
       .renglon__subtotal {
-        flex: 0 0 auto; font: 800 16px/1 var(--font-numeric); color: var(--text-title); text-align: right;
+        flex: 0 0 auto; font: 800 clamp(14.5px, 3.7vw, 16px)/1 var(--font-numeric); color: var(--text-title); text-align: right;
       }
     `,
   ],
@@ -326,7 +394,7 @@ export class RenglonPedidoComponent {
           }
         </span>
 
-        <span class="pedido__lineas">
+        <span class="pedido__lineas" [class.pedido__lineas--abierto]="abierto()">
           @for (item of visibles(); track item.id) {
             <span class="linea">
               <i class="linea__cantidad">×{{ item.cantidad }}</i>
@@ -338,11 +406,6 @@ export class RenglonPedidoComponent {
               />
             </span>
           }
-          @if (restantes() > 0) {
-            <span class="linea linea--mas">
-              y {{ restantes() }} {{ restantes() === 1 ? 'producto más' : 'productos más' }}
-            </span>
-          }
         </span>
 
         <span class="pedido__pie">
@@ -352,6 +415,19 @@ export class RenglonPedidoComponent {
           <span class="pedido__total">{{ pedido().totalFinal | pesos }}</span>
         </span>
       </button>
+
+      <!-- Fuera del botón de la tarjeta: un botón dentro de otro botón no es
+           HTML válido y el navegador lo desarma. -->
+      @if (restantes() > 0) {
+        <button type="button" class="pedido__mas" [attr.aria-expanded]="abierto()" (click)="alternar()">
+          <lm-icono [nombre]="abierto() ? 'expand_less' : 'expand_more'" [tamano]="18" />
+          {{
+            abierto()
+              ? 'Ver menos'
+              : 'Ver los ' + restantes() + (restantes() === 1 ? ' producto restante' : ' productos restantes')
+          }}
+        </button>
+      }
 
       @if (conAcciones()) {
         <div class="pedido__acciones">
@@ -376,7 +452,7 @@ export class RenglonPedidoComponent {
       }
       .pedido__cabecera {
         display: flex; align-items: center; gap: 10px;
-        padding: 12px 14px 10px;
+        padding: var(--space-3) var(--space-4) 10px;
       }
       .pedido__mesa {
         flex: 0 0 auto; padding: 5px 11px; border-radius: var(--radius-pill);
@@ -391,7 +467,7 @@ export class RenglonPedidoComponent {
       .pedido__hora { flex: 0 0 auto; font: var(--type-caption); color: var(--text-muted); }
       .pedido__lineas {
         display: flex; flex-direction: column; gap: 6px;
-        padding: 10px 14px;
+        padding: 10px var(--space-4);
         border-top: 1px solid var(--surface-sunken);
         border-bottom: 1px solid var(--surface-sunken);
         background: rgba(255, 215, 223, 0.24);
@@ -399,22 +475,37 @@ export class RenglonPedidoComponent {
       .linea { display: flex; align-items: center; gap: 8px; min-width: 0; }
       .linea__cantidad {
         flex: 0 0 auto; min-width: 30px;
-        font: 800 13px/1 var(--font-numeric); font-style: normal; color: var(--action-primary);
+        font: 800 clamp(12px, 3vw, 13px)/1 var(--font-numeric); font-style: normal; color: var(--action-primary);
       }
       .linea__nombre {
         flex: 1 1 auto; min-width: 0; font: var(--type-body-small); color: var(--text-title);
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
-      .linea--mas { font: var(--type-caption); color: var(--text-muted); padding-left: 38px; }
+      /* Abierto, el nombre deja de cortarse: el punto del ítem es leer el
+         producto entero, y para eso se abrió. Cerrado sigue en una línea, que
+         es lo que mantiene la lista escaneable. */
+      .pedido__lineas--abierto .linea { align-items: flex-start; }
+      .pedido__lineas--abierto .linea__nombre { white-space: normal; overflow: visible; }
+      .pedido__lineas--abierto .linea__cantidad { padding-top: 2px; }
+      /* El renglón que abre el resto del pedido. Va ancho completo y con el alto
+         táctil mínimo porque el mozo lo toca de parado, con el equipo en una
+         mano. */
+      .pedido__mas {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        width: 100%; min-height: var(--touch-min); padding: var(--space-2) var(--space-4);
+        border: none; border-top: 1px solid var(--surface-sunken);
+        background: rgba(255, 215, 223, 0.24); cursor: pointer;
+        font: var(--type-body-small); font-weight: 700; color: var(--action-primary);
+      }
       .pedido__pie {
         display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
-        padding: 10px 14px 12px;
+        padding: 10px var(--space-4) var(--space-3);
       }
       .pedido__cuenta { font: var(--type-caption); color: var(--text-muted); }
-      .pedido__total { font: 900 19px/1 var(--font-numeric); color: var(--action-primary); }
+      .pedido__total { font: 900 clamp(14px, 4.4vw, 19px)/1 var(--font-numeric); color: var(--action-primary); }
       .pedido__acciones {
-        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px;
-        padding: 0 14px 14px;
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4);
+        padding: 0 var(--space-4) var(--space-4);
       }
     `,
   ],
@@ -440,8 +531,22 @@ export class FilaPedidoComponent {
     return 'Cliente';
   }
 
+  /**
+   * La lista de pedidos se mira de un vistazo y de parado: si cada tarjeta
+   * listara sus doce ítems, en pantalla entraría un pedido y medio y dejaría de
+   * ser una lista. Así que el corte se mantiene, pero ahora se puede abrir en el
+   * lugar —sin entrar al detalle y sin perder la posición en la lista— y el
+   * renglón dice cuántos falta ver, no sólo que falta algo.
+   */
+  protected readonly abierto = signal(false);
+
+  protected alternar(): void {
+    this.abierto.update((v) => !v);
+  }
+
   protected visibles(): PedidoItem[] {
-    return this.pedido().items.slice(0, this.TOPE);
+    const items = this.pedido().items;
+    return this.abierto() ? items : items.slice(0, this.TOPE);
   }
 
   protected restantes(): number {

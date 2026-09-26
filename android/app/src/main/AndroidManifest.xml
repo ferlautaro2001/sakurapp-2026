@@ -10,7 +10,11 @@
         android:extractNativeLibs="true"
         android:theme="@style/AppTheme">
 
+        <!-- La aplicación es sólo vertical: el diseño está pensado para una
+             mano y el modo horizontal no se soporta. Bloquearlo acá evita que
+             el sistema gire la ventana y desarme las pantallas. -->
         <activity
+            android:screenOrientation="portrait"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
             android:name=".MainActivity"
             android:label="@string/title_activity_main"

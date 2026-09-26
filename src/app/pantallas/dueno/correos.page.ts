@@ -78,18 +78,23 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .correo { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-      .correo__fila { display: flex; align-items: center; gap: 12px; background: none; border: none; padding: 0; cursor: pointer; text-align: left; width: 100%; }
-      .correo__icono { width: 46px; height: 46px; flex: 0 0 auto; border-radius: var(--radius-thumb); background: var(--state-success); display: grid; place-items: center; }
+      .correo { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
+      .correo__fila { display: flex; align-items: center; gap: var(--space-3); background: none; border: none; padding: 0; min-height: var(--touch-min); cursor: pointer; text-align: left; width: 100%; }
+      .correo__icono { width: var(--size-icono-caja); height: var(--size-icono-caja); flex: 0 0 auto; border-radius: var(--radius-thumb); background: var(--state-success); display: grid; place-items: center; }
       .correo__icono--rechazo { background: var(--state-error); }
       .correo__datos { flex: 1; min-width: 0; }
       .correo__datos b { display: block; font: var(--type-body-medium); color: var(--text-title); }
       .correo__datos small { display: block; font: var(--type-caption); color: var(--text-muted); }
-      .correo__estado { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+      /* El asunto y el destinatario ceden antes que el ícono y el chevrón, que
+         son los que dicen de qué plantilla se trata y que la fila se abre. */
+      .correo__fila > lm-icono { flex: 0 0 auto; }
+      .correo__estado { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
       /* El correo se muestra dentro de un marco aislado: su hoja de estilos
          está pensada para un cliente de correo y no puede tocar la aplicación. */
       .correo__vista {
-        width: 100%; height: 420px; display: block;
+        /* 420px clavados tapaban la pantalla entera en un equipo bajo: el marco
+           nunca pasa de dos tercios del alto útil. */
+        width: 100%; height: min(420px, 62dvh); display: block;
         border-radius: var(--radius-field); border: 1px solid var(--border-field);
         background: var(--surface-sunken);
       }

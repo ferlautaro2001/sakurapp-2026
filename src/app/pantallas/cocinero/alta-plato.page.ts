@@ -175,7 +175,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 14px;
+        padding: var(--space-4);
         font: var(--type-body-small);
         color: var(--text-body);
       }
@@ -189,6 +189,16 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
 
       .fotos lm-foto {
         min-width: 0;
+      }
+
+      /* Tres columnas en un equipo de 320 dejan cada foto en unos 90px: con
+         el alto clavado en 104px la casilla quedaba más alta que ancha y el
+         renglón desparejo. Con proporción cuadrada cada una crece y se encoge
+         con su columna. El !important es para ganarle al alto en píxeles que
+         lm-foto escribe en el estilo del elemento. */
+      .fotos ::ng-deep .lm-photo__marco--rect {
+        height: auto !important;
+        aspect-ratio: 1 / 1;
       }
     `,
   ],

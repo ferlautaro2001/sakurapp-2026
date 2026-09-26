@@ -73,7 +73,7 @@ import { Unsubscribe } from 'firebase/firestore';
       }
       .sala__vacia {
         flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 6px; text-align: center; padding: 20px 10px;
+        gap: 6px; text-align: center; padding: var(--space-5) var(--space-3);
       }
       .sala__vacia b { font: var(--type-card-title); color: var(--text-sobre-fondo); }
       .sala__vacia span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
@@ -127,9 +127,10 @@ export class ClienteConsultaPage extends PaginaConSesion {
       if (mid && uid) {
         this.escuchaChat = this.chat.escucharMensajes(mid, uid, (msjs) => {
           this.mensajes.set(msjs);
-          if (msjs.some((m) => m.remitenteRol === 'MOZO' && !m.leido)) {
-            void this.chat.marcarLeidos(mid, 'MOZO');
-          }
+          // Sin condición: el `leido` de cada mensaje se marca una sola vez,
+          // pero la fecha de lectura de la conversación hay que volver a
+          // estamparla cada vez que se entra al hilo.
+          void this.chat.marcarLeidos(mid, 'MOZO');
         });
       }
     });

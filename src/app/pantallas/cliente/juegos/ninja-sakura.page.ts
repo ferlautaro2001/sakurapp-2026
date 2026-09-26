@@ -30,12 +30,26 @@ interface Flor {
   imagen: string;
 }
 
+/**
+ * El rastro que queda donde estaba la flor recién tocada. No es una flor: no
+ * recibe toques ni se mueve, sólo se apaga sola.
+ */
+interface Impacto {
+  id: number;
+  x: number;
+  y: number;
+  tam: number;
+  imagen: string;
+}
+
 type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
 
 /** Cuántas flores hay que atrapar y en cuánto tiempo. */
 const OBJETIVO = 30;
 const SEGUNDOS = 15;
 const CADENCIA = 235;
+/** Cuánto vive el rastro del impacto. Tiene que coincidir con la animación. */
+const IMPACTO_MS = 320;
 const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/flor-3.png'];
 
 /**
@@ -143,6 +157,19 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
             </button>
           }
 
+          @for (impacto of impactos(); track impacto.id) {
+            <span
+              class="impacto"
+              aria-hidden="true"
+              [style.transform]="'translate3d(' + impacto.x + 'px,' + impacto.y + 'px,0)'"
+              [style.width.px]="impacto.tam"
+              [style.height.px]="impacto.tam"
+            >
+              <img [src]="impacto.imagen" alt="" [width]="impacto.tam" [height]="impacto.tam" />
+              <i></i><i></i><i></i><i></i>
+            </span>
+          }
+
           @if (estado() !== 'JUGANDO') {
             <div class="tapa">
               <div class="tapa__ficha">
@@ -174,8 +201,8 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
 
       .marcador {
         flex: 0 0 auto;
-        display: flex; align-items: center; gap: 12px;
-        padding: 10px 14px; border-radius: var(--radius-card);
+        display: flex; align-items: center; gap: var(--space-3);
+        padding: var(--space-3) var(--space-4); border-radius: var(--radius-card);
         background: var(--surface-card); box-shadow: var(--shadow-card);
       }
       .marcador__dato { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 62px; }
@@ -184,7 +211,7 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
         text-transform: uppercase; color: var(--text-muted);
       }
       .marcador__valor { font: var(--type-price); color: var(--action-primary); }
-      .marcador__valor small { font-size: 13px; }
+      .marcador__valor small { font-size: clamp(12px, 3.1vw, 13px); }
       .marcador__dato--poco .marcador__valor { color: var(--state-error); }
       .marcador__barra {
         flex: 1 1 auto; height: 10px; border-radius: var(--radius-pill);
@@ -210,20 +237,55 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
       }
       .flor img { display: block; width: 100%; height: 100%; pointer-events: none; }
 
+      /* El impacto es puro CSS y nunca recibe el dedo: el conteo ya se sumó
+         cuando esto aparece, así que no puede frenar ni tapar el toque
+         siguiente. Son cinco nodos que se descartan solos a los 320ms. */
+      .impacto {
+        position: absolute; top: 0; left: 0; display: block;
+        pointer-events: none; will-change: transform, opacity;
+      }
+      .impacto img {
+        display: block; width: 100%; height: 100%;
+        animation: ninja-desvanecer var(--dur-base) var(--ease-out-soft) forwards;
+      }
+      /* Los pétalos salen del centro de la flor tocada. Cada uno lleva su
+         propio rumbo en --dx/--dy, que son constantes: lo que se anima es una
+         sola transformación por nodo, sin recalcular layout. */
+      .impacto i {
+        position: absolute; top: 50%; left: 50%;
+        width: 26%; height: 26%; margin: -13% 0 0 -13%;
+        border-radius: 60% 10% 60% 10%;
+        background: var(--sk-petalo-vivo);
+        animation: ninja-petalo var(--dur-slow) var(--ease-out-soft) forwards;
+      }
+      .impacto i:nth-child(2) { --dx: -120%; --dy: -95%; }
+      .impacto i:nth-child(3) { --dx: 125%; --dy: -80%; }
+      .impacto i:nth-child(4) { --dx: -95%; --dy: 115%; }
+      .impacto i:nth-child(5) { --dx: 110%; --dy: 125%; }
+
+      @keyframes ninja-desvanecer {
+        from { opacity: .95; transform: scale(1); }
+        to { opacity: 0; transform: scale(1.45); }
+      }
+      @keyframes ninja-petalo {
+        from { opacity: .9; transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+        to { opacity: 0; transform: translate3d(var(--dx, 0), var(--dy, 0), 0) scale(.35) rotate(150deg); }
+      }
+
       .tapa {
         position: absolute; inset: 0; display: flex;
-        align-items: center; justify-content: center; padding: 18px;
+        align-items: center; justify-content: center; padding: var(--space-5);
         background: linear-gradient(160deg, rgba(255, 118, 101, .42), rgba(253, 82, 124, .34));
         border-radius: var(--radius-card);
       }
       .tapa__ficha {
         display: flex; flex-direction: column; align-items: center; gap: 7px;
-        padding: 20px 22px; max-width: 32ch; text-align: center;
+        padding: var(--space-5) var(--space-6); max-width: 32ch; text-align: center;
         border-radius: var(--radius-card); background: var(--surface-card);
         box-shadow: var(--shadow-raised);
       }
       .tapa__icono {
-        width: 62px; height: 62px; border-radius: var(--radius-pill);
+        width: clamp(48px, 15vw, 62px); height: clamp(48px, 15vw, 62px); border-radius: var(--radius-pill);
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--surface-sunken);
       }
@@ -243,6 +305,7 @@ export class NinjaSakuraPage extends PaginaConSesion {
   protected readonly atrapadas = signal(0);
   protected readonly restante = signal(SEGUNDOS);
   protected readonly flores = signal<Flor[]>([]);
+  protected readonly impactos = signal<Impacto[]>([]);
 
   protected readonly avance = computed(() => Math.min(100, (this.atrapadas() / OBJETIVO) * 100));
 
@@ -253,6 +316,7 @@ export class NinjaSakuraPage extends PaginaConSesion {
   private siguienteId = 1;
   private ancho = 0;
   private alto = 0;
+  private readonly relojesImpacto = new Set<ReturnType<typeof setTimeout>>();
 
   private readonly entradaEnLista = computed(() => {
     const id = this.usuario()?.id;
@@ -262,7 +326,18 @@ export class NinjaSakuraPage extends PaginaConSesion {
   constructor() {
     super();
     this.espera.iniciar();
-    inject(DestroyRef).onDestroy(() => this.detener());
+
+    /* La cancha se medía una sola vez al empezar, así que si después cambiaba
+       de alto —el teclado, la barra del navegador, girar el equipo— las flores
+       seguían naciendo y muriendo en las coordenadas viejas. */
+    const observador = new ResizeObserver(() => this.medirCancha());
+    effect(() => observador.observe(this.cancha().nativeElement));
+
+    inject(DestroyRef).onDestroy(() => {
+      observador.disconnect();
+      this.detener();
+      this.limpiarImpactos();
+    });
   }
 
   protected empezar(): void {
@@ -270,6 +345,7 @@ export class NinjaSakuraPage extends PaginaConSesion {
     this.atrapadas.set(0);
     this.restante.set(SEGUNDOS);
     this.flores.set([]);
+    this.limpiarImpactos();
     this.milisegundos = 0;
     this.desdeLaUltima = CADENCIA;
     this.anterior = 0;
@@ -281,13 +357,34 @@ export class NinjaSakuraPage extends PaginaConSesion {
   protected atrapar(id: number): void {
     if (this.estado() !== 'JUGANDO') return;
     const antes = this.flores();
-    const quedan = antes.filter((flor) => flor.id !== id);
-    if (quedan.length === antes.length) return;
+    const tocada = antes.find((flor) => flor.id === id);
+    if (!tocada) return;
 
-    this.flores.set(quedan);
+    this.flores.set(antes.filter((flor) => flor.id !== id));
+    /* El punto se suma en el mismo toque, antes del efecto: el juego es contra
+       reloj y la animación no puede meterse en el medio del conteo. */
     const total = this.atrapadas() + 1;
     this.atrapadas.set(total);
+    this.estallar(tocada);
     if (total >= OBJETIVO) this.terminar('GANADO');
+  }
+
+  /** Deja el rastro de la flor tocada y lo saca solo cuando termina de apagarse. */
+  private estallar(flor: Flor): void {
+    const impacto: Impacto = { id: flor.id, x: flor.x, y: flor.y, tam: flor.tam, imagen: flor.imagen };
+    this.impactos.update((previos) => [...previos, impacto]);
+
+    const reloj = setTimeout(() => {
+      this.relojesImpacto.delete(reloj);
+      this.impactos.update((previos) => previos.filter((otro) => otro.id !== impacto.id));
+    }, IMPACTO_MS);
+    this.relojesImpacto.add(reloj);
+  }
+
+  private limpiarImpactos(): void {
+    for (const reloj of this.relojesImpacto) clearTimeout(reloj);
+    this.relojesImpacto.clear();
+    this.impactos.set([]);
   }
 
   protected async salir(): Promise<void> {
@@ -307,6 +404,7 @@ export class NinjaSakuraPage extends PaginaConSesion {
       }
       this.estado.set('LISTO');
       this.flores.set([]);
+      this.limpiarImpactos();
     }
     this.ir(['/cliente/juegos']);
   }

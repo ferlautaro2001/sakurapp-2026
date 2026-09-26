@@ -110,19 +110,22 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .dato { padding: 14px; }
+      .dato { padding: var(--space-4); }
       .dato__valor { display: block; font: var(--type-numeral); color: var(--text-title); }
       .dato__texto { display: block; font: var(--type-card-title); color: var(--text-title); margin-top: 4px; }
       .foto-readonly { width: 100%; display: flex; justify-content: center; }
+      /* El alto de la foto acompaña al ancho del equipo: con 168px clavados, en
+         un celular chico la mesa se veía desproporcionada y comía la pantalla. */
       .foto-readonly__marco {
-        width: 100%; height: 168px; border-radius: var(--radius-card);
+        width: 100%; height: clamp(124px, 44vw, 168px); border-radius: var(--radius-card);
         background: var(--surface-card) center / cover no-repeat;
         box-shadow: var(--shadow-card); border: 1.5px solid var(--border-card);
       }
       .foto-readonly__vacia {
-        width: 100%; height: 140px; border-radius: var(--radius-card);
+        width: 100%; min-height: clamp(110px, 37vw, 140px); border-radius: var(--radius-card);
         background: var(--surface-card); border: 2px dashed var(--border-card);
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2);
+        padding: var(--space-3); text-align: center;
       }
       .foto-readonly__texto { font: var(--type-caption); color: var(--text-muted); }
     `,

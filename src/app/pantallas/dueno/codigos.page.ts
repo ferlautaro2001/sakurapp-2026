@@ -1,8 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { PROPINAS, QrService } from '../../nucleo/servicios/qr.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
+import { Mesa } from '../../nucleo/modelos/modelos';
 
 interface CodigoPropina {
   porcentaje: number;
@@ -59,11 +60,10 @@ interface CodigoPropina {
 
           @case ('mesas') {
             @if (mesas.todas().length) {
-              <p class="lm-parrafo">Cada mesa tiene su código generado automáticamente al darla de alta.</p>
               <div class="lm-list">
                 @for (mesa of mesas.todas(); track mesa.id) {
                   <button type="button" class="lm-card mesa" (click)="ir(['/mesas', mesa.id, 'qr'])">
-                    <img [src]="mesa.qrCodeUrl" [alt]="'Código QR de la mesa ' + mesa.numero" />
+                    <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" />
                     <div class="mesa__datos">
                       <span class="mesa__numero">Mesa {{ mesa.numero }}</span>
                       <span class="mesa__meta">{{ mesa.cantidadComensales }} personas</span>
@@ -90,9 +90,12 @@ interface CodigoPropina {
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .propina, .mesa { display: flex; align-items: center; gap: 14px; padding: 12px; width: 100%; text-align: left; cursor: pointer; }
-      .propina img, .mesa img { width: 84px; height: 84px; border-radius: var(--radius-thumb); flex: 0 0 auto; }
+      .propina, .mesa { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3); width: 100%; min-height: var(--touch-min); text-align: left; cursor: pointer; }
+      /* La miniatura del código escala con el ancho del equipo, pero sigue
+         cuadrada: un QR deformado no lo lee ninguna cámara. */
+      .propina img, .mesa img { width: var(--size-thumb); height: var(--size-thumb); aspect-ratio: 1; border-radius: var(--radius-thumb); flex: 0 0 auto; }
       .propina__datos, .mesa__datos { flex: 1; min-width: 0; }
+      .mesa > lm-icono { flex: 0 0 auto; }
       .propina__rotulo { display: block; font: var(--type-card-title); color: var(--text-title); }
       .propina__valor { display: block; font: var(--type-price); color: var(--action-primary); }
       .propina__nota { display: block; font: var(--type-caption); color: var(--text-muted); }
@@ -114,6 +117,15 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
 
   protected readonly ingreso = signal<string | null>(null);
   protected readonly propinas = signal<CodigoPropina[]>([]);
+  /** Código dibujado en el momento para cada mesa, indexado por su id. */
+  private readonly codigosDeMesa = signal<Record<string, string>>({});
+
+  constructor() {
+    super();
+    // Las mesas llegan del salón cuando llegan: el dibujo se rehace solo a
+    // medida que la lista se puebla, en vez de una sola vez al entrar.
+    effect(() => void this.dibujarCodigosDeMesa(this.mesas.todas()));
+  }
 
   async ngOnInit(): Promise<void> {
     this.ingreso.set(await this.qr.generarDeIngreso());
@@ -122,5 +134,31 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
       codigos.push({ ...propina, imagen: await this.qr.generarDePropina(propina.porcentaje) });
     }
     this.propinas.set(codigos);
+  }
+
+  /**
+   * La miniatura se dibuja acá y no se lee de `qrCodeUrl`.
+   *
+   * Ese campo es un dato guardado, no código: las mesas del salón lo tenían
+   * apuntando a un archivo que no existía y las doce miniaturas salían rotas.
+   * Un archivo estático además envejece —si la mesa se renumera o se vuelve a
+   * crear, la imagen sigue codificando la anterior— y un QR equivocado es peor
+   * que uno roto, porque se escanea igual. La pantalla de la mesa ya prefiere
+   * el código generado en vivo, así que generándolo también acá las dos
+   * muestran lo mismo. Lo guardado queda de red por si el dibujo falla.
+   */
+  private async dibujarCodigosDeMesa(mesas: readonly Mesa[]): Promise<void> {
+    const yaDibujados = untracked(this.codigosDeMesa);
+    const faltantes = mesas.filter((mesa) => !yaDibujados[mesa.id]);
+    if (!faltantes.length) return;
+    const dibujados: Record<string, string> = {};
+    for (const mesa of faltantes) {
+      dibujados[mesa.id] = await this.qr.generarDeMesa(mesa.id, mesa.numero);
+    }
+    this.codigosDeMesa.update((actual) => ({ ...actual, ...dibujados }));
+  }
+
+  protected miniatura(mesa: { id: string; qrCodeUrl: string }): string {
+    return this.codigosDeMesa()[mesa.id] || mesa.qrCodeUrl;
   }
 }

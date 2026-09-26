@@ -135,13 +135,14 @@ import { QrService } from '../../nucleo/servicios/qr.service';
         flex: 1 1 auto;
         min-height: 0;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-        padding: 16px 18px; text-align: center;
+        padding: var(--space-4) var(--space-5); text-align: center;
         border-radius: var(--radius-card); background: var(--surface-card);
         box-shadow: var(--shadow-raised);
         position: relative; overflow: hidden;
       }
       .turno::before {
-        content: ""; position: absolute; top: -24px; right: -24px; width: 112px; height: 112px;
+        content: ""; position: absolute; top: calc(-1 * var(--space-6)); right: calc(-1 * var(--space-6));
+        width: clamp(80px, 26vw, 112px); height: clamp(80px, 26vw, 112px);
         background: url("/assets/img/flor-2.png") center / contain no-repeat; opacity: .28;
       }
       .turno__rotulo {
@@ -150,7 +151,10 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       }
       .turno__numero {
         font-family: var(--font-numeric); font-weight: 900; line-height: 1;
-        font-size: clamp(56px, 17vh, 104px);
+        /* El número manda en la ficha, pero no puede ser más ancho que un
+           cuarto de pantalla: en los equipos angostos y altos, el alto solo lo
+           dejaba crecer hasta desbordar a lo ancho. */
+        font-size: clamp(56px, min(17dvh, 26vw), 104px);
         color: var(--action-primary);
       }
       .turno__mensaje { font: var(--type-section); color: var(--text-title); text-wrap: balance; }
@@ -160,7 +164,7 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       }
       .turno__datos { gap: 12px; font: var(--type-body-small); margin-top: 2px; }
       .turno__datos > span { display: inline-flex; align-items: center; gap: 5px; }
-      .pasos { display: flex; flex-direction: column; gap: 9px; padding: 13px 14px; }
+      .pasos { display: flex; flex-direction: column; gap: 9px; padding: var(--space-4); }
       .paso { display: flex; gap: 9px; align-items: flex-start; font: var(--type-body-small); color: var(--text-sobre-fondo); text-wrap: pretty; }
     `,
   ],

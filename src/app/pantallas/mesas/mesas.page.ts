@@ -31,25 +31,32 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
       </lm-encabezado>
 
       <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón </lm-titulo>
+        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón</lm-titulo>
 
-        <div class="resumen">
-          <div class="lm-card resumen__dato">
-            <lm-icono nombre="table_restaurant" [tamano]="20" color="var(--state-success)" />
-            <b>{{ mesas.vacias().length }}</b>
-            <span>mesas libres ahora</span>
-          </div>
+        <!--
+          Ocho chips seguidos con el mismo peso no dejan ver que son dos
+          preguntas distintas: el rótulo de arriba de cada tira dice cuál se
+          está respondiendo, y de paso recupera el dato de disponibilidad que
+          antes repetía el pill del encabezado.
+        -->
+        <div class="grupo">
+          <span class="grupo__rotulo">Disponibilidad</span>
+          <lm-filtros [opciones]="estados" [valor]="estado()" (cambiar)="estado.set($event)" />
         </div>
-
-        <lm-filtros [opciones]="estados" [valor]="estado()" (cambiar)="estado.set($event)" />
-        <lm-filtros [opciones]="tipos" [valor]="tipo()" (cambiar)="tipo.set($event)" />
+        <div class="grupo">
+          <span class="grupo__rotulo">Tipo de mesa</span>
+          <lm-filtros [opciones]="tipos" [valor]="tipo()" (cambiar)="tipo.set($event)" />
+        </div>
 
         @if (visibles().length) {
           <div class="lm-list lm-list--2">
             @for (mesa of visibles(); track mesa.id) {
               <lm-tarjeta-mesa
                 [mesa]="mesa"
+                [conEdicion]="puedeEditar()"
                 (presionar)="ir(['/mesas', mesa.id])"
+                (abrirQr)="ir(['/mesas', mesa.id, 'qr'])"
+                (abrirEdicion)="editarMesa(mesa.id)"
               />
             }
           </div>
@@ -71,9 +78,11 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .resumen__dato { display: flex; align-items: center; gap: 8px; padding: 12px 14px; }
-      .resumen__dato b { font: var(--type-section); color: var(--text-title); }
-      .resumen__dato span { font: var(--type-caption); color: var(--text-muted); }
+      .grupo { display: flex; flex-direction: column; gap: var(--space-2); min-width: 0; }
+      .grupo__rotulo {
+        font: var(--type-label); letter-spacing: var(--tracking-label);
+        text-transform: uppercase; color: var(--text-sobre-fondo-suave);
+      }
     `,
   ],
 })
@@ -86,6 +95,17 @@ export class MesasPage extends PaginaConSesion {
   protected readonly tipo = signal('Todos los tipos');
 
   protected readonly puedeAgregar = computed(() => this.sesion.esAdministrador());
+  /** Dueño y supervisor son los únicos que editan comensales y tipo de mesa. */
+  protected readonly puedeEditar = computed(() => this.sesion.esAdministrador());
+
+  /**
+   * El lápiz lleva a la pantalla del código, que es donde vive la edición, y
+   * le avisa por la dirección que abra los campos ya desplegados. Entrar por
+   * la tarjeta lleva a la misma pantalla pero sin resaltar nada.
+   */
+  protected editarMesa(id: string): void {
+    void this.router.navigate(['/mesas', id, 'qr'], { queryParams: { editar: 1 } });
+  }
 
   protected readonly visibles = computed(() =>
     this.mesas

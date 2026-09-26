@@ -24,7 +24,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   template: `
     <div class="lm-screen lm-screen--login">
       <div class="lm-body login-body">
-        <lm-logo bajada="Bienvenido" [tamano]="30" />
+        <lm-logo bajada="Bienvenido" [tamano]="76" />
         <h2 class="login-bajada">Iniciá sesión para continuar</h2>
 
         @if (error()) {
@@ -93,10 +93,16 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         overflow: hidden;
       }
       .login-body {
-        padding-top: calc(6px + env(safe-area-inset-top, 6px));
+        padding-top: calc(6px + var(--safe-top));
         padding-bottom: 0;
         gap: 4px;
         overflow-y: auto;
+        /* El eje horizontal se declara a mano porque un contenedor que se
+           desplaza en vertical no puede dejar el otro eje en visible: el
+           navegador lo convierte en auto y aparece una barra lateral por
+           cualquier sombra o pétalo que asome. Acá ya no tapa nada: lo que
+           antes desbordaba de verdad —la fila de accesos sin corte, el
+           perfil y el avatar clavados en píxeles— está resuelto arriba. */
         overflow-x: hidden;
         flex: 1;
         min-height: 0;
@@ -106,9 +112,12 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
            reparte arriba y abajo. */
         justify-content: safe center;
       }
+      /* La escalera de la pantalla es marca → qué hay que hacer acá → acción.
+         Con la bajada en el cuerpo de lectura, el salto desde el nombre de la
+         marca se lee como jerarquía y no como dos textos chicos seguidos. */
       .login-bajada {
         margin: 0;
-        font: 700 15px/1.25 var(--font-text);
+        font: var(--type-body-medium);
         color: var(--text-sobre-fondo);
         text-align: center;
       }
@@ -120,18 +129,18 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       }
       /* Compactamos la altura de los campos para asegurar que entre todo en viewport móvil */
       :host ::ng-deep .login-body .lm-field__box {
-        min-height: 44px;
-        padding: 0 14px;
+        min-height: var(--touch-min);
+        padding: 0 var(--space-4);
       }
       /* Tipografía más legible para personas con presbicia */
       :host ::ng-deep .lm-field input {
-        font-size: 15.5px !important;
+        font-size: clamp(14px, 3.6vw, 15.5px) !important;
         font-weight: 600 !important;
         letter-spacing: 0.01em !important;
         color: var(--text-title) !important;
       }
       :host ::ng-deep .lm-field__marcador {
-        font-size: 14px !important;
+        font-size: clamp(13px, 3.3vw, 14px) !important;
       }
       /* Separador decorativo con flor Sakura */
       .separador-flor {
@@ -165,14 +174,14 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         to { transform: rotate(360deg); }
       }
       .separador-flor__texto {
-        font: 700 12px/1 var(--font-display);
+        font: 700 clamp(11px, 2.8vw, 12px)/1 var(--font-display);
         color: var(--action-primary);
         letter-spacing: 0.02em;
         text-transform: uppercase;
       }
       .login-nota {
         margin: 0;
-        font: 500 12px/1.25 var(--font-text);
+        font: 500 clamp(11px, 2.8vw, 12px)/1.25 var(--font-text);
         color: var(--text-sobre-fondo-suave);
         text-align: center;
       }
@@ -180,26 +189,30 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         gap: 3px;
         width: 100%;
       }
+      /* Compactar el perfil no puede llevarlo por debajo del área táctil: son
+         ocho botones chicos pegados y errarle es entrar con otro usuario. */
       :host ::ng-deep .login-perfiles .lm-profile {
-        min-height: 40px;
+        min-height: var(--touch-min);
         padding: 3px 8px;
         gap: 8px;
       }
       :host ::ng-deep .login-perfiles .lm-profile__avatar {
-        width: 32px;
-        height: 32px;
+        width: var(--size-avatar-sm);
+        height: var(--size-avatar-sm);
       }
+      /* En proporción y no en píxeles, así sigue al avatar cuando este escala
+         con el ancho del equipo. */
       :host ::ng-deep .login-perfiles .lm-profile__avatar img {
-        width: 24px;
-        height: 24px;
+        width: 74%;
+        height: 74%;
       }
       :host ::ng-deep .login-perfiles .lm-profile__texto b {
-        font-size: 13.5px !important;
+        font-size: clamp(12.5px, 3.1vw, 13.5px) !important;
         font-weight: 700 !important;
         line-height: 1.2;
       }
       :host ::ng-deep .login-perfiles .lm-profile__texto small {
-        font-size: 11px !important;
+        font-size: clamp(11px, 2.8vw, 12px) !important;
         line-height: 1.1;
       }
       .login-enlace-presentacion {
@@ -207,7 +220,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         justify-content: center;
       }
       .login-actionbar {
-        padding: 2px var(--gutter-screen) calc(6px + env(safe-area-inset-bottom, 6px));
+        padding: 2px var(--gutter-screen) calc(var(--space-2) + var(--safe-bottom));
         gap: 4px;
         flex-shrink: 0;
         background: transparent;
@@ -217,8 +230,10 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         align-items: center;
         justify-content: center;
         gap: 6px;
+        /* Sin white-space:nowrap: la fila ya envuelve, y prohibirle el corte a cada
+           enlace era lo que empujaba "Ingresar como invitado" fuera del
+           margen en los equipos angostos. */
         flex-wrap: wrap;
-        white-space: nowrap;
       }
       .registro__separador {
         margin: 0 2px;
@@ -226,17 +241,21 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       }
       .registro__pregunta {
         margin: 0;
-        font: 600 13px/1.2 var(--font-text);
+        font: var(--type-caption);
+        font-weight: 600;
         color: var(--text-sobre-fondo-suave);
         text-align: center;
       }
       .registro span {
-        font: 600 13.5px/1.2 var(--font-text);
+        font: var(--type-body-small);
+        font-weight: 600;
         color: var(--text-sobre-fondo-suave);
       }
+      /* Segunda en la escalera: se lee sin esfuerzo, pero sin el peso ni el
+         relleno del botón de arriba, que es la acción que se espera. */
       .registro lm-texto-boton {
         display: inline-block;
-        font-size: 13.5px;
+        font: var(--type-body-small);
       }
     `,
   ],

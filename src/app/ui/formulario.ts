@@ -117,15 +117,15 @@ export class AreaComponent {
         [class.lm-photo__marco--ovalo]="forma() === 'ovalo'"
         [class.lm-photo__marco--rect]="forma() === 'rectangulo'"
         [class.lm-photo__marco--cargada]="!!fuente()"
-        [style.width.px]="forma() === 'ovalo' ? Math.round(tamano() * 0.88) : forma() === 'circulo' ? tamano() : null"
-        [style.height.px]="tamano()"
+        [style.width]="forma() === 'ovalo' ? medida(0.88) : forma() === 'circulo' ? medida(1) : null"
+        [style.height]="medida(1)"
         [style.background-image]="fuente() ? 'url(' + fuente() + ')' : null"
         [style.border-color]="error() ? 'var(--state-error)' : null"
         [attr.aria-label]="fuente() ? 'Reemplazar la foto' : etiqueta()"
         (click)="capturar.emit()"
       >
         @if (!fuente()) {
-          <lm-icono nombre="photo_camera" [tamano]="30" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+          <lm-icono nombre="photo_camera" tamano="clamp(22px, 7vw, 30px)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
       </button>
       <button type="button" class="lm-photo__pie" [class.lm-photo__pie--cargada]="!!fuente()" (click)="capturar.emit()">
@@ -143,13 +143,27 @@ export class AreaComponent {
   styles: [':host{display:block}'],
 })
 export class FotoComponent {
-  protected readonly Math = Math;
   readonly fuente = input<string | null>(null);
   readonly etiqueta = input('Foto con cámara');
-  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('ovalo');
+  /**
+   * Círculo por omisión: toda foto de persona —registro y perfil— va redonda y
+   * llena. El óvalo quedó como opción porque alguna pantalla vieja lo pide por
+   * nombre, pero ninguna foto de cara debería usarlo: deformaba el rostro.
+   */
+  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('circulo');
   readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
   readonly capturar = output<void>();
+
+  /**
+   * El marco de la foto ocupaba 140px clavados: sumado al recuadro de la cámara
+   * y al pie, en un equipo de 320px se comía la mitad del formulario. El tamaño
+   * pedido pasa a ser el techo, y `proporcion` es lo que el óvalo angosta.
+   */
+  protected medida(proporcion: number): string {
+    const techo = this.tamano() * proporcion;
+    return `clamp(${Math.round(techo * 0.73)}px, ${(techo / 4.3).toFixed(1)}vw, ${Math.round(techo)}px)`;
+  }
 }
 
 /** Acceso destacado al escaneo del código del documento, arriba del formulario. */
@@ -160,7 +174,7 @@ export class FotoComponent {
   template: `
     <button type="button" class="lm-qrscan" [class.lm-qrscan--scanning]="escaneando()" (click)="escanear.emit()">
       <span class="lm-qrscan__icono">
-        <lm-icono nombre="qr_code_scanner" [tamano]="26" color="var(--text-on-primary)" />
+        <lm-icono nombre="qr_code_scanner" tamano="clamp(19px, 6vw, 26px)" color="var(--text-on-primary)" />
       </span>
       <span class="lm-qrscan__texto">
         <b>{{ escaneando() ? 'Escaneando…' : titulo() }}</b>
@@ -251,7 +265,12 @@ export class FiltrosComponent {
     @if (etiqueta()) {
       <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
     }
-    <div class="lm-segmented" [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',1fr)'">
+    <!-- Columnas con mínimo cero: de lo contrario ninguna baja del ancho de su
+         propio rótulo y el control entero se sale de la pantalla. -->
+    <div
+      class="lm-segmented"
+      [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',minmax(0,1fr))'"
+    >
       @for (opcion of opciones(); track opcion.valor) {
         <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
           {{ opcion.rotulo }}

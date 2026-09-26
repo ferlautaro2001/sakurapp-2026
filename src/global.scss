@@ -25,3 +25,122 @@
   min-width: 0;
   min-height: 0;
 }
+
+/* ===========================================================================
+   Base responsiva
+   ---------------------------------------------------------------------------
+   La aplicación es sólo para celular y sólo en vertical. Nada se desborda: si
+   algo no entra, primero escala (tokens fluidos), después envuelve, después se
+   corta con puntos suspensivos, y en último caso la pantalla se desplaza hacia
+   abajo. El desplazamiento horizontal es un error, nunca una solución.
+
+   Estas reglas son el piso de todo el sistema: valen para las 63 rutas y no
+   hay que repetirlas en cada pantalla.
+   ========================================================================= */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  /* `dvh` y no `vh`: en el navegador del celular la barra de direcciones se
+     esconde al desplazar y `vh` queda congelado en el alto sin barra, así que
+     el contenido terminaba tapado por abajo. */
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  /* Cinturón y tiradores: si alguna pantalla igual genera ancho de más, el
+     desborde se recorta en vez de habilitar desplazamiento lateral. */
+  overflow-x: hidden;
+  overscroll-behavior-y: none;
+  /* El zoom por pellizco está desactivado en el `viewport`, pero iOS sigue
+     agrandando el texto al girar el equipo. Con la orientación bloqueada no
+     debería pasar; queda igual por las dudas. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* La causa número uno de desborde horizontal en flex y grid: el tamaño mínimo
+   automático de los hijos es su contenido, así que un texto largo o una imagen
+   ensanchan el contenedor en vez de encogerse. Esto lo apaga de raíz.
+
+   Va con especificidad cero (`:where`) a propósito: es un piso, y cualquier
+   regla con una clase propia lo puede pisar cuando de verdad haga falta un
+   mínimo. */
+:where(.sk-app) :where(*:not(svg, svg *)) {
+  min-width: 0;
+}
+
+/* Todo texto envuelve, incluso una palabra sola más ancha que la pantalla
+   (correos largos, URLs, nombres sin espacios, un DNI mal tipeado). */
+:where(.sk-app) :where(p, span, h1, h2, h3, h4, h5, h6, li, td, th, label, b, strong, em, small, a, button, figcaption) {
+  overflow-wrap: anywhere;
+  /* `pretty` evita la palabra huérfana en la última línea sin afectar el ancho. */
+  text-wrap: pretty;
+}
+
+/* El medio nunca es más ancho que su hueco, y no arrastra la línea base. */
+:where(.sk-app) :where(img, svg, video, canvas, picture, iframe, object) {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Un `<canvas>` con atributos `width` y `height` ya tiene proporción propia:
+   alcanza con no fijarle el alto para que la respete y se ajuste al ancho
+   disponible. No se usa `attr()` acá porque la versión que lee números recién
+   existe en Chrome 133 y el WebView de los Android que tenemos es anterior. */
+:where(.sk-app) :where(canvas[width][height]) {
+  height: auto;
+}
+
+/* Los controles no heredan la tipografía del sistema operativo y en Android
+   aparecían con un tamaño propio, más grande, que rompía las filas. */
+:where(.sk-app) :where(input, select, textarea, button) {
+  font: inherit;
+  max-width: 100%;
+}
+
+/* `nowrap` es legítimo en precios, cantidades y etiquetas cortas, pero sólo si
+   lo acompaña un corte: sin esto, un valor inesperadamente largo empuja la
+   fila entera fuera de la pantalla. */
+:where(.sk-app) :where([class*="nowrap"], .sk-nowrap) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Las listas en dos y tres columnas colapsan a una sola cuando la columna
+   quedaría más angosta que lo que puede leerse. Es la única media query del
+   sistema y está expresada en ancho de contenido, no en modelos de celular. */
+@media (max-width: 340px) {
+  .sk-app :where(.lm-list--3) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Vertical y nada más: la orientación está bloqueada en el manifiesto de
+   Android, pero en el navegador de escritorio y en las previsualizaciones el
+   equipo se puede girar igual. Si eso pasa, la pantalla se desplaza hacia
+   abajo antes que aplastar el contenido. */
+@media (orientation: landscape) {
+  .sk-app {
+    overflow-y: auto;
+  }
+}
+
+/* Quien pidió menos movimiento no recibe animaciones: además de accesibilidad,
+   las transformaciones en curso falsean cualquier medición de desborde. */
+@media (prefers-reduced-motion: reduce) {
+  .sk-app *,
+  .sk-app *::before,
+  .sk-app *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

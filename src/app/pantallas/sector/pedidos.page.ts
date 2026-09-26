@@ -83,7 +83,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         background: var(--surface-card); box-shadow: var(--shadow-raised);
         overflow: hidden;
       }
-      .ticket__cabecera { display: flex; align-items: center; gap: 10px; padding: 12px 14px 6px; }
+      .ticket__cabecera { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4) 6px; }
       .ticket__mesa {
         flex: 0 0 auto; padding: 5px 11px; border-radius: var(--radius-pill);
         background: var(--action-primary); color: #FFFFFF;
@@ -95,26 +95,26 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .ticket__meta {
-        display: flex; align-items: center; gap: 5px; padding: 0 14px 10px;
+        display: flex; align-items: center; gap: 5px; padding: 0 var(--space-4) 10px;
         font: var(--type-caption); color: var(--text-muted);
       }
       .ticket__items {
         display: flex; flex-direction: column; gap: 8px;
-        padding: 12px 14px;
+        padding: var(--space-3) var(--space-4);
         border-top: 1px solid var(--surface-sunken);
         border-bottom: 1px solid var(--surface-sunken);
         background: rgba(255, 215, 223, 0.24);
       }
-      .item { display: flex; align-items: center; gap: 12px; }
+      .item { display: flex; align-items: center; gap: var(--space-3); }
       .item__cantidad {
-        flex: 0 0 auto; min-width: 46px; height: 34px; padding: 0 8px;
+        flex: 0 0 auto; min-width: var(--size-icono-caja); min-height: 34px; padding: 0 8px;
         border-radius: 11px; display: grid; place-items: center;
         background: var(--action-primary); color: #FFFFFF;
-        font: 900 17px/1 var(--font-numeric);
+        font: 900 clamp(13px, 4vw, 17px)/1 var(--font-numeric);
       }
       .item__nombre { flex: 1 1 auto; min-width: 0; font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
       .item__tiempo { flex: 0 0 auto; font: var(--type-caption); color: var(--text-muted); }
-      .ticket__pie { padding: 12px 14px; }
+      .ticket__pie { padding: var(--space-3) var(--space-4); }
       .ticket__listo {
         margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
         font: var(--type-body-small); color: var(--state-success);

@@ -26,14 +26,14 @@ export interface ItemNavegacion {
           <lm-icono-boton icono="arrow_back" rotulo="Volver" pegadoIzquierda (presionar)="volver.emit()" />
         } @else if (usuario()) {
           <span class="lm-header__avatar">
-            <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario()?.nombre ?? 'Avatar'" width="30" height="30" />
+            <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario()?.nombre ?? 'Avatar'" width="56" height="56" />
           </span>
         }
         <div class="lm-header__texto">
           <span class="lm-header__nombre">{{ titulo() ?? usuarios.nombreCompleto(usuario()) }}</span>
           @if (!titulo() && usuario()) {
             <span class="lm-header__rol">
-              <lm-icono nombre="badge" [tamano]="13" />
+              <lm-icono nombre="badge" [tamano]="16" />
               {{ rotulo() }}
             </span>
           }
@@ -73,7 +73,10 @@ export class EncabezadoComponent {
   imports: [IconoComponent],
   template: `
     @if (items().length > 1) {
-      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',1fr)'">
+      <!-- Columnas con mínimo cero: si el mínimo es el contenido, con cinco
+           secciones el rótulo más largo fija su columna y la barra se pasa de
+           la pantalla. -->
+      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',minmax(0,1fr))'">
         @for (item of items(); track item.id) {
           <button type="button" [class.on]="item.id === activo()" (click)="ir(item)">
             <span class="lm-bottomnav__pastilla">

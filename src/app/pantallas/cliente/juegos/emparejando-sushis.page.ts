@@ -102,8 +102,8 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
 
       .marcador {
         flex: 0 0 auto;
-        display: flex; align-items: center; gap: 12px;
-        padding: 10px 14px; border-radius: var(--radius-card);
+        display: flex; align-items: center; gap: var(--space-3);
+        padding: var(--space-3) var(--space-4); border-radius: var(--radius-card);
         background: var(--surface-card); box-shadow: var(--shadow-card);
       }
       .marcador__dato { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 62px; }
@@ -112,7 +112,7 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
         text-transform: uppercase; color: var(--text-muted);
       }
       .marcador__valor { font: var(--type-price); color: var(--action-primary); }
-      .marcador__valor small { font-size: 13px; }
+      .marcador__valor small { font-size: clamp(12px, 3.1vw, 13px); }
       .marcador__dato--poco .marcador__valor { color: var(--state-error); }
       .marcador__barra {
         flex: 1 1 auto; height: 10px; border-radius: var(--radius-pill);
@@ -123,9 +123,18 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
         background: var(--action-primary); transition: width var(--dur-base) var(--ease-standard);
       }
 
+      /* Las cartas guardan su proporción sin un alto fijo: el tablero pide toda
+         la altura que le quede al cuerpo y de ahí deduce su ancho, doce cartas
+         apenas más altas que anchas. Si el equipo es bajito el tablero se
+         angosta y queda centrado, en vez de achatar las cartas; si es muy alto,
+         el ancho de la pantalla lo frena. El align-self es imprescindible: con
+         el estirado que trae el cuerpo, la proporción no se aplicaría. */
       .tablero {
         flex: 1 1 auto; min-height: 0; position: relative;
-        display: grid; gap: 10px;
+        align-self: center;
+        height: 100%; width: auto; max-width: 100%;
+        aspect-ratio: 3 / 4.15;
+        display: grid; gap: var(--space-3);
         grid-template-columns: repeat(3, minmax(0, 1fr));
         grid-template-rows: repeat(4, minmax(0, 1fr));
       }
@@ -171,18 +180,18 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
 
       .tapa {
         position: absolute; inset: 0; display: flex;
-        align-items: center; justify-content: center; padding: 18px;
+        align-items: center; justify-content: center; padding: var(--space-5);
         background: linear-gradient(160deg, rgba(255, 118, 101, .42), rgba(253, 82, 124, .34));
         border-radius: var(--radius-card);
       }
       .tapa__ficha {
         display: flex; flex-direction: column; align-items: center; gap: 7px;
-        padding: 20px 22px; max-width: 32ch; text-align: center;
+        padding: var(--space-5) var(--space-6); max-width: 32ch; text-align: center;
         border-radius: var(--radius-card); background: var(--surface-card);
         box-shadow: var(--shadow-raised);
       }
       .tapa__icono {
-        width: 62px; height: 62px; border-radius: var(--radius-pill);
+        width: clamp(48px, 15vw, 62px); height: clamp(48px, 15vw, 62px); border-radius: var(--radius-pill);
         display: inline-flex; align-items: center; justify-content: center;
         background: var(--surface-sunken);
       }

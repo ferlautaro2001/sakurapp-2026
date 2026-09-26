@@ -13,7 +13,6 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
   selector: 'lm-producto-ficha',
   imports: [...UI],
   template: `
-    <div class="lm-screen">
     <div class="lm-screen" [class.producto-screen--gestionable]="puedeGestionar()">
       <lm-encabezado
         titulo="Detalle del producto"
@@ -174,6 +173,29 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 {{ producto.disponible ? 'Disponible' : 'Sin stock' }}
               </span>
             </div>
+
+            @if (puedeAgregar()) {
+              <div class="producto-cantidad">
+                <span class="producto-cantidad__texto">
+                  <strong>En tu pedido</strong>
+                  <small>
+                    {{
+                      enElCarrito()
+                        ? precio(producto.precio * enElCarrito())
+                        : 'Todavía no lo sumaste'
+                    }}
+                  </small>
+                </span>
+
+                <lm-cantidad
+                  [cantidad]="enElCarrito()"
+                  [nombre]="producto.nombre"
+                  [permitirAgregar]="marca() === null"
+                  (agregar)="sumarUno()"
+                  (quitar)="restarUno()"
+                />
+              </div>
+            }
           </section>
         } @else {
           <lm-vacio
@@ -253,21 +275,21 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
+        max-width: 100%;
+        padding: var(--space-2) var(--space-3);
         border: 1px solid rgba(255, 255, 255, 0.72);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.18);
         color: #ffffff;
         font: var(--type-body-small);
         font-weight: 800;
-        white-space: nowrap;
       }
 
       .producto-body {
         display: flex;
         flex-direction: column;
-        gap: 20px;
-        padding-bottom: 18px;
+        gap: var(--space-5);
+        padding-bottom: var(--space-5);
       }
 
       .producto-fotos {
@@ -298,13 +320,14 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
 
       .producto-tipo {
         position: absolute;
-        top: 14px;
-        left: 14px;
+        top: var(--space-4);
+        left: var(--space-4);
         z-index: 4;
         display: inline-flex;
         align-items: center;
         gap: 7px;
-        padding: 8px 14px;
+        max-width: calc(100% - var(--space-7));
+        padding: var(--space-2) var(--space-4);
         border-radius: 999px;
         color: var(--action-primary);
         background: rgba(253, 236, 239, 0.96);
@@ -319,8 +342,8 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         position: absolute;
         top: 50%;
         z-index: 5;
-        width: 44px;
-        height: 44px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         padding: 0;
         border: 0;
         border-radius: 50%;
@@ -340,11 +363,11 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
       }
 
       .lm-carousel__flecha--izquierda {
-        left: 12px;
+        left: var(--space-3);
       }
 
       .lm-carousel__flecha--derecha {
-        right: 12px;
+        right: var(--space-3);
       }
 
       /*
@@ -355,20 +378,23 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 7px;
-        width: max-content;
-        margin: 8px auto 0;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        max-width: 100%;
+        margin: var(--space-2) auto 0;
         padding: 0;
         border: 0;
         background: transparent;
         box-shadow: none;
       }
 
+      /* La flor mide lo que se ve, pero el botón mide lo que se toca: con el
+         área táctil mínima entran los dedos gruesos sin agrandar el adorno. */
       .sk-flor {
         appearance: none;
         -webkit-appearance: none;
-        width: 23px;
-        height: 23px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         display: grid;
         place-items: center;
         padding: 0;
@@ -378,22 +404,28 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         background: transparent;
         box-shadow: none;
         opacity: 0.55;
-        transform: scale(0.78);
-        transition:
-          opacity 150ms ease,
-          transform 150ms ease;
+        transition: opacity 150ms ease;
       }
 
+      /* El achicado va sobre la flor y no sobre el botón: una transformación
+         encoge también el área que recibe el toque, así que escalando el botón
+         los 44px de arriba se quedaban en 34 reales y el punto volvía a ser
+         imposible de acertar. */
       .sk-flor img {
         display: block;
-        width: 100%;
-        height: 100%;
+        width: clamp(17px, 5.3vw, 23px);
+        height: clamp(17px, 5.3vw, 23px);
         object-fit: contain;
         pointer-events: none;
+        transform: scale(0.78);
+        transition: transform 150ms ease;
       }
 
       .sk-flor.on {
         opacity: 1;
+      }
+
+      .sk-flor.on img {
         transform: scale(1.08);
       }
 
@@ -404,8 +436,8 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 8px;
-        padding: 24px;
+        gap: var(--space-2);
+        padding: var(--space-6);
         color: var(--text-muted);
         font: var(--type-body-small);
         text-align: center;
@@ -416,27 +448,29 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         width: 100%;
         display: flex;
         flex-direction: column;
-        gap: 14px;
+        gap: var(--space-4);
         padding: 0 2px;
       }
 
       .producto-info h1 {
         margin: 0;
         color: var(--text-on-primary);
-        font: 800 24px/1.15 var(--font-text);
+        font: 800 clamp(17.5px, 5.6vw, 24px) / 1.15 var(--font-text);
         letter-spacing: -0.3px;
       }
 
       .producto-descripcion {
         margin: 0;
         color: rgba(255, 255, 255, 0.92);
-        font: 500 14px/1.55 var(--font-text);
+        font: var(--type-body-small);
+        font-weight: 500;
+        line-height: 1.55;
       }
 
       .producto-datos {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 10px;
+        gap: var(--space-3);
         margin-top: 3px;
       }
 
@@ -444,17 +478,17 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         min-width: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 14px;
+        gap: var(--space-3);
+        padding: var(--space-4);
         border-radius: 16px;
         background: var(--surface-card);
         box-shadow: 0 4px 12px rgba(73, 4, 31, 0.1);
       }
 
       .dato-icono {
-        width: 44px;
-        height: 44px;
-        flex: 0 0 44px;
+        width: var(--size-icono-caja);
+        height: var(--size-icono-caja);
+        flex: 0 0 var(--size-icono-caja);
         display: grid;
         place-items: center;
         border-radius: 50%;
@@ -469,24 +503,34 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         gap: 5px;
       }
 
+      /* El rótulo es una sola palabra en mayúsculas y el corte de emergencia
+         que la base aplica a todo el texto la partía al medio: "ELABORACIÓ" y
+         abajo la "N". Como no tiene dónde cortar bien, acá se prohíbe partirla
+         y se la deja encoger hasta entrar en su columna. */
       .dato-contenido small {
         color: var(--text-muted);
         font: var(--type-caption);
+        font-size: clamp(10.5px, 2.9vw, 13px);
         font-weight: 800;
+        overflow-wrap: normal;
+        word-break: keep-all;
+        hyphens: none;
       }
 
       .dato-contenido strong {
         color: var(--text-title);
-        font: 800 16px/1.15 var(--font-text);
+        font: var(--type-body-medium);
+        font-weight: 800;
+        line-height: 1.15;
       }
 
       .producto-estado {
         width: 100%;
         display: flex;
         align-items: center;
-        gap: 14px;
+        gap: var(--space-4);
         margin-top: 3px;
-        padding: 15px 16px;
+        padding: var(--space-4);
         border-radius: 18px;
         background: var(--surface-card);
         box-shadow: 0 4px 12px rgba(73, 4, 31, 0.1);
@@ -495,28 +539,35 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
       .producto-estado__titulo {
         flex: 0 0 auto;
         color: var(--action-primary);
-        font: 800 16px/1 var(--font-text);
+        font: var(--type-body-medium);
+        font-weight: 800;
+        line-height: 1;
       }
 
+      /* El chip no es un control, así que no le corresponde el área táctil
+         mínima: venía en 18px y con esa altura pesaba más que el precio, que
+         es el dato importante del bloque. Queda un escalón abajo. */
       .estado-chip {
         min-width: 0;
-        min-height: 46px;
+        min-height: clamp(36px, 10vw, 40px);
         flex: 1;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 11px;
-        padding: 10px 16px;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4);
         border-radius: 999px;
         color: #08783e;
         background: linear-gradient(90deg, #dcf8ea, #cff3df);
-        font: 800 18px/1 var(--font-text);
+        font: var(--type-body-medium);
+        font-weight: 800;
+        line-height: 1.15;
       }
 
       .estado-chip__punto {
-        width: 13px;
-        height: 13px;
-        flex: 0 0 13px;
+        width: 11px;
+        height: 11px;
+        flex: 0 0 11px;
         border-radius: 50%;
         background: #0a9b58;
         box-shadow: 0 0 0 4px rgba(10, 155, 88, 0.08);
@@ -527,164 +578,98 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         background: linear-gradient(90deg, #ffe5e8, #ffdadd);
       }
 
+      /* El mismo control de cantidad que la carta, acá adentro: antes había
+         que volver atrás para sumar una unidad más. */
+      .producto-cantidad {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        border-radius: 18px;
+        background: var(--surface-card);
+        box-shadow: 0 4px 12px rgba(73, 4, 31, 0.1);
+      }
+
+      .producto-cantidad__texto {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+      }
+
+      .producto-cantidad__texto strong {
+        color: var(--action-primary);
+        font: var(--type-body-medium);
+        font-weight: 800;
+        line-height: 1.15;
+      }
+
+      .producto-cantidad__texto small {
+        color: var(--text-muted);
+        font: var(--type-body-small);
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
       .estado-chip--sin-stock .estado-chip__punto {
         background: #d43c50;
         box-shadow: 0 0 0 4px rgba(212, 60, 80, 0.08);
       }
 
-      @media (max-width: 380px) {
-        .producto-datos {
-          gap: 8px;
-        }
-
-        .dato-card {
-          gap: 8px;
-          padding: 12px 10px;
-        }
-
-        .dato-icono {
-          width: 38px;
-          height: 38px;
-          flex-basis: 38px;
-        }
-
-        .dato-contenido strong {
-          font-size: 14px;
-        }
-
-        .producto-estado {
-          gap: 10px;
-          padding: 13px;
-        }
-
-        .producto-estado__titulo {
-          font-size: 14px;
-        }
-
-        .estado-chip {
-          min-height: 42px;
-          gap: 8px;
-          padding: 9px 12px;
-          font-size: 15px;
-        }
-      }
-
-      /* Escalamiento exclusivo para roles con posibilidad de editar la carta */
+      /* La ficha del cocinero mete dos acciones más abajo, así que el chasis
+         —la foto y el espacio entre bloques— se compacta para dejarles lugar.
+         El bloque de datos NO entra en esta compactación: eso se unificó
+         después de la revisión de septiembre de 2026, donde el mismo producto
+         se leía distinto según quién lo abría. */
       .producto-screen--gestionable .producto-body {
-        gap: 10px;
+        gap: var(--space-3);
         padding-top: 4px;
         padding-bottom: 6px;
       }
 
       .producto-screen--gestionable .sk-carrusel-fotos {
         aspect-ratio: 1.85 / 1;
-        max-height: 175px;
+        max-height: min(48vw, 175px);
         border-radius: 16px;
         box-shadow: 0 4px 14px rgba(73, 4, 31, 0.14);
       }
 
       .producto-screen--gestionable .producto-tipo {
-        top: 8px;
-        left: 8px;
-        padding: 5px 11px;
-        font-size: 11px;
-      }
-
-      .producto-screen--gestionable .lm-carousel__flecha {
-        width: 36px;
-        height: 36px;
+        top: var(--space-2);
+        left: var(--space-2);
+        padding: var(--space-1) var(--space-3);
+        font: var(--type-label);
+        font-weight: 800;
       }
 
       .producto-screen--gestionable .lm-carousel__puntos {
-        margin: 4px auto 0;
-        gap: 5px;
+        margin: var(--space-1) auto 0;
+        gap: var(--space-1);
       }
 
-      .producto-screen--gestionable .sk-flor {
-        width: 17px;
-        height: 17px;
+      .producto-screen--gestionable .sk-flor img {
+        width: clamp(13px, 4vw, 17px);
+        height: clamp(13px, 4vw, 17px);
       }
 
-      .producto-screen--gestionable .producto-info {
-        gap: 8px;
-      }
-
-      .producto-screen--gestionable .producto-info h1 {
-        font-size: 19px;
-        line-height: 1.15;
-      }
-
-      .producto-screen--gestionable .producto-descripcion {
-        font-size: 12.5px;
-        line-height: 1.35;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-      }
-
-      .producto-screen--gestionable .producto-datos {
-        gap: 8px;
-        margin-top: 0;
-      }
-
-      .producto-screen--gestionable .dato-card {
-        gap: 8px;
-        padding: 8px 10px;
-        border-radius: 12px;
-      }
-
-      .producto-screen--gestionable .dato-icono {
-        width: 34px;
-        height: 34px;
-        flex: 0 0 34px;
-      }
-
-      .producto-screen--gestionable .dato-contenido {
-        gap: 2px;
-      }
-
-      .producto-screen--gestionable .dato-contenido small {
-        font-size: 10px;
-      }
-
-      .producto-screen--gestionable .dato-contenido strong {
-        font-size: 14px;
-      }
-
-      .producto-screen--gestionable .producto-estado {
-        gap: 8px;
-        margin-top: 0;
-        padding: 8px 12px;
-        border-radius: 14px;
-      }
-
-      .producto-screen--gestionable .producto-estado__titulo {
-        font-size: 13px;
-      }
-
-      .producto-screen--gestionable .estado-chip {
-        min-height: 34px;
-        gap: 7px;
-        padding: 5px 12px;
-        font-size: 14px;
-      }
-
-      .producto-screen--gestionable .estado-chip__punto {
-        width: 9px;
-        height: 9px;
-        flex: 0 0 9px;
-      }
+      /* De acá para abajo la ficha NO se compacta por rol. Precio, elaboración
+         y estado son la lectura del producto y tienen que verse igual para
+         todos: lo único que cambia entre roles son las acciones de abajo. */
 
       .producto-screen--gestionable .lm-actionbar {
-        padding: 6px var(--gutter-screen) calc(10px + env(safe-area-inset-bottom));
+        padding: var(--space-2) var(--gutter-screen) calc(var(--space-3) + var(--safe-bottom));
         gap: 2px;
       }
 
+      /* El botón de texto NO se compacta por debajo del área táctil mínima:
+         acá adentro es el que borra un producto de la carta. */
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-textbtn {
-        min-height: 36px;
-        padding: 4px 8px;
-        font-size: 13px;
+        padding: var(--space-1) var(--space-2);
+        font-size: clamp(12px, 3.1vw, 13px);
       }
     `,
   ],
@@ -942,6 +927,30 @@ export class ProductoFichaPage extends PaginaConSesion {
         'Revisá la conexión e intentá nuevamente.',
       );
     }
+  }
+
+  /** Unidades de este producto que ya están en el carrito. */
+  protected readonly enElCarrito = computed(() => {
+    const id = this.producto()?.id;
+    if (!id) return 0;
+    return this.carrito.items().find((item) => item.producto.id === id)?.cantidad ?? 0;
+  });
+
+  /*
+   * El más y el menos no avisan por toast como el botón grande: se tocan
+   * varias veces seguidas y el propio número ya es la confirmación.
+   */
+  protected sumarUno(): void {
+    const producto = this.producto();
+    if (!producto || !this.mesaId || this.marca() !== null) return;
+
+    this.carrito.iniciarMesa(this.mesaId);
+    this.carrito.agregar(producto);
+  }
+
+  protected restarUno(): void {
+    const producto = this.producto();
+    if (producto) this.carrito.restar(producto.id);
   }
 
   protected agregarAlCarrito(): void {

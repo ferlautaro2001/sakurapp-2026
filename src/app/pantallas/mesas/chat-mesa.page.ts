@@ -58,11 +58,33 @@ import { PaginaConSesion } from '../pagina-base';
         </div>
 
         <div class="chat-header__rol">
-          <lm-chip [estado]="esMozo() ? 'ocupada' : 'reservada'">
-            {{ esMozo() ? 'Atención Mozo' : 'Comensal' }}
+          <lm-chip [estado]="cerrada() ? 'libre' : esMozo() ? 'ocupada' : 'reservada'">
+            {{ cerrada() ? 'Resuelta' : esMozo() ? 'Atención Mozo' : 'Comensal' }}
           </lm-chip>
         </div>
+
+        <!--
+          Cerrar es del mozo: es el que sabe si la consulta quedó contestada.
+          El comensal no lo ve porque para él el hilo nunca estuvo abierto ni
+          cerrado, sólo es el canal con su mesa.
+        -->
+        @if (esMozo()) {
+          <lm-icono-boton
+            [icono]="cerrada() ? 'replay' : 'task_alt'"
+            [rotulo]="cerrada() ? 'Reabrir la consulta' : 'Marcar la consulta como resuelta'"
+            [tono]="cerrada() ? 'neutro' : 'primario'"
+            (presionar)="alternarCierre()"
+          />
+        }
       </div>
+
+      @if (cerrada()) {
+        <p class="chat-cerrada">
+          <lm-icono nombre="task_alt" [tamano]="16" color="var(--state-success)" />
+          Consulta resuelta{{ cerradaPor() ? ' por ' + cerradaPor() : '' }}. Si escriben de nuevo,
+          vuelve a la bandeja sola.
+        </p>
+      }
 
       <!-- Lista de Mensajes (Diseño WhatsApp) -->
       <div #contenedorMensajes class="chat-mensajes" role="log" aria-live="polite">
@@ -158,8 +180,9 @@ import { PaginaConSesion } from '../pagina-base';
       .chat-header {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 10px 14px;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-4);
+        padding-top: calc(var(--space-3) + var(--safe-top));
         background: var(--surface-card);
         border-bottom: 1px solid rgba(110, 18, 52, 0.08);
         box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
@@ -169,17 +192,21 @@ import { PaginaConSesion } from '../pagina-base';
       .chat-header__volver {
         background: none;
         border: none;
+        min-width: var(--touch-min);
+        min-height: var(--touch-min);
+        flex: 0 0 auto;
         padding: 4px;
-        margin-left: -4px;
+        margin-left: calc(var(--space-1) * -1);
         cursor: pointer;
         display: inline-flex;
         align-items: center;
+        justify-content: center;
         border-radius: 50%;
       }
 
       .chat-header__avatar {
-        width: 40px;
-        height: 40px;
+        width: var(--size-avatar-sm);
+        height: var(--size-avatar-sm);
         border-radius: 50%;
         background: var(--surface-sunken);
         display: flex;
@@ -195,11 +222,17 @@ import { PaginaConSesion } from '../pagina-base';
         min-width: 0;
       }
 
+      /* Con el nombre del comensal al lado del número, el título es lo único
+         de la cabecera que puede ceder: la placa de rol no se deforma y el
+         nombre completo se recupera entrando a la mesa. */
       .chat-header__titulo {
         font: var(--type-section);
         font-weight: 800;
         color: var(--text-title);
         line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .chat-header__subtitulo {
@@ -208,11 +241,17 @@ import { PaginaConSesion } from '../pagina-base';
         display: flex;
         align-items: center;
         gap: 6px;
+        min-width: 0;
+      }
+
+      .chat-header__rol {
+        flex: 0 1 auto;
       }
 
       .chat-header__punto-en-vivo {
         width: 7px;
         height: 7px;
+        flex: 0 0 auto;
         border-radius: 50%;
         background-color: var(--sk-verde);
         animation: pulso 2s infinite;
@@ -224,14 +263,32 @@ import { PaginaConSesion } from '../pagina-base';
         100% { opacity: 0.5; transform: scale(0.9); }
       }
 
+      /* Aviso de hilo resuelto, pegado bajo la cabecera: explica por qué la
+         consulta ya no figura en la bandeja sin ocupar lugar en el hilo. */
+      .chat-cerrada {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        margin: 0;
+        padding: var(--space-2) var(--space-4);
+        background: var(--state-success-surface);
+        color: var(--state-success);
+        font: var(--type-body-small);
+        text-wrap: pretty;
+      }
+
+      .chat-cerrada lm-icono {
+        flex: 0 0 auto;
+      }
+
       /* Contenedor de burbujas */
       .chat-mensajes {
         flex: 1;
         overflow-y: auto;
-        padding: 14px 12px;
+        padding: var(--space-4) var(--space-3);
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: var(--space-3);
         scroll-behavior: smooth;
       }
 
@@ -242,8 +299,8 @@ import { PaginaConSesion } from '../pagina-base';
         align-items: center;
         text-align: center;
         color: var(--text-sobre-fondo, #FFFFFF);
-        gap: 6px;
-        padding: 24px;
+        gap: var(--space-2);
+        padding: var(--space-6);
         opacity: 0.9;
       }
 
@@ -271,10 +328,16 @@ import { PaginaConSesion } from '../pagina-base';
         justify-content: flex-start;
       }
 
+      /* La burbuja crece con lo que dice el mensaje y nunca al revés: el
+         min-width de 120px que tenía era un piso que un "Ok" no necesita y que,
+         sumado al encabezado de nombre y rol, empujaba la fila fuera de
+         pantalla. Ahora el único límite es el techo del 78% de la fila, y lo
+         que no entra envuelve —incluido un enlace o un correo sin espacios,
+         que el overflow-wrap de la base ya corta. */
       .burbuja {
-        max-width: 82%;
-        min-width: 120px;
-        padding: 8px 12px;
+        max-width: 78%;
+        min-width: 0;
+        padding: var(--space-2) var(--space-3);
         border-radius: 14px;
         position: relative;
         box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
@@ -300,18 +363,22 @@ import { PaginaConSesion } from '../pagina-base';
         color: #111B21;
       }
 
+      /* Nombre y placa de rol se acomodan en dos renglones antes que ensanchar
+         la burbuja: un nombre largo no puede decidir el ancho del hilo. */
       .burbuja__encabezado {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        font-size: 11px;
+        flex-wrap: wrap;
+        gap: var(--space-1) var(--space-2);
+        font: var(--type-label);
         margin-bottom: 1px;
       }
 
       .burbuja__nombre {
         font-weight: 800;
         color: var(--sk-fucsia-hondo, #C72657);
+        min-width: 0;
       }
 
       .burbuja__nombre--mozo {
@@ -319,7 +386,7 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .burbuja__rol-etiqueta {
-        font-size: 10px;
+        font-size: clamp(9px, 2.3vw, 10px);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         font-weight: 700;
@@ -351,7 +418,7 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .burbuja__hora {
-        font-size: 10px;
+        font-size: clamp(9px, 2.3vw, 10px);
         color: var(--text-muted);
       }
 
@@ -359,17 +426,20 @@ import { PaginaConSesion } from '../pagina-base';
       .chat-barra-envio {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 8px 10px;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        padding-bottom: calc(var(--space-2) + var(--safe-bottom));
         background: var(--surface-card);
         border-top: 1px solid rgba(110, 18, 52, 0.08);
       }
 
       .chat-input {
         flex: 1;
+        min-width: 0;
+        min-height: var(--touch-min);
         border: 1px solid rgba(110, 18, 52, 0.15);
         border-radius: 24px;
-        padding: 10px 16px;
+        padding: var(--space-3) var(--space-4);
         font: var(--type-body);
         outline: none;
         background: #FFFFFF;
@@ -381,8 +451,8 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .chat-boton-enviar {
-        width: 44px;
-        height: 44px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         border-radius: 50%;
         background: var(--gradiente-marca, var(--sk-fucsia-hondo));
         border: none;
@@ -417,6 +487,8 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
   private readonly firestore = inject(FirestoreService);
 
   private desuscribirChat: Unsubscribe | null = null;
+  /** Baja de esta pantalla en la escucha compartida de conversaciones. */
+  private soltarConversaciones: Unsubscribe | null = null;
   private readonly mesaDirecta = signal<Mesa | null>(null);
 
   protected readonly clienteDestinatario = computed(() => {
@@ -446,6 +518,13 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
   protected readonly texto = signal<string>('');
   protected readonly enviando = signal<boolean>(false);
 
+  /** El estado de cierre vive en el resumen de la conversación, no en el hilo. */
+  private readonly resumen = computed(() =>
+    this.chatService.conversacionesActivas().find((c) => c.mesaId === (this.mesa()?.id ?? this.id())),
+  );
+  protected readonly cerrada = computed(() => this.resumen()?.cerrada ?? false);
+  protected readonly cerradaPor = computed(() => this.resumen()?.cerradaPor ?? '');
+
 
   ngOnInit(): void {
     const mesaId = this.id();
@@ -458,6 +537,10 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
 
     void this.mesasService.sincronizar();
     void this.esperaService.iniciar();
+    // El resumen de la conversación es lo que dice si está cerrada. La escucha
+    // es una sola para toda la aplicación y está contada por referencias: darla
+    // de baja acá no apaga la de las otras pantallas.
+    this.soltarConversaciones = this.chatService.iniciarEscuchaConversaciones();
 
     // Si la mesa no está cargada en el store reactivo, cargarla directamente de Firestore
     if (!this.mesa()) {
@@ -506,9 +589,30 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
       usuarioId,
       (mensajesActualizados) => {
         this.mensajes.set(mensajesActualizados);
+        // Estar adentro del hilo es haberlo leído: se limpia al entrar y cada
+        // vez que llega algo mientras el hilo sigue en pantalla. Sin esto la
+        // bandeja del mozo nunca apagaba el globo de no leído.
+        void this.chatService.marcarLeidos(idMesa, this.esMozo() ? 'CLIENTE' : 'MOZO');
         setTimeout(() => this.scrollAlFondo(), 60);
       },
     );
+  }
+
+  /**
+   * Cerrar no archiva ni corta nada: saca la consulta de las pendientes del
+   * panel. Por eso es reversible desde el mismo botón, y además se deshace
+   * sola cuando alguien vuelve a escribir.
+   */
+  protected async alternarCierre(): Promise<void> {
+    const mesaId = this.mesa()?.id ?? this.id();
+    if (this.cerrada()) {
+      await this.chatService.reabrirConversacion(mesaId);
+      this.avisos.info('Consulta reabierta', 'Vuelve a figurar como pendiente en el panel.');
+      return;
+    }
+    const actual = this.usuario();
+    await this.chatService.cerrarConversacion(mesaId, actual?.nombre ?? '');
+    this.avisos.exito('Consulta resuelta', 'Sale de las pendientes. Si escriben de nuevo, vuelve sola.');
   }
 
   ngAfterViewInit(): void {
@@ -519,6 +623,10 @@ export class ChatMesaPage extends PaginaConSesion implements OnInit, AfterViewIn
     if (this.desuscribirChat) {
       this.desuscribirChat();
       this.desuscribirChat = null;
+    }
+    if (this.soltarConversaciones) {
+      this.soltarConversaciones();
+      this.soltarConversaciones = null;
     }
   }
 

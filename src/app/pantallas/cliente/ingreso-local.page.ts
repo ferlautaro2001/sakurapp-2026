@@ -74,20 +74,20 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       :host { display: flex; flex: 1; min-height: 0; }
       .marco {
         position: relative;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-        min-height: 230px; padding: 26px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4);
+        min-height: clamp(180px, 56vw, 230px); padding: var(--space-6);
         border-radius: var(--radius-card);
         background: rgba(110, 18, 52, .3);
         border: 1px solid rgba(255, 255, 255, .28);
         overflow: hidden;
       }
-      .marco__esquina { position: absolute; width: 32px; height: 32px; border: 4px solid #FFFFFF; }
+      .marco__esquina { position: absolute; width: clamp(24px, 8vw, 32px); height: clamp(24px, 8vw, 32px); border: 4px solid #FFFFFF; }
       .marco__esquina.si { top: 14px; left: 14px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
       .marco__esquina.sd { top: 14px; right: 14px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
       .marco__esquina.ii { bottom: 14px; left: 14px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
       .marco__esquina.id { bottom: 14px; right: 14px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
       .marco__linea {
-        position: absolute; left: 26px; right: 26px; top: 50%; height: 2px;
+        position: absolute; left: var(--space-6); right: var(--space-6); top: 50%; height: 2px;
         background: #FFFFFF; box-shadow: 0 0 16px #FFFFFF; opacity: .8;
         animation: lm-scan 2.6s var(--ease-standard) infinite;
       }
@@ -99,10 +99,11 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       .paso { display: flex; gap: 10px; align-items: flex-start; font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
       .paso i {
         flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
-        display: grid; place-items: center; font: 800 12px/1 var(--font-numeric); font-style: normal;
+        display: grid; place-items: center; font-style: normal;
+        font: var(--type-label); font-weight: 800; line-height: 1; font-family: var(--font-numeric);
         background: rgba(255, 255, 255, .9); color: var(--action-primary);
       }
-      .cuenta { display: flex; align-items: center; gap: 12px; padding: 14px; }
+      .cuenta { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
       .cuenta b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
     `,
   ],

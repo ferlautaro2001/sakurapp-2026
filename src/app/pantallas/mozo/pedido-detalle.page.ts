@@ -83,18 +83,18 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .mesa { display: flex; align-items: center; gap: 12px; padding: 14px; }
+      .mesa { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
       .mesa__icono {
-        flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px;
+        flex: 0 0 auto; width: var(--touch-min); min-height: var(--touch-min); border-radius: 14px;
         display: grid; place-items: center; background: var(--surface-sunken);
       }
       .mesa__datos { flex: 1 1 auto; min-width: 0; }
       .mesa__datos b { display: block; font: var(--type-section); color: var(--text-title); }
       .mesa__datos small { display: block; font: var(--type-body-small); color: var(--text-muted); }
-      .devuelto { padding: 14px; border-left: 4px solid var(--state-error); }
+      .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      .sector { display: flex; align-items: center; gap: 10px; padding: 12px 14px; font: var(--type-body-small); color: var(--text-body); }
+      .sector { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4); font: var(--type-body-small); color: var(--text-body); }
     `,
   ],
 })

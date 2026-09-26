@@ -109,10 +109,15 @@ import { UI } from '../../ui';
         display: contents;
       }
 
+      /* El tope de 440px sólo levanta el del sistema: el ancho sigue siendo
+         100% del hueco que deja el fondo del modal, que ya reserva
+         --gutter-screen a cada lado, así que en un equipo de 320 entra con su
+         margen. El alto va en dvh porque con vh la barra de direcciones del
+         navegador del celular dejaba el pie del modal abajo de la pantalla. */
       .lm-modal--ancho {
         max-width: 440px;
         width: 100%;
-        max-height: 85vh;
+        max-height: 85dvh;
         display: flex;
         flex-direction: column;
       }
@@ -128,17 +133,19 @@ import { UI } from '../../ui';
         display: flex;
         flex-direction: column;
         gap: 8px;
-        max-height: 320px;
+        /* En un equipo bajo, 320px de lista dejaban los dos botones fuera de
+           la pantalla: la lista cede primero y se desplaza por dentro. */
+        max-height: min(44dvh, 320px);
         overflow-y: auto;
-        margin: 12px 0;
+        margin: var(--space-3) 0;
         padding-right: 4px;
       }
 
       .mesa-opcion {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 10px 14px;
+        gap: var(--space-3);
+        padding: 10px var(--space-4);
         background: var(--surface-secondary, #f8f6f7);
         border: 2px solid transparent;
         border-radius: 12px;
@@ -164,8 +171,8 @@ import { UI } from '../../ui';
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        min-width: 52px;
-        height: 52px;
+        min-width: clamp(44px, 14vw, 52px);
+        min-height: clamp(44px, 14vw, 52px);
         background: #ffffff;
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
@@ -173,14 +180,14 @@ import { UI } from '../../ui';
       }
 
       .mesa-opcion__numero span {
-        font-size: 10px;
+        font-size: clamp(11px, 2.8vw, 12px);
         text-transform: uppercase;
         letter-spacing: 0.5px;
         opacity: 0.8;
       }
 
       .mesa-opcion__numero strong {
-        font-size: 18px;
+        font-size: clamp(14px, 4.2vw, 18px);
         font-weight: 700;
         line-height: 1;
       }
@@ -193,7 +200,7 @@ import { UI } from '../../ui';
       }
 
       .mesa-opcion__tipo {
-        font-size: 13px;
+        font-size: clamp(13px, 3.3vw, 14px);
         font-weight: 600;
         display: flex;
         align-items: center;
@@ -202,7 +209,7 @@ import { UI } from '../../ui';
       }
 
       .mesa-opcion__capacidad {
-        font-size: 12px;
+        font-size: clamp(11px, 2.8vw, 12px);
         color: var(--text-secondary, #6e5c65);
         display: flex;
         align-items: center;
@@ -211,6 +218,7 @@ import { UI } from '../../ui';
 
       .mesa-opcion__check {
         display: flex;
+        flex: 0 0 auto;
         align-items: center;
       }
     `,

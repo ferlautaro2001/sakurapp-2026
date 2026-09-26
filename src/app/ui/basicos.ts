@@ -7,7 +7,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, input, numberAttr
   template: `<span
     class="material-symbols-rounded"
     aria-hidden="true"
-    [style.font-size.px]="tamano()"
+    [style.font-size]="medida()"
     [style.color]="color()"
     >{{ nombre() }}</span
   >`,
@@ -15,8 +15,21 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, input, numberAttr
 })
 export class IconoComponent {
   readonly nombre = input.required<string>();
-  readonly tamano = input(22, { transform: numberAttribute });
+  /**
+   * Un número son píxeles, como en los cientos de usos que ya existen. Un texto
+   * pasa tal cual a `font-size`, así los glifos grandes —los de 30px para
+   * arriba, que son los que se comen el ancho de un equipo angosto— pueden
+   * recibir un `clamp()` o un token en vez de un número clavado.
+   */
+  readonly tamano = input<number | string>(22);
   readonly color = input('currentColor');
+
+  protected medida(): string {
+    const valor = this.tamano();
+    /* Un atributo estático (`tamano="18"`) llega como texto pero sigue siendo
+       un número de píxeles: sin esto quedaría un `font-size:18` inválido. */
+    return typeof valor === 'number' || /^[\d.]+$/.test(valor.trim()) ? `${valor}px` : valor;
+  }
 }
 
 /** Acción de pantalla. Una sola primaria por pantalla, ancha, en el tercio inferior. */
@@ -109,7 +122,9 @@ export class TextoBotonComponent {
       :host > button { position: relative; }
       .lm-iconbtn__globo {
         position: absolute; top: -2px; right: -2px;
-        min-width: 20px; height: 20px; padding: 0 5px; border-radius: 10px;
+        /* Alto mínimo y no fijo: un contador de tres cifras crecía para abajo
+           y se salía de la pastilla. */
+        min-width: 20px; min-height: 20px; padding: 0 5px; border-radius: var(--radius-pill);
         display: grid; place-items: center;
         background: var(--state-error); color: #FFFFFF;
         font: 800 11px/1 var(--font-numeric);
@@ -212,7 +227,7 @@ export class LogoComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="lm-spinner">
-      <span class="lm-spinner__anillo" [style.width.px]="tamano()" [style.height.px]="tamano()">
+      <span class="lm-spinner__anillo" [style.width]="medida()" [style.height]="medida()">
         <img src="assets/img/logo-badge.png" alt="" [width]="interior()" [height]="interior()" />
       </span>
       @if (rotulo()) {
@@ -220,11 +235,19 @@ export class LogoComponent {
       }
     </div>
   `,
-  styles: [':host{display:block}'],
+  /* El logo se mide en porcentaje del anillo y no en píxeles: así sigue al
+     anillo cuando éste se encoge en un equipo angosto, en vez de quedar del
+     mismo tamaño y desbordarlo. */
+  styles: [':host{display:block}.lm-spinner__anillo img{width:54%;height:auto}'],
 })
 export class SpinnerComponent {
   readonly tamano = input(96, { transform: numberAttribute });
   readonly rotulo = input<string | null>('Cargando…');
+  /** El alto pedido es el techo; por debajo de 430px el anillo baja con el ancho real. */
+  protected medida(): string {
+    const techo = this.tamano();
+    return `clamp(${Math.round(techo * 0.73)}px, ${(techo / 4.3).toFixed(1)}vw, ${techo}px)`;
+  }
   protected interior(): number {
     return Math.round(this.tamano() * 0.54);
   }
@@ -311,7 +334,7 @@ export class BannerComponent {
   template: `
     <div class="lm-empty">
       <span class="lm-empty__icono">
-        <lm-icono [nombre]="icono()" [tamano]="34" color="var(--action-accent)" />
+        <lm-icono [nombre]="icono()" tamano="clamp(25px, 7.9vw, 34px)" color="var(--action-accent)" />
       </span>
       <span class="lm-empty__titulo">{{ titulo() }}</span>
       <span class="lm-empty__texto"><ng-content /></span>
@@ -361,6 +384,38 @@ export class PushComponent {
 }
 
 /**
+ * Renglón marcado dentro de la ficha del modal.
+ *
+ * Un valor suelto (`Nigiri Omakase (sin stock), Gyozas (cantidad…)`) se lee
+ * como un párrafo y hay que recorrerlo entero. Uno por renglón, con el mismo
+ * sello de color que llevaba su tarjeta en la pantalla de atrás, se mira de un
+ * vistazo: el color y el ícono dicen qué le pasa a cada producto.
+ */
+export interface MarcaFicha {
+  /** Ícono de Material Symbols que va adentro del sello, en blanco. */
+  icono: string;
+  /** Tiñe el sello: el mismo código de color que usa la pantalla que pregunta. */
+  tono: 'pendiente' | 'peligro' | 'exito';
+  texto: string;
+}
+
+/**
+ * Renglón de la ficha del modal: rótulo a la izquierda, valor a la derecha.
+ *
+ * El ícono es opcional a propósito: las decenas de confirmaciones que ya pasan
+ * sólo rótulo y valor siguen andando igual. Donde se lo pasa, el glifo ancla la
+ * lectura —mesa, persona, motivo— y la ficha se recorre de un vistazo en vez de
+ * leerse renglón por renglón.
+ */
+export interface DatoFicha {
+  rotulo: string;
+  valor: string;
+  /** Nombre de Material Symbols que va a la izquierda del rótulo. */
+  icono?: string;
+  marcas?: MarcaFicha[];
+}
+
+/**
  * Ventana modal de confirmación.
  *
  * La dibuja una sola vez la cáscara de la aplicación, alimentada por
@@ -387,7 +442,7 @@ export class PushComponent {
           </span>
         } @else {
           <span class="lm-modal__icono lm-modal__icono--{{ tono() }}">
-            <lm-icono [nombre]="icono()" [tamano]="30" color="#FFFFFF" />
+            <lm-icono [nombre]="icono()" tamano="clamp(22px, 7vw, 30px)" color="#FFFFFF" />
           </span>
         }
         <h2 class="lm-modal__titulo">{{ titulo() }}</h2>
@@ -397,8 +452,26 @@ export class PushComponent {
           <dl class="lm-modal__detalle">
             @for (dato of detalle(); track dato.rotulo) {
               <div>
-                <dt>{{ dato.rotulo }}</dt>
-                <dd>{{ dato.valor }}</dd>
+                <dt>
+                  @if (dato.icono) {
+                    <lm-icono [nombre]="dato.icono" [tamano]="16" color="var(--action-primary)" />
+                  }
+                  {{ dato.rotulo }}
+                </dt>
+                @if (dato.marcas?.length) {
+                  <dd class="lm-modal__marcas">
+                    @for (marca of dato.marcas; track marca.texto) {
+                      <span class="lm-modal__marca">
+                        <i class="lm-modal__sello lm-modal__sello--{{ marca.tono }}">
+                          <lm-icono [nombre]="marca.icono" [tamano]="14" color="#FFFFFF" />
+                        </i>
+                        {{ marca.texto }}
+                      </span>
+                    }
+                  </dd>
+                } @else {
+                  <dd>{{ dato.valor }}</dd>
+                }
               </div>
             }
           </dl>
@@ -425,7 +498,7 @@ export class PushComponent {
        * aprobando o rechazando.
        */
       .modal-foto {
-        width: 116px; height: 116px; flex: 0 0 auto;
+        width: var(--size-avatar); height: var(--size-avatar); flex: 0 0 auto;
         border-radius: 50%; background: #ffffff;
         border: 3px solid rgba(185, 46, 88, 0.22);
         box-shadow: 0 4px 12px rgba(110, 18, 52, 0.14);
@@ -433,8 +506,8 @@ export class PushComponent {
          * En bloque, no en grilla: con display grid la imagen estira la fila
          * hasta su altura natural y una foto vertical (la típica captura de
          * pantalla de 1320x2868) se desborda del círculo y se ve corrida. En
-         * bloque, el 100% de alto se mide contra los 116px del contenedor y el
-         * recorte queda siempre centrado.
+         * bloque, el 100% de alto se mide contra el lado del contenedor —el
+         * mismo de cualquier avatar— y el recorte queda siempre centrado.
          */
         display: block; overflow: hidden;
       }
@@ -454,7 +527,7 @@ export class ModalComponent {
   readonly rotuloCancelar = input('Cancelar');
   readonly tono = input<'exito' | 'peligro' | 'primario'>('primario');
   readonly icono = input('help');
-  readonly detalle = input<{ rotulo: string; valor: string }[]>([]);
+  readonly detalle = input<DatoFicha[]>([]);
   /** Fotografía de la persona sobre la que se decide, si la decisión es sobre alguien. */
   readonly foto = input<string | null>(null);
   /** En falso, el modal es una ficha para mirar: un solo botón, sin decisión. */

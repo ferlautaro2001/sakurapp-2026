@@ -46,7 +46,15 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
       <lm-barra-inferior [items]="secciones()" activo="empleados" />
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}.lm-avatar{object-fit:cover;flex-shrink:0}'],
+  styles: [
+    `
+      :host { display: flex; flex: 1; min-height: 0; }
+      .lm-avatar { object-fit: cover; flex-shrink: 0; }
+      /* En la fila densa el chip de estado no cede ancho: lo que se recorta es
+         el nombre y el correo, que se recuperan mirando el detalle. */
+      .lm-pending__fila > lm-chip { flex: 0 0 auto; }
+    `,
+  ],
 })
 export class DuenoEmpleadosPage extends PaginaConSesion {
   protected readonly usuarios = inject(UsuariosService);

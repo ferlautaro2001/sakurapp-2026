@@ -93,7 +93,6 @@ import { PaginaConSesion } from '../pagina-base';
           <div class="chat-vacio">
             <lm-icono nombre="chat_bubble_outline" [tamano]="36" color="var(--text-muted)" />
             <p>Aún no hay mensajes en esta mesa.</p>
-            <small>Escribí tu mensaje para empezar.</small>
           </div>
         }
 
@@ -473,6 +472,14 @@ import { PaginaConSesion } from '../pagina-base';
         opacity: 0.5;
         cursor: not-allowed;
       }
+    
+      /* Distribución: llenar el alto disponible sin recortar mensajes */
+
+      .chat-mensajes { min-height: 0; overscroll-behavior: contain; scroll-snap-type: y proximity; scroll-padding-bottom: var(--space-3); }
+      .chat-fila { scroll-snap-align: end; }
+      .chat-vacio { flex: 1; justify-content: center; }
+      .chat-vacio p { font: var(--type-title); }
+      .chat-barra-envio { padding-bottom: max(var(--space-2), var(--safe-bottom)); }
     `,
   ],
 })

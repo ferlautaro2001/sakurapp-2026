@@ -46,7 +46,7 @@ import { PaginaConSesion } from '../pagina-base';
           </div>
         }
 
-        <lm-titulo [contador]="pedidos.pendientesConfirmacion().length" bajada="Pedidos que esperan confirmación">
+        <lm-titulo [contador]="pedidos.pendientesConfirmacion().length">
           Pedidos del salón
         </lm-titulo>
 

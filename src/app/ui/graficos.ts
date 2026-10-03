@@ -147,10 +147,18 @@ export class GraficoBarrasComponent {
         <p class="sk-grafico__bajada">{{ bajada() }}</p>
       }
 
+      <div class="sk-linea__marco">
       <svg class="sk-linea" viewBox="0 0 300 160" preserveAspectRatio="none" role="img" [attr.aria-label]="descripcion()">
         @for (guia of guias; track guia) {
           <line x1="0" [attr.y1]="guia" x2="300" [attr.y2]="guia" stroke="var(--border-field)" stroke-width="1" />
         }
+        <defs>
+          <linearGradient id="sk-linea-area" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#E8336F" stop-opacity="0.38" />
+            <stop offset="100%" stop-color="#E8336F" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <polygon [attr.points]="area()" fill="url(#sk-linea-area)" />
         <polyline
           [attr.points]="linea()"
           fill="none"
@@ -160,10 +168,11 @@ export class GraficoBarrasComponent {
           stroke-linecap="round"
           vector-effect="non-scaling-stroke"
         />
-        @for (punto of coordenadas(); track punto.rotulo) {
-          <circle [attr.cx]="punto.x" [attr.cy]="punto.y" r="5" fill="var(--action-primary)" />
-        }
       </svg>
+      @for (punto of coordenadas(); track punto.rotulo) {
+        <span class="sk-linea__punto" [style.left.%]="(punto.x / 300) * 100" [style.top.%]="(punto.y / 160) * 100"></span>
+      }
+      </div>
 
       <ul class="sk-linea__pie">
         @for (punto of puntos(); track punto.rotulo) {
@@ -200,6 +209,15 @@ export class GraficoLineaComponent {
 
   protected linea(): string {
     return this.coordenadas().map((p) => `${p.x},${p.y}`).join(' ');
+  }
+
+  /** Polígono bajo la línea, para el relleno degradado. */
+  protected area(): string {
+    const lista = this.coordenadas();
+    if (!lista.length) return '';
+    const primero = lista[0];
+    const ultimo = lista[lista.length - 1];
+    return `${primero.x},160 ${this.linea()} ${ultimo.x},160`;
   }
 
   protected descripcion(): string {

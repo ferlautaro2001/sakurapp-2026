@@ -26,7 +26,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--gap14">
-        <lm-titulo bajada="Tocá el botón de abajo de todo para sumarte a la fila">
+        <lm-titulo>
           Hola, {{ usuario()?.nombre }}
         </lm-titulo>
 
@@ -36,7 +36,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
           <span class="marco__esquina ii"></span>
           <span class="marco__esquina id"></span>
           <span class="marco__linea"></span>
-          <lm-icono nombre="qr_code_scanner" [tamano]="76" color="#FFFFFF" />
+          <lm-icono nombre="qr_code_scanner" tamano="clamp(64px, 24vw, 120px)" color="#FFFFFF" />
           <span class="marco__rotulo">Código de ingreso al local</span>
         </div>
 
@@ -75,7 +75,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       .marco {
         position: relative;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4);
-        min-height: clamp(180px, 56vw, 230px); padding: var(--space-6);
+        flex: 1 1 auto; min-height: clamp(180px, 56vw, 230px); padding: var(--space-6);
         border-radius: var(--radius-card);
         background: rgba(110, 18, 52, .3);
         border: 1px solid rgba(255, 255, 255, .28);
@@ -103,6 +103,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
         font: var(--type-label); font-weight: 800; line-height: 1; font-family: var(--font-numeric);
         background: rgba(255, 255, 255, .9); color: var(--action-primary);
       }
+      .pasos { flex: 0 0 auto; }
       .cuenta { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
       .cuenta b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
     `,

@@ -24,24 +24,21 @@ import { EsperaService } from '../../nucleo/servicios/espera.service';
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
         @if (encuestas.total()) {
-          <lm-titulo [contador]="encuestas.total()" [bajada]="bajada()">Encuestas</lm-titulo>
+          <lm-titulo [contador]="encuestas.total()">Encuestas</lm-titulo>
 
           <lm-diapositivas alto [etiquetas]="etiquetas">
             <lm-grafico-torta
               titulo="Lo mejor de la visita"
-              bajada="Una respuesta por comensal."
               [porciones]="encuestas.aspectosFavoritos()"
             />
 
             <lm-grafico-barras
               titulo="Atención del mozo"
-              bajada="Cuánta gente eligió cada puntaje, del uno al cinco."
               [puntos]="encuestas.puntajesDelMozo()"
             />
 
             <lm-grafico-linea
               titulo="Limpieza, semana a semana"
-              bajada="Promedio del puntaje en cada una de las semanas."
               [puntos]="encuestas.limpiezaPorSemana()"
             />
           </lm-diapositivas>
@@ -86,10 +83,4 @@ export class ClienteEncuestasPreviasPage extends PaginaConSesion {
     });
   }
 
-  protected bajada(): string {
-    const fecha = this.encuestas.desde();
-    if (!fecha) return 'Resultados de las encuestas anteriores';
-    const desde = new Date(fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' });
-    return `Respuestas anteriores, desde el ${desde}`;
-  }
 }

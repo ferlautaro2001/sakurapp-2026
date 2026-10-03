@@ -19,15 +19,16 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="correos().length" bajada="Se envían solos al resolver cada registro">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="correos().length">
           Correos automáticos
         </lm-titulo>
 
         @if (correos().length) {
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (correo of correos(); track correo.id) {
-              <div class="lm-card correo">
+              <div class="casilla" [class.casilla--abierta]="abierto() === correo.id">
+              <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
                 <button type="button" class="correo__fila" (click)="alternar(correo.id)">
                   <span class="correo__icono" [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'">
                     <lm-icono
@@ -59,6 +60,7 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
                     [srcdoc]="html(correo)"
                   ></iframe>
                 }
+              </div>
               </div>
             }
           </div>
@@ -98,6 +100,16 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
         border-radius: var(--radius-field); border: 1px solid var(--border-field);
         background: var(--surface-sunken);
       }
+    
+      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla.
+         Cuando se abre la vista previa, la casilla ocupa toda la lista y el
+         marco del correo toma el alto que sobra, sin desbordar. */
+      .casilla { display: flex; flex-direction: column; justify-content: center; }
+      .casilla > .correo { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
+      .casilla--abierta { flex-basis: 100% !important; }
+      .casilla > .correo--abierto { max-height: 100%; justify-content: flex-start; min-height: 0; }
+      .correo--abierto .correo__vista { flex: 1 1 0; height: auto; min-height: 0; }
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
     `,
   ],
 })

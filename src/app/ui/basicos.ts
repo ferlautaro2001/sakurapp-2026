@@ -479,9 +479,9 @@ export interface DatoFicha {
 
         <div class="lm-modal__acciones" [class.lm-modal__acciones--unica]="!conCancelar()">
           @if (conCancelar()) {
-            <lm-boton variante="ghost" (presionar)="cancelar.emit()">{{ rotuloCancelar() }}</lm-boton>
+            <lm-boton variante="ghost" icono="close" (presionar)="cancelar.emit()">{{ rotuloCancelar() }}</lm-boton>
           }
-          <lm-boton [variante]="varianteConfirmar()" [icono]="icono()" (presionar)="confirmar.emit()">
+          <lm-boton [variante]="varianteConfirmar()" icono="check" (presionar)="confirmar.emit()">
             {{ rotuloConfirmar() }}
           </lm-boton>
         </div>

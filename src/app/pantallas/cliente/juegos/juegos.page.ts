@@ -31,13 +31,12 @@ interface Minijuego {
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo
-          bajada="Mientras esperás la mesa o tu pedido, jugá y divertite"
           >Juegos</lm-titulo
         >
 
-        <div class="lista">
+        <div class="lista lm-lista-fija">
           @for (juego of juegos; track juego.id) {
           <button
             type="button"
@@ -49,7 +48,7 @@ interface Minijuego {
             <span class="juego__icono" aria-hidden="true">
               <lm-icono
                 [nombre]="juego.icono"
-                [tamano]="44"
+                [tamano]="72"
                 color="var(--action-primary)"
               />
             </span>
@@ -88,7 +87,6 @@ interface Minijuego {
             </span>
           </button>
           }
-        </div>
 
         <!--
           El premio no es obvio y no se puede deshacer: se juega una sola vez
@@ -96,21 +94,31 @@ interface Minijuego {
           alguien queme el intento sin saberlo, y aclara lo otro que no se
           adivina: que después puede seguir jugando igual.
         -->
+        <!-- El @if hace que Angular cree esta tarjeta después de las de los
+             juegos: si naciera antes, el navegador la recordaría como la
+             tarjeta "actual" del snap y abriría la pantalla en la última. -->
+        @if (juegos.length) {
         <section class="dto">
-          <span class="dto__titulo">
+          <span class="dto__icono" aria-hidden="true">
             <lm-icono
               nombre="redeem"
-              [tamano]="20"
+              [tamano]="72"
               color="var(--state-success)"
             />
-            Cómo funciona el descuento
           </span>
+          @if (intentoUsado() && descuentoGanado() > 0) {
+          <span class="dto__titulo dto__titulo--ganado"
+            >¡Ganaste tu {{ descuentoGanado() }}% de descuento!</span
+          >
+          } @else {
+          <span class="dto__titulo">Cómo funciona el descuento</span>
+          }
 
           @if (intentoUsado()) { @if (descuentoGanado() > 0) {
           <p class="dto__texto">
-            Ya ganaste tu <b>{{ descuentoGanado() }}%</b> y está aplicado en el
-            total de tu compra. El intento de este pedido está usado, así que
-            seguí jugando las veces que quieras: ahora es sólo por diversión.
+            Ya está aplicado en el total de tu compra. El intento de este pedido
+            está usado, así que seguí jugando las veces que quieras: ahora es
+            sólo por diversión.
           </p>
           } @else {
           <p class="dto__texto">
@@ -141,6 +149,8 @@ interface Minijuego {
           </span>
           } }
         </section>
+        }
+        </div>
       </div>
 
       <lm-barra-inferior [items]="secciones()" activo="juegos" />
@@ -170,7 +180,7 @@ interface Minijuego {
         align-items: center;
         column-gap: var(--space-3);
         row-gap: var(--space-3);
-        min-height: clamp(132px, 42vw, 166px);
+        min-height: clamp(132px, 20dvh, 190px);
         padding: var(--space-6) var(--space-4) var(--space-5) var(--space-3);
         text-align: left;
         width: 100%;
@@ -337,6 +347,78 @@ interface Minijuego {
         font: 500 clamp(11px, 2.9vw, 12px)/1.4 var(--font-text);
         color: var(--text-muted);
       }
+
+      /* Un juego por pantalla, centrado: la lista (lm-lista-fija) mide el alto
+         que sobra y cada juego mide exactamente eso. El disco, el nombre y los
+         textos crecen con el alto disponible para no dejar huecos. */
+      .lista { gap: var(--space-3); overflow-anchor: none; }
+      .lista .juego {
+        display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
+        text-align: center; min-height: 0; height: 100%;
+        padding: var(--space-5) var(--space-4);
+        background: var(--surface-card-degradado);
+      }
+      .lista .juego__icono {
+        /* Círculo perfecto: la proporción 1:1 manda y el disco no crece ni se
+           encoge en la columna (antes el alto se estiraba y salía un óvalo). */
+        order: 1; width: clamp(88px, 17dvh, 150px); height: auto; aspect-ratio: 1 / 1;
+        flex: 0 0 auto; align-self: center; min-height: 0; max-height: none;
+      }
+      .lista .juego__texto { order: 2; align-items: center; gap: var(--space-3); }
+      .lista .juego__nombre { font: var(--type-title-xl); }
+      .lista .juego__bajada { font: var(--type-body); text-wrap: balance; }
+      .lista .juego__etiquetas { order: 3; justify-content: center; align-items: center; align-content: center; flex: 0 0 auto; height: auto; }
+      .lista .juego__etiqueta { flex: 0 0 auto; height: auto; }
+      .lista .juego__etiqueta { font: var(--type-body-small); font-weight: 700; padding: 7px 12px; }
+      /* Mismo contorno de vidrio que los botones de ícono, en rosa claro porque
+         van sobre la tarjeta: borde fino, brillo interior y sombra suave. */
+      .lista .juego__etiqueta {
+        border-radius: 14px; gap: 6px; color: var(--action-primary);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 215, 223, 0.8) 100%);
+        border: 1.5px solid rgba(255, 79, 139, 0.45);
+        box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, 0.14);
+      }
+      .lista .juego__accion { order: 4; padding: 0; align-self: center; }
+      /* Mismo vidrio que los botones de ícono, pero en rosa fuerte y oscuro
+         y todavía traslúcido: forma amplia, contorno claro, brillo interior. */
+      .lista .juego__ir {
+        width: clamp(52px, 8dvh, 68px); height: clamp(52px, 8dvh, 68px);
+        border-radius: 22px; color: #fff;
+        background: linear-gradient(180deg, rgba(226, 48, 108, 0.82) 0%, rgba(168, 28, 78, 0.74) 100%);
+        border: 1.5px solid rgba(255, 255, 255, 0.5);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.5),
+          inset 0 -6px 12px rgba(94, 12, 44, 0.18),
+          0 6px 14px rgba(94, 12, 44, 0.3);
+        -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      }
+      /* "Cómo funciona el descuento" es la última tarjeta de la lista: ocupa
+         la pantalla igual que un juego, y si el texto es más largo se desplaza
+         por dentro sin soltar el anclaje. */
+      .lista .dto {
+        height: 100%; justify-content: center; gap: var(--space-4);
+        overflow-y: auto; padding: var(--space-5);
+        background: var(--surface-card-degradado);
+      }
+      /* El ícono es el mismo disco que el de los juegos: círculo perfecto del
+         mismo tamaño, y la información va debajo, centrada y más grande. */
+      .dto__icono {
+        flex: 0 0 auto; align-self: center; display: grid; place-items: center;
+        width: clamp(88px, 17dvh, 150px); height: auto; aspect-ratio: 1 / 1;
+        border-radius: 50%;
+        background: radial-gradient(circle at 32% 22%, #f2fff8 0%, #cdf1de 52%, #8fd5b0 100%);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 8px 18px rgba(27, 122, 76, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.9);
+      }
+      .dto__icono lm-icono { filter: drop-shadow(0 2px 2px rgba(10, 100, 60, 0.18)); }
+      .lista .dto { align-items: center; text-align: center; justify-content: safe center; gap: var(--space-3); padding: var(--space-4); }
+      .lista .dto__titulo { font: var(--type-title); text-align: center; text-wrap: balance; }
+      .lista .dto__titulo--ganado { color: var(--state-success); }
+      .lista .dto__texto { font: 500 clamp(14.5px, 3.9vw, 17px)/1.4 var(--font-text); text-align: center; text-wrap: pretty; }
+      .lista .dto__premios { justify-content: center; gap: 8px; }
+      .lista .dto__premio { font: 700 clamp(13px, 3.5vw, 15.5px)/1.2 var(--font-text); padding: 6px 12px; }
+      .lista .dto__premio b { font-size: clamp(14.5px, 4vw, 18px); }
+      .lista .dto__nota { font: 500 clamp(13px, 3.5vw, 15px)/1.35 var(--font-text); text-align: left; }
     `,
   ],
 })

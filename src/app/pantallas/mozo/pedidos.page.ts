@@ -15,13 +15,13 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Pedidos</lm-titulo>
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="visibles().length">Pedidos</lm-titulo>
 
         <lm-pestanas [opciones]="pestanas" [valor]="bandeja()" (cambiar)="bandeja.set($any($event))" />
 
         @if (visibles().length) {
-          <div class="lm-list">
+          <div class="lm-lista-libre">
             @for (pedido of visibles(); track pedido.id) {
               <lm-fila-pedido
                 [pedido]="pedido"
@@ -63,11 +63,6 @@ export class MozoPedidosPage extends PaginaDeComandas {
     );
   });
 
-  protected bajada(): string {
-    return this.bandeja() === 'REVISAR'
-      ? 'Confirmá el pedido o devolvelo con un motivo para que lo modifique el cliente'
-      : 'Pedidos ya derivados a la cocina y a la barra';
-  }
 
   protected tituloVacio(): string {
     return this.bandeja() === 'REVISAR' ? 'No hay pedidos para revisar' : 'No hay pedidos en curso';

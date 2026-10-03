@@ -46,20 +46,20 @@ import {
           </lm-banner>
         }
 
-        <lm-foto
-          [fuente]="foto()"
-          [tamano]="124"
-          etiqueta="Foto con cámara"
-          [error]="errorFoto()"
-          (capturar)="tomarFoto()"
-        />
-
-        <lm-tarjeta-escaneo
-          titulo="Escanear el código del documento"
-          ayuda="Es más rápido que escribir todo"
-          [escaneando]="escaneando()"
-          (escanear)="escanearDocumento()"
-        />
+        <div class="lm-fila-doc">
+          <lm-foto
+            [fuente]="foto()"
+            [tamano]="124"
+            etiqueta="Tomar foto"
+            [error]="errorFoto()"
+            (capturar)="tomarFoto()"
+          />
+          <lm-tarjeta-escaneo
+            titulo="Escanear documento"
+            [escaneando]="escaneando()"
+            (escanear)="escanearDocumento()"
+          />
+        </div>
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
         <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
@@ -78,7 +78,6 @@ import {
           marcador="20-44225858-9"
           modo="numeric"
           [largoMaximo]="13"
-          ayuda="Lo completamos solos al escanear el documento"
         />
         <lm-campo
           [control]="formulario.controls.email"
@@ -87,7 +86,6 @@ import {
           modo="email"
           etiqueta="Correo electrónico"
           marcador="sofia@correo.com.ar"
-          ayuda="Ahí te avisamos si tu cuenta quedó aprobada o rechazada"
         />
         <lm-campo
           [control]="formulario.controls.clave"

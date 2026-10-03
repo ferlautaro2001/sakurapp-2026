@@ -10,6 +10,7 @@ import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
 import {
   clave,
+  clavesIguales,
   correoElectronico,
   cuil,
   documento,
@@ -75,15 +76,16 @@ import {
             </lm-banner>
           }
 
-          <lm-tarjeta-escaneo [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-
-          <lm-foto
-            [fuente]="foto()"
-            [tamano]="120"
-            etiqueta="Foto con cámara"
-            [error]="errorFoto()"
-            (capturar)="tomarFoto()"
-          />
+          <div class="lm-fila-doc">
+            <lm-foto
+              [fuente]="foto()"
+              [tamano]="120"
+              etiqueta="Tomar foto"
+              [error]="errorFoto()"
+              (capturar)="tomarFoto()"
+            />
+            <lm-tarjeta-escaneo [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+          </div>
 
           <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
           <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
@@ -118,6 +120,14 @@ import {
             etiqueta="Contraseña"
             marcador="Mínimo ocho caracteres"
           />
+          <lm-campo
+            [control]="formulario.controls.repeticion"
+            icono="lock_reset"
+            tipo="password"
+            etiqueta="Confirmar contraseña"
+            marcador="Repetí la contraseña"
+            tecla="done"
+          />
 
           <lm-segmentado
             etiqueta="Perfil"
@@ -128,9 +138,9 @@ import {
           />
         </div>
 
-        <div class="lm-actionbar">
+        <div class="lm-actionbar acciones-par">
+          <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
           <lm-boton icono="check" (presionar)="guardar()">Dar de alta</lm-boton>
-          <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
         </div>
       }
     </div>
@@ -141,6 +151,10 @@ import {
       .persona { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4); }
       .persona__nombre { font: var(--type-card-title); color: var(--text-title); }
       .persona__meta { font: var(--type-caption); color: var(--text-muted); margin-bottom: 6px; }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
     `,
   ],
 })
@@ -168,7 +182,8 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     cuil: ['', [requerido('Escribí el CUIL'), cuil()]],
     email: ['', [requerido('Escribí el correo electrónico'), correoElectronico()]],
     clave: ['', [requerido('Elegí una contraseña'), clave()]],
-  });
+    repeticion: ['', [requerido('Repetí la contraseña')]],
+  }, { validators: [clavesIguales('clave', 'repeticion')] });
 
   protected rotuloPerfil(perfil: Perfil): string {
     return ROTULO_PERFIL[perfil];

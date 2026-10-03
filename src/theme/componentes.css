@@ -1842,3 +1842,1415 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 
 /* Las dos acciones de la fila de espera: asignar mesa y sacar de la lista. */
 .lm-wait__acciones { display: flex; align-items: center; gap: 2px; flex: 0 0 auto; }
+
+
+/* =========================================================================
+   Revisión móvil · snap, zonas seguras y distribución
+   -------------------------------------------------------------------------
+   Pautas de la cátedra: un listado nunca corta un elemento por la mitad
+   (entra uno por pantalla, o n enteros) y los textos y botones se reparten
+   el espacio disponible. Sólo estilos: ninguna pantalla cambia de flujo.
+   ========================================================================= */
+
+/* ---------- scroll snap ("magnético") ----------
+   `proximity` en general: el desplazamiento se acomoda al elemento cercano
+   pero un formulario largo no se vuelve incómodo. Donde hay una lista de
+   tarjetas pasa a `mandatory`, así ninguna queda cortada a la mitad.
+   `scroll-padding` deja el lugar de la barra de acción y de la zona segura. */
+.lm-body {
+  scroll-snap-type: y proximity;
+  scroll-padding: var(--space-3) 0 calc(var(--space-6) + var(--safe-bottom));
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+.lm-body:has(.lm-list, .lm-snap, .equipo__lista, .mesas-grilla, .lista-carrito, .lista, .items, .tablero) {
+  scroll-snap-type: y mandatory;
+}
+.lm-body > *,
+.lm-list > *,
+.lm-snap > *,
+.equipo__lista > *,
+.mesas-grilla > *,
+.lista-carrito > *,
+.lista > *,
+.items > *,
+.tablero > * {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+/* El contenedor de la lista no es un punto de anclaje: lo son sus tarjetas. */
+.lm-body > .lm-list,
+.lm-body > .lm-snap,
+.lm-body > .lista,
+.lm-body > .items,
+.lm-body > .tablero { scroll-snap-align: none; }
+/* Un campo enfocado nunca queda pegado al borde ni detrás del teclado. */
+.lm-field, lm-campo, lm-area { scroll-margin-block: var(--space-6); }
+
+/* Filas horizontales (filtros, pestañas, carruseles): también se acomodan. */
+.lm-tabs { scroll-snap-type: x proximity; }
+.lm-tabs > * { scroll-snap-align: center; }
+
+/* ---------- zonas seguras ----------
+   `max()` y no suma: en un equipo sin barra de gestos queda el margen de
+   diseño, y en uno con barra el margen es la barra misma. */
+.lm-actionbar { padding-bottom: max(var(--space-4), var(--safe-bottom)); }
+.lm-bottomnav { padding-bottom: max(6px, var(--safe-bottom)); }
+.lm-header { padding-top: max(6px, var(--safe-top)); }
+
+/* ---------- acción principal: aprovecha el alto disponible ----------
+   El botón de la barra de acción crece con la altura de la pantalla (en un
+   celular alto sobra espacio) sin pasar de un tamaño cómodo. */
+.lm-actionbar > .lm-btn,
+.lm-actionbar > lm-boton .lm-btn {
+  min-height: clamp(52px, 8dvh, 68px);
+  font-size: clamp(16px, 4.4vw, 19px);
+}
+
+/* ---------- foto y escaneo del documento en la misma fila ---------- */
+.lm-fila-doc {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: stretch;
+}
+.lm-fila-doc > * { display: flex; min-width: 0; }
+.lm-fila-doc > lm-foto > .lm-photo,
+.lm-fila-doc > lm-tarjeta-escaneo > .lm-qrscan { width: 100%; }
+.lm-fila-doc .lm-photo {
+  justify-content: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, .12);
+}
+/* El pie de la foto es corto y entra en la mitad de la fila. */
+.lm-fila-doc .lm-photo__pie { padding-inline: var(--space-3); font-size: clamp(12.5px, 3.3vw, 14px); text-align: center; }
+
+/* Mosaico de escaneo: cuadrado, un ícono grande y un rótulo corto. */
+.lm-qrscan {
+  flex-direction: column; justify-content: center; text-align: center;
+  gap: var(--space-3); padding: var(--space-3);
+}
+.lm-qrscan__icono {
+  width: clamp(56px, 18vw, 76px); height: clamp(56px, 18vw, 76px);
+  border-radius: var(--radius-card);
+}
+.lm-qrscan__texto { flex: 0 0 auto; width: 100%; }
+.lm-qrscan__texto b { font: var(--type-card-title); text-align: center; }
+
+/* ---------- mesas: la foto se ve entera ----------
+   Se quitó el recorte elíptico y el alto fijo que cortaba la imagen: la foto
+   conserva una proporción 4:3 y ocupa todo el ancho de la tarjeta. */
+.lm-mesa__foto {
+  height: auto;
+  flex: 0 0 auto;
+  aspect-ratio: 4 / 3;
+}
+.lm-mesa__imagen { clip-path: none; }
+
+/* ---------- ventana de confirmación: ✕ y ✓ ----------
+   Dos botones grandes del mismo tamaño, con el símbolo como protagonista. */
+.lm-modal__acciones { gap: var(--space-3); }
+.lm-modal__acciones .lm-btn {
+  min-height: clamp(52px, 8dvh, 64px);
+  flex-direction: column; gap: 2px;
+  font-size: clamp(13px, 3.5vw, 15px);
+}
+.lm-modal__acciones .lm-btn .material-symbols-rounded { font-size: 26px !important; }
+.lm-fila-doc > lm-tarjeta-escaneo > .lm-qrscan { height: 100%; }
+
+/* ---------- botón de texto: siempre se lee como botón ----------
+   Antes era texto suelto del mismo color que el fondo. Ahora lleva relleno
+   translúcido y borde, con el contraste de un botón secundario. */
+.lm-textbtn {
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(255, 255, 255, .16);
+  border: 2px solid rgba(255, 255, 255, .62);
+  border-radius: var(--radius-button);
+  color: var(--text-sobre-fondo);
+  font-weight: 700;
+  text-decoration: none;
+  padding: 0 var(--space-4);
+}
+.lm-textbtn:active { background: rgba(255, 255, 255, .28); }
+.lm-textbtn--high { background: rgba(255, 255, 255, .26); border-color: var(--text-sobre-fondo); text-decoration: none; }
+.lm-textbtn--danger { background: rgba(110, 18, 52, .34); border-color: #FFD3CC; color: #FFFFFF; }
+.lm-textbtn--sobre-oscuro { color: var(--sk-nieve); border-color: rgba(253, 236, 239, .6); }
+.lm-card .lm-textbtn, .lm-modal .lm-textbtn {
+  background: var(--surface-sunken); border-color: var(--border-field); color: var(--action-primary);
+}
+.lm-card .lm-textbtn--danger, .lm-modal .lm-textbtn--danger {
+  background: var(--state-error-surface); border-color: transparent; color: var(--state-error);
+}
+.visor .lm-textbtn { background: rgba(20, 4, 10, .5); border-color: rgba(255, 255, 255, .7); }
+
+/* ---------- tarjeta de mesa · rediseño ----------
+   La foto ocupa toda la tarjeta y los datos van encima, sobre un degradado
+   ciruela: ya no es un bloque blanco con una foto arriba. El número y el tipo
+   quedan arriba; nombre, personas, atajos y estado, abajo. */
+.lm-mesa {
+  position: relative;
+  isolation: isolate;
+  min-height: 0;
+  height: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--gradiente-marca);
+  color: #FFFFFF;
+  justify-content: flex-end;
+}
+.lm-mesa__foto {
+  position: absolute; inset: 0; z-index: 0;
+  height: auto; aspect-ratio: auto; flex: none;
+  background: transparent;
+}
+.lm-mesa__imagen--sinfoto { background: var(--gradiente-marca); }
+.lm-mesa__foto--sinfoto::after, .lm-mesa__imagen--sinfoto + .lm-mesa__tipo { opacity: 1; }
+.lm-mesa__foto::before {
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(110, 18, 52, .34) 0%, rgba(110, 18, 52, 0) 28%, rgba(110, 18, 52, .5) 52%, rgba(94, 12, 44, .96) 100%);
+}
+.lm-mesa__numero {
+  top: var(--space-3); bottom: auto; left: var(--space-3);
+  background: rgba(255, 255, 255, .94); color: var(--action-primary);
+  border-radius: 14px; box-shadow: 0 4px 12px rgba(59, 8, 27, .3);
+}
+.lm-mesa__tipo { top: var(--space-3); right: var(--space-3); max-width: calc(100% - 2 * var(--space-3) - clamp(40px, 12.1vw, 52px) - 6px); }
+.lm-mesa__cuerpo {
+  position: relative; z-index: 2;
+  flex: 0 0 auto;
+  padding: var(--space-3);
+  background: transparent;
+  gap: var(--space-2);
+}
+.lm-mesa__cabecera { align-items: flex-end; }
+.lm-mesa__rotulo { color: #FFFFFF; font: 900 clamp(17px, 5vw, 21px)/1.1 var(--font-display); text-shadow: 0 1px 6px rgba(59, 8, 27, .5); }
+.lm-mesa__meta { color: rgba(255, 255, 255, .92); }
+.lm-mesa__acciones { flex-direction: row; gap: 6px; }
+.lm-mesa__accion {
+  width: clamp(36px, 10.5vw, 42px); height: clamp(36px, 10.5vw, 42px);
+  color: #FFFFFF; background: rgba(255, 255, 255, .22);
+  backdrop-filter: blur(4px);
+}
+.lm-mesa__accion--editar { background: var(--action-primary); box-shadow: 0 2px 8px rgba(59, 8, 27, .4); }
+.lm-mesa__estado { width: 100%; justify-content: center; font-weight: 800; }
+.lm-mesa__estado--vacia { color: #0E6B45; background: #CFF3E1; }
+.lm-mesa__estado--ocupada { color: #FFFFFF; background: var(--sk-coral-hondo); }
+.lm-mesa__estado--inactiva { color: #FFFFFF; background: rgba(255, 255, 255, .26); }
+.lm-mesa__cabecera { flex-wrap: wrap; row-gap: var(--space-2); align-items: flex-end; }
+.lm-mesa__datos { flex: 1 1 auto; }
+.lm-mesa__meta { white-space: nowrap; overflow-wrap: normal; }
+.lm-mesa__acciones { margin-left: auto; }
+.lm-mesa__numero { width: clamp(34px, 10.5vw, 44px); height: clamp(34px, 10.5vw, 44px); border-radius: 12px; font-size: clamp(15px, 4.6vw, 20px); }
+.lm-mesa__tipo { max-width: calc(100% - 2 * var(--space-3) - clamp(34px, 10.5vw, 44px) - 6px); padding: 5px 9px; }
+
+
+/* =========================================================================
+   Pautas de cátedra · listados y distribución (refuerzo global)
+   ========================================================================= */
+
+/* ---------- listados: ningún elemento se corta ----------
+   Toda tarjeta de lista mide como mínimo lo que mide su contenido, no se
+   encoge dentro del cuerpo y es un punto de anclaje del snap. */
+.lm-list > *,
+.lm-body > .ticket,
+.lm-body > .lm-card,
+.lm-body > .lm-pending,
+.lm-body > .lm-stat {
+  min-height: min-content;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
+.lm-pending, .lm-product, .lm-wait, .ticket, .pedido, .lm-card { min-height: min-content; }
+/* Cuerpos con tickets de comanda: también se acomodan entero a entero. */
+.lm-body:has(.ticket, lm-fila-pedido, lm-fila-pendiente, lm-fila-producto, lm-fila-espera, lm-renglon-pedido, lm-tarjeta-perfil) {
+  scroll-snap-type: y mandatory;
+}
+/* Un listado largo deja asomar el final de la tarjeta de abajo sólo si cabe
+   entera: el remate de la lista reserva el hueco de la barra de acción. */
+.lm-list { padding-bottom: 2px; }
+
+/* ---------- distribución: el espacio se reparte, no se desperdicia ----------
+   Las acciones dentro de una tarjeta de comanda crecen con el alto de la
+   pantalla, como la acción principal de la pauta "Comprar". */
+.ticket__pie .lm-btn,
+.pedido__acciones .lm-btn,
+.lm-pending__acciones .lm-btn {
+  min-height: clamp(48px, 7dvh, 60px);
+  font-size: clamp(15px, 4vw, 17px);
+}
+.ticket__pie lm-boton, .pedido__acciones lm-boton { width: 100%; }
+
+/* Estado vacío: llena el alto disponible y su contenido escala con él. */
+.lm-empty { min-height: min(100%, 60dvh); }
+.lm-empty__icono { width: clamp(68px, 13dvh, 120px); height: clamp(68px, 13dvh, 120px); }
+.lm-empty__titulo { font-size: clamp(18px, 5.2vw, 24px); }
+.lm-empty__texto { font-size: clamp(14px, 3.9vw, 17px); max-width: min(100%, 340px); }
+
+/* Pestañas y filtros: área táctil cómoda y letra fluida. */
+.lm-tabs button { min-height: var(--touch-min); font-size: clamp(13px, 3.6vw, 15px); }
+.lm-filter { font-size: clamp(13px, 3.6vw, 15px); }
+
+/* En pantallas bajas (320×568) el aire vertical se cede antes que el contenido. */
+@media (max-height: 640px) {
+  .lm-body { gap: var(--space-3); }
+  .lm-actionbar { padding-top: var(--space-2); }
+  .lm-actionbar > .lm-btn, .lm-actionbar > lm-boton .lm-btn { min-height: 52px; }
+}
+
+/* ---------- carta: un producto por pantalla ----------
+   El encabezado (título, pestañas, buscador) queda fijo y sólo se desplaza la
+   lista, que tiene el alto restante. Cada producto mide exactamente ese alto y
+   se ancla entero: nunca asoma el siguiente ni se corta el actual. La foto es
+   cuadrada y absorbe el alto que sobra; el nombre se muestra completo. */
+.carta > * { flex: 0 0 auto; }
+.carta > .carta__lista, .carta > lm-vacio { flex: 1 1 0; min-height: 0; }
+.carta__lista {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  scroll-snap-type: y mandatory;
+  scroll-padding: 0;
+}
+.carta__lista::-webkit-scrollbar { display: none; }
+.carta__lista > lm-fila-producto {
+  flex: 0 0 100%; display: flex; min-height: 0;
+  scroll-snap-align: start; scroll-snap-stop: always;
+}
+.carta__lista .lm-product-fila {
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  border-radius: var(--radius-card); overflow: hidden;
+  background: var(--surface-card); box-shadow: var(--shadow-card);
+}
+.carta__lista .lm-product {
+  flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; align-items: center;
+  gap: var(--space-3); padding: var(--space-3) var(--space-3) var(--space-2);
+  background: transparent; border: none; box-shadow: none; border-radius: 0; text-align: center;
+}
+.carta__lista .lm-product::after, .carta__lista .lm-product__ir, .carta__lista .lm-product__desc { display: none; }
+.carta__lista .lm-product__thumb {
+  flex: 1 1 0; min-height: 64px; width: auto; height: auto; aspect-ratio: 1 / 1;
+  max-width: 100%; align-self: center; border-radius: var(--radius-card);
+}
+.carta__lista .lm-product__datos { flex: 0 0 auto; width: 100%; align-items: center; gap: var(--space-2); }
+.carta__lista .lm-product__nombre { justify-content: center; flex-wrap: wrap; font-size: clamp(17px, 5vw, 21px); }
+.carta__lista .lm-product__nombre-texto { overflow: visible; text-overflow: clip; white-space: normal; text-wrap: balance; }
+.carta__lista .lm-product__pie { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin: 0; }
+.carta__lista .lm-product-fila--carrito .lm-product__carrito { width: 100%; flex-direction: row; justify-content: space-between; padding: 0 var(--space-3) var(--space-3); }
+.carta__lista .lm-product-fila--carrito { flex-direction: column; align-items: stretch; }
+
+/* ---------- pestañas y segmentado: la pastilla se desliza ----------
+   Una sola pastilla viaja de una opción a otra (efecto de barrido). Las
+   opciones miden lo mismo, así que la posición sale de `--i` y `--n` sin
+   medir nada. Los botones pierden su pastilla propia. */
+.lm-tabs { position: relative; }
+.lm-tabs button::before { display: none; }
+.lm-tabs button { z-index: 1; }
+.lm-tabs__marca {
+  position: absolute; top: 3px; bottom: 3px; left: 3px; z-index: 0;
+  width: calc((100% - 6px - (var(--n, 1) - 1) * 2px) / var(--n, 1));
+  border-radius: var(--radius-pill); background: var(--surface-card);
+  box-shadow: 0 2px 8px rgba(59, 8, 27, .22);
+  transform: translateX(calc(var(--i, 0) * 100% + var(--i, 0) * 2px));
+  transition: transform var(--dur-slow) var(--ease-out-soft);
+}
+
+.lm-segmented--desliza { position: relative; }
+.lm-segmented--desliza button::before { display: none; }
+.lm-segmented--desliza button { z-index: 1; }
+.lm-segmented__marca { display: none; }
+.lm-segmented--desliza > .lm-segmented__marca {
+  display: block; position: absolute; top: 4px; bottom: 4px; left: 4px; z-index: 0;
+  width: calc((100% - 8px - (var(--n, 1) - 1) * 4px) / var(--n, 1));
+  border-radius: 10px; background: var(--action-primary);
+  transform: translateX(calc(var(--i, 0) * 100% + var(--i, 0) * 4px));
+  transition: transform var(--dur-slow) var(--ease-out-soft);
+}
+@media (prefers-reduced-motion: reduce) {
+  .lm-tabs__marca, .lm-segmented__marca { transition: none !important; }
+}
+
+/* Barrido con rebote: la pastilla se pasa un poco del destino y vuelve. La
+   curva tiene un tramo mayor a 1 (sobrepaso) y la duración es más larga para
+   que el movimiento se note suave. */
+.lm-tabs__marca, .lm-segmented--desliza > .lm-segmented__marca {
+  transition: transform 520ms cubic-bezier(.34, 1.45, .5, 1);
+}
+
+/* El rebote hace que la pastilla se pase unos píxeles del borde de la barra.
+   Con `overflow-x: auto` ese sobrante habilitaba desplazamiento y empujaba los
+   rótulos de lado mientras corría el efecto. `clip` lo recorta sin crear un
+   contenedor desplazable: las opciones miden lo mismo y siempre entran. */
+.lm-tabs { overflow: clip; }
+.lm-segmented--desliza { overflow: clip; }
+.lm-tabs button, .lm-segmented--desliza button { transform: none; will-change: auto; }
+
+/* Segmentado sin opción activa: la pastilla se esconde, sin perder su lugar. */
+.lm-segmented--desliza.lm-segmented--sin > .lm-segmented__marca { opacity: 0; }
+.lm-segmented--desliza > .lm-segmented__marca { transition: transform 520ms cubic-bezier(.34, 1.45, .5, 1), opacity var(--dur-base) var(--ease-standard); }
+
+/* ---------- tarjetas con el degradado de la carta ----------
+   Ninguna tarjeta queda en blanco liso: todas llevan el degradado rosa de las
+   tarjetas del menú. Va como `background-image` sobre el color de base, y con
+   `!important` porque muchas pantallas declaran su propia tarjeta en estilos
+   del componente, que de otro modo ganarían por especificidad. */
+.lm-card, .lm-stat, .lm-pending, .lm-wait, .lm-empty, .lm-qrplate, .lm-profile,
+.lm-resumen, .renglon, .pedido, .ticket, .item-carrito, .dato-card,
+.producto-estado, .producto-cantidad, .turno, button.sala, .marcador, .modal-exito,
+.sk-grafico, .lm-modal, .lm-product-fila--carrito, .carta__lista .lm-product-fila,
+.lm-toggle, .lm-banner--info, .lm-push, .lm-qrscan:not(.lm-qrscan--scanning),
+.lm-photo__marco:not(.lm-photo__marco--cargada) {
+  background-image: var(--surface-card-degradado) !important;
+}
+
+/* ---------- patrón compartido: una tarjeta por pantalla, centrada ----------
+   Uso (sólo HTML):
+     <div class="lm-body lm-body--gap12 lm-body--pantalla">
+       <lm-titulo>…</lm-titulo>            ← lo fijo (título, filtros, buscador)
+       <div class="lm-lista-uno">          ← lo único que se desplaza
+         <lo-que-sea-una-tarjeta/> …
+       </div>
+     </div>
+   La lista mide el alto que sobra y cada hija mide exactamente ese alto: el
+   usuario desplaza libre y, al soltar, la tarjeta más cercana se centra sola
+   (`scroll-snap-type: y mandatory` + `scroll-snap-align: center`). Nunca asoma
+   la siguiente ni se corta la actual. Para listas densas (filas de ~100px) se
+   usa `.lm-lista-n` en vez de ésta: varias filas enteras por pantalla. */
+.lm-body--pantalla { overflow: hidden; }
+.lm-body--pantalla > * { flex: 0 0 auto; }
+.lm-body--pantalla > .lm-lista-uno,
+.lm-body--pantalla > .lm-lista-n,
+.lm-body--pantalla > .lm-lista-fija,
+.lm-body--pantalla > lm-vacio { flex: 1 1 0; min-height: 0; }
+.lm-lista-uno, .lm-lista-n, .lm-lista-fija {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  scroll-snap-type: y mandatory; scroll-padding: 0; overflow-anchor: none;
+  -webkit-overflow-scrolling: touch;
+}
+.lm-lista-uno::-webkit-scrollbar, .lm-lista-n::-webkit-scrollbar, .lm-lista-fija::-webkit-scrollbar { display: none; }
+
+/* ---------- listas por tandas (reemplaza el criterio anterior) ----------
+   Una sola tarjeta no tiene por qué ocupar toda la pantalla. La cantidad por
+   tanda depende de cuántos elementos hay:
+     · `.lm-lista-uno` (tarjetas grandes): 1–2 elementos → de a uno; 3 o más → de a dos.
+     · `.lm-lista-n`   (filas densas):      1–2 → de a uno; 3–4 → de a dos; 5 o más → de a tres.
+     · `.lm-lista-fija`: siempre de a uno (juegos, carta).
+   Cada hija mide exactamente `(alto − separaciones) / por`, así la tanda entra
+   entera y nunca se corta nada; el snap ancla cada elemento al tope (`start`),
+   de modo que el último tramo muestra las últimas tarjetas enteras. */
+.lm-lista-uno, .lm-lista-n, .lm-lista-fija { --por: 1; }
+.lm-lista-uno:has(> :nth-child(3)) { --por: 2; }
+.lm-lista-n:has(> :nth-child(3)) { --por: 2; }
+.lm-lista-n:has(> :nth-child(5)) { --por: 3; }
+.lm-lista-uno > *, .lm-lista-n > *, .lm-lista-fija > * {
+  flex: 0 0 calc((100% - (var(--por) - 1) * var(--space-3)) / var(--por));
+  /* Si el contenido es más alto que su casilla la casilla crece: nunca se corta
+     ni se superpone con la siguiente. */
+  min-height: min-content; display: flex; flex-direction: column; justify-content: center;
+  scroll-snap-align: start; scroll-snap-stop: normal;
+}
+.lm-lista-fija > * { scroll-snap-stop: always; }
+/* Las tarjetas grandes (lista-uno/fija) se estiran al alto de su casilla; las
+   filas densas (lista-n) conservan su alto natural y quedan centradas. */
+.lm-lista-uno > * > *, .lm-lista-fija > * > * { flex: 1 1 auto; }
+
+/* ---------- tarjeta de mesa en casilla de lista (ancho completo, ~225px) ----------
+   En una tanda de dos, la mesa es una tarjeta apaisada: la foto es el fondo, el
+   nombre y la cantidad van a la izquierda abajo, los atajos y el estado a la
+   derecha. En grilla de dos columnas conserva la proporción vertical. */
+.lm-lista-uno lm-tarjeta-mesa, .lm-lista-fija lm-tarjeta-mesa { display: block; height: 100%; }
+.lm-lista-uno .lm-mesa, .lm-lista-fija .lm-mesa { aspect-ratio: auto; height: 100%; min-height: 150px; }
+.lm-lista-uno .lm-mesa__cuerpo, .lm-lista-fija .lm-mesa__cuerpo {
+  flex-direction: row; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: var(--space-2) var(--space-3);
+}
+.lm-lista-uno .lm-mesa__cabecera, .lm-lista-fija .lm-mesa__cabecera {
+  flex: 1 1 auto; flex-wrap: nowrap; align-items: flex-end; row-gap: 0; min-width: 0;
+}
+.lm-lista-uno .lm-mesa__estado, .lm-lista-fija .lm-mesa__estado { width: auto; flex: 0 0 auto; margin-top: 0; }
+.lm-lista-uno .lm-mesa__numero, .lm-lista-fija .lm-mesa__numero { width: clamp(38px, 11vw, 48px); height: clamp(38px, 11vw, 48px); }
+.lm-lista-uno .lm-mesa__foto::before, .lm-lista-fija .lm-mesa__foto::before {
+  background: linear-gradient(180deg, rgba(110, 18, 52, .3) 0%, rgba(110, 18, 52, 0) 30%, rgba(110, 18, 52, .55) 62%, rgba(94, 12, 44, .95) 100%);
+}
+
+/* Listas de tarjetas de alto variable (tickets, pedidos con renglones): cada
+   una conserva su alto natural y se ancla al tope. No se fuerzan tandas porque
+   una tarjeta puede ser más alta que su casilla. */
+.lm-lista-libre {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  scroll-snap-type: y mandatory; overflow-anchor: none; -webkit-overflow-scrolling: touch;
+}
+.lm-lista-libre::-webkit-scrollbar { display: none; }
+.lm-lista-libre > * { flex: 0 0 auto; scroll-snap-align: start; scroll-snap-stop: normal; }
+.lm-body--pantalla > .lm-lista-libre { flex: 1 1 0; min-height: 0; }
+
+/* Pantallas bajas (≈ 640px o menos de alto útil): menos tarjetas por tanda, para
+   que cada una conserve un tamaño legible y táctil. */
+@media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
+@media (max-height: 640px) {
+  .lm-lista-uno:has(> :nth-child(3)) { --por: 1; }
+  .lm-lista-n:has(> :nth-child(3)) { --por: 1; }
+}
+
+/* ---------- borde de las tarjetas ----------
+   Todas las tarjetas llevan un borde rosa fuerte de 2px (`--borde-tarjeta`).
+   Con `box-sizing: border-box` no cambia su medida. Va con `!important` por la
+   misma razón que el degradado: muchas pantallas declaran `border: none` en
+   los estilos de su componente. */
+.lm-card, .lm-stat, .lm-pending, .lm-wait, .lm-empty, .lm-qrplate, .lm-profile,
+.lm-resumen, .renglon, .pedido, .ticket, .item-carrito, .dato-card,
+.producto-estado, .producto-cantidad, .turno, button.sala, .marcador, .modal-exito,
+.sk-grafico, .lm-modal, .lm-product, .lm-mesa, .lm-product-fila--carrito,
+.carta__lista .lm-product-fila {
+  border: var(--borde-tarjeta) !important;
+}
+/* La tarjeta de producto dentro de una fila con carrito no lleva doble borde. */
+.lm-product-fila--carrito .lm-product,
+.carta__lista .lm-product-fila .lm-product { border: none !important; }
+
+/* ---------- segmentado "vidrio": igual que las pestañas ----------
+   Fondo transparente con borde blanco translúcido, rótulos blancos y la
+   pastilla blanca que se desliza con el texto en rosa. */
+.lm-segmented--vidrio {
+  gap: 2px; padding: 3px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(110deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+  border: 1px solid rgba(255, 255, 255, .38);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10);
+}
+.lm-segmented--vidrio button {
+  border-radius: var(--radius-pill);
+  color: var(--text-sobre-fondo);
+  font: 600 clamp(11.5px, 3.2vw, 14px)/1.2 var(--font-text);
+  text-align: center;
+}
+.lm-segmented--vidrio button.on { color: var(--action-primary); font-weight: 800; }
+.lm-segmented--vidrio.lm-segmented--desliza > .lm-segmented__marca {
+  top: 3px; bottom: 3px; left: 3px;
+  width: calc((100% - 6px - (var(--n, 1) - 1) * 2px) / var(--n, 1));
+  border-radius: var(--radius-pill); background: var(--surface-card);
+  box-shadow: 0 2px 8px rgba(59, 8, 27, .22);
+  transform: translateX(calc(var(--i, 0) * 100% + var(--i, 0) * 2px));
+}
+
+/* Respaldo para WebView sin `:has()` (Android viejos): sin él la cantidad por
+   tanda no se puede deducir del número de elementos y cada tarjeta ocuparía
+   toda la lista. Se fija un valor razonable. */
+@supports not selector(:has(*)) {
+  .lm-lista-uno { --por: 2; }
+  .lm-lista-n { --por: 3; }
+}
+
+/* ---------- botones de ícono: vidrio esmerilado ----------
+   Todos los botones de ícono de la app (volver, cerrar sesión, consultar,
+   agregar…) comparten el aspecto del botón de volver del diseño: una pastilla
+   cuadrada de esquinas amplias, relleno blanco translúcido con brillo suave
+   arriba, contorno claro y fino, y el ícono en blanco y grueso. */
+.lm-iconbtn,
+.lm-iconbtn--primary,
+.lm-iconbtn--claro {
+  border-radius: 17px;
+  color: #FFFFFF;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%);
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    inset 0 -6px 12px rgba(255, 255, 255, .06),
+    0 4px 10px rgba(94, 12, 44, .16);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
+}
+.lm-iconbtn .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
+.lm-iconbtn:not(:disabled):active { transform: scale(.94); background: linear-gradient(180deg, rgba(255, 255, 255, .46), rgba(255, 255, 255, .28)); }
+/* Sobre tarjetas y modales el blanco translúcido no se vería: mismo contorno y
+   forma, con el relleno en rosa claro y el ícono en fucsia. */
+.lm-card .lm-iconbtn, .lm-modal .lm-iconbtn, .lm-pending .lm-iconbtn, .lm-wait .lm-iconbtn {
+  color: var(--action-primary);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .85) 0%, rgba(255, 215, 223, .8) 100%);
+  border-color: rgba(255, 79, 139, .45);
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .14);
+}
+/* Los de significado (peligro, éxito) conservan su color, con la misma forma. */
+.lm-iconbtn--danger, .lm-iconbtn--success {
+  border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .6);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
+}
+
+/* Avatar del encabezado: el mismo contorno de vidrio que los botones de ícono
+   (esquinas amplias, borde claro y fino, brillo interior y sombra suave). */
+.lm-header__avatar {
+  border-radius: 17px;
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .92) 0%, rgba(255, 238, 244, .85) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .8),
+    0 4px 10px rgba(94, 12, 44, .16);
+  overflow: hidden;
+}
+.lm-header__avatar img { border-radius: 0; }
+
+/* ---------- flechas del carrusel de fotos ----------
+   El mismo contorno de vidrio que los botones de ícono, pero casi
+   transparentes para que la foto se vea a través. Ícono blanco y grueso. */
+.lm-carousel__flecha {
+  border-radius: 17px !important;
+  background: linear-gradient(180deg, rgba(255, 150, 190, .42), rgba(255, 100, 155, .34)) !important;
+  border: 1.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 3px 10px rgba(40, 4, 20, .22) !important;
+  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+}
+.lm-carousel__flecha .material-symbols-rounded {
+  color: #FFFFFF !important;
+  font-variation-settings: 'FILL' 1, 'wght' 700;
+  filter: drop-shadow(0 1px 3px rgba(40, 4, 20, .55));
+}
+
+/* ---------- buscador: mismo vidrio que las pestañas ----------
+   Fondo traslúcido con borde blanco fino, y texto, ícono y marcador en
+   blanco, como el filtro de al lado. */
+.lm-search {
+  background: linear-gradient(110deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06)) !important;
+  border: 1px solid rgba(255, 255, 255, .38) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .10) !important;
+}
+.lm-search input { color: var(--text-sobre-fondo); caret-color: #FFFFFF; }
+.lm-search input::placeholder { color: rgba(255, 255, 255, .78); opacity: 1; }
+.lm-search input::-webkit-search-cancel-button { display: none; }
+.lm-search .material-symbols-rounded { color: #FFFFFF !important; }
+
+/* ---------- pestañas, filtros y buscador: el vidrio de los botones de ícono ----------
+   Mismo relleno blanco translúcido con brillo arriba, contorno claro de
+   1.5px, brillo interior, sombra suave y desenfoque que el botón de ícono.
+   Conservan su forma de píldora porque son barras anchas. */
+.lm-tabs,
+.lm-search,
+.lm-segmented--vidrio {
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, .5) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .55),
+    inset 0 -6px 12px rgba(255, 255, 255, .06),
+    0 4px 10px rgba(94, 12, 44, .16) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.lm-search input::placeholder { color: rgba(255, 255, 255, .85); }
+.juego__ir .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
+
+/* ---------- carrusel de gráficos (encuestas): flores y flechas ----------
+   Flechas con el vidrio de los botones de ícono; flores más grandes, con halo
+   claro y sombra para que no se pierdan contra el fondo rosa. */
+.sk-diapos__flecha {
+  border-radius: 17px;
+  color: #FFFFFF;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%);
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+.sk-diapos__flecha .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
+.sk-diapos__flecha:not(:disabled):active { transform: scale(.94); }
+.sk-diapos__flores .sk-flor img {
+  width: clamp(24px, 6.6vw, 30px); height: clamp(24px, 6.6vw, 30px);
+  opacity: .85;
+  filter: drop-shadow(0 0 3px rgba(255, 255, 255, .85)) drop-shadow(0 2px 4px rgba(94, 12, 44, .45));
+}
+.sk-diapos__flores .sk-flor.on img {
+  width: clamp(34px, 9.4vw, 42px); height: clamp(34px, 9.4vw, 42px);
+  opacity: 1;
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, 1)) drop-shadow(0 2px 5px rgba(94, 12, 44, .5));
+}
+
+/* ---------- gráficos de las encuestas: más claros y con texto grande ---------- */
+.sk-grafico { gap: var(--space-3); padding: var(--space-5) var(--space-4) var(--space-4); }
+.sk-grafico__titulo { font: var(--type-title); text-align: center; }
+
+/* Torta: anillo más grande con sombra, y el total bien visible al centro. */
+.sk-torta { max-width: min(100%, 270px); }
+.sk-torta svg { max-height: 270px; filter: drop-shadow(0 6px 10px rgba(94, 12, 44, .25)); }
+.sk-torta svg circle { stroke-linecap: butt; }
+.sk-torta__centro b { font: 900 clamp(30px, 9.4vw, 44px)/1 var(--font-numeric); }
+.sk-torta__centro small { font: 700 clamp(13px, 3.6vw, 16px)/1.1 var(--font-text); }
+
+/* Leyenda: una fila por porción, con la muestra de color grande y el
+   porcentaje destacado. */
+.sk-leyenda { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.sk-leyenda li {
+  gap: var(--space-3); padding: 9px var(--space-3);
+  border-radius: 14px; background: rgba(255, 255, 255, .6);
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 6px rgba(94, 12, 44, .1);
+  font: 600 clamp(15px, 4.2vw, 18px)/1.2 var(--font-text);
+}
+.sk-leyenda i { width: 18px; height: 18px; border-radius: 6px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+.sk-leyenda b { font: 900 clamp(16px, 4.6vw, 20px)/1 var(--font-numeric); }
+
+/* Barras: más anchas, con brillo, número grande arriba y rótulo legible. */
+.sk-barras { gap: 12px; }
+.sk-barras__columna { gap: 6px; }
+.sk-barras__valor { font: 900 clamp(15px, 4.4vw, 20px)/1 var(--font-numeric); color: var(--action-primary); }
+.sk-barras__pista { background: linear-gradient(180deg, rgba(255, 215, 223, .45), rgba(255, 215, 223, .15)); border-radius: 12px; }
+.sk-barras__barra {
+  border-radius: 12px 12px 6px 6px;
+  background: linear-gradient(180deg, #FF7AA8 0%, #E8336F 55%, #B81F55 100%);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45), 0 3px 8px rgba(184, 31, 85, .3);
+}
+.sk-barras__rotulo { font: 700 clamp(13px, 3.6vw, 16px)/1.15 var(--font-text); color: var(--text-title); }
+
+/* Línea: más gruesa, con relleno degradado debajo y datos grandes. */
+.sk-linea { min-height: 120px; filter: drop-shadow(0 3px 5px rgba(184, 31, 85, .25)); }
+.sk-linea__pie b { font: 900 clamp(18px, 5.2vw, 24px)/1.1 var(--font-numeric); color: var(--action-primary); }
+.sk-linea__pie small { font: 700 clamp(12.5px, 3.4vw, 15px)/1.25 var(--font-text); color: var(--text-title); }
+
+/* Los puntos de la línea son círculos HTML y no del SVG: el SVG se estira para
+   ocupar la tarjeta (`preserveAspectRatio="none"`) y deformaba los círculos
+   en óvalos. Posicionados en porcentaje, siguen la línea y son perfectos. */
+.sk-linea__marco { position: relative; flex: 1 1 auto; min-height: 120px; display: flex; }
+.sk-linea__marco .sk-linea { flex: 1 1 auto; height: 100%; min-height: 0; }
+.sk-linea__punto {
+  position: absolute; width: clamp(14px, 4vw, 18px); aspect-ratio: 1 / 1; height: auto;
+  transform: translate(-50%, -50%); border-radius: 50%;
+  background: var(--action-primary); border: 2.5px solid #FFFFFF;
+  box-shadow: 0 2px 6px rgba(184, 31, 85, .45);
+}
+
+/* ---------- ventana de confirmación: bordes de vidrio ----------
+   Sólo el contorno de los dos botones (cancelar y confirmar) toma el borde
+   blanco translúcido con halo rosa de los demás botones de vidrio; el relleno
+   conserva su color porque cada uno significa algo. */
+.lm-modal__acciones .lm-btn {
+  border: 1.5px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 10px rgba(94, 12, 44, .18);
+}
+.lm-modal__acciones .lm-btn:not(:disabled):active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 0 0 1px rgba(232, 51, 111, .3); }
+
+/* ---------- botones de texto: borde de vidrio ----------
+   Ingresar como invitado, Registrate, Cancelar, Volver…: el mismo contorno
+   blanco translúcido de 1.5px, con brillo interior y sombra suave, que los
+   demás botones de vidrio. El relleno de cada uno no cambia. */
+.lm-textbtn {
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 4px 10px rgba(94, 12, 44, .16);
+}
+.lm-textbtn--high { border-color: rgba(255, 255, 255, .65); }
+.lm-textbtn--danger { border-color: rgba(255, 211, 204, .7); }
+.lm-card .lm-textbtn, .lm-modal .lm-textbtn {
+  border-color: rgba(255, 79, 139, .4);
+  box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .12);
+}
+
+/* ---------- bordes de vidrio en perfiles, campos y botón principal ----------
+   Acceso rápido, los campos de los formularios y los botones principales
+   (Iniciar sesión, Registrarse…) toman el contorno blanco translúcido con halo
+   rosa, sin cambiar su relleno: conservan su degradado o su blanco. */
+.lm-profile,
+.lm-field:not(.lm-field--error) .lm-field__box:not(:focus-within),
+.lm-btn--primary {
+  border: 1.5px solid rgba(255, 255, 255, .65) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .32),
+    0 4px 10px rgba(94, 12, 44, .18) !important;
+}
+.lm-btn--primary:not(:disabled):active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 0 1px rgba(232, 51, 111, .32) !important; }
+
+/* El borde translúcido sobre un relleno blanco se perdía: el blanco pasaba por
+   debajo del borde y lo tapaba. Con `background-clip: padding-box` el relleno
+   termina donde empieza el borde, y el aro blanco translúcido se ve sobre el
+   rosa del fondo, como en los demás botones de vidrio. */
+.lm-profile,
+.lm-field:not(.lm-field--error) .lm-field__box:not(:focus-within),
+.lm-btn--primary {
+  background-clip: padding-box !important;
+  border-width: 2.5px !important;
+  border-color: rgba(255, 255, 255, .55) !important;
+}
+
+/* ---------- tarjeta de mesa: borde de vidrio ----------
+   El mismo aro blanco translúcido con halo rosa que los botones y campos. El
+   relleno (la foto) termina donde empieza el borde, así el aro se ve sobre el
+   fondo rosa. */
+.lm-mesa {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    0 0 0 1px rgba(232, 51, 111, .32),
+    0 6px 14px rgba(94, 12, 44, .25) !important;
+}
+
+/* ---------- elementos de la tarjeta de mesa: vidrio rosa ----------
+   El tipo, el número, los atajos (editar y QR) y el estado comparten el
+   aspecto de los botones de vidrio, pero en rosa degradé traslúcido: relleno
+   rosa que deja ver la foto, contorno blanco fino, brillo interior y sombra.
+   El estado conserva su significado en el punto de color. */
+.lm-mesa__tipo,
+.lm-mesa__numero,
+.lm-mesa__accion,
+.lm-mesa__estado {
+  color: #FFFFFF !important;
+  background: linear-gradient(180deg, rgba(255, 150, 190, .5) 0%, rgba(226, 48, 108, .42) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .5),
+    inset 0 -6px 12px rgba(94, 12, 44, .12),
+    0 4px 10px rgba(40, 4, 20, .28) !important;
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+  text-shadow: 0 1px 3px rgba(60, 6, 30, .4);
+}
+.lm-mesa__accion--editar { background: linear-gradient(180deg, rgba(240, 70, 128, .75) 0%, rgba(184, 31, 85, .68) 100%) !important; }
+.lm-mesa__accion .material-symbols-rounded, .lm-mesa__tipo .material-symbols-rounded { color: #FFFFFF !important; font-variation-settings: 'FILL' 1, 'wght' 700; }
+.lm-mesa__estado { font-weight: 800; }
+.lm-mesa__estado-punto { box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+.lm-mesa__estado--vacia .lm-mesa__estado-punto { background: #35D08A; }
+.lm-mesa__estado--ocupada .lm-mesa__estado-punto { background: #FFB347; }
+.lm-mesa__estado--inactiva .lm-mesa__estado-punto { background: #C9C0C4; }
+
+/* ---------- pastilla activa de pestañas y filtros: borde de vidrio ----------
+   La pastilla blanca que se desliza lleva el mismo aro blanco translúcido con
+   halo rosa que los demás elementos; el relleno blanco termina donde empieza
+   el borde para que el aro se vea. */
+.lm-tabs__marca,
+.lm-segmented--vidrio.lm-segmented--desliza > .lm-segmented__marca {
+  background-clip: padding-box;
+  border: 2.5px solid rgba(255, 255, 255, .55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 3px 10px rgba(59, 8, 27, .25);
+}
+
+/* ---------- pantalla de la mesa (QR): bordes de vidrio ----------
+   Las tarjetas, las subtarjetas de datos, el interruptor y los botones de
+   esta pantalla toman el aro blanco translúcido con halo rosa. El relleno de
+   cada uno no cambia y termina donde empieza el borde, para que el aro se
+   vea sobre el fondo. */
+.tarjeta-blanca,
+.subtarjeta-info,
+.tarjeta-qr,
+.modal-qr-card,
+.opcion-tipo:not(.opcion-tipo--elegida),
+.btn-fullscreen,
+.btn-guardar,
+.btn-cancelar {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+.subtarjeta-info { border-width: 1.5px !important; }
+.switch, .contador__btn, .btn-cerrar-modal {
+  border: 1.5px solid rgba(255, 255, 255, .6) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .18) !important;
+}
+/* El botón de volver del encabezado: el vidrio de los botones de ícono. */
+.hdr__volver {
+  border-radius: 17px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, .5) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+
+/* ---------- código QR: borde suave ----------
+   La imagen del QR tenía las esquinas rectas y el borde seco. Ahora lleva
+   esquinas redondeadas y el mismo aro blanco translúcido con halo rosa que el
+   resto de la pantalla. El QR conserva su nitidez (`pixelated`). */
+.qr-imagen, .modal-qr-img {
+  border-radius: 22px;
+  border: 3px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 16px rgba(59, 8, 27, .22);
+}
+
+/* Cancelar de la pantalla de la mesa: el mismo vidrio que el botón de volver. */
+.btn-cancelar {
+  border-radius: 17px !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
+  border: 1.5px solid rgba(255, 255, 255, .5) !important;
+  background-clip: border-box !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  font-weight: 700;
+}
+.btn-cancelar:active { transform: scale(.97); }
+
+/* ---------- estados vacíos: borde de vidrio ----------
+   Ninguna mesa entra en el filtro, no hay consultas, etc.: el mismo aro blanco
+   translúcido con halo rosa; el relleno termina donde empieza el borde. */
+.lm-empty {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+
+/* Disco del ícono del estado vacío: el mismo aro de vidrio. */
+.lm-empty__icono {
+  background-clip: padding-box;
+  border: 2.5px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .18);
+}
+
+/* Ícono de la ventana de confirmación: borde rosa fuerte (el de las
+   tarjetas), conservando su color de relleno (rojo, verde o rosa). */
+.lm-modal__icono {
+  border: var(--borde-tarjeta);
+  box-shadow: 0 4px 12px rgba(59, 8, 27, .22);
+}
+
+/* ---------- carta: tarjeta de producto y sus elementos, borde de vidrio ----------
+   La tarjeta, la foto y las píldoras de precio y tiempo llevan el aro blanco
+   translúcido con halo rosa. Los rellenos terminan donde empieza el borde para
+   que el aro se vea. */
+.carta__lista .lm-product-fila,
+.lm-product-fila--carrito,
+.lm-product,
+.lm-product__thumb,
+.lm-product__dato,
+.lm-product__dato-icono {
+  background-clip: padding-box !important;
+}
+.carta__lista .lm-product-fila,
+.lm-product-fila--carrito {
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+.lm-product__thumb,
+.lm-product__dato {
+  border: 2px solid rgba(255, 255, 255, .6) !important;
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .16) !important;
+}
+.lm-product__dato-icono {
+  border: 1.5px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .25);
+}
+
+/* ---------- ficha de producto: tarjetas de datos con borde de vidrio ----------
+   Precio, elaboración, estado y cantidad: el aro blanco translúcido con halo
+   rosa, y uno más fino para el disco del ícono y el chip de estado. */
+.dato-card,
+.producto-estado,
+.producto-cantidad {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+.dato-icono,
+.estado-chip {
+  background-clip: padding-box;
+  border: 1.5px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .25);
+}
+
+/* ---------- reemplazar foto: sólo las flechas, en grande ----------
+   Sin texto: un botón cuadrado de esquinas amplias con las flechas de recarga
+   bien grandes y el aro blanco translúcido con halo rosa. */
+.lm-photo__pie--cargada {
+  width: clamp(54px, 15vw, 64px); height: clamp(54px, 15vw, 64px); min-height: 0;
+  padding: 0; justify-content: center; border-radius: 18px;
+  color: var(--action-primary);
+  background-clip: padding-box;
+  border: 2.5px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2);
+}
+.lm-photo__pie--cargada .material-symbols-rounded { font-variation-settings: 'FILL' 0, 'wght' 700; }
+
+/* ---------- formularios (alta y edición): bordes de vidrio ----------
+   El selector de categoría o tipo (segmentado) y los marcos de foto toman el
+   aro blanco translúcido con halo rosa, igual que los campos y los botones.
+   Los rellenos terminan donde empieza el borde para que el aro se vea. */
+.lm-segmented:not(.lm-segmented--vidrio) {
+  background-clip: padding-box;
+  border: 2.5px solid rgba(255, 255, 255, .55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2);
+}
+.lm-segmented:not(.lm-segmented--vidrio).lm-segmented--desliza > .lm-segmented__marca {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 3px 8px rgba(184, 31, 85, .35);
+}
+.lm-photo__marco {
+  background-clip: padding-box;
+  border: 2.5px solid rgba(255, 255, 255, .6) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2);
+}
+
+/* Carta: precio y tiempo ocupan todo el ancho de la fila, uno en cada punta.
+   El tiempo queda a la izquierda y el precio a la derecha. El margen derecho
+   que reservaba la flecha ya no hace falta porque la flecha no se muestra. */
+.carta__lista .lm-product__pie {
+  width: 100%; margin: 0 !important;
+  display: flex; flex-direction: row-reverse; flex-wrap: nowrap;
+  justify-content: space-between; align-items: center; gap: var(--space-2);
+}
+.carta__lista .lm-product__dato { flex: 0 1 auto; min-width: 0; }
+.carta__lista .lm-product__nombre { padding-right: 0 !important; width: 100%; }
+
+/* Carta: el título arriba de la foto, y precio y tiempo abajo, más grandes.
+   `display: contents` en el bloque de datos deja que el nombre y el pie se
+   ordenen por separado alrededor de la foto, sin tocar el template. */
+.carta__lista .lm-product__datos { display: contents; }
+.carta__lista .lm-product__nombre { order: 0; flex: 0 0 auto; font-size: clamp(19px, 5.4vw, 24px); }
+.carta__lista .lm-product__thumb { order: 1; }
+.carta__lista .lm-product__pie { order: 2; flex: 0 0 auto; }
+.carta__lista .lm-product__dato { padding: 7px 12px 7px 8px; gap: 8px; min-height: clamp(44px, 12vw, 52px); }
+.carta__lista .lm-product__dato-icono { width: clamp(30px, 8.4vw, 36px); height: clamp(30px, 8.4vw, 36px); }
+.carta__lista .lm-product__dato-icono .material-symbols-rounded { font-size: clamp(20px, 5.6vw, 24px) !important; }
+.carta__lista .lm-product__precio { font-size: clamp(19px, 5.4vw, 24px); }
+.carta__lista .lm-product__tiempo { font-size: clamp(15px, 4.2vw, 18px); }
+
+/* El disco del ícono dentro de la píldora no lleva borde: alcanza con el de la
+   píldora. También queda círculo perfecto (se estiraba en un óvalo). */
+.lm-product__dato-icono {
+  border: none !important;
+  box-shadow: none !important;
+  flex: 0 0 auto;
+  height: auto !important;
+  aspect-ratio: 1 / 1;
+}
+
+/* Carta: la foto ocupa el mismo ancho que la fila de tiempo y precio (del borde
+   izquierdo de la píldora del tiempo al borde derecho de la del precio). Toma el
+   alto que sobra, así que es casi cuadrada en pantallas altas. */
+.carta__lista .lm-product__thumb {
+  width: 100%; max-width: none; align-self: stretch;
+  aspect-ratio: auto; flex: 1 1 0; min-height: 64px;
+}
+
+/* ---------- pantalla de espera: el vidrio del botón de cerrar sesión ----------
+   La tarjeta del turno, el recuadro de pasos y los botones de acción toman el
+   mismo relleno blanco translúcido, contorno de 1.5px, brillo interior y sombra
+   que el botón de ícono. Como el relleno es translúcido, el texto pasa a blanco. */
+lm-cliente-espera .turno,
+lm-cliente-espera .pasos,
+lm-cliente-espera .lm-actionbar .lm-btn {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
+  background-color: transparent !important;
+  background-clip: border-box !important;
+  border: 1.5px solid rgba(255, 255, 255, .5) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+}
+lm-cliente-espera .lm-actionbar .lm-btn { border-radius: 17px; color: #FFFFFF !important; }
+lm-cliente-espera .turno,
+lm-cliente-espera .turno__rotulo,
+lm-cliente-espera .turno__numero,
+lm-cliente-espera .turno__mensaje,
+lm-cliente-espera .turno__datos,
+lm-cliente-espera .turno__pie { color: #FFFFFF !important; text-shadow: 0 1px 4px rgba(94, 12, 44, .35); }
+lm-cliente-espera .turno .material-symbols-rounded { color: #FFFFFF !important; }
+
+/* ---------- burbujas de consulta: borde de vidrio ----------
+   Sólo el borde: aro blanco translúcido con halo rosa. El relleno de cada
+   burbuja (la propia y la del mozo) no cambia y termina donde empieza el borde. */
+.burbuja {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .6);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .6),
+    0 0 0 1px rgba(232, 51, 111, .28),
+    0 3px 8px rgba(59, 8, 27, .16);
+}
+
+/* Los botones de ícono dentro de un campo (enviar, etc.) van sobre fondo claro:
+   el vidrio blanco translúcido no se vería. Mismo contorno y forma, con relleno
+   rosa y el ícono en blanco. */
+.lm-field__box .lm-iconbtn {
+  color: #FFFFFF;
+  background: linear-gradient(180deg, #FF6AA0 0%, #E8336F 55%, #B81F55 100%);
+  border: 1.5px solid rgba(255, 255, 255, .7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 3px 8px rgba(184, 31, 85, .35);
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+
+/* ---------- pantallas del pedido: el borde del botón de cerrar sesión ----------
+   Mi pedido, Estado del pedido y la comanda: tarjetas de sector, renglones,
+   resumen, tiempos y totales toman el contorno blanco translúcido de 1.5px con
+   brillo interior y sombra suave del botón de ícono. El relleno de cada uno no
+   cambia y termina donde empieza el borde para que el aro se vea. */
+:is(lm-cliente-pedido, lm-estado-pedido, lm-comanda-carrito) :is(.lm-card, .lm-resumen, .resumen, .renglon, .item-carrito, .sector, .ticket, .lm-pending) {
+  background-clip: padding-box !important;
+  border: 1.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    inset 0 -6px 12px rgba(255, 255, 255, .06),
+    0 4px 10px rgba(94, 12, 44, .16) !important;
+}
+
+/* ---------- menú de juegos: borde de vidrio ----------
+   Las tarjetas de cada juego y la del descuento: aro blanco translúcido con
+   halo rosa; el relleno termina donde empieza el borde para que el aro se vea. */
+lm-cliente-juegos .juego,
+lm-cliente-juegos .dto {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+
+/* ---------- placa de QR (códigos del dueño): borde de vidrio ----------
+   La placa y el código dentro de ella: aro blanco translúcido con halo rosa. El
+   QR conserva su nitidez y su fondo blanco. */
+.lm-qrplate {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+.lm-qrplate img {
+  border-radius: 22px;
+  border: 3px solid rgba(255, 255, 255, .6);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .3), 0 6px 16px rgba(59, 8, 27, .22);
+  image-rendering: pixelated;
+}
+
+/* ---------- códigos de propina y de mesa: borde de vidrio ----------
+   Las tarjetas y el QR de cada una: aro blanco translúcido con halo rosa. El QR
+   conserva su fondo blanco y su nitidez. */
+lm-dueno-codigos .propina,
+lm-dueno-codigos .mesa {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+lm-dueno-codigos .propina img,
+lm-dueno-codigos .mesa img {
+  border: 3px solid rgba(255, 255, 255, .6);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .3), 0 4px 12px rgba(59, 8, 27, .2);
+  image-rendering: pixelated;
+}
+
+/* ---------- filas de registros: borde de vidrio en padre e hijos ----------
+   La tarjeta, el avatar, el chip de estado y los botones de aceptar y rechazar
+   toman el aro blanco translúcido con halo rosa. Cada relleno conserva su color
+   y termina donde empieza el borde. */
+.lm-pending {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+.lm-pending .lm-avatar,
+.lm-pending .lm-chip,
+.lm-pending__acciones .lm-btn {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .16);
+}
+.lm-pending__acciones .lm-btn { border-radius: 16px; }
+
+/* ---------- ventana de ficha / confirmación: borde de vidrio en padre e hijos ----------
+   El marco de la ventana, la foto de la persona y el listado de datos toman el
+   aro blanco translúcido con halo rosa. Los rellenos conservan su color. */
+.lm-modal {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 10px 28px rgba(59, 8, 27, .35) !important;
+}
+.lm-modal .modal-foto {
+  border: 3px solid rgba(255, 255, 255, .7) !important;
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .3), 0 4px 12px rgba(59, 8, 27, .22) !important;
+}
+.lm-modal__detalle {
+  background: rgba(255, 255, 255, .55);
+  border: 2px solid rgba(255, 255, 255, .65);
+  border-radius: 18px;
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .14);
+}
+.lm-modal__detalle > div { border-bottom: 1px solid rgba(255, 255, 255, .7); }
+.lm-modal__detalle > div:last-child { border-bottom: none; }
+
+/* ---------- altas y registro: el borde del botón de volver ----------
+   Foto, escaneo del documento y campos toman el contorno del botón de volver:
+   blanco translúcido de 1.5px con brillo interior y sombra suave. El relleno de
+   cada uno no cambia y termina donde empieza el borde para que el aro se vea. */
+:is(lm-alta-empleado, lm-registro-cliente) :is(.lm-photo__marco, .lm-photo__pie, .lm-qrscan, .lm-field:not(.lm-field--error) .lm-field__box:not(:focus-within)) {
+  background-clip: padding-box !important;
+  border: 1.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    inset 0 -6px 12px rgba(255, 255, 255, .06),
+    0 4px 10px rgba(94, 12, 44, .16) !important;
+}
+/* El recuadro que contiene la foto y su botón, en la fila del documento. */
+.lm-fila-doc .lm-photo {
+  border: 1.5px solid rgba(255, 255, 255, .55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 4px 10px rgba(94, 12, 44, .16);
+}
+
+/* ---------- opciones del segmentado: borde de vidrio ----------
+   Cada opción (Metre, Mozo, Cocinero, Cantinero…) lleva su propio aro blanco
+   translúcido; la elegida lleva además el relleno rosa con el mismo aro. */
+.lm-segmented:not(.lm-segmented--vidrio) > button {
+  border: 1.5px solid rgba(255, 255, 255, .6);
+  border-radius: 12px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 2px 6px rgba(94, 12, 44, .1);
+}
+.lm-segmented:not(.lm-segmented--vidrio) > button.on { border-color: rgba(255, 255, 255, .85); }
+.lm-segmented:not(.lm-segmented--vidrio) > button::before { border-radius: inherit; }
+.lm-segmented:not(.lm-segmented--desliza) > button.on::before {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .45), 0 3px 8px rgba(184, 31, 85, .35);
+}
+
+/* ---------- par de acciones: negativa a la izquierda, afirmativa a la derecha ----------
+   Dos botones del mismo tamaño, uno al lado del otro. La acción negativa
+   (Cancelar, Quitar…) va con un acento rojo fuerte; la afirmativa conserva su
+   estilo principal. */
+.acciones-par {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3); align-items: stretch;
+}
+.acciones-par lm-boton { display: flex; }
+.acciones-par .lm-btn {
+  flex: 1 1 auto; min-height: clamp(56px, 8.5dvh, 68px);
+  border-radius: 20px; font-size: clamp(15px, 4.2vw, 18px); font-weight: 800;
+}
+.acciones-par .lm-btn--danger {
+  color: #FFFFFF;
+  background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%);
+  border: 2px solid rgba(255, 190, 180, 0.7);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -4px 10px rgba(80, 8, 4, 0.35),
+    0 0 0 1px rgba(192, 38, 26, 0.55),
+    0 6px 14px rgba(142, 22, 15, 0.4);
+}
+.acciones-par .lm-btn--danger:not(:disabled):active { background: linear-gradient(180deg, #C0261A 0%, #8E160F 100%); }
+
+/* ---------- tickets de cocina y barra, y pedidos del mozo: borde de vidrio ----------
+   La tarjeta, el chip de estado, cada renglón de producto y los botones de
+   acción toman el aro blanco translúcido con halo rosa. Los rellenos conservan
+   su color y terminan donde empieza el borde. */
+.ticket, .pedido {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 6px 14px rgba(59, 8, 27, .22) !important;
+}
+.ticket .lm-chip,
+.pedido .lm-chip,
+.ticket .item,
+.ticket__pie .lm-btn,
+.pedido__acciones .lm-btn {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .65);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .14);
+}
+.ticket .item { border-radius: 14px; }
+.ticket__pie .lm-btn, .pedido__acciones .lm-btn { border-radius: 16px; }
+
+/* Los renglones de producto dentro del ticket no llevan borde: alcanza con el de
+   la tarjeta. */
+.ticket .item, .ticket__items {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Las etiquetas del ticket (la mesa y la cantidad de cada producto) sí llevan el
+   aro de vidrio, con su relleno rosa intacto. */
+.ticket__mesa,
+.item__cantidad {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .7) !important;
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .3), 0 3px 8px rgba(59, 8, 27, .18) !important;
+}
+
+/* Pantalla de la mesa: cancelar (negativo, rojo) a la izquierda y guardar a la
+   derecha, del mismo tamaño. El aviso de cambios sin guardar ocupa las dos. */
+.acciones-inferiores {
+  display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) !important; align-items: stretch !important;
+}
+.acciones-inferiores > .pendiente { grid-column: 1 / -1; }
+.acciones-inferiores .btn-guardar,
+.acciones-inferiores .btn-cancelar {
+  width: 100%; min-height: clamp(56px, 8.5dvh, 68px);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border-radius: 20px !important; font: 800 clamp(15px, 4.2vw, 18px)/1.1 var(--font-text);
+}
+.acciones-inferiores .btn-cancelar {
+  color: #FFFFFF !important;
+  background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%) !important;
+  border: 2px solid rgba(255, 190, 180, 0.7) !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -4px 10px rgba(80, 8, 4, 0.35),
+    0 0 0 1px rgba(192, 38, 26, 0.55),
+    0 6px 14px rgba(142, 22, 15, 0.4) !important;
+  -webkit-backdrop-filter: none; backdrop-filter: none;
+}
+.acciones-inferiores .btn-cancelar:active { background: linear-gradient(180deg, #C0261A 0%, #8E160F 100%) !important; }
+
+/* El QR de la mesa es un botón: se toca para verlo en pantalla completa. */
+button.qr-marco { padding: 0; background: transparent; border: none; cursor: pointer; font: inherit; color: inherit; -webkit-tap-highlight-color: transparent; }
+button.qr-marco:active { transform: scale(.98); }
+
+/* Ventanas de edición de la mesa: cancelar con acento rojizo y aplicar con
+   acento verdoso, los dos con el aro de vidrio. */
+.modal-editar__acciones .lm-btn--danger {
+  background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%);
+  color: #FFFFFF;
+}
+.modal-editar__acciones .lm-btn--success {
+  background: linear-gradient(180deg, #2FA56B 0%, #1B7A4C 55%, #11593A 100%);
+  color: #FFFFFF;
+}
+.modal-editar__acciones .lm-btn--danger,
+.modal-editar__acciones .lm-btn--success {
+  border: 2px solid rgba(255, 255, 255, .6);
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35), inset 0 -4px 10px rgba(0, 0, 0, .25), 0 0 0 1px rgba(0, 0, 0, .12), 0 6px 14px rgba(59, 8, 27, .3);
+}
+.modal-editar__acciones .lm-btn {
+  padding-inline: var(--space-3); gap: 6px; white-space: nowrap; overflow-wrap: normal;
+  font-size: clamp(14px, 3.9vw, 16px);
+}
+/* Solo íconos: la acción se entiende sin texto, así que van más grandes. */
+.modal-editar__acciones .lm-btn .material-symbols-rounded { font-size: 34px !important; }
+/* Sin la X de arriba, el título de las ventanas de edición queda centrado. */
+.modal-editar .modal-qr-header { justify-content: center; }
+
+/* Mesa ocupada: la pastilla se pinta de rojizo traslúcido. */
+.lm-mesa__estado--ocupada {
+  background: linear-gradient(180deg, rgba(255, 110, 90, .55) 0%, rgba(214, 40, 30, .5) 100%) !important;
+}
+
+/* X del modal del QR: mismo rojo que el cancelar de las ventanas de edición.
+   Con !important porque los estilos del componente se cargan después. */
+.modal-qr-card .btn-cerrar-modal {
+  background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%) !important;
+  border: 2px solid rgba(255, 255, 255, .6) !important;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, .35), inset 0 -4px 10px rgba(0, 0, 0, .25), 0 0 0 1px rgba(0, 0, 0, .12), 0 6px 14px rgba(59, 8, 27, .3) !important;
+}
+
+/* ---------- rechazo de pedido: borde de vidrio ----------
+   Cada producto a marcar y sus dos botones (hay menos / no se puede preparar)
+   toman el aro blanco translúcido con halo rosa. El relleno de cada uno no
+   cambia y termina donde empieza el borde. */
+.marcar {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+.marcar .marca {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .7) !important;
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .16);
+}
+
+/* Leyenda de sellos (rechazo del mozo y pedidos): borde blanco de vidrio. */
+.lm-card.leyenda {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+
+/* ---------- devolver pedido: tarjetas con borde de vidrio ----------
+   La tarjeta de la mesa, la leyenda de marcas y el disco del ícono toman el aro
+   blanco translúcido con halo rosa; el relleno termina donde empieza el borde. */
+lm-mozo-rechazo .lm-card {
+  background-clip: padding-box !important;
+  border: 2.5px solid rgba(255, 255, 255, .55) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .7),
+    0 0 0 1px rgba(232, 51, 111, .3),
+    0 4px 12px rgba(59, 8, 27, .2) !important;
+}
+lm-mozo-rechazo .mesa__icono {
+  background-clip: padding-box;
+  border: 2px solid rgba(255, 255, 255, .7);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .14);
+}
+
+/* =========================================================================
+   Transiciones y animaciones
+   -------------------------------------------------------------------------
+   Nada aparece ni desaparece de golpe. Las pantallas se funden con un leve
+   desplazamiento; los modales entran con un fundido del fondo y un rebote
+   suave de la tarjeta, y salen con el movimiento inverso. Con "reducir
+   movimiento" activado, todo es instantáneo (regla global de global.scss).
+   ========================================================================= */
+@keyframes sk-pantalla-entra { from { opacity: 0; transform: translateY(14px) scale(.992); } to { opacity: 1; transform: none; } }
+@keyframes sk-pantalla-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-8px) scale(.996); } }
+@keyframes sk-fondo-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sk-fondo-sale  { from { opacity: 1; } to { opacity: 0; } }
+@keyframes sk-modal-entra { 0% { opacity: 0; transform: translateY(22px) scale(.9); } 60% { opacity: 1; transform: translateY(-3px) scale(1.012); } 100% { opacity: 1; transform: none; } }
+@keyframes sk-modal-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(14px) scale(.94); } }
+@keyframes sk-aviso-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-14px); } }
+
+/* Entre pantallas: transición de vista del enrutador (Chrome 111+). */
+::view-transition-old(root) { animation: sk-pantalla-sale 200ms var(--ease-standard) both; }
+::view-transition-new(root) { animation: sk-pantalla-entra 340ms var(--ease-out-soft) both; }
+/* Donde no existe esa API, la pantalla nueva entra sola. */
+@supports not (view-transition-name: none) {
+  .sk-app > router-outlet + * { animation: sk-pantalla-entra 340ms var(--ease-out-soft) both; }
+}
+
+/* Entrada de los modales y de las capas. */
+.lm-modal__fondo, .modal-qr-fondo, .modal-exito-overlay, .lm-overlay { animation: sk-fondo-entra 240ms var(--ease-standard) both; }
+.lm-modal, .modal-qr-card, .modal-exito { animation: sk-modal-entra 420ms cubic-bezier(.2, .9, .3, 1.15) both; }
+.lm-toasts .lm-banner, .lm-toasts .lm-push { animation: lm-slide-down 340ms var(--ease-out-soft) both; }
+
+/* Salida (Angular agrega estas clases con `animate.leave`). */
+.sk-fondo-sale { animation: sk-fondo-sale 200ms var(--ease-standard) both !important; }
+.sk-modal-sale { animation: sk-modal-sale 200ms var(--ease-standard) both !important; }
+.sk-aviso-sale { animation: sk-aviso-sale 220ms var(--ease-standard) both !important; }
+
+/* Cambios de pestaña dentro de una pantalla: el contenido nuevo se asienta con
+   un fundido corto en lugar de aparecer de golpe. */
+.lm-lista-uno, .lm-lista-n, .lm-lista-fija, .lm-lista-libre { animation: sk-fondo-entra 260ms var(--ease-standard) both; }
+
+/* Salida de las ventanas que son componentes: el nombre de la clase va en el
+   propio componente (`<lm-modal animate.leave>`) y anima a sus hijos, porque el
+   anfitrión no se dibuja (`display: contents`). */
+.sk-modal-host-sale .lm-modal__fondo { animation: sk-fondo-sale 200ms var(--ease-standard) both !important; }
+.sk-modal-host-sale .lm-modal { animation: sk-modal-sale 200ms var(--ease-standard) both !important; }

@@ -102,18 +102,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
           [largoMaximo]="3"
         />
 
-        <section aria-labelledby="titulo-fotos">
-          <span
-            id="titulo-fotos"
-            class="lm-label"
-          >
-            {{
-              esPostre()
-                ? 'Fotos del postre - tres obligatorias'
-                : 'Fotos del plato - tres obligatorias'
-            }}
-          </span>
-
+        <section aria-label="Fotos del plato">
           <div class="fotos">
             @for (indice of [0, 1, 2]; track indice) {
               <lm-foto
@@ -139,11 +128,6 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
               />
 
               {{ errorFotos() }}
-            </span>
-          } @else {
-            <span class="lm-field__hint">
-              Podés tomar cada foto con la cámara o elegirla de la galería.
-              Cada imagen puede reemplazarse por separado.
             </span>
           }
         </section>
@@ -200,6 +184,10 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
         height: auto !important;
         aspect-ratio: 1 / 1;
       }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
     `,
   ],
 })

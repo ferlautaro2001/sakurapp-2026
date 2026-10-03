@@ -44,8 +44,8 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
   />
 </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="pendientes().length" [bajada]="bajadaPendientes()">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="pendientes().length">
           Registro de clientes
         </lm-titulo>
 
@@ -57,10 +57,11 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
         <lm-filtros [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (visibles().length) {
-          <div class="lm-list">
+          <div [class.lm-lista-uno]="filtro() === 'Todos' || filtro() === 'Pendiente'" [class.lm-lista-n]="filtro() !== 'Todos' && filtro() !== 'Pendiente'">
             @for (cliente of visibles(); track cliente.id) {
               <lm-fila-pendiente
                 [cliente]="cliente"
+                [mostrarEstado]="filtro() === 'Todos'"
                 (abrir)="verFicha(cliente)"
                 (aceptar)="resolver(cliente, 'aprobado')"
                 (rechazar)="resolver(cliente, 'rechazado')"
@@ -87,7 +88,21 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
       <lm-barra-inferior [items]="secciones()" activo="registros" />
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host { display: flex; flex: 1; min-height: 0; }
+
+      /* La tarjeta conserva su alto natural y se centra en su casilla: nunca se
+         estira para llenarla ni se sale. Las que llevan Aceptar/Rechazar ocupan
+         lo que necesitan; las filas simples, hasta un tope. */
+      lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
+      lm-fila-pendiente ::ng-deep .lm-pending:has(.lm-pending__acciones) { flex: 0 1 auto; max-height: 100%; }
+      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
+      @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
+    `,
+  ],
 })
 export class ClientesPendientesPage extends PaginaConSesion {
   private readonly usuarios = inject(UsuariosService);
@@ -103,12 +118,6 @@ export class ClientesPendientesPage extends PaginaConSesion {
   protected readonly busqueda = signal('');
 
   protected readonly pendientes = computed(() => this.usuarios.pendientes());
-  protected readonly bajadaPendientes = computed(() => {
-    const cant = this.pendientes().length;
-    if (cant === 0) return 'No hay clientes pendientes de aprobación';
-    if (cant === 1) return '1 cliente pendiente de aprobación';
-    return `${cant} clientes pendientes de aprobación`;
-  });
 
   protected readonly visibles = computed(() => {
     const filtro = this.filtro();

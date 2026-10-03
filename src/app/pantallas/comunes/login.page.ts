@@ -25,7 +25,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
     <div class="lm-screen lm-screen--login">
       <div class="lm-body login-body">
         <lm-logo bajada="Bienvenido" [tamano]="76" />
-        <h2 class="login-bajada">Iniciá sesión para continuar</h2>
 
         @if (error()) {
           <lm-banner tono="error" titulo="No pudimos iniciar sesión">{{ error() }}</lm-banner>
@@ -58,17 +57,14 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
           </div>
           <span class="separador-flor__linea"></span>
         </div>
-
-        <p class="login-nota">Tocá un perfil para ingresar.</p>
-
         <div class="lm-grid2 login-perfiles">
           @for (usuario of perfiles(); track usuario.id) {
             <lm-tarjeta-perfil [usuario]="usuario" soloNombre (presionar)="entrarComo(usuario)" />
           }
         </div>
 
-        <div class="login-enlace-presentacion">
-          <lm-texto-boton (presionar)="verPresentacion()">Ver pantallas de presentación</lm-texto-boton>
+        <div class="login-invitado">
+          <lm-texto-boton (presionar)="comoInvitado()">Ingresar como invitado</lm-texto-boton>
         </div>
       </div>
 
@@ -77,8 +73,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         <p class="registro__pregunta">¿No tenés cuenta?</p>
         <div class="registro">
           <lm-texto-boton enfasis="alto" (presionar)="registrarse()">Registrate</lm-texto-boton>
-          <span class="registro__separador">·</span>
-          <lm-texto-boton (presionar)="comoInvitado()">Ingresar como invitado</lm-texto-boton>
         </div>
       </div>
     </div>
@@ -111,15 +105,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
            lo que sobra caía junto abajo, contra la barra. Centrado, ese aire se
            reparte arriba y abajo. */
         justify-content: safe center;
-      }
-      /* La escalera de la pantalla es marca → qué hay que hacer acá → acción.
-         Con la bajada en el cuerpo de lectura, el salto desde el nombre de la
-         marca se lee como jerarquía y no como dos textos chicos seguidos. */
-      .login-bajada {
-        margin: 0;
-        font: var(--type-body-medium);
-        color: var(--text-sobre-fondo);
-        text-align: center;
       }
       .campos-grupo {
         display: flex;
@@ -179,12 +164,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         letter-spacing: 0.02em;
         text-transform: uppercase;
       }
-      .login-nota {
-        margin: 0;
-        font: 500 clamp(11px, 2.8vw, 12px)/1.25 var(--font-text);
-        color: var(--text-sobre-fondo-suave);
-        text-align: center;
-      }
       .login-perfiles {
         gap: 3px;
         width: 100%;
@@ -215,7 +194,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         font-size: clamp(11px, 2.8vw, 12px) !important;
         line-height: 1.1;
       }
-      .login-enlace-presentacion {
+      .login-invitado {
         display: flex;
         justify-content: center;
       }
@@ -234,10 +213,6 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
            enlace era lo que empujaba "Ingresar como invitado" fuera del
            margen en los equipos angostos. */
         flex-wrap: wrap;
-      }
-      .registro__separador {
-        margin: 0 2px;
-        opacity: 0.5;
       }
       .registro__pregunta {
         margin: 0;
@@ -349,8 +324,5 @@ export class LoginPage implements OnInit {
     void this.router.navigate(['/registro-invitado']);
   }
 
-  protected verPresentacion(): void {
-    void this.router.navigate(['/']);
-  }
 }
 

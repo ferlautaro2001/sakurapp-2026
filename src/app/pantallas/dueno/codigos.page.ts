@@ -22,8 +22,8 @@ interface CodigoPropina {
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo bajada="Imprimilos y pegalos en la puerta, en la barra y en cada mesa">Códigos QR</lm-titulo>
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo>Códigos QR</lm-titulo>
 
         <lm-pestanas [opciones]="pestanas" [valor]="pestana()" (cambiar)="pestana.set($event)" />
 
@@ -31,20 +31,11 @@ interface CodigoPropina {
           @case ('ingreso') {
             @if (ingreso()) {
               <lm-placa-qr [fuente]="ingreso()!" rotulo="Ingreso al local" />
-              <lm-separador rotulo="Cómo se usa" />
-              <p class="lm-parrafo">
-                Va pegado en la puerta. El cliente lo escanea para anotarse en la lista de espera y para ver los
-                resultados de las encuestas anteriores.
-              </p>
             }
           }
 
           @case ('propinas') {
-            <p class="lm-parrafo">
-              Cinco códigos, uno por nivel de satisfacción. El cliente escanea el que corresponde y ese porcentaje se
-              suma a la cuenta final.
-            </p>
-            <div class="lm-list">
+            <div class="lm-lista-uno">
               @for (codigo of propinas(); track codigo.porcentaje) {
                 <div class="lm-card propina">
                   <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" />
@@ -60,7 +51,7 @@ interface CodigoPropina {
 
           @case ('mesas') {
             @if (mesas.todas().length) {
-              <div class="lm-list">
+              <div class="lm-lista-uno">
                 @for (mesa of mesas.todas(); track mesa.id) {
                   <button type="button" class="lm-card mesa" (click)="ir(['/mesas', mesa.id, 'qr'])">
                     <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" />
@@ -90,17 +81,29 @@ interface CodigoPropina {
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .propina, .mesa { display: flex; align-items: center; gap: var(--space-4); padding: var(--space-3); width: 100%; min-height: var(--touch-min); text-align: left; cursor: pointer; }
+      /* Una tarjeta por pantalla: el código va grande, arriba, y los datos debajo. */
+      /* Tarjeta de QR en horizontal: el código cuadrado a la izquierda, tan alto como la
+         casilla, y los datos a la derecha. Entra de a dos por pantalla sin achicar el QR. */
+      .propina, .mesa { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; gap: var(--space-4); padding: var(--space-3); width: 100%; min-height: 0; max-height: 100%; text-align: left; cursor: pointer; }
       /* La miniatura del código escala con el ancho del equipo, pero sigue
          cuadrada: un QR deformado no lo lee ninguna cámara. */
-      .propina img, .mesa img { width: var(--size-thumb); height: var(--size-thumb); aspect-ratio: 1; border-radius: var(--radius-thumb); flex: 0 0 auto; }
-      .propina__datos, .mesa__datos { flex: 1; min-width: 0; }
-      .mesa > lm-icono { flex: 0 0 auto; }
+      .propina img, .mesa img { flex: 0 0 auto; width: 46%; height: auto; max-height: 100%; aspect-ratio: 1; object-fit: contain; border-radius: var(--radius-card); background: #fff; }
+      .propina__datos, .mesa__datos { flex: 1 1 0; min-width: 0; }
+      .mesa > lm-icono { display: none; }
+      /* Los códigos van de a dos con alto de pantalla normal; en pantallas bajas, de a uno. */
+      @media (max-height: 700px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
       .propina__rotulo { display: block; font: var(--type-card-title); color: var(--text-title); }
-      .propina__valor { display: block; font: var(--type-price); color: var(--action-primary); }
+      .propina__valor { display: block; font: var(--type-numeral); color: var(--action-primary); }
       .propina__nota { display: block; font: var(--type-caption); color: var(--text-muted); }
-      .mesa__numero { display: block; font: var(--type-card-title); color: var(--text-title); }
+      .mesa__numero { display: block; font: var(--type-title); color: var(--text-title); }
       .mesa__meta { display: block; font: var(--type-caption); color: var(--text-muted); }
+    
+      /* Distribución: llenar el alto disponible sin recortar tarjetas */
+
+      /* El código de ingreso es una sola pieza: ocupa todo el alto libre. */
+      .lm-body > lm-placa-qr { flex: 1 1 auto; display: flex; }
+      .lm-body > lm-placa-qr ::ng-deep .lm-qrplate { flex: 1; width: 100%; justify-content: center; }
+      .lm-body > lm-placa-qr ::ng-deep .lm-qrplate img { max-width: min(100%, 44dvh, 340px); }
     `,
   ],
 })

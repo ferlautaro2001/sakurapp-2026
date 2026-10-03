@@ -33,14 +33,9 @@ import { PaginaConSesion } from '../pagina-base';
         }
       </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12 contenido">
+      <div class="lm-body lm-body--gap12 contenido" [class.lm-body--pantalla]="!devuelto()">
         <lm-titulo
           [contador]="carrito.cantidadTotal()"
-          [bajada]="
-            corrigiendo()
-              ? 'Corregí lo que marcó el mozo y volvé a mandarlo'
-              : 'Modificá las cantidades antes de confirmar tu pedido'
-          "
         >
           Tu comanda
         </lm-titulo>
@@ -101,7 +96,7 @@ import { PaginaConSesion } from '../pagina-base';
         }
 
         @if (carrito.items().length) {
-          <div class="lista-carrito">
+          <div class="lista-carrito" [class.lm-lista-n]="!devuelto()">
             @for (
               item of carrito.items();
               track item.producto.id
@@ -260,6 +255,10 @@ import { PaginaConSesion } from '../pagina-base';
         flex-direction: column;
         gap: var(--gap-list);
       }
+      /* En tandas, pero nunca de a tres: el renglón lleva foto, datos y el
+         contador de unidades, y en un tercio del alto no entra entero. */
+      .lista-carrito.lm-lista-n:has(> :nth-child(5)) { --por: 2; }
+      .lista-carrito.lm-lista-n .item-carrito { min-height: 0; overflow: hidden; --foto-item: clamp(48px, 7.5dvh, 76px); }
 
       /* Foto y datos arriba, el contador de unidades en su propio renglón: en
          un celular las tres columnas nunca entraban a lo ancho, y lo que antes
@@ -493,6 +492,19 @@ import { PaginaConSesion } from '../pagina-base';
         font-size: clamp(18px, 5vw, 25px);
         font-weight: 900;
       }
+      /* Los renglones nunca se cortan: el nombre pasa a dos líneas en vez de
+         truncarse y la foto crece con el ancho. */
+      .item-carrito { --foto-item: clamp(64px, 21vw, 92px); scroll-snap-align: start; }
+      .item-carrito__datos strong {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        font: var(--type-card-title);
+      }
+      .resumen > span:first-child strong { font: var(--type-numeral-lg); }
+      .resumen > span:last-child strong { font: var(--type-price); }
+
     `,
   ],
 })

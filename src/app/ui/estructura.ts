@@ -105,7 +105,8 @@ export class BarraInferiorComponent {
   selector: 'lm-pestanas',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="lm-tabs">
+    <div class="lm-tabs" [style.--n]="opciones().length" [style.--i]="indice()">
+      <span class="lm-tabs__marca" aria-hidden="true"></span>
       @for (opcion of opciones(); track opcion.valor) {
         <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
           {{ opcion.rotulo }}
@@ -119,5 +120,10 @@ export class PestanasComponent {
   readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
   readonly valor = input.required<string>();
   readonly cambiar = output<string>();
+
+  /** Posición de la opción activa: la pastilla se desliza hasta ahí. */
+  protected indice(): number {
+    return Math.max(0, this.opciones().findIndex((o) => o.valor === this.valor()));
+  }
 }
 

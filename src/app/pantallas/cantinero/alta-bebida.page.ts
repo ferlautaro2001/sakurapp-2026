@@ -39,6 +39,11 @@ import { enteroEntre, largoMinimo, marcarEnviado, precio, requerido } from '../.
          en el estilo del elemento: la casilla sigue el ancho de su columna en
          lugar de quedar más alta que ancha en un equipo de 320. */
       .fotos ::ng-deep .lm-photo__marco--rect{height:auto !important;aspect-ratio:1/1}
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
+      .fotos ::ng-deep .lm-photo__marco--rect { min-height: clamp(80px, 14dvh, 140px); }
     `,
   ],
 })

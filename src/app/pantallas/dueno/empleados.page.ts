@@ -12,7 +12,7 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
-      <div class="lm-body lm-body--gap12">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo [contador]="cargandoLista() || errorCarga() ? null : empleados().length">Empleados</lm-titulo>
         <lm-buscador marcador="Buscar por nombre o puesto" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
         @if (errorCarga()) {
@@ -20,9 +20,10 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
         } @else if (cargandoLista()) {
           <p class="lm-parrafo" role="status">Cargando empleados…</p>
         } @else if (visibles().length) {
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (empleado of visibles(); track empleado.uid || empleado.id) {
-              <article class="lm-pending">
+              <div class="casilla">
+<article class="lm-pending">
                 <div class="lm-pending__fila">
                   <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" />
                   <div class="lm-pending__datos">
@@ -35,6 +36,7 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
                   <lm-chip [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
                 </div>
               </article>
+</div>
             }
           </div>
         } @else {
@@ -53,6 +55,12 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
       /* En la fila densa el chip de estado no cede ancho: lo que se recorta es
          el nombre y el correo, que se recuperan mirando el detalle. */
       .lm-pending__fila > lm-chip { flex: 0 0 auto; }
+      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla:
+         nunca se estira hasta llenarla ni se sale de ella. */
+      .casilla { display: flex; flex-direction: column; justify-content: center; }
+      .casilla > * { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
+      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
     `,
   ],
 })

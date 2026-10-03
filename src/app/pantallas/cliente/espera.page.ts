@@ -28,7 +28,7 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
-        <lm-titulo [bajada]="bajada()">{{ titulo() }}</lm-titulo>
+        <lm-titulo>{{ titulo() }}</lm-titulo>
 
         @if (esperando()) {
           <div class="turno">
@@ -108,7 +108,7 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       }
 
       @if (modalErrorMesa(); as err) {
-        <lm-modal
+        <lm-modal animate.leave="sk-modal-host-sale"
           titulo="Mesa incorrecta"
           [mensaje]="err.mensaje"
           rotuloConfirmar="Entendido"
@@ -222,11 +222,6 @@ export class ClienteEsperaPage extends PaginaConSesion {
     return 'Esperando tu mesa';
   }
 
-  protected bajada(): string {
-    if (this.vinculado()) return 'Quedaste vinculado con la mesa que te asignó el metre';
-    if (this.estado() === 'ASIGNADO') return 'Escaneá el código de tu mesa para vincularte';
-    return 'Ya estás anotado en la lista de espera del salón';
-  }
 
   protected mensajeFila(): string {
     const delante = this.delante();

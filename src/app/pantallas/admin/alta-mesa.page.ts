@@ -83,11 +83,6 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
           [activo]="disponible()"
           (cambiar)="disponible.set($event)"
         />
-
-        <lm-separador rotulo="Código QR" />
-        <p class="lm-parrafo">
-          Al guardar la mesa, tendrás su código listo para imprimir.
-        </p>
       </div>
 
       <div class="lm-actionbar">
@@ -97,7 +92,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
     </div>
 
     @if (mesaCreada(); as m) {
-      <lm-modal
+      <lm-modal animate.leave="sk-modal-host-sale"
         titulo="Mesa agregada con éxito"
         [mensaje]="'La mesa ' + m.numero + ' ya está registrada.'"
         rotuloCancelar="Volver a mesas"
@@ -118,6 +113,14 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         flex-direction: column;
         gap: 6px;
       }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* La foto es la parte flexible: absorbe lo que sobra del alto. */
+      .lm-body { justify-content: space-between; }
+      .foto-seccion { flex: 1 0 auto; min-height: clamp(150px, 24dvh, 300px); }
+      .foto-seccion lm-foto { flex: 1; display: flex; }
+      .foto-seccion ::ng-deep .lm-photo { flex: 1; width: 100%; }
+      .foto-seccion ::ng-deep .lm-photo__marco--rect { flex: 1; height: auto !important; min-height: 120px; }
     `,
   ],
 })

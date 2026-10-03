@@ -87,7 +87,7 @@ import { UI } from '../../ui';
         }
 
         <div class="lm-modal__acciones">
-          <lm-boton variante="ghost" (presionar)="cancelar.emit()">
+          <lm-boton variante="ghost" icono="close" (presionar)="cancelar.emit()">
             Cancelar
           </lm-boton>
 
@@ -221,6 +221,16 @@ import { UI } from '../../ui';
         flex: 0 0 auto;
         align-items: center;
       }
+    
+      /* Las opciones de mesa se acomodan enteras, una a una. */
+      .mesas-grilla { scroll-snap-type: y mandatory; scroll-padding: 4px; overscroll-behavior: contain; }
+      .mesa-opcion { scroll-snap-align: start; scroll-snap-stop: always; flex-shrink: 0; }
+      /* La lista muestra una cantidad exacta de opciones enteras: con alto de
+         opción fijo, tres (dos en pantallas bajas) entran sin cortar ninguna. */
+      .mesa-opcion { box-sizing: border-box; height: 64px; }
+      .mesas-grilla { max-height: calc(3 * 64px + 2 * 8px); padding-bottom: 0; }
+      @media (max-height: 700px) { .mesas-grilla { max-height: calc(2 * 64px + 8px); } }
+      .mesa-opcion:not(.mesa-opcion--seleccionada) { background-image: var(--surface-card-degradado); }
     `,
   ],
 })

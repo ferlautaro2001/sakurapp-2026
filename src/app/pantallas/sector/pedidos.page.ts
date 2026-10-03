@@ -17,18 +17,21 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="comandas().length" [bajada]="bajada()">{{ titulo() }}</lm-titulo>
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="comandas().length">{{ titulo() }}</lm-titulo>
 
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (comandas().length) {
+          <div class="lm-lista-libre">
           @for (pedido of comandas(); track pedido.id) {
             <div class="ticket">
               <div class="ticket__cabecera">
                 <span class="ticket__mesa">Mesa {{ numeroMesa(pedido) }}</span>
                 <span class="ticket__cliente">{{ comensal(pedido) }}</span>
-                <lm-chip [estado]="chip(pedido)">{{ rotuloEstado(pedido) }}</lm-chip>
+                @if (filtro() === 'TODOS') {
+                  <lm-chip [estado]="chip(pedido)">{{ rotuloEstado(pedido) }}</lm-chip>
+                }
               </div>
 
               <div class="ticket__meta">
@@ -64,6 +67,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
               </div>
             </div>
           }
+          </div>
         } @else {
           <lm-vacio icono="skillet" [titulo]="tituloVacio()">
             {{ textoVacio() }}
@@ -171,9 +175,6 @@ export class SectorPedidosPage extends PaginaConSesion {
     return this.sector() === 'BAR' ? 'Pedidos de la barra' : 'Pedidos de la cocina';
   }
 
-  protected bajada(): string {
-    return `Lo que hay que preparar en ${this.rotuloSector()}, agrupado por mesa`;
-  }
 
   protected rotuloSector(): string {
     return ROTULO_SECTOR[this.sector()].toLocaleLowerCase('es-AR');

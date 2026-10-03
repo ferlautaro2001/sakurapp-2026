@@ -17,13 +17,13 @@ import { DatePipe } from '@angular/common';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="conversaciones().length" bajada="Las contesta cualquiera de los mozos del salón">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="conversaciones().length">
           Consultas
         </lm-titulo>
 
         @if (conversaciones().length) {
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (sala of conversaciones(); track sala.mesaId) {
               <button
                 type="button"
@@ -72,7 +72,18 @@ import { DatePipe } from '@angular/common';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      /* Más filas por tanda: cada consulta mide poco, así que entran 2, 4 o 6
+         enteras según cuántas haya. La fila se queda en horizontal: la regla
+         global de las listas la apilaría en columna. */
+      .lm-lista-n { --por: 2; }
+      .lm-lista-n:has(> :nth-child(3)) { --por: 4; }
+      .lm-lista-n:has(> :nth-child(5)) { --por: 4; }
+      @media (max-height: 760px) {
+        .lm-lista-n:has(> :nth-child(3)) { --por: 3; }
+        .lm-lista-n:has(> :nth-child(5)) { --por: 3; }
+      }
       .sala {
+        flex-direction: row; justify-content: flex-start;
         display: flex; align-items: center; gap: var(--space-3); width: 100%;
         padding: 10px var(--space-3); text-align: left; cursor: pointer;
         border: none; border-radius: var(--radius-card);
@@ -94,8 +105,12 @@ import { DatePipe } from '@angular/common';
       .sala__datos b { display: block; font: var(--type-card-title); color: var(--text-title); }
       .sala__datos small {
         display: block; font: var(--type-caption); color: var(--text-muted);
-        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        overflow: hidden; text-overflow: ellipsis;
+        display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+        white-space: normal; overflow-wrap: anywhere;
       }
+      .sala__datos > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .sala__datos small b { display: block; font: 800 clamp(14.5px, 4.1vw, 17px)/1.25 var(--font-text); color: var(--action-primary) !important; }
       .sala__hora {
         flex: 0 0 auto; font: var(--type-caption); color: var(--text-muted);
       }
@@ -105,9 +120,52 @@ import { DatePipe } from '@angular/common';
       }
       /* Resuelta: sigue a la vista para releerla, pero sin pelear por la
          atención con las que todavía esperan respuesta. */
-      .sala--cerrada { opacity: .72; }
-      .sala--cerrada .sala__datos b { color: var(--text-muted); }
+      .sala--cerrada { opacity: 1; }
       .sala > lm-icono { flex: 0 0 auto; }
+
+      /* ---------- calco del diseño de referencia ---------- */
+      /* Perla rosada con flor grande y pétalos de fondo; sin el degradado
+         fuerte del resto de las tarjetas. */
+      .sala {
+        position: relative; overflow: hidden; isolation: isolate;
+        gap: var(--space-4); padding: var(--space-3) var(--space-4);
+        border-radius: 24px;
+        background-color: #FFF1F5 !important;
+        background-image:
+          radial-gradient(ellipse at 18% 0%, rgba(255, 255, 255, .9), transparent 60%),
+          linear-gradient(135deg, #FFF6F8 0%, #FFE6EE 60%, #FFD9E5 100%) !important;
+        box-shadow: 0 8px 18px rgba(88, 12, 43, .2);
+      }
+      .sala::before {
+        content: ''; position: absolute; right: -14px; bottom: -22px; z-index: -1; pointer-events: none;
+        width: clamp(96px, 28vw, 130px); height: clamp(96px, 28vw, 130px);
+        background: url('/assets/img/flor-2.png') no-repeat center / contain;
+        opacity: .2; transform: rotate(-12deg);
+      }
+      .sala::after {
+        content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+        background:
+          radial-gradient(ellipse 7px 4px at 62% 72%, rgba(255, 150, 185, .5), transparent 70%),
+          radial-gradient(ellipse 6px 3.5px at 88% 22%, rgba(255, 150, 185, .45), transparent 70%),
+          radial-gradient(ellipse 5px 3px at 40% 14%, rgba(255, 150, 185, .35), transparent 70%);
+      }
+      .sala__mesa {
+        width: clamp(58px, 16.5vw, 72px); min-height: clamp(58px, 16.5vw, 72px);
+        border-radius: 18px;
+        background: linear-gradient(160deg, #FFFFFF 0%, #FFE9F0 100%);
+        box-shadow: 0 4px 10px rgba(168, 30, 72, .18), inset 0 1px 0 #FFFFFF;
+        border: 1px solid rgba(255, 190, 210, .8);
+        font: 900 clamp(22px, 6.6vw, 30px)/1 var(--font-numeric);
+      }
+      .sala__mesa small { font-size: clamp(10px, 2.9vw, 12px); color: var(--text-muted); }
+      .sala__datos { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+      .sala__datos > b { font: 900 clamp(17px, 5vw, 21px)/1.15 var(--font-display); color: var(--text-title); }
+      .sala__datos small { font: 500 clamp(14px, 3.9vw, 16px)/1.3 var(--font-text); color: var(--text-muted); }
+      .sala__hora { font: 500 clamp(13px, 3.7vw, 16px)/1 var(--font-text); color: var(--text-muted); }
+      .sala > lm-icono {
+        width: clamp(36px, 10.5vw, 44px); height: clamp(36px, 10.5vw, 44px); justify-content: center;
+        border-radius: 50%; background: #D8F4E4; box-shadow: 0 3px 8px rgba(10, 120, 62, .22);
+      }
     `,
   ],
 })

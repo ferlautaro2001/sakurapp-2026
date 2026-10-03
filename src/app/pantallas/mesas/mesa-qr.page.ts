@@ -7,7 +7,7 @@ import { ICONO_TIPO_MESA, ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelo
 
 /** Rango admitido de comensales, el mismo que valida el alta de mesa. */
 const MIN_COMENSALES = 1;
-const MAX_COMENSALES = 30;
+const MAX_COMENSALES = 10;
 
 const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
@@ -32,23 +32,21 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         <main class="contenedor-tarjetas">
           <!-- Tarjeta 1: Información de la mesa -->
           <div class="tarjeta-blanca" [class.tarjeta-blanca--resaltada]="resaltar()">
-            <div class="tarjeta-blanca__encabezado">
-              <lm-icono nombre="table_restaurant" [tamano]="20" color="#6E1234" />
-              <h2>Información de la mesa</h2>
-            </div>
-
-            <!-- El número identifica la mesa y su QR: no se edita nunca. -->
-            <div class="subtarjeta-info subtarjeta-info--fija">
-              <div class="subtarjeta-info__icono">
-                <lm-icono nombre="tag" [tamano]="22" color="#6E1234" />
-              </div>
-              <div class="subtarjeta-info__datos">
-                <span class="subtarjeta-info__etiqueta">Número de mesa</span>
-                <span class="subtarjeta-info__valor">{{ m.numero }}</span>
-              </div>
-              <span class="candado" aria-label="El número de mesa no se puede editar">
-                <lm-icono nombre="lock" [tamano]="15" color="#A2708A" />
-              </span>
+            <!-- Lo que más importa de la mesa: si está libre u ocupada. -->
+            <div class="estado-mesa" [class.estado-mesa--ocupada]="ocupada()">
+              <span class="dot dot--grande" [class.dot--ocupada]="ocupada()" [class.dot--libre]="!ocupada()"></span>
+              <span class="estado-mesa__titulo">{{ ocupada() ? 'Mesa ocupada' : 'Mesa libre' }}</span>
+              <button
+                type="button"
+                role="switch"
+                [attr.aria-checked]="ocupada()"
+                aria-label="Marcar la mesa como ocupada"
+                class="switch"
+                [class.switch--on]="ocupada()"
+                (click)="toggleOcupada()"
+              >
+                <span class="switch__perilla"></span>
+              </button>
             </div>
 
             <div class="grid-info">
@@ -92,44 +90,21 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 }
               </div>
             </div>
+            <!-- El número identifica la mesa y su QR: no se edita nunca. -->
+            <p class="numero-fijo">
+              <lm-icono nombre="lock" [tamano]="13" color="#A2708A" />
+              <span>Mesa {{ m.numero }} · el número no se puede editar</span>
+            </p>
           </div>
 
-          <!-- Tarjeta 2: Disponibilidad -->
-          <div class="tarjeta-blanca">
-            <div class="fila-disponibilidad-top">
-              <h2>Disponibilidad</h2>
-              <button
-                type="button"
-                role="switch"
-                [attr.aria-checked]="ocupada()"
-                class="switch"
-                [class.switch--on]="ocupada()"
-                (click)="toggleOcupada()"
-              >
-                <span class="switch__perilla"></span>
-              </button>
-            </div>
-            <div class="fila-disponibilidad-estado">
-              <span class="dot" [class.dot--ocupada]="ocupada()" [class.dot--libre]="!ocupada()"></span>
-              <div class="disponibilidad-texto">
-                <span class="disponibilidad-texto__titulo">
-                  {{ ocupada() ? 'Mesa ocupada' : 'Mesa libre' }}
-                </span>
-                <span class="disponibilidad-texto__bajada">
-                  {{ ocupada() ? 'Desactivá para liberar la mesa.' : 'Activá para ocupar la mesa.' }}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tarjeta 3: Código QR de la mesa -->
+          <!-- Tarjeta 2: Código QR de la mesa -->
           <div class="tarjeta-blanca tarjeta-qr">
-            <div class="tarjeta-blanca__encabezado">
-              <lm-icono nombre="qr_code_2" [tamano]="20" color="#6E1234" />
-              <h2>Código QR de la mesa</h2>
-            </div>
-
-            <div class="qr-marco">
+            <button
+              type="button"
+              class="qr-marco"
+              aria-label="Ver el código QR en pantalla completa"
+              (click)="mostrarQrCompleto.set(true)"
+            >
               @if (fuenteQr() || m.qrCodeUrl) {
                 <img
                   [src]="fuenteQr() || m.qrCodeUrl"
@@ -142,18 +117,6 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                   <span>Generando QR…</span>
                 </div>
               }
-            </div>
-
-            @if (puedeEditar()) {
-              <p class="qr-fijo">
-                <lm-icono nombre="lock" [tamano]="13" color="#A2708A" />
-                <span>El código ya generado no se edita: sigue siendo válido con los datos nuevos.</span>
-              </p>
-            }
-
-            <button type="button" class="btn-fullscreen" (click)="mostrarQrCompleto.set(true)">
-              <lm-icono nombre="fullscreen" [tamano]="18" color="#7A1535" />
-              <span>Ver en pantalla completa</span>
             </button>
           </div>
 
@@ -165,24 +128,25 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 <span>Tenés cambios sin guardar.</span>
               </p>
             }
+            <button type="button" class="btn-cancelar" (click)="volver()">
+              <lm-icono nombre="close" [tamano]="20" color="#FFFFFF" />
+              <span>Cancelar</span>
+            </button>
             <button type="button" class="btn-guardar" (click)="guardarCambios()">
               <lm-icono nombre="save" [tamano]="20" color="#B92E58" />
               <span>Guardar cambios</span>
-            </button>
-            <button type="button" class="btn-cancelar" (click)="volver()">
-              Cancelar
             </button>
           </div>
         </main>
 
         <!-- Modal QR en Pantalla Completa -->
         @if (mostrarQrCompleto()) {
-          <div class="modal-qr-fondo" (click)="mostrarQrCompleto.set(false)">
-            <div class="modal-qr-card" (click)="$event.stopPropagation()">
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="mostrarQrCompleto.set(false)">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card" (click)="$event.stopPropagation()">
               <div class="modal-qr-header">
                 <h3>Mesa {{ m.numero }}</h3>
                 <button type="button" class="btn-cerrar-modal" (click)="mostrarQrCompleto.set(false)">
-                  <lm-icono nombre="close" [tamano]="22" color="#6E1234" />
+                  <lm-icono nombre="close" [tamano]="26" color="#FFFFFF" />
                 </button>
               </div>
               <img
@@ -190,28 +154,17 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 [alt]="'QR Mesa ' + m.numero"
                 class="modal-qr-img"
               />
-              <p class="modal-qr-texto">Escaneá este código para ingresar a la mesa.</p>
-              <lm-boton variante="primary" (presionar)="mostrarQrCompleto.set(false)">
-                Cerrar
-              </lm-boton>
             </div>
           </div>
         }
 
         <!-- Modal de edición: comensales -->
         @if (editando() === 'comensales') {
-          <div class="modal-qr-fondo" (click)="cerrarEdicion()">
-            <div class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="cerrarEdicion()">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
               <div class="modal-qr-header">
                 <h3>Comensales</h3>
-                <button type="button" class="btn-cerrar-modal" aria-label="Cerrar" (click)="cerrarEdicion()">
-                  <lm-icono nombre="close" [tamano]="22" color="#6E1234" />
-                </button>
               </div>
-
-              <p class="modal-editar__bajada">
-                ¿Cuánta gente entra en la mesa {{ m.numero }}?
-              </p>
 
               <div class="contador">
                 <button
@@ -240,8 +193,8 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
               </p>
 
               <div class="modal-editar__acciones">
-                <lm-boton variante="ghost" (presionar)="cerrarEdicion()">Cancelar</lm-boton>
-                <lm-boton variante="primary" icono="check" (presionar)="aplicarComensales()">Aplicar</lm-boton>
+                <lm-boton variante="danger" icono="close" (presionar)="cerrarEdicion()"></lm-boton>
+                <lm-boton variante="success" icono="check" (presionar)="aplicarComensales()"></lm-boton>
               </div>
             </div>
           </div>
@@ -249,18 +202,11 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
         <!-- Modal de edición: tipo de mesa -->
         @if (editando() === 'tipo') {
-          <div class="modal-qr-fondo" (click)="cerrarEdicion()">
-            <div class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="cerrarEdicion()">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
               <div class="modal-qr-header">
                 <h3>Tipo de mesa</h3>
-                <button type="button" class="btn-cerrar-modal" aria-label="Cerrar" (click)="cerrarEdicion()">
-                  <lm-icono nombre="close" [tamano]="22" color="#6E1234" />
-                </button>
               </div>
-
-              <p class="modal-editar__bajada">
-                Definí cómo se ofrece la mesa {{ m.numero }} en el salón.
-              </p>
 
               <div class="opciones-tipo" role="radiogroup" aria-label="Tipo de mesa">
                 @for (opcion of tipos; track opcion) {
@@ -284,8 +230,8 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
               </div>
 
               <div class="modal-editar__acciones">
-                <lm-boton variante="ghost" (presionar)="cerrarEdicion()">Cancelar</lm-boton>
-                <lm-boton variante="primary" icono="check" (presionar)="aplicarTipo()">Aplicar</lm-boton>
+                <lm-boton variante="danger" icono="close" (presionar)="cerrarEdicion()"></lm-boton>
+                <lm-boton variante="success" icono="check" (presionar)="aplicarTipo()"></lm-boton>
               </div>
             </div>
           </div>
@@ -629,6 +575,36 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         margin-top: 1px;
       }
 
+
+      .dot--grande { width: 14px; height: 14px; margin-top: 0; }
+
+      .estado-mesa {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 2px 12px;
+      }
+
+      .estado-mesa__titulo {
+        flex: 1 1 auto;
+        font: var(--type-card-title);
+        font-size: clamp(20px, 5.6vw, 24px);
+        font-weight: 800;
+        color: #1B7A4C;
+      }
+
+      .estado-mesa--ocupada .estado-mesa__titulo { color: #D6336C; }
+
+      .numero-fijo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        margin: 10px 0 0;
+        font: var(--type-caption);
+        color: #A2708A;
+      }
+
       /* Tarjeta QR */
       .tarjeta-qr {
         text-align: center;
@@ -790,6 +766,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
       }
 
       .modal-qr-header {
+        gap: var(--space-2);
         width: 100%;
         display: flex;
         align-items: center;
@@ -941,6 +918,19 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         font: var(--type-body-small);
         color: #6E1234;
         overflow-wrap: anywhere;
+      }
+    
+      /* Distribución: llenar el alto disponible sin recortar tarjetas */
+
+      .pantalla-mesa { scroll-snap-type: y proximity; scroll-padding: 8px 0 16px; padding-bottom: max(16px, var(--safe-bottom)); }
+      .contenedor-tarjetas { flex: 1 1 auto; }
+      .tarjeta-blanca { scroll-snap-align: start; scroll-snap-stop: normal; }
+      .tarjeta-qr { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+      .qr-marco { width: clamp(140px, min(58vw, 30dvh), 260px); }
+
+      /* Degradado de las tarjetas de la carta en lo que era blanco liso. */
+      .tarjeta-blanca, .modal-qr-card, .opcion-tipo:not(.opcion-tipo--elegida) {
+        background-image: var(--surface-card-degradado);
       }
     `,
   ],

@@ -120,7 +120,9 @@ export class TarjetaPerfilComponent {
             <span>{{ cliente().email ?? 'Sin correo' }}</span>
           </span>
         </span>
-        <lm-chip [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+        @if (mostrarEstado()) {
+          <lm-chip [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+        }
       </button>
       @if (cliente().estado === 'PENDIENTE' && conAcciones()) {
         <div class="lm-pending__acciones">
@@ -156,6 +158,8 @@ export class FilaPendienteComponent {
   protected readonly usuarios = inject(UsuariosService);
   readonly cliente = input.required<Usuario>();
   readonly conAcciones = input(true, { transform: booleanAttribute });
+  /** Con un filtro de estado activo el estado ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
   readonly aceptar = output<void>();
   readonly rechazar = output<void>();
   /** Toque sobre la fila: abre la ficha ampliada de la persona. */
@@ -194,13 +198,15 @@ export class FilaPendienteComponent {
     "
   ></span>
 
-  <span class="lm-mesa__tipo">
-    <lm-icono
-      [nombre]="iconoTipo()"
-      [tamano]="14"
-    />
-    {{ rotuloTipo() }}
-  </span>
+  @if (mostrarTipo()) {
+    <span class="lm-mesa__tipo">
+      <lm-icono
+        [nombre]="iconoTipo()"
+        [tamano]="14"
+      />
+      {{ rotuloTipo() }}
+    </span>
+  }
 
   <span class="lm-mesa__numero">
     {{ mesa().numero }}
@@ -263,16 +269,18 @@ export class FilaPendienteComponent {
     </span>
 
     <!-- ESTADO -->
-    <span
-      class="lm-mesa__estado"
-      [class.lm-mesa__estado--vacia]="mesa().estado.toLowerCase() === 'vacia'"
-      [class.lm-mesa__estado--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
-      [class.lm-mesa__estado--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
-    >
-      <span class="lm-mesa__estado-punto"></span>
+    @if (mostrarEstado()) {
+      <span
+        class="lm-mesa__estado"
+        [class.lm-mesa__estado--vacia]="mesa().estado.toLowerCase() === 'vacia'"
+        [class.lm-mesa__estado--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
+        [class.lm-mesa__estado--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+      >
+        <span class="lm-mesa__estado-punto"></span>
 
-      {{ rotuloEstado() }}
-    </span>
+        {{ rotuloEstado() }}
+      </span>
+    }
 
   </span>
 </button>
@@ -283,6 +291,9 @@ export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
   /** El lápiz sólo lo ven los perfiles que pueden editar la mesa. */
   readonly conEdicion = input(false, { transform: booleanAttribute });
+  /** Con un filtro de estado o de tipo activo, ese dato ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
+  readonly mostrarTipo = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
   readonly abrirQr = output<void>();
   readonly abrirEdicion = output<void>();

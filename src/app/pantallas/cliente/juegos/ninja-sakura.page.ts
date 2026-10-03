@@ -291,6 +291,8 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
       }
       .tapa__titulo { font: var(--type-section); color: var(--text-title); text-wrap: balance; }
       .tapa__texto { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
+      /* Nada de blanco liso: el degradado de las tarjetas del menú. */
+      .tapa__ficha, .cancha { background-image: var(--surface-card-degradado); }
     `,
   ],
 })

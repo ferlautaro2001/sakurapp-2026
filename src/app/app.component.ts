@@ -47,7 +47,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       @if (avisos.avisosToast().length) {
         <div class="lm-toasts">
           @for (aviso of avisos.avisosToast(); track aviso.id) {
-            <lm-banner [tono]="aviso.tono" [titulo]="aviso.titulo" cerrable (cerrar)="avisos.cerrar(aviso.id)">
+            <lm-banner animate.leave="sk-aviso-sale" [tono]="aviso.tono" [titulo]="aviso.titulo" cerrable (cerrar)="avisos.cerrar(aviso.id)">
               {{ aviso.cuerpo }}
             </lm-banner>
           }
@@ -55,7 +55,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       }
 
       @if (avisos.modalExito(); as exito) {
-        <div class="modal-exito-overlay" (click)="avisos.cerrar(exito.id)">
+        <div class="modal-exito-overlay" animate.leave="sk-fondo-sale" (click)="avisos.cerrar(exito.id)">
           <div class="modal-exito" (click)="$event.stopPropagation()">
             <div class="modal-exito__icono">
               <lm-icono nombre="check_circle" tamano="clamp(32px, 10.2vw, 44px)" color="var(--state-success)" />
@@ -72,13 +72,13 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       }
 
       @if (cargando.visible()) {
-        <div class="lm-overlay">
+        <div class="lm-overlay" animate.leave="sk-fondo-sale">
           <lm-spinner [rotulo]="cargando.rotulo()" />
         </div>
       }
 
       @if (confirmacion.abierta(); as pedido) {
-        <lm-modal
+        <lm-modal animate.leave="sk-modal-host-sale"
           [titulo]="pedido.titulo"
           [mensaje]="pedido.mensaje"
           [rotuloConfirmar]="pedido.confirmar"

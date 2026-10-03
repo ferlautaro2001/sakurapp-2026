@@ -49,8 +49,7 @@ import { PaginaConSesion } from '../pagina-base';
               <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
             </span>
             <div class="mesa__datos">
-              <b>Mesa {{ p.mesaNumero }}</b>
-              <small>Pedido de {{ p.clienteNombre }}</small>
+              <b>Mesa {{ p.mesaNumero }} - {{ p.clienteNombre }}</b>
             </div>
           </div>
 
@@ -63,15 +62,15 @@ import { PaginaConSesion } from '../pagina-base';
           <div class="lm-card leyenda">
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cantidad">
-                <lm-icono nombre="warning" [tamano]="16" color="#FFFFFF" />
+                <lm-icono nombre="warning" [tamano]="30" color="#FFFFFF" />
               </i>
-              Hay, pero menos de lo pedido: tiene que bajar la cantidad.
+              Bajo stock
             </span>
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cambiar">
-                <lm-icono nombre="block" [tamano]="16" color="#FFFFFF" />
+                <lm-icono nombre="block" [tamano]="30" color="#FFFFFF" />
               </i>
-              No lo podés preparar: tiene que sacarlo o cambiarlo.
+              Agotado
             </span>
           </div>
 
@@ -206,6 +205,13 @@ import { PaginaConSesion } from '../pagina-base';
         background: var(--surface-sunken);
       }
 
+      /* El título ocupa todo el ancho que deja el ícono y va centrado; el ícono
+         se equilibra con un hueco del mismo ancho a la derecha. */
+      .mesa { align-items: center; justify-content: center; }
+      .mesa::after { content: ''; flex: 0 0 var(--touch-min); }
+      .mesa__datos { flex: 1 1 auto; min-width: 0; text-align: center; }
+      .mesa__datos b { text-wrap: balance; overflow-wrap: anywhere; }
+
       .mesa__datos b {
         display: block;
         color: var(--text-title);
@@ -219,16 +225,19 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .leyenda {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
         padding: var(--space-4);
       }
 
       .leyenda__item {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        text-align: center;
+        font-weight: 800;
         color: var(--text-body);
         font: var(--type-body-small);
         text-wrap: pretty;
@@ -238,8 +247,8 @@ import { PaginaConSesion } from '../pagina-base';
       .leyenda__sello {
         display: grid;
         flex: 0 0 auto;
-        width: 26px;
-        height: 26px;
+        width: 56px;
+        height: 56px;
         place-items: center;
         border-radius: 50%;
       }

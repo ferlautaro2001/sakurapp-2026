@@ -14,16 +14,17 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" bajada="Ordenada por hora de llegada">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="visibles().length">
           Lista de espera
         </lm-titulo>
 
         <lm-buscador marcador="Buscar comensal" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
 
         @if (visibles().length) {
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (entrada of visibles(); track entrada.id; let posicion = $index) {
+              <div class="casilla">
               <div class="lm-wait">
                 <span class="lm-wait__pos">{{ posicion + 1 }}</span>
                 <span
@@ -57,6 +58,7 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
                   />
                 </span>
               </div>
+              </div>
             }
           </div>
         } @else {
@@ -71,7 +73,7 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
       </div>
 
       @if (entradaParaAsignar(); as seleccionada) {
-        <lm-asignar-mesa-modal
+        <lm-asignar-mesa-modal animate.leave="sk-modal-host-sale"
           [clienteNombre]="seleccionada.clienteNombre"
           (asignar)="confirmarAsignacion(seleccionada, $event)"
           (cancelar)="entradaParaAsignar.set(null)"
@@ -82,7 +84,18 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
     </div>
   `,
 
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host { display: flex; flex: 1; min-height: 0; }
+
+      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla:
+         nunca se estira hasta llenarla ni se sale de ella. */
+      .casilla { display: flex; flex-direction: column; justify-content: center; }
+      .casilla > * { flex: 1 1 auto; max-height: clamp(76px, 18dvh, 130px); justify-content: center; align-items: center; }
+      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
+    `,
+  ],
 })
 export class MetreListaEsperaPage extends PaginaConSesion implements OnInit {
   private readonly espera = inject(EsperaService);

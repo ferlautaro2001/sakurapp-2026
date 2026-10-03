@@ -4,7 +4,6 @@
 > **Grupo:** Sakura  
 > **Repositorio:** `sakurapp-2026`
 
-
 ---
 
 ## Integrantes y Backlog
@@ -17,6 +16,7 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 | Integrante | Rol |
 | :--- | :--- |
 | **Fernandez Di Bella, Lautaro Alfredo** | Líder de Proyecto  
+
 ---
 
 ## Tech Stack
@@ -37,43 +37,13 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 * **Backend & Autenticación:** Firebase Authentication & Cloud Firestore / Data Connect / SQL Connect
 * **Lenguajes & Estilos:** TypeScript 6, HTML5, SCSS/CSS3, Tailwind CSS & Font Awesome
 
-
 ---
 
-## Índice Visual de Pantallas e Imágenes
+## Índice Visual de Pantallas
 
-A continuación se indexan las capturas de pantalla de los flujos y componentes de la aplicación, disponibles en el directorio [`visuals/`](./visuals):
+Las capturas de pantalla de los flujos y componentes de la aplicación se encuentran indexadas en el siguiente enlace externo:
 
-### 1. Paleta & Componentes
-
-<img src="visuals/paleta.png" width="400" alt="Presentación Estática"/>
-
-
-### 2. Acceso y Presentación
-
-| Pantalla | Descripción | Captura |
-| :--- | :--- | :---: |
-| **Splash Dinámico** | Pantalla de carga animada con isotipo Sakura. | <img src="visuals/01-splash-dinamico.png" width="220" alt="Splash Dinámico"/> |
-| **Presentación Estática** | Portada y bienvenida institucional a SakurApp. | <img src="visuals/02-presentacion-estatica.png" width="220" alt="Presentación Estática"/> |
-| **Inicio de Sesión** | Pantalla de login con tarjetas de accesos rápidos por perfil. | <img src="visuals/03-login.png" width="220" alt="Login"/> |
-| **Error de Validación** | Feedback visual interactivo ante errores de validación. | <img src="visuals/11-login-error-validacion.png" width="220" alt="Validación Login"/> |
-| **Cierre de Sesión** | Modal de confirmación para deslogueo seguro. | <img src="visuals/10-cierre-sesion-modal.png" width="220" alt="Cierre de Sesión"/> |
-
-### 2. Registro y Estados de Cuenta
-
-| Pantalla | Descripción | Captura |
-| :--- | :--- | :---: |
-| **Registro de Cliente** | Formulario completo con lector de DNI y captura de foto de perfil. | <img src="visuals/04-registro-cliente.png" width="220" alt="Registro Cliente"/> |
-| **Registro Enviado** | Confirmación de solicitud enviada a los administradores. | <img src="visuals/05-registro-enviado.png" width="220" alt="Registro Enviado"/> |
-| **Registro de Invitado** | Alta ágil de cliente anónimo presencial (nombre y foto). | <img src="visuals/06-registro-invitado.png" width="220" alt="Registro Invitado"/> |
-| **Cuenta Pendiente** | Pantalla informativa para clientes a la espera de aprobación. | <img src="visuals/07-estado-cuenta-pendiente.png" width="220" alt="Cuenta Pendiente"/> |
-| **Cuenta Rechazada** | Pantalla informativa para clientes cuya solicitud fue denegada. | <img src="visuals/08-estado-cuenta-rechazado.png" width="220" alt="Cuenta Rechazada"/> |
-
-### 3. Dashboard Principal
-
-| Pantalla | Descripción | Captura |
-| :--- | :--- | :---: |
-| **Home de Sesión** | Dashboard principal con navegación contextual según el perfil de usuario. | <img src="visuals/09-home-sesion.png" width="220" alt="Home Sesión"/> |
+🔗 **https://sakupantallas.vercel.app/**
 
 ---
 
@@ -172,4 +142,3 @@ Para probar la aplicación en el navegador localmente:
 ```bash
 npm start
 ```
-

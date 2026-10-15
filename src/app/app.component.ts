@@ -47,7 +47,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       @if (avisos.avisosToast().length) {
         <div class="lm-toasts">
           @for (aviso of avisos.avisosToast(); track aviso.id) {
-            <lm-banner [tono]="aviso.tono" [titulo]="aviso.titulo" cerrable (cerrar)="avisos.cerrar(aviso.id)">
+            <lm-banner animate.leave="sk-aviso-sale" [tono]="aviso.tono" [titulo]="aviso.titulo" cerrable (cerrar)="avisos.cerrar(aviso.id)">
               {{ aviso.cuerpo }}
             </lm-banner>
           }
@@ -55,7 +55,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       }
 
       @if (avisos.modalExito(); as exito) {
-        <div class="modal-exito-overlay" (click)="avisos.cerrar(exito.id)">
+        <div class="modal-exito-overlay" animate.leave="sk-fondo-sale" (click)="avisos.cerrar(exito.id)">
           <div class="modal-exito" (click)="$event.stopPropagation()">
             <div class="modal-exito__icono">
               <lm-icono nombre="check_circle" tamano="clamp(32px, 10.2vw, 44px)" color="var(--state-success)" />
@@ -72,13 +72,13 @@ import { SesionService } from './nucleo/servicios/sesion.service';
       }
 
       @if (cargando.visible()) {
-        <div class="lm-overlay">
+        <div class="lm-overlay" animate.leave="sk-fondo-sale">
           <lm-spinner [rotulo]="cargando.rotulo()" />
         </div>
       }
 
       @if (confirmacion.abierta(); as pedido) {
-        <lm-modal
+        <lm-modal animate.leave="sk-modal-host-sale"
           [titulo]="pedido.titulo"
           [mensaje]="pedido.mensaje"
           [rotuloConfirmar]="pedido.confirmar"
@@ -142,6 +142,9 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         display: flex;
         flex-direction: column;
         align-items: center;
+        /* Separación pareja entre ícono, título, cuerpo y botón: sin cuerpo, el
+           título quedaba pegado al botón. */
+        gap: var(--space-5);
         text-align: center;
         box-shadow: 0 16px 36px rgba(110, 18, 52, 0.22);
         border: 1.5px solid rgba(46, 125, 50, 0.2);
@@ -154,7 +157,6 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         background: rgba(46, 125, 50, 0.12);
         display: grid;
         place-items: center;
-        margin-bottom: 12px;
       }
       .modal-exito__titulo {
         margin: 0;
@@ -162,7 +164,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         color: var(--text-title);
       }
       .modal-exito__cuerpo {
-        margin: var(--space-2) 0 var(--space-4);
+        margin: 0;
         font: 500 clamp(13px, 3.3vw, 14px)/1.4 var(--font-text);
         color: var(--text-muted);
       }

@@ -30,9 +30,9 @@ import { Unsubscribe } from 'firebase/firestore';
       </lm-encabezado>
 
       @if (pedido(); as p) {
-        <div class="lm-body lm-body--gap12">
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
           @if (!esperando()) {
-            <lm-titulo [bajada]="bajada()">{{ titulo() }}</lm-titulo>
+            <lm-titulo>{{ titulo() }}</lm-titulo>
           }
 
           @if (p.estadoGlobal === 'RECHAZADO') {
@@ -55,7 +55,6 @@ import { Unsubscribe } from 'firebase/firestore';
                 <lm-icono nombre="hourglass_top" [tamano]="30" color="var(--action-primary)" />
               </span>
               <b>El mozo está revisando tu pedido</b>
-              <small>Cuando lo confirme te avisamos. Mientras tanto, pasá el rato con un minijuego.</small>
               <div style="margin-top: 12px; width: 100%;">
                 <lm-boton icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">Jugar mientras esperás</lm-boton>
               </div>
@@ -111,7 +110,7 @@ import { Unsubscribe } from 'firebase/firestore';
 
           <!-- Renglones en modo editable (desde carrito) -->
           @if (editable()) {
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of carrito.items(); track item.producto.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -125,14 +124,10 @@ import { Unsubscribe } from 'firebase/firestore';
 
             @if (traba(); as motivo) {
               <lm-banner tono="error" titulo="Todavía no lo podés mandar">{{ motivo }}</lm-banner>
-            } @else {
-              <p class="lm-parrafo">
-                Podés cambiar las cantidades acá o volver a la carta para sumar o sacar productos.
-              </p>
             }
           } @else {
             <!-- Renglones de pedido enviado o confirmado -->
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of p.items; track item.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -194,10 +189,10 @@ import { Unsubscribe } from 'firebase/firestore';
         </div>
       } @else if (carrito.items().length) {
         <!-- Borrador antes de enviar -->
-        <div class="lm-body lm-body--gap12">
-          <lm-titulo bajada="Sumá o sacá lo que quieras antes de mandarlo">Mi pedido</lm-titulo>
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
+          <lm-titulo>Mi pedido</lm-titulo>
 
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (item of carrito.items(); track item.producto.id) {
               <lm-renglon-pedido
                 [item]="item"
@@ -207,10 +202,6 @@ import { Unsubscribe } from 'firebase/firestore';
               />
             }
           </div>
-
-          <p class="lm-parrafo">
-            Podés cambiar las cantidades acá o volver a la carta para sumar otros productos.
-          </p>
         </div>
 
         <div class="lm-actionbar">
@@ -232,7 +223,7 @@ import { Unsubscribe } from 'firebase/firestore';
       } @else {
         <!-- Vacío -->
         <div class="lm-body">
-          <lm-titulo bajada="Todavía no armaste ningún pedido">Mi pedido</lm-titulo>
+          <lm-titulo>Mi pedido</lm-titulo>
           <lm-vacio icono="receipt_long" titulo="Tu pedido está vacío">
             Entrá a la carta, tocá el más en lo que quieras y el pedido se va armando solo.
             <lm-boton accion variante="secondary" icono="restaurant_menu" [ancho]="false" (presionar)="ir(['/carta'])">
@@ -285,6 +276,24 @@ import { Unsubscribe } from 'firebase/firestore';
       }
       .espera b { font: var(--type-card-title); color: var(--text-title); }
       .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
+      /* El estado vacío llena el alto que sobra: sin hueco debajo. */
+      lm-vacio { display: flex; flex-direction: column; flex: 1 1 auto; }
+      lm-vacio ::ng-deep .lm-empty { flex: 1 1 auto; justify-content: center; }
+
+      /* Esperando al mozo: la tarjeta ocupa el alto disponible y el reloj
+         y el título crecen con él, en lugar de quedar chicos arriba. */
+      .espera { flex: 1 1 auto; justify-content: center; gap: var(--space-3); }
+      .espera__reloj { width: clamp(64px, 22vw, 96px); height: clamp(64px, 22vw, 96px); }
+      .espera__titulo { font: var(--type-title-xl); }
+      .espera b { font: var(--type-section); }
+      .espera small { font: var(--type-body); }
+      /* El estado y el resumen dejan menos alto que en el borrador:
+         como en el carrito, se muestran hasta dos renglones por tanda. */
+      .pedido__detalle:has(> :nth-child(5)) { --por: 2; }
+      @media (max-height: 640px) {
+        .pedido__detalle:has(> :nth-child(3)) { --por: 1; }
+      }
+
     `,
   ],
 })
@@ -394,29 +403,6 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     return 'Mi pedido';
   }
 
-  protected bajada(): string | null {
-    const p = this.pedido();
-    if (!p) return 'Sumá o sacá lo que quieras antes de mandarlo';
-    switch (p.estadoGlobal) {
-      case 'RECHAZADO':
-        return 'El mozo te devolvió el pedido';
-      case 'PENDIENTE_CONFIRMACION':
-        return null;
-      case 'CONFIRMADO':
-        return `Salió para la cocina y la barra · listo en unos ${p.tiempoEstimado} minutos`;
-      case 'EN_PREPARACION':
-        return 'Ya lo están preparando';
-      case 'LISTO':
-        return 'El mozo te lo va a acercar en un momento';
-      case 'RECIBIDO':
-      case 'ENTREGADO':
-        return 'Esperamos que disfrutes tu comida';
-      case 'CUENTA_SOLICITADA':
-        return 'El mozo se acerca con la cuenta';
-      default:
-        return 'Sumá o sacá lo que quieras antes de mandarlo';
-    }
-  }
 
   protected alcance(): string {
     const p = this.pedido();

@@ -19,15 +19,16 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="correos().length" bajada="Se envían solos al resolver cada registro">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="correos().length">
           Correos automáticos
         </lm-titulo>
 
         @if (correos().length) {
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (correo of correos(); track correo.id) {
-              <div class="lm-card correo">
+              <div class="casilla" [class.casilla--abierta]="abierto() === correo.id">
+              <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
                 <button type="button" class="correo__fila" (click)="alternar(correo.id)">
                   <span class="correo__icono" [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'">
                     <lm-icono
@@ -37,19 +38,16 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
                     />
                   </span>
                   <span class="correo__datos">
-                    <b>{{ correo.asunto }}</b>
-                    <small>Para {{ correo.para }} · {{ correo.enviadoEn | fechaHora }}</small>
+                    <b>{{ rotuloAsunto(correo.asunto) }}</b>
+                    <small>Para {{ correo.para }}</small>
+                    <small>{{ correo.enviadoEn | fechaHora }}</small>
                   </span>
+                  <!-- Qué se le avisó a la persona, a la altura del chevrón. -->
+                  <lm-chip [estado]="correo.plantilla === 'APROBACION' ? 'aprobado' : 'rechazado'">
+                    {{ correo.plantilla === 'APROBACION' ? 'Aprobado' : 'Rechazado' }}
+                  </lm-chip>
                   <lm-icono [nombre]="abierto() === correo.id ? 'expand_less' : 'expand_more'" [tamano]="22" />
                 </button>
-
-                <!-- El chip alcanza: el detalle que devuelve el proveedor es
-                     diagnóstico interno y no le dice nada a quien mira. -->
-                <div class="correo__estado">
-                  <lm-chip [estado]="correo.entregado ? 'aprobado' : 'pendiente'">
-                    {{ correo.entregado ? 'Entregado' : 'En bandeja' }}
-                  </lm-chip>
-                </div>
 
                 @if (abierto() === correo.id) {
                   <iframe
@@ -59,6 +57,7 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
                     [srcdoc]="html(correo)"
                   ></iframe>
                 }
+              </div>
               </div>
             }
           </div>
@@ -79,16 +78,21 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
     `
       :host { display: flex; flex: 1; min-height: 0; }
       .correo { padding: var(--space-3); display: flex; flex-direction: column; gap: var(--space-3); }
+      /* Mismo aro de vidrio que el botón de cerrar sesión. */
+      .correo {
+        border: 1.5px solid rgba(255, 255, 255, .5) !important;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
+      }
       .correo__fila { display: flex; align-items: center; gap: var(--space-3); background: none; border: none; padding: 0; min-height: var(--touch-min); cursor: pointer; text-align: left; width: 100%; }
       .correo__icono { width: var(--size-icono-caja); height: var(--size-icono-caja); flex: 0 0 auto; border-radius: var(--radius-thumb); background: var(--state-success); display: grid; place-items: center; }
       .correo__icono--rechazo { background: var(--state-error); }
-      .correo__datos { flex: 1; min-width: 0; }
-      .correo__datos b { display: block; font: var(--type-body-medium); color: var(--text-title); }
-      .correo__datos small { display: block; font: var(--type-caption); color: var(--text-muted); }
+      .correo__datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+      .correo__datos b { display: block; font: var(--type-body-medium); color: var(--text-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      .correo__datos small { display: block; font: var(--type-caption); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       /* El asunto y el destinatario ceden antes que el ícono y el chevrón, que
          son los que dicen de qué plantilla se trata y que la fila se abre. */
       .correo__fila > lm-icono { flex: 0 0 auto; }
-      .correo__estado { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+      .correo__fila > lm-chip { flex: 0 0 auto; }
       /* El correo se muestra dentro de un marco aislado: su hoja de estilos
          está pensada para un cliente de correo y no puede tocar la aplicación. */
       .correo__vista {
@@ -98,6 +102,16 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
         border-radius: var(--radius-field); border: 1px solid var(--border-field);
         background: var(--surface-sunken);
       }
+    
+      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla.
+         Cuando se abre la vista previa, la casilla ocupa toda la lista y el
+         marco del correo toma el alto que sobra, sin desbordar. */
+      .casilla { display: flex; flex-direction: column; justify-content: center; }
+      .casilla > .correo { flex: 0 0 auto; justify-content: center; }
+      .casilla--abierta { flex-basis: 100% !important; }
+      .casilla > .correo--abierto { flex: 1 1 auto; max-height: 100%; justify-content: flex-start; min-height: 0; }
+      .correo--abierto .correo__vista { flex: 1 1 0; height: auto; min-height: 0; }
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
     `,
   ],
 })
@@ -120,5 +134,10 @@ export class DuenoCorreosPage extends PaginaConSesion {
    */
   protected html(correo: CorreoEnviado): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(correo.cuerpoHtml);
+  }
+
+  /** En la lista el asunto va corto: el nombre del local sobra y el del rechazo es largo. */
+  protected rotuloAsunto(asunto: string): string {
+    return asunto.includes('Estado de tu solicitud') ? 'Estado de solicitud' : asunto;
   }
 }

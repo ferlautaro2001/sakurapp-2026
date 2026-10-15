@@ -33,7 +33,7 @@ import { Unsubscribe } from 'firebase/firestore';
             }
           } @else {
             <div class="sala__vacia">
-              <lm-icono nombre="forum" [tamano]="34" color="var(--action-accent)" />
+              <lm-icono nombre="forum" tamano="clamp(56px, 22vw, 104px)" color="var(--text-sobre-fondo)" />
               <b>Preguntá lo que necesites</b>
               <span>Un mozo te responderá por acá.</span>
             </div>
@@ -73,10 +73,10 @@ import { Unsubscribe } from 'firebase/firestore';
       }
       .sala__vacia {
         flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 6px; text-align: center; padding: var(--space-5) var(--space-3);
+        gap: var(--space-3); text-align: center; padding: var(--space-5) var(--space-3);
       }
-      .sala__vacia b { font: var(--type-card-title); color: var(--text-sobre-fondo); }
-      .sala__vacia span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
+      .sala__vacia b { font: var(--type-title); color: var(--text-sobre-fondo); }
+      .sala__vacia span { font: var(--type-body); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
 
     `,
   ],

@@ -1,7 +1,7 @@
 import { Component, computed, input } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
-import { ROTULO_ESTADO_PEDIDO, ROTULO_ESTADO_SECTOR, Sector } from '../../nucleo/modelos/enums';
+import { ROTULO_ESTADO_PEDIDO, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
 
 /**
@@ -24,7 +24,12 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
               <b>Mesa {{ numeroMesa(p) }}</b>
               <small>Pedido de {{ comensal(p) }}</small>
             </div>
-            <lm-chip [estado]="chip()">{{ rotuloEstado() }}</lm-chip>
+            <lm-chip class="mesa__estado" [estado]="chip()">
+              @if (confirmado()) {
+                <lm-icono [nombre]="itemsDe('COCINA').length ? 'skillet' : 'local_bar'" [tamano]="18" />
+              }
+              {{ rotuloEstado() }}
+            </lm-chip>
           </div>
 
           @if (p.estadoGlobal === 'RECHAZADO' && p.motivoRechazo) {
@@ -42,16 +47,6 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
                   <lm-renglon-pedido [item]="item" />
                 }
               </div>
-              @if (confirmado()) {
-                <div class="lm-card sector">
-                  <lm-icono
-                    [nombre]="sector.valor === 'BAR' ? 'local_bar' : 'skillet'"
-                    [tamano]="20"
-                    color="var(--action-primary)"
-                  />
-                  <span>{{ rotuloSector(sector.valor) }}</span>
-                </div>
-              }
             }
           }
         </div>
@@ -59,14 +54,12 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
         <div class="lm-actionbar">
           <lm-resumen-pedido [total]="p.totalFinal" [tiempo]="p.tiempoEstimado" [unidades]="unidades(p)">
             @if (p.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-              <div class="lm-actionbar--split">
-                <lm-boton variante="success" icono="thumb_up" (presionar)="confirmar()">Confirmar</lm-boton>
-                <lm-boton variante="danger" icono="edit_note" (presionar)="ir(['/mozo/pedidos', p.id, 'rechazar'])">
-                  Devolver
-                </lm-boton>
-              </div>
-            } @else {
-              <lm-boton variante="secondary" icono="list" (presionar)="volver()">Volver a los pedidos</lm-boton>
+              <lm-decision
+                rotuloRechazar="Devolver"
+                rotuloAceptar="Confirmar"
+                (rechazar)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
+                (aceptar)="confirmar()"
+              />
             }
           </lm-resumen-pedido>
         </div>
@@ -83,6 +76,18 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      /* El estado del pedido, más grande y con el ícono del sector. */
+      .mesa__estado ::ng-deep .lm-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; padding: 6px 12px; }
+      /* Tarjetas, resumen y botones de decisión con el aro de vidrio del botón de volver. */
+      .lm-card, :host ::ng-deep .renglon,
+      :host ::ng-deep .lm-resumen, :host ::ng-deep lm-decision .dec {
+        background-clip: padding-box !important;
+        border: 1.5px solid rgba(255, 255, 255, .5) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .55),
+          inset 0 -6px 12px rgba(255, 255, 255, .06),
+          0 4px 10px rgba(94, 12, 44, .16) !important;
+      }
       .mesa { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
       .mesa__icono {
         flex: 0 0 auto; width: var(--touch-min); min-height: var(--touch-min); border-radius: 14px;
@@ -94,7 +99,6 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      .sector { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4); font: var(--type-body-small); color: var(--text-body); }
     `,
   ],
 })
@@ -134,13 +138,6 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
     if (estado === 'RECHAZADO') return 'rechazado';
     if (estado === 'LISTO') return 'aprobado';
     return 'reservada';
-  }
-
-  protected rotuloSector(sector: Sector): string {
-    const p = this.pedido();
-    if (!p) return '';
-    const estado = sector === 'COCINA' ? p.estadoCocina : p.estadoBar;
-    return (ROTULO_ESTADO_SECTOR as Record<string, string>)[estado] ?? estado;
   }
 
   protected async confirmar(): Promise<void> {

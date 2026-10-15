@@ -125,13 +125,25 @@ export class AreaComponent {
         (click)="capturar.emit()"
       >
         @if (!fuente()) {
-          <lm-icono nombre="photo_camera" tamano="clamp(22px, 7vw, 30px)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+          <lm-icono nombre="photo_camera" [tamano]="medida(0.4)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
       </button>
-      <button type="button" class="lm-photo__pie" [class.lm-photo__pie--cargada]="!!fuente()" (click)="capturar.emit()">
-        <lm-icono [nombre]="fuente() ? 'cached' : 'add_a_photo'" [tamano]="16" />
-        {{ fuente() ? 'Reemplazar foto' : etiqueta() }}
+      @if (fuente() || !sinRotulo()) {
+      <button
+        type="button"
+        class="lm-photo__pie"
+        [class.lm-photo__pie--cargada]="!!fuente()"
+        [attr.aria-label]="fuente() ? 'Reemplazar la foto' : null"
+        (click)="capturar.emit()"
+      >
+        @if (fuente()) {
+          <lm-icono nombre="cached" [tamano]="34" />
+        } @else {
+          <lm-icono nombre="add_a_photo" [tamano]="16" />
+          {{ etiqueta() }}
+        }
       </button>
+      }
       @if (error()) {
         <span class="lm-field__error" style="margin-top:0">
           <lm-icono nombre="error" [tamano]="16" />
@@ -153,6 +165,8 @@ export class FotoComponent {
   readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('circulo');
   readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
+  /** Sin el botón de texto debajo: el marco solo ya invita a sacar la foto. */
+  readonly sinRotulo = input(false, { transform: booleanAttribute });
   readonly capturar = output<void>();
 
   /**
@@ -166,28 +180,36 @@ export class FotoComponent {
   }
 }
 
-/** Acceso destacado al escaneo del código del documento, arriba del formulario. */
+/**
+ * Acceso al escaneo del código del documento. Es un mosaico cuadrado, sólo
+ * con el ícono y un rótulo corto, para ir en la misma fila que la foto.
+ */
 @Component({
   selector: 'lm-tarjeta-escaneo',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent],
   template: `
-    <button type="button" class="lm-qrscan" [class.lm-qrscan--scanning]="escaneando()" (click)="escanear.emit()">
+    <button
+      type="button"
+      class="lm-qrscan"
+      [class.lm-qrscan--scanning]="escaneando()"
+      [attr.aria-label]="escaneando() ? 'Escaneando…' : titulo()"
+      (click)="escanear.emit()"
+    >
       <span class="lm-qrscan__icono">
-        <lm-icono nombre="qr_code_scanner" tamano="clamp(19px, 6vw, 26px)" color="var(--text-on-primary)" />
+        <lm-icono nombre="document_scanner" tamano="clamp(26px, 8.4vw, 36px)" color="var(--text-on-primary)" />
       </span>
       <span class="lm-qrscan__texto">
         <b>{{ escaneando() ? 'Escaneando…' : titulo() }}</b>
-        <small>{{ escaneando() ? 'Sostené el documento dentro del marco' : ayuda() }}</small>
       </span>
-      <lm-icono nombre="chevron_right" [tamano]="22" color="var(--action-primary)" />
     </button>
   `,
   styles: [':host{display:block}'],
 })
 export class TarjetaEscaneoComponent {
-  readonly titulo = input('Escanear el código del documento');
-  readonly ayuda = input('Completá los datos automáticamente');
+  readonly titulo = input('Escanear documento');
+  /** Se conserva por compatibilidad: el mosaico ya no muestra texto de ayuda. */
+  readonly ayuda = input('');
   readonly escaneando = input(false, { transform: booleanAttribute });
   readonly escanear = output<void>();
 }
@@ -267,12 +289,20 @@ export class FiltrosComponent {
     }
     <!-- Columnas con mínimo cero: de lo contrario ninguna baja del ancho de su
          propio rótulo y el control entero se sale de la pantalla. -->
+    <!-- Sólo el de vidrio (filtros) desliza la pastilla; en los formularios
+         la opción elegida se pinta y crece desde adentro, igual en todos. -->
     <div
       class="lm-segmented"
+      [class.lm-segmented--desliza]="vidrio() && opciones().length <= (columnas() ?? opciones().length)"
       [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',minmax(0,1fr))'"
+      [style.--n]="opciones().length"
+      [class.lm-segmented--sin]="indice() < 0"
+      [class.lm-segmented--vidrio]="vidrio()"
+      [style.--i]="Math.max(0, indice())"
     >
+      <span class="lm-segmented__marca" aria-hidden="true"></span>
       @for (opcion of opciones(); track opcion.valor) {
-        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
+        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(desactivable() && opcion.valor === valor() ? '' : opcion.valor)">
           {{ opcion.rotulo }}
         </button>
       }
@@ -281,11 +311,21 @@ export class FiltrosComponent {
   styles: [':host{display:block}'],
 })
 export class SegmentadoComponent {
+  protected readonly Math = Math;
+  /** Tocar de nuevo la opción activa la apaga: sin opción activa no se filtra. */
+  readonly desactivable = input(false, { transform: booleanAttribute });
+  /** Mismo aspecto que las pestañas: transparente, con la pastilla blanca. */
+  readonly vidrio = input(false, { transform: booleanAttribute });
   readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
   readonly valor = input.required<string>();
   readonly etiqueta = input<string | null>(null);
   readonly columnas = input<number | null>(null);
   readonly cambiar = output<string>();
+
+  /** Posición de la opción activa: la pastilla se desliza hasta ahí. */
+  protected indice(): number {
+    return this.opciones().findIndex((o) => o.valor === this.valor());
+  }
 }
 
 /** Interruptor de disponibilidad. Fila completa táctil. */

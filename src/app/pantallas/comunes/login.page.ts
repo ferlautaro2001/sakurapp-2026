@@ -24,8 +24,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   template: `
     <div class="lm-screen lm-screen--login">
       <div class="lm-body login-body">
-        <lm-logo bajada="Bienvenido" [tamano]="76" />
-        <h2 class="login-bajada">Iniciá sesión para continuar</h2>
+        <lm-logo class="login-logo" [tamano]="76" />
 
         @if (error()) {
           <lm-banner tono="error" titulo="No pudimos iniciar sesión">{{ error() }}</lm-banner>
@@ -58,27 +57,20 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
           </div>
           <span class="separador-flor__linea"></span>
         </div>
-
-        <p class="login-nota">Tocá un perfil para ingresar.</p>
-
         <div class="lm-grid2 login-perfiles">
           @for (usuario of perfiles(); track usuario.id) {
             <lm-tarjeta-perfil [usuario]="usuario" soloNombre (presionar)="entrarComo(usuario)" />
           }
         </div>
-
-        <div class="login-enlace-presentacion">
-          <lm-texto-boton (presionar)="verPresentacion()">Ver pantallas de presentación</lm-texto-boton>
-        </div>
       </div>
 
       <div class="lm-actionbar login-actionbar">
         <lm-boton icono="login" (presionar)="ingresar()">Iniciar sesión</lm-boton>
+        <!-- La pregunta arriba; debajo, las dos salidas repartidas en mitades. -->
         <p class="registro__pregunta">¿No tenés cuenta?</p>
         <div class="registro">
+          <lm-texto-boton (presionar)="comoInvitado()"><lm-icono nombre="person_outline" [tamano]="20" /> Invitado</lm-texto-boton>
           <lm-texto-boton enfasis="alto" (presionar)="registrarse()">Registrate</lm-texto-boton>
-          <span class="registro__separador">·</span>
-          <lm-texto-boton (presionar)="comoInvitado()">Ingresar como invitado</lm-texto-boton>
         </div>
       </div>
     </div>
@@ -95,7 +87,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
       .login-body {
         padding-top: calc(6px + var(--safe-top));
         padding-bottom: 0;
-        gap: 4px;
+        /* Ritmo por bloques: logo, campos, acceso rápido. El aire entre bloques
+           crece con el alto del equipo y se achica en los bajos. */
+        gap: clamp(10px, 2.6dvh, 22px);
         overflow-y: auto;
         /* El eje horizontal se declara a mano porque un contenedor que se
            desplaza en vertical no puede dejar el otro eje en visible: el
@@ -112,19 +106,12 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
            reparte arriba y abajo. */
         justify-content: safe center;
       }
-      /* La escalera de la pantalla es marca → qué hay que hacer acá → acción.
-         Con la bajada en el cuerpo de lectura, el salto desde el nombre de la
-         marca se lee como jerarquía y no como dos textos chicos seguidos. */
-      .login-bajada {
-        margin: 0;
-        font: var(--type-body-medium);
-        color: var(--text-sobre-fondo);
-        text-align: center;
-      }
+      /* Sin bajada debajo, la marca toma ese lugar: más grande. */
+      :host ::ng-deep .login-logo .lm-logo__nombre { font-size: clamp(34px, 10vw, 44px); line-height: 1.1; }
       .campos-grupo {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 10px;
         width: 100%;
       }
       /* Compactamos la altura de los campos para asegurar que entre todo en viewport móvil */
@@ -179,14 +166,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         letter-spacing: 0.02em;
         text-transform: uppercase;
       }
-      .login-nota {
-        margin: 0;
-        font: 500 clamp(11px, 2.8vw, 12px)/1.25 var(--font-text);
-        color: var(--text-sobre-fondo-suave);
-        text-align: center;
-      }
       .login-perfiles {
-        gap: 3px;
+        gap: 8px;
+        margin-top: calc(-1 * clamp(2px, 1dvh, 10px));
         width: 100%;
       }
       /* Compactar el perfil no puede llevarlo por debajo del área táctil: son
@@ -215,33 +197,26 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         font-size: clamp(11px, 2.8vw, 12px) !important;
         line-height: 1.1;
       }
-      .login-enlace-presentacion {
-        display: flex;
-        justify-content: center;
-      }
       .login-actionbar {
-        padding: 2px var(--gutter-screen) calc(var(--space-2) + var(--safe-bottom));
-        gap: 4px;
+        padding: 10px var(--gutter-screen) calc(var(--space-2) + var(--safe-bottom));
+        gap: 6px;
         flex-shrink: 0;
         background: transparent;
       }
       .registro {
-        display: flex;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         align-items: center;
-        justify-content: center;
-        gap: 6px;
-        /* Sin white-space:nowrap: la fila ya envuelve, y prohibirle el corte a cada
-           enlace era lo que empujaba "Ingresar como invitado" fuera del
-           margen en los equipos angostos. */
-        flex-wrap: wrap;
+        gap: 8px;
       }
-      .registro__separador {
-        margin: 0 2px;
-        opacity: 0.5;
-      }
+      .registro lm-texto-boton { text-align: center; }
+      .registro ::ng-deep .lm-textbtn { justify-content: center; gap: 6px; }
+      /* Más aire entre la acción principal y las alternativas. */
+      .login-actionbar > lm-boton { margin-bottom: 10px; }
       .registro__pregunta {
         margin: 0;
-        font: var(--type-caption);
+        font: var(--type-body-medium);
+        font-size: 16.5px;
         font-weight: 600;
         color: var(--text-sobre-fondo-suave);
         text-align: center;
@@ -312,7 +287,7 @@ export class LoginPage implements OnInit {
 
   private async resolver(resultado: Awaited<ReturnType<SesionService['ingresar']>>): Promise<void> {
     if (resultado.ok) {
-      this.avisos.exito(`¡Bienvenido, ${resultado.usuario.nombre}!`, 'Sesión iniciada con éxito.');
+      this.avisos.exito(`¡Bienvenido, ${resultado.usuario.nombre}!`);
       await this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
       return;
     }
@@ -349,8 +324,5 @@ export class LoginPage implements OnInit {
     void this.router.navigate(['/registro-invitado']);
   }
 
-  protected verPresentacion(): void {
-    void this.router.navigate(['/']);
-  }
 }
 

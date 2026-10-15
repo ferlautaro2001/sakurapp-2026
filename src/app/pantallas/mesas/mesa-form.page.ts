@@ -128,6 +128,18 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         padding: var(--space-3); text-align: center;
       }
       .foto-readonly__texto { font: var(--type-caption); color: var(--text-muted); }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* La foto absorbe el alto que sobra y los datos se reparten el resto. */
+      .lm-body { justify-content: space-between; }
+      .lm-body > lm-foto { flex: 1 0 auto; display: flex; min-height: clamp(150px, 24dvh, 300px); }
+      .lm-body > lm-foto ::ng-deep .lm-photo { flex: 1; width: 100%; }
+      .lm-body > lm-foto ::ng-deep .lm-photo__marco--rect { flex: 1; height: auto !important; min-height: 120px; }
+      .foto-readonly { flex: 1 0 auto; min-height: clamp(124px, 44vw, 168px); }
+      .foto-readonly__marco { height: auto; flex: 1; min-height: clamp(124px, 44vw, 168px); }
+      .dato { display: flex; flex-direction: column; justify-content: center; }
+
+      .foto-readonly__vacia { background-image: var(--surface-card-degradado); }
     `,
   ],
 })

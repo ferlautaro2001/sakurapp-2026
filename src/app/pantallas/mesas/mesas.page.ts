@@ -4,8 +4,8 @@ import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ROTULO_ESTADO_MESA, ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
-const ESTADOS = ['Todas', 'Vacía', 'Ocupada', 'Inactiva'];
-const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
+const ESTADOS = ['Vacía', 'Ocupada', 'Inactiva'].map((r) => ({ valor: r, rotulo: r }));
+const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r, rotulo: r }));
 
 /**
  * Punto 4 · Grilla y gestión de mesas del salón SakurApp.
@@ -30,8 +30,8 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
         }
       </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Mesas del salón</lm-titulo>
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="visibles().length">Mesas del salón</lm-titulo>
 
         <!--
           Ocho chips seguidos con el mismo peso no dejan ver que son dos
@@ -41,19 +41,21 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
         -->
         <div class="grupo">
           <span class="grupo__rotulo">Disponibilidad</span>
-          <lm-filtros [opciones]="estados" [valor]="estado()" (cambiar)="estado.set($event)" />
+          <lm-segmentado desactivable vidrio [opciones]="estados" [valor]="estado()" (cambiar)="estado.set($event)" />
         </div>
         <div class="grupo">
           <span class="grupo__rotulo">Tipo de mesa</span>
-          <lm-filtros [opciones]="tipos" [valor]="tipo()" (cambiar)="tipo.set($event)" />
+          <lm-segmentado desactivable vidrio [opciones]="tipos" [valor]="tipo()" (cambiar)="tipo.set($event)" />
         </div>
 
         @if (visibles().length) {
-          <div class="lm-list lm-list--2">
+          <div class="lm-lista-uno">
             @for (mesa of visibles(); track mesa.id) {
               <lm-tarjeta-mesa
                 [mesa]="mesa"
                 [conEdicion]="puedeEditar()"
+                [mostrarEstado]="!estado()"
+                [mostrarTipo]="!tipo()"
                 (presionar)="ir(['/mesas', mesa.id])"
                 (abrirQr)="ir(['/mesas', mesa.id, 'qr'])"
                 (abrirEdicion)="editarMesa(mesa.id)"
@@ -83,6 +85,12 @@ const TIPOS = ['Todos los tipos', 'Estándar', 'VIP', 'Movilidad reducida'];
         font: var(--type-label); letter-spacing: var(--tracking-label);
         text-transform: uppercase; color: var(--text-sobre-fondo-suave);
       }
+    
+      /* De a dos mesas por pantalla (de a una si hay una o dos, o si la pantalla
+         es baja): la tarjeta toma todo el alto de su casilla y la foto la llena. */
+      @media (max-height: 700px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
+      .lm-lista-uno > lm-tarjeta-mesa { display: flex; flex-direction: column; }
+      .lm-lista-uno > lm-tarjeta-mesa ::ng-deep .lm-mesa { aspect-ratio: auto; width: 100%; height: 100%; flex: 1 1 auto; }
     `,
   ],
 })
@@ -91,8 +99,8 @@ export class MesasPage extends PaginaConSesion {
 
   protected readonly estados = ESTADOS;
   protected readonly tipos = TIPOS;
-  protected readonly estado = signal('Todas');
-  protected readonly tipo = signal('Todos los tipos');
+  protected readonly estado = signal('');
+  protected readonly tipo = signal('');
 
   protected readonly puedeAgregar = computed(() => this.sesion.esAdministrador());
   /** Dueño y supervisor son los únicos que editan comensales y tipo de mesa. */
@@ -110,15 +118,10 @@ export class MesasPage extends PaginaConSesion {
   protected readonly visibles = computed(() =>
     this.mesas
       .todas()
-      .filter((m) => this.estado() === 'Todas' || ROTULO_ESTADO_MESA[m.estado] === this.estado())
-      .filter((m) => this.tipo() === 'Todos los tipos' || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
+      .filter((m) => !this.estado() || ROTULO_ESTADO_MESA[m.estado] === this.estado())
+      .filter((m) => !this.tipo() || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
   );
 
-  protected bajada(): string {
-    return this.puedeAgregar()
-      ? 'Tocá una mesa para editarla o cambiar su disponibilidad'
-      : 'Tocá una mesa para ver sus datos y cambiar su disponibilidad';
-  }
 
   protected tituloVacio(): string {
     return this.mesas.todas().length ? 'Ninguna mesa entra en el filtro' : 'Todavía no hay mesas cargadas';

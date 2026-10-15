@@ -50,6 +50,11 @@
   /* semánticos */
   --bg-app: var(--sk-fondo);
   --surface-card: var(--sk-nieve);
+  /* Degradado de las tarjetas de la carta: rosa franco a la izquierda que se
+     aclara hacia la derecha. Es el fondo de toda tarjeta, no sólo la del menú. */
+  --surface-card-degradado: linear-gradient(90deg, #ef9dbb 0%, #f9d6e2 34%, #fdf0f4 70%, #fffafb 100%);
+  /* Borde de las tarjetas: rosa fuerte y fino, para que no queden peladas. */
+  --borde-tarjeta: 2px solid #FF4F8B;
   --surface-sunken: var(--sk-nieve-rosa);
   --surface-inverse: var(--sk-ciruela);
   --text-title: var(--sk-ciruela);

@@ -70,6 +70,73 @@ export class BotonComponent {
   readonly presionar = output<void>();
 }
 
+/**
+ * El par aceptar/rechazar de toda la app: ✕ roja a la izquierda y ✓ verde a la
+ * derecha, del mismo tamaño y sólo con el símbolo. Los rótulos no se ven pero
+ * quedan como nombre accesible y como tooltip. `compacto` es para filas y
+ * tarjetas donde el par grande no entra.
+ */
+@Component({
+  selector: 'lm-decision',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [IconoComponent],
+  host: { '[class.lm-decision--compacto]': 'compacto()' },
+  template: `
+    <button
+      type="button"
+      class="dec dec--no"
+      [attr.aria-label]="rotuloRechazar()"
+      [title]="rotuloRechazar()"
+      (click)="rechazar.emit()"
+    >
+      <lm-icono nombre="close" [tamano]="compacto() ? 26 : 34" />
+    </button>
+    <button
+      type="button"
+      class="dec dec--si"
+      [attr.aria-label]="rotuloAceptar()"
+      [title]="rotuloAceptar()"
+      [disabled]="deshabilitado()"
+      (click)="aceptar.emit()"
+    >
+      <lm-icono nombre="check" [tamano]="compacto() ? 26 : 34" />
+    </button>
+  `,
+  styles: [
+    `
+      :host { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-3); width: 100%; }
+      .dec {
+        min-height: clamp(56px, 8.5dvh, 68px); padding: 0; border-radius: 20px;
+        display: flex; align-items: center; justify-content: center;
+        color: #FFFFFF; cursor: pointer; -webkit-tap-highlight-color: transparent;
+        /* Aro de vidrio de la app: el relleno termina donde empieza el borde. */
+        background-clip: padding-box;
+        border: 2px solid rgba(255, 255, 255, .65);
+        box-shadow:
+          inset 0 2px 0 rgba(255, 255, 255, .35),
+          inset 0 -4px 10px rgba(0, 0, 0, .2),
+          0 0 0 1px rgba(232, 51, 111, .28),
+          0 3px 8px rgba(59, 8, 27, .16);
+        transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
+      }
+      :host(.lm-decision--compacto) .dec { min-height: var(--touch-min); border-radius: 16px; }
+      .dec--no { background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%); }
+      .dec--si { background: linear-gradient(180deg, #2FA56B 0%, #1B7A4C 55%, #11593A 100%); }
+      .dec:not(:disabled):active { transform: scale(.97); filter: brightness(.88); }
+      .dec:disabled { opacity: .46; cursor: default; }
+      .dec:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; }
+    `,
+  ],
+})
+export class DecisionComponent {
+  readonly rotuloAceptar = input('Aceptar');
+  readonly rotuloRechazar = input('Cancelar');
+  readonly compacto = input(false, { transform: booleanAttribute });
+  readonly deshabilitado = input(false, { transform: booleanAttribute });
+  readonly aceptar = output<void>();
+  readonly rechazar = output<void>();
+}
+
 /** Acción secundaria en texto: no compite en color con la primaria. */
 @Component({
   selector: 'lm-texto-boton',
@@ -426,7 +493,7 @@ export interface DatoFicha {
 @Component({
   selector: 'lm-modal',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, BotonComponent],
+  imports: [IconoComponent, DecisionComponent],
   template: `
     <div class="lm-modal__fondo" (click)="cancelar.emit()">
       <div
@@ -445,8 +512,10 @@ export interface DatoFicha {
             <lm-icono [nombre]="icono()" tamano="clamp(22px, 7vw, 30px)" color="#FFFFFF" />
           </span>
         }
-        <h2 class="lm-modal__titulo">{{ titulo() }}</h2>
-        <p class="lm-modal__texto">{{ mensaje() }}</p>
+        <h2 class="lm-modal__titulo" [class.lm-modal__titulo--solo]="!mensaje()">{{ titulo() }}</h2>
+        @if (mensaje()) {
+          <p class="lm-modal__texto">{{ mensaje() }}</p>
+        }
 
         @if (detalle().length) {
           <dl class="lm-modal__detalle">
@@ -477,14 +546,20 @@ export interface DatoFicha {
           </dl>
         }
 
-        <div class="lm-modal__acciones" [class.lm-modal__acciones--unica]="!conCancelar()">
-          @if (conCancelar()) {
-            <lm-boton variante="ghost" (presionar)="cancelar.emit()">{{ rotuloCancelar() }}</lm-boton>
-          }
-          <lm-boton [variante]="varianteConfirmar()" [icono]="icono()" (presionar)="confirmar.emit()">
-            {{ rotuloConfirmar() }}
-          </lm-boton>
-        </div>
+        @if (conCancelar()) {
+          <lm-decision
+            class="lm-modal__acciones"
+            [rotuloRechazar]="rotuloCancelar()"
+            [rotuloAceptar]="rotuloConfirmar()"
+            (rechazar)="cancelar.emit()"
+            (aceptar)="confirmar.emit()"
+          />
+        } @else {
+          <!-- Ficha para mirar: se cierra con la cruz de la esquina, sin botón abajo. -->
+          <button type="button" class="modal-cerrar" [attr.aria-label]="rotuloConfirmar()" (click)="confirmar.emit()">
+            <lm-icono nombre="close" [tamano]="22" />
+          </button>
+        }
       </div>
     </div>
   `,
@@ -515,8 +590,20 @@ export interface DatoFicha {
         width: 100%; height: 100%; display: block;
         object-fit: cover; object-position: center;
       }
-      /* Sin decisión que tomar, el único botón ocupa todo el ancho. */
-      .lm-modal__acciones--unica { grid-template-columns: minmax(0, 1fr); }
+      .lm-modal { position: relative; }
+      .modal-cerrar {
+        position: absolute; top: 12px; right: 12px;
+        /* Mismo tamaño que el botón de cerrar sesión del encabezado. */
+        width: var(--touch-min); height: var(--touch-min); display: grid; place-items: center; padding: 0;
+        /* Mismo contorno de vidrio que el botón de cerrar sesión; conserva el rojo. */
+        border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .5);
+        background: var(--state-error); color: #FFFFFF; cursor: pointer;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .55),
+          inset 0 -6px 12px rgba(255, 255, 255, .06),
+          0 4px 10px rgba(94, 12, 44, .16);
+      }
+      .modal-cerrar:active { transform: scale(.94); }
     `,
   ],
 })
@@ -534,9 +621,4 @@ export class ModalComponent {
   readonly conCancelar = input(true, { transform: booleanAttribute });
   readonly confirmar = output<void>();
   readonly cancelar = output<void>();
-
-  protected varianteConfirmar(): 'primary' | 'success' | 'danger' {
-    const tono = this.tono();
-    return tono === 'exito' ? 'success' : tono === 'peligro' ? 'danger' : 'primary';
-  }
 }

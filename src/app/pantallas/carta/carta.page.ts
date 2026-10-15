@@ -41,8 +41,8 @@ type Categoria = 'TODOS' | TipoProducto;
         }
       </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="visibles().length" [bajada]="bajada()">Carta</lm-titulo>
+      <div class="lm-body lm-body--gap12 lm-body--fijo carta">
+        <lm-titulo [contador]="visibles().length">Carta</lm-titulo>
 
         <lm-pestanas [opciones]="pestanas" [valor]="pestana()" (cambiar)="pestana.set($any($event))" />
 
@@ -59,7 +59,7 @@ type Categoria = 'TODOS' | TipoProducto;
         }
 
         @if (visibles().length) {
-          <div class="lm-list">
+          <div class="lm-list carta__lista">
             @for (producto of visibles(); track producto.id) {
               <lm-fila-producto
                 [producto]="producto"
@@ -108,6 +108,17 @@ type Categoria = 'TODOS' | TipoProducto;
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      /* El estado vacío llena el alto que sobra: sin hueco debajo. */
+      lm-vacio { display: flex; flex-direction: column; flex: 1 1 auto; }
+      lm-vacio ::ng-deep .lm-empty { flex: 1 1 auto; justify-content: center; }
+
+      /* Precio y tiempo ya no se truncan ("$ 14…"): van apilados, cada uno con
+         su ancho completo, y cada fila entra entera en la pantalla. */
+      .lm-list ::ng-deep .lm-product__pie { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+      .lm-list ::ng-deep .lm-product__precio,
+      .lm-list ::ng-deep .lm-product__tiempo { overflow: visible; text-overflow: clip; }
+      .lm-list > * { scroll-snap-align: start; }
+
     `,
   ],
 })
@@ -238,14 +249,6 @@ export class CartaPage extends PaginaConSesion {
       : `${cuantos} productos están marcados como no disponibles para hoy. Siguen en la carta.`;
   }
 
-  protected bajada(): string {
-    if (this.esComensal()) {
-      return 'Tocá el más para sumar al pedido, o el producto para ver sus fotos y su descripción';
-    }
-    return this.puedeCargar()
-      ? 'La carta completa del salón. Tocá un producto para verlo, editarlo o marcarlo sin stock'
-      : 'Tocá un producto para ver sus fotos, su precio y su tiempo de elaboración';
-  }
 
   protected tituloVacio(): string {
     if (this.busqueda().trim()) return 'No encontramos nada con esa búsqueda';

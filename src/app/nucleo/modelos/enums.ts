@@ -135,7 +135,7 @@ export const ROTULO_TIPO_MESA: Record<TipoMesa, string> = {
 
 export const ICONO_TIPO_MESA: Record<TipoMesa, string> = {
   ESTANDAR: 'table_restaurant',
-  VIP: 'workspace_premium',
+  VIP: 'star',
   MOVILIDAD_REDUCIDA: 'accessible',
 };
 

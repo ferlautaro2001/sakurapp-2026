@@ -3,7 +3,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { DocumentoPipe, UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Usuario } from '../../nucleo/modelos/modelos';
-import { EstadoUsuario, ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
+import { ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { CorreoService } from '../../nucleo/servicios/correo.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
@@ -18,13 +18,6 @@ const FILTROS = [
   { valor: 'Aprobado', rotulo: 'Aprobados' },
   { valor: 'Rechazado', rotulo: 'Rechazados' },
 ];
-
-/** Qué significa cada estado para quien mira la ficha. */
-const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
-  PENDIENTE: 'Todavía no resolviste este registro. Podés aprobarlo o rechazarlo desde su fila.',
-  APROBADO: 'La cuenta está habilitada: puede iniciar sesión en la aplicación.',
-  RECHAZADO: 'La cuenta está bloqueada: no puede iniciar sesión en la aplicación.',
-};
 
 /**
  * Punto 6 · Listado de clientes pendientes de aprobación.
@@ -50,8 +43,8 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
         />
       </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12">
-        <lm-titulo [contador]="pendientes().length" bajada="Tocá aceptar o rechazar en la fila de cada persona">
+      <div class="lm-body lm-body--gap12 lm-body--pantalla">
+        <lm-titulo [contador]="pendientes().length">
           Registros pendientes
         </lm-titulo>
 
@@ -72,10 +65,11 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (visibles().length) {
-          <div class="lm-list">
+          <div [class.lm-lista-uno]="filtro() === 'Todos' || filtro() === 'Pendiente'" [class.lm-lista-n]="filtro() !== 'Todos' && filtro() !== 'Pendiente'">
             @for (cliente of visibles(); track cliente.id) {
               <lm-fila-pendiente
                 [cliente]="cliente"
+                [mostrarEstado]="filtro() === 'Todos'"
                 (abrir)="verFicha(cliente)"
                 (aceptar)="resolver(cliente, 'aprobado')"
                 (rechazar)="resolver(cliente, 'rechazado')"
@@ -101,7 +95,21 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
       <lm-barra-inferior [items]="secciones()" activo="registros" />
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host { display: flex; flex: 1; min-height: 0; }
+
+      /* La tarjeta conserva su alto natural y se centra en su casilla: nunca se
+         estira para llenarla ni se sale. Las que llevan Aceptar/Rechazar ocupan
+         lo que necesitan; las filas simples, hasta un tope. */
+      lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
+      lm-fila-pendiente ::ng-deep .lm-pending:has(.lm-pending__acciones) { flex: 0 1 auto; max-height: 100%; }
+      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
+      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
+      @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
+    `,
+  ],
 })
 export class DuenoRegistrosPage extends PaginaConSesion {
   private readonly usuarios = inject(UsuariosService);
@@ -154,7 +162,7 @@ export class DuenoRegistrosPage extends PaginaConSesion {
   protected verFicha(cliente: Usuario): void {
     void this.confirmacion.mostrar({
       titulo: this.usuarios.nombreCompleto(cliente),
-      mensaje: MENSAJE_ESTADO[cliente.estado],
+      mensaje: '',
       // La ficha no decide nada: el botón va neutro. Un "Cerrar" en rojo o en
       // verde se lee como si aprobara o rechazara. El estado se cuenta con
       // palabras, en el mensaje y en su propia fila.
@@ -195,9 +203,7 @@ export class DuenoRegistrosPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: aprobar ? '¿Aprobás este registro?' : '¿Rechazás este registro?',
-      mensaje: aprobar
-        ? 'La cuenta queda habilitada para entrar a la aplicación.'
-        : 'La cuenta queda bloqueada y la persona no va a poder iniciar sesión.',
+      mensaje: '',
       confirmar: aprobar ? 'Aprobar' : 'Rechazar',
       tono: aprobar ? 'exito' : 'peligro',
       icono: aprobar ? 'check' : 'close',

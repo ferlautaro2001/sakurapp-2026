@@ -8,7 +8,7 @@ import {
   ROTULO_TIPO_MESA,
 } from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
-import { BotonComponent, ChipComponent, IconoBotonComponent, IconoComponent } from './basicos';
+import { ChipComponent, DecisionComponent, IconoBotonComponent, IconoComponent } from './basicos';
 import { CantidadComponent } from './pedidos';
 import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 
@@ -30,6 +30,7 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
   styles: [
     `
       :host { display: block; }
+      .lm-pending__estado { display: block; margin-top: 4px; }
       .lm-profile {
         display: flex; align-items: center; gap: 10px; width: 100%;
         min-height: var(--touch-min); padding: 4px 10px; text-align: left; cursor: pointer;
@@ -104,7 +105,7 @@ export class TarjetaPerfilComponent {
 @Component({
   selector: 'lm-fila-pendiente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent, BotonComponent, DocumentoPipe],
+  imports: [IconoComponent, ChipComponent, DecisionComponent, DocumentoPipe],
   template: `
     <div class="lm-pending">
       <button type="button" class="lm-pending__fila fila" (click)="abrir.emit()">
@@ -112,21 +113,27 @@ export class TarjetaPerfilComponent {
         <span class="lm-pending__datos">
           <span class="lm-pending__nombre">{{ usuarios.nombreCompleto(cliente()) }}</span>
           <span class="lm-pending__meta">
-            <lm-icono nombre="badge" [tamano]="15" />
+            <lm-icono nombre="badge" [tamano]="18" />
             DNI: {{ cliente().dni | documento }}
           </span>
           <span class="lm-pending__meta">
-            <lm-icono nombre="mail" [tamano]="15" />
+            <lm-icono nombre="mail" [tamano]="18" />
             <span>{{ cliente().email ?? 'Sin correo' }}</span>
           </span>
+          <!-- El estado va debajo de los datos: al costado le comía el ancho al nombre y al correo. -->
+          @if (mostrarEstado()) {
+            <lm-chip class="lm-pending__estado" [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+          }
         </span>
-        <lm-chip [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
       </button>
       @if (cliente().estado === 'PENDIENTE' && conAcciones()) {
-        <div class="lm-pending__acciones">
-          <lm-boton variante="danger" icono="close" (presionar)="rechazar.emit()">Rechazar</lm-boton>
-          <lm-boton variante="success" icono="check" (presionar)="aceptar.emit()">Aceptar</lm-boton>
-        </div>
+        <lm-decision
+          compacto
+          class="lm-pending__acciones"
+          rotuloRechazar="Rechazar"
+          (rechazar)="rechazar.emit()"
+          (aceptar)="aceptar.emit()"
+        />
       }
     </div>
   `,
@@ -149,6 +156,18 @@ export class TarjetaPerfilComponent {
         color: inherit;
       }
       .fila:active { opacity: 0.7; }
+
+      /* Una sola fila: foto grande, datos legibles y las dos decisiones
+         apiladas a la derecha, del alto de la foto. */
+      .lm-pending { flex-direction: row; align-items: center; gap: 14px; }
+      .fila { flex: 1; min-width: 0; gap: 14px; }
+      .fila .lm-avatar { width: 96px; border-radius: 18px; }
+      .lm-pending__datos { display: flex; flex-direction: column; gap: 6px; }
+      .lm-pending__nombre { font-size: 18px; }
+      .lm-pending__meta { font-size: 15px; }
+      .lm-pending__acciones { display: flex; flex-direction: column; width: auto; gap: 8px; flex: 0 0 auto; }
+      .lm-pending__acciones ::ng-deep .dec { width: 48px; min-height: 0; height: 44px; border-radius: 14px; }
+      .lm-pending__acciones ::ng-deep .dec .material-symbols-rounded { font-size: 22px !important; }
     `,
   ],
 })
@@ -156,6 +175,8 @@ export class FilaPendienteComponent {
   protected readonly usuarios = inject(UsuariosService);
   readonly cliente = input.required<Usuario>();
   readonly conAcciones = input(true, { transform: booleanAttribute });
+  /** Con un filtro de estado activo el estado ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
   readonly aceptar = output<void>();
   readonly rechazar = output<void>();
   /** Toque sobre la fila: abre la ficha ampliada de la persona. */
@@ -174,7 +195,7 @@ export class FilaPendienteComponent {
 @Component({
   selector: 'lm-tarjeta-mesa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent],
+  imports: [IconoComponent],
   template: `
 <button
   type="button"
@@ -194,12 +215,19 @@ export class FilaPendienteComponent {
     "
   ></span>
 
-  <span class="lm-mesa__tipo">
-    <lm-icono
-      [nombre]="iconoTipo()"
-      [tamano]="14"
-    />
-    {{ rotuloTipo() }}
+  <!-- Tipo (sólo el ícono) y comensales en una sola píldora arriba a la derecha. -->
+  <span
+    class="lm-mesa__arriba lm-mesa__meta"
+    [attr.aria-label]="(mostrarTipo() ? rotuloTipo() + ', ' : '') + mesa().cantidadComensales + ' personas'"
+  >
+    @if (mostrarTipo()) {
+      <span class="lm-mesa__tipo">
+        <lm-icono [nombre]="iconoTipo()" [tamano]="18" />
+      </span>
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    }
+    <lm-icono nombre="group" [tamano]="20" />
+    {{ mesa().cantidadComensales }}
   </span>
 
   <span class="lm-mesa__numero">
@@ -208,72 +236,51 @@ export class FilaPendienteComponent {
 
 </span>
 
-  <!-- CUERPO -->
-  <span class="lm-mesa__cuerpo">
-
-    <span class="lm-mesa__cabecera">
-      <span class="lm-mesa__datos">
-        <span class="lm-mesa__rotulo">
-          Mesa {{ mesa().numero }}
-        </span>
-
-        <span class="lm-mesa__meta">
-          <lm-icono
-            nombre="group"
-            [tamano]="16"
-          />
-          {{ mesa().cantidadComensales }} personas
-        </span>
+  <!--
+    Abajo a la derecha, en una sola píldora separada por pipes: editar, QR y el
+    estado. Los atajos van con el rol de botón y no como un elemento button,
+    porque la tarjeta entera ya es uno y el HTML no permite anidarlos; por eso
+    cada uno frena la propagación, para que tocar el lápiz no abra además la
+    ficha que hay detrás.
+  -->
+  <span class="lm-mesa__abajo">
+    @if (conEdicion()) {
+      <span
+        class="lm-mesa__atajo"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Editar la mesa ' + mesa().numero"
+        (click)="editar($event)"
+        (keydown.enter)="editar($event)"
+        (keydown.space)="editar($event)"
+      >
+        <lm-icono nombre="edit" [tamano]="20" />
       </span>
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    }
 
-      <!--
-        Atajos de la fila. Van con el rol de botón y no como un elemento
-        button, porque la tarjeta entera ya es uno y el HTML no permite
-        anidarlos;
-        por eso cada uno frena la propagación, para que tocar el lápiz no abra
-        además la ficha que hay detrás.
-      -->
-      <span class="lm-mesa__acciones">
-        @if (conEdicion()) {
-          <span
-            class="lm-mesa__accion lm-mesa__accion--editar"
-            role="button"
-            tabindex="0"
-            [attr.aria-label]="'Editar la mesa ' + mesa().numero"
-            (click)="editar($event)"
-            (keydown.enter)="editar($event)"
-            (keydown.space)="editar($event)"
-          >
-            <lm-icono nombre="edit" [tamano]="18" />
-          </span>
-        }
-
-        <span
-          class="lm-mesa__accion lm-mesa__accion--qr"
-          role="button"
-          tabindex="0"
-          [attr.aria-label]="'Ver el código QR de la mesa ' + mesa().numero"
-          (click)="verQr($event)"
-          (keydown.enter)="verQr($event)"
-          (keydown.space)="verQr($event)"
-        >
-          <lm-icono nombre="qr_code_2" [tamano]="18" />
-        </span>
-      </span>
-    </span>
-
-    <!-- ESTADO -->
     <span
-      class="lm-mesa__estado"
-      [class.lm-mesa__estado--vacia]="mesa().estado.toLowerCase() === 'vacia'"
-      [class.lm-mesa__estado--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
-      [class.lm-mesa__estado--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+      class="lm-mesa__atajo"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'Ver el código QR de la mesa ' + mesa().numero"
+      (click)="verQr($event)"
+      (keydown.enter)="verQr($event)"
+      (keydown.space)="verQr($event)"
     >
-      <span class="lm-mesa__estado-punto"></span>
-
-      {{ rotuloEstado() }}
+      <lm-icono nombre="qr_code_2" [tamano]="20" />
     </span>
 
+    @if (mostrarEstado()) {
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+      <span
+        class="lm-mesa__semaforo"
+        [class.lm-mesa__semaforo--vacia]="mesa().estado.toLowerCase() === 'vacia'"
+        [class.lm-mesa__semaforo--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
+        role="img"
+        [attr.aria-label]="rotuloEstado()"
+      ></span>
+    }
   </span>
 </button>
   `,
@@ -283,6 +290,9 @@ export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
   /** El lápiz sólo lo ven los perfiles que pueden editar la mesa. */
   readonly conEdicion = input(false, { transform: booleanAttribute });
+  /** Con un filtro de estado o de tipo activo, ese dato ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
+  readonly mostrarTipo = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
   readonly abrirQr = output<void>();
   readonly abrirEdicion = output<void>();

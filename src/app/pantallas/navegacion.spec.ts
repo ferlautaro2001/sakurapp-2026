@@ -24,15 +24,13 @@ describe('navegacionDe · secciones por perfil', () => {
     expect(rutas('METRE')).toEqual(['/metre/espera', '/mesas', '/metre/registrar']);
   });
 
-  it('sin mesa (en fila), el comensal ve su lugar, juegos y encuestas', () => {
+  it('sin mesa (en fila), el comensal ve su lugar y encuestas, sin juegos', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: false })).toEqual([
       '/cliente/espera',
-      '/cliente/juegos',
       '/cliente/encuestas',
     ]);
     expect(rutas('CLIENTE_ANONIMO', { enMesa: false })).toEqual([
       '/cliente/espera',
-      '/cliente/juegos',
       '/cliente/encuestas',
     ]);
   });

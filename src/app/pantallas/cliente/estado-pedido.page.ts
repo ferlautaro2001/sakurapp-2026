@@ -31,7 +31,7 @@ import { PaginaConSesion } from '../pagina-base';
       <div class="lm-body lm-body--gap12">
         @if (pedido(); as actual) {
           @if (corrigiendo()) {
-            <lm-titulo bajada="El mozo te devolvió el pedido">Tu pedido necesita cambios</lm-titulo>
+            <lm-titulo>Tu pedido necesita cambios</lm-titulo>
 
             <section class="lm-card devuelto">
               <div class="devuelto__encabezado">
@@ -129,13 +129,9 @@ import { PaginaConSesion } from '../pagina-base';
 
             @if (traba(); as falta) {
               <lm-banner tono="error" titulo="Todavía no lo podés mandar">{{ falta }}</lm-banner>
-            } @else {
-              <p class="lm-parrafo">
-                Podés cambiar las cantidades acá o volver a la carta para sumar o sacar productos.
-              </p>
             }
           } @else {
-            <lm-titulo bajada="Actualización automática de Cocina y Bar">Estado de mi pedido</lm-titulo>
+            <lm-titulo>Estado de mi pedido</lm-titulo>
 
             <section class="lm-card estado">
               <span class="estado__icono"><lm-icono nombre="receipt_long" [tamano]="34" /></span>
@@ -273,6 +269,22 @@ import { PaginaConSesion } from '../pagina-base';
     .resumen span{display:flex;flex-direction:column;gap:2px}
     .resumen small{font:var(--type-label);letter-spacing:var(--tracking-label);color:#FFFFFF;opacity:.82}
     .resumen strong{display:flex;align-items:center;gap:6px;font:var(--type-card-title);color:#FFFFFF}
+    /* Vista de estado: las tarjetas se reparten el alto disponible. El estado
+       general crece y centra su contenido; el total es la cifra grande. */
+    .lm-body > lm-vacio{display:flex;flex-direction:column;flex:1 1 auto}
+    .lm-body > lm-vacio ::ng-deep .lm-empty{flex:1 1 auto;justify-content:center}
+    .estado{flex:1 1 auto;flex-direction:column;justify-content:center;text-align:center;gap:var(--space-4)}
+    .estado__icono{width:clamp(64px,22vw,96px);height:clamp(64px,22vw,96px);border-radius:26px}
+    .estado h2{font:var(--type-title-xl)}
+    .estado p{font:var(--type-body)}
+    .lm-body > .lm-grid2{flex:1 1 auto}
+    .sector{align-content:center;justify-items:center;text-align:center;gap:var(--space-2)}
+    .sector b{font:var(--type-title)}
+    .total{flex-direction:column;gap:var(--space-2);text-align:center;padding:var(--space-5)}
+    .total span{font:var(--type-body-medium);color:var(--text-muted)}
+    .total b{font:var(--type-numeral-lg)}
+    .renglon{scroll-snap-align:start}
+
   `],
 })
 export class EstadoPedidoPage extends PaginaConSesion implements OnInit {

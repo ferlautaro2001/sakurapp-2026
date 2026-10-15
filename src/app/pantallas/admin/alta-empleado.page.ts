@@ -12,7 +12,7 @@ import { SonidoService } from '../../nucleo/servicios/sonido.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { Perfil, ROTULO_PERFIL } from '../../nucleo/modelos/enums';
 import { Usuario } from '../../nucleo/modelos/modelos';
-import { clave, correoElectronico, cuil, cuilDelDocumento, documento, largoMinimo, marcarEnviado, requerido, soloLetras } from '../../nucleo/validacion/validadores';
+import { clave, clavesIguales, correoElectronico, cuil, cuilDelDocumento, documento, largoMinimo, marcarEnviado, requerido, soloLetras } from '../../nucleo/validacion/validadores';
 
 type PerfilEmpleado = Extract<Perfil, 'COCINERO' | 'CANTINERO' | 'MOZO' | 'METRE'>;
 const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
@@ -28,8 +28,10 @@ const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
         @if (resumenError()) { <lm-banner tono="error" titulo="Revisá los datos">{{ resumenError() }}</lm-banner> }
         @if (leidoDelDocumento()) { <lm-banner tono="success" titulo="Documento leído">Confirmá los datos antes de dar el alta.</lm-banner> }
 
-        <lm-foto [fuente]="foto()" [tamano]="132" etiqueta="Tomar foto con cámara" [error]="errorFoto()" (capturar)="tomarFoto()" />
-        <lm-tarjeta-escaneo titulo="Escanear código de barras del DNI" ayuda="Completamos identidad y CUIL" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+        <div class="lm-fila-doc">
+          <lm-foto [fuente]="foto()" [tamano]="132" etiqueta="Tomar foto" [error]="errorFoto()" (capturar)="tomarFoto()" />
+          <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+        </div>
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
         <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
@@ -37,6 +39,7 @@ const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
         <lm-campo [control]="formulario.controls.cuil" icono="fingerprint" etiqueta="CUIL" marcador="27-44225858-4" modo="numeric" [largoMaximo]="13" />
         <lm-campo [control]="formulario.controls.email" icono="mail" tipo="email" etiqueta="Correo electrónico" marcador="sofia@correo.com.ar" />
         <lm-campo [control]="formulario.controls.clave" icono="lock" tipo="password" etiqueta="Contraseña" marcador="Mínimo ocho caracteres, una letra y un número" />
+        <lm-campo [control]="formulario.controls.repeticion" icono="lock_reset" tipo="password" etiqueta="Confirmar contraseña" marcador="Repetí la contraseña" tecla="done" />
 
         <section class="roles" aria-labelledby="rol-title">
           <span id="rol-title" class="lm-label">Rol operativo</span>
@@ -54,7 +57,7 @@ const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
     </div>
 
     @if (alta(); as empleado) {
-      <lm-modal titulo="Empleado dado de alta" mensaje="La cuenta quedó aprobada y puede ingresar inmediatamente." rotuloCancelar="Cerrar" rotuloConfirmar="Dar otra alta" tono="exito" icono="verified" [detalle]="detalleAlta(empleado)" (cancelar)="volver()" (confirmar)="otroMas()" />
+      <lm-modal animate.leave="sk-modal-host-sale" titulo="Empleado dado de alta" mensaje="La cuenta quedó aprobada y puede ingresar inmediatamente." rotuloCancelar="Cerrar" rotuloConfirmar="Dar otra alta" tono="exito" icono="verified" [detalle]="detalleAlta(empleado)" (cancelar)="volver()" (confirmar)="otroMas()" />
     }
   `,
   styles: [
@@ -82,6 +85,13 @@ const PERFILES: PerfilEmpleado[] = ['COCINERO', 'CANTINERO', 'MOZO', 'METRE'];
       }
       .roles__tarjeta > lm-icono { flex: 0 0 auto; }
       .roles__tarjeta--activa { border: 2px solid #fff; background: #86163e; color: #fff; }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
+      .roles__tarjeta { min-height: clamp(74px, 11dvh, 112px); }
+
+      .roles__tarjeta:not(.roles__tarjeta--activa) { background-image: var(--surface-card-degradado); }
     `,
   ],
 })
@@ -112,7 +122,8 @@ export class AltaEmpleadoPage {
     cuil: ['', [requerido('Escribí el CUIL'), cuil()]],
     email: ['', [requerido('Escribí el correo electrónico'), correoElectronico()]],
     clave: ['', [requerido('Elegí una contraseña'), clave()]],
-  }, { validators: [cuilDelDocumento('dni', 'cuil')] });
+    repeticion: ['', [requerido('Repetí la contraseña')]],
+  }, { validators: [clavesIguales('clave', 'repeticion'), cuilDelDocumento('dni', 'cuil')] });
 
   protected async tomarFoto(): Promise<void> {
     const imagen = await this.camara.tomarFoto();
@@ -143,7 +154,7 @@ export class AltaEmpleadoPage {
       this.avisos.error('No pudimos dar el alta', 'Revisá los campos marcados.');
       return;
     }
-    const datos = this.formulario.getRawValue();
+    const { repeticion: _repeticion, ...datos } = this.formulario.getRawValue();
     const seguro = await this.confirmacion.pedir({ titulo: '¿Das de alta a esta persona?', mensaje: 'La cuenta quedará aprobada y podrá autenticarse de inmediato.', confirmar: 'Dar de alta', tono: 'exito', icono: 'person_add', detalle: [{ rotulo: 'Empleado', valor: `${datos.nombre} ${datos.apellido}` }, { rotulo: 'Rol', valor: this.rotuloRol(this.perfil()) }] });
     if (!seguro) return;
     const empleado = await this.cargando.conEsperaMinima('Registrando empleado…', () => this.usuarios.crearEmpleado({ ...datos, perfil: this.perfil(), fotoUrl: this.foto()! }));

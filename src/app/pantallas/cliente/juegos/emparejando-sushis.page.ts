@@ -197,6 +197,8 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
       }
       .tapa__titulo { font: var(--type-section); color: var(--text-title); text-wrap: balance; }
       .tapa__texto { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
+      /* Nada de blanco liso: el degradado de las tarjetas del menú. */
+      .tapa__ficha, .carta__cara--frente { background-image: var(--surface-card-degradado); }
     `,
   ],
 })

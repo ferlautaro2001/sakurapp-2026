@@ -22,7 +22,7 @@ import { UI } from '../../ui';
         <div class="lm-card espera">
           <h1 class="espera__titulo">Registro enviado</h1>
           <span class="espera__reloj">
-            <lm-icono nombre="hourglass_top" [tamano]="46" color="var(--action-primary)" />
+            <lm-icono nombre="hourglass_top" tamano="clamp(46px, 17vw, 84px)" color="var(--action-primary)" />
           </span>
           <b>El dueño o el supervisor van a revisar tus datos</b>
           <small>
@@ -42,21 +42,22 @@ import { UI } from '../../ui';
     `
       :host { display: flex; flex: 1; min-height: 0; }
       .espera {
-        display: flex; flex-direction: column; align-items: center; gap: 6px;
+        flex: 1 1 auto;
+        display: flex; flex-direction: column; align-items: center; justify-content: space-evenly; gap: var(--space-3);
         padding: var(--space-6) var(--space-5); text-align: center;
       }
       .espera__titulo {
-        margin: 0 0 6px; font: var(--type-title); letter-spacing: var(--tracking-tight);
+        margin: 0 0 6px; font: var(--type-title-xl); letter-spacing: var(--tracking-tight);
         color: var(--text-title); text-wrap: balance;
       }
       /* El reloj es lo único que se mira acá, así que va al tamaño de la ficha
          de estado de cuenta y no al de la tarjeta del pedido. */
       .espera__reloj {
-        width: clamp(64px, 22vw, 88px); height: clamp(64px, 22vw, 88px); border-radius: 50%; display: grid; place-items: center;
+        width: clamp(96px, 36vw, 156px); height: clamp(96px, 36vw, 156px); border-radius: 50%; display: grid; place-items: center;
         background: var(--surface-sunken);
       }
-      .espera b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
-      .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
+      .espera b { font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
+      .espera small { font: var(--type-body); color: var(--text-muted); text-wrap: pretty; }
     `,
   ],
 })

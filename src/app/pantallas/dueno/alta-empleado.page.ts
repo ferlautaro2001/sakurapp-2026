@@ -10,9 +10,9 @@ import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
 import {
   clave,
+  clavesIguales,
   correoElectronico,
   cuil,
-  documento,
   largoMinimo,
   requerido,
   soloLetras,
@@ -75,26 +75,17 @@ import {
             </lm-banner>
           }
 
-          <lm-tarjeta-escaneo [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-
-          <lm-foto
-            [fuente]="foto()"
-            [tamano]="120"
-            etiqueta="Foto con cámara"
-            [error]="errorFoto()"
-            (capturar)="tomarFoto()"
-          />
+          <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
+          <section class="lm-vidrio lm-doc">
+            <b>Cargá tu foto y escaneá tu DNI</b>
+            <div class="lm-fila-doc">
+              <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+              <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+            </div>
+          </section>
 
           <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
           <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-          <lm-campo
-            [control]="formulario.controls.dni"
-            icono="badge"
-            etiqueta="Número de documento"
-            marcador="44225858"
-            modo="numeric"
-            [largoMaximo]="8"
-          />
           <lm-campo
             [control]="formulario.controls.cuil"
             icono="credit_card"
@@ -118,6 +109,14 @@ import {
             etiqueta="Contraseña"
             marcador="Mínimo ocho caracteres"
           />
+          <lm-campo
+            [control]="formulario.controls.repeticion"
+            icono="lock_reset"
+            tipo="password"
+            etiqueta="Confirmar contraseña"
+            marcador="Repetí la contraseña"
+            tecla="done"
+          />
 
           <lm-segmentado
             etiqueta="Perfil"
@@ -129,8 +128,7 @@ import {
         </div>
 
         <div class="lm-actionbar">
-          <lm-boton icono="check" (presionar)="guardar()">Dar de alta</lm-boton>
-          <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
+          <lm-decision rotuloAceptar="Dar de alta" (rechazar)="volver()" (aceptar)="guardar()" />
         </div>
       }
     </div>
@@ -141,6 +139,10 @@ import {
       .persona { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4); }
       .persona__nombre { font: var(--type-card-title); color: var(--text-title); }
       .persona__meta { font: var(--type-caption); color: var(--text-muted); margin-bottom: 6px; }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
     `,
   ],
 })
@@ -164,11 +166,11 @@ export class AltaEmpleadoPage extends PaginaConSesion {
   protected readonly formulario = this.fb.nonNullable.group({
     nombre: ['', [requerido('Escribí los nombres'), soloLetras(), largoMinimo(2, 'El nombre es demasiado corto')]],
     apellido: ['', [requerido('Escribí los apellidos'), soloLetras(), largoMinimo(2, 'El apellido es demasiado corto')]],
-    dni: ['', [requerido('Escribí el número de documento'), documento()]],
     cuil: ['', [requerido('Escribí el CUIL'), cuil()]],
     email: ['', [requerido('Escribí el correo electrónico'), correoElectronico()]],
     clave: ['', [requerido('Elegí una contraseña'), clave()]],
-  });
+    repeticion: ['', [requerido('Repetí la contraseña')]],
+  }, { validators: [clavesIguales('clave', 'repeticion')] });
 
   protected rotuloPerfil(perfil: Perfil): string {
     return ROTULO_PERFIL[perfil];
@@ -206,7 +208,6 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     this.formulario.patchValue({
       nombre: datos.nombres,
       apellido: datos.apellidos,
-      dni: datos.dni,
       cuil: datos.cuil,
     });
     this.leidoDelDocumento.set(true);
@@ -222,11 +223,8 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     if (this.usuarios.existeCorreo(this.formulario.controls.email.value)) {
       this.formulario.controls.email.setErrors({ lm: 'Ese correo electrónico ya está en uso' });
     }
-    if (this.usuarios.existeDocumento(this.formulario.controls.dni.value)) {
-      this.formulario.controls.dni.setErrors({ lm: 'Ese número de documento ya está registrado' });
-    }
-    if (!this.coincideCuil()) {
-      this.formulario.controls.cuil.setErrors({ lm: 'El CUIL no coincide con el número de documento' });
+    if (this.formulario.controls.cuil.valid && this.usuarios.existeDocumento(this.dni())) {
+      this.formulario.controls.cuil.setErrors({ lm: 'Ese número de documento ya está registrado' });
     }
 
     if (this.formulario.invalid || !this.foto()) {
@@ -237,6 +235,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     }
 
     const datos = this.formulario.getRawValue();
+    const dni = this.dni();
 
     const seguro = await this.preguntar({
       titulo: '¿Das de alta a esta persona?',
@@ -246,7 +245,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
       icono: 'person_add',
       detalle: [
         { rotulo: 'Nombre', valor: `${datos.nombre} ${datos.apellido}` },
-        { rotulo: 'Documento', valor: datos.dni },
+        { rotulo: 'Documento', valor: dni },
         { rotulo: 'Perfil', valor: ROTULO_PERFIL[this.perfil()] },
       ],
     });
@@ -256,7 +255,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
       this.usuarios.crearEmpleado({
         nombre: datos.nombre,
         apellido: datos.apellido,
-        dni: datos.dni,
+        dni,
         cuil: datos.cuil,
         email: datos.email,
         clave: datos.clave,
@@ -269,12 +268,9 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     this.avisos.exito('Empleado dado de alta', `${nuevo.nombre} ya aparece en el ingreso rápido.`);
   }
 
-  /** El CUIL tiene que llevar adentro el mismo número de documento. */
-  private coincideCuil(): boolean {
-    const dni = this.formulario.controls.dni.value.replace(/\D/g, '');
-    const cuil = this.formulario.controls.cuil.value.replace(/\D/g, '');
-    if (!dni || cuil.length !== 11) return true;
-    return cuil.slice(2, 10) === dni.padStart(8, '0');
+  /** El documento se infiere del CUIL: los ocho dígitos del medio, sin ceros a la izquierda. */
+  private dni(): string {
+    return this.formulario.controls.cuil.value.replace(/\D/g, '').slice(2, 10).replace(/^0+/, '');
   }
 
   private contarErrores(): number {

@@ -39,22 +39,20 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
           >
             <div
               class="lm-carousel__marco sk-carrusel-fotos"
-              [style.background-image]="
-                fotoActual()
-                  ? 'url(' + fotoActual() + ')'
-                  : null
-              "
               (pointerdown)="iniciarSwipe($event)"
               (pointerup)="terminarSwipe($event)"
               (pointercancel)="cancelarSwipe()"
             >
-              <span class="producto-tipo">
-                <lm-icono
-                  [nombre]="iconoProducto(producto)"
-                  [tamano]="18"
-                />
-                {{ rotuloTipo(producto) }}
-              </span>
+              <!-- Cada foto es un elemento nuevo: el track hace que entre con barrido. -->
+              @for (foto of [fotoActual()]; track foto) {
+                @if (foto) {
+                  <div
+                    class="sk-foto"
+                    [class.sk-foto--atras]="direccionFoto() < 0"
+                    [style.background-image]="'url(' + foto + ')'"
+                  ></div>
+                }
+              }
 
               @if (!fotoActual()) {
                 <span class="lm-carousel__vacio">
@@ -133,7 +131,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-icono">
                   <lm-icono
                     nombre="payments"
-                    [tamano]="26"
+                    [tamano]="20"
                   />
                 </span>
 
@@ -147,7 +145,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-icono">
                   <lm-icono
                     nombre="schedule"
-                    [tamano]="27"
+                    [tamano]="21"
                   />
                 </span>
 
@@ -160,19 +158,14 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
               </article>
             </div>
 
-            <div class="producto-estado">
-              <strong class="producto-estado__titulo">
-                Estado:
-              </strong>
-
-              <span
-                class="estado-chip"
-                [class.estado-chip--sin-stock]="!producto.disponible"
-              >
-                <span class="estado-chip__punto"></span>
-                {{ producto.disponible ? 'Disponible' : 'Sin stock' }}
-              </span>
-            </div>
+            @if (!producto.disponible) {
+              <div class="producto-estado">
+                <span class="estado-chip estado-chip--sin-stock">
+                  <span class="estado-chip__punto"></span>
+                  Sin stock
+                </span>
+              </div>
+            }
 
             @if (puedeAgregar()) {
               <div class="producto-cantidad">
@@ -207,22 +200,27 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         }
       </div>
 
-      <div class="lm-actionbar">
+      <!-- Sin acciones (sólo mirar) la barra queda invisible pero ocupando su
+           alto, para que la foto no cambie de tamaño; se vuelve con la flecha
+           del encabezado. -->
+      <div class="lm-actionbar" [class.barra-vacia]="!puedeGestionar() && !puedeAgregar()">
         @if (puedeGestionar()) {
           <lm-boton
+            class="accion-editar"
             icono="edit"
-            [compacto]="true"
             (presionar)="editar()"
           >
-            Editar producto
+            <span class="solo-lector">Editar producto</span>
           </lm-boton>
 
-          <lm-texto-boton
-            enfasis="peligro"
+          <lm-boton
+            class="accion-quitar"
+            variante="danger"
+            icono="delete_forever"
             (presionar)="quitar()"
           >
-            Quitar de la carta
-          </lm-texto-boton>
+            <span class="solo-lector">Quitar de la carta</span>
+          </lm-boton>
         } @else if (puedeAgregar()) {
           @if (marca(); as marcado) {
             <lm-banner
@@ -253,12 +251,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
             </lm-texto-boton>
           }
         } @else {
-          <lm-boton
-            icono="arrow_back"
-            (presionar)="volver()"
-          >
-            Volver a la carta
-          </lm-boton>
+          <lm-boton icono="arrow_back" aria-hidden="true" tabindex="-1">&nbsp;</lm-boton>
         }
       </div>
     </div>
@@ -285,6 +278,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         font-weight: 800;
       }
 
+      .barra-vacia { visibility: hidden; }
       .producto-body {
         display: flex;
         flex-direction: column;
@@ -303,7 +297,6 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         overflow: hidden;
         border: 2px solid rgba(255, 255, 255, 0.72);
         border-radius: 20px;
-        background-color: #fff7f8;
         background-position: center;
         background-size: cover;
         background-repeat: no-repeat;
@@ -318,25 +311,34 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         -webkit-user-select: none;
       }
 
-      .producto-tipo {
+      /* Barrido: la foto nueva entra por encima de la anterior, desde el lado del gesto. */
+      .sk-foto {
         position: absolute;
-        top: var(--space-4);
-        left: var(--space-4);
-        z-index: 4;
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        max-width: calc(100% - var(--space-7));
-        padding: var(--space-2) var(--space-4);
-        border-radius: 999px;
-        color: var(--action-primary);
-        background: rgba(253, 236, 239, 0.96);
-        font: var(--type-caption);
-        font-weight: 800;
-        box-shadow: 0 4px 12px rgba(58, 6, 27, 0.15);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
+        inset: 0;
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        animation: sk-barrido-entrada 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
       }
+
+      .sk-foto--atras {
+        animation-name: sk-barrido-entrada-atras;
+      }
+
+      @keyframes sk-barrido-entrada {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+
+      @keyframes sk-barrido-entrada-atras {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sk-foto { animation: none; }
+      }
+
 
       .lm-carousel__flecha {
         position: absolute;
@@ -530,18 +532,10 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         align-items: center;
         gap: var(--space-4);
         margin-top: 3px;
-        padding: var(--space-4);
+        padding: var(--space-3);
         border-radius: 18px;
         background: var(--surface-card);
         box-shadow: 0 4px 12px rgba(73, 4, 31, 0.1);
-      }
-
-      .producto-estado__titulo {
-        flex: 0 0 auto;
-        color: var(--action-primary);
-        font: var(--type-body-medium);
-        font-weight: 800;
-        line-height: 1;
       }
 
       /* El chip no es un control, así que no le corresponde el área táctil
@@ -638,13 +632,6 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         box-shadow: 0 4px 14px rgba(73, 4, 31, 0.14);
       }
 
-      .producto-screen--gestionable .producto-tipo {
-        top: var(--space-2);
-        left: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        font: var(--type-label);
-        font-weight: 800;
-      }
 
       .producto-screen--gestionable .lm-carousel__puntos {
         margin: var(--space-1) auto 0;
@@ -671,6 +658,153 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         padding: var(--space-1) var(--space-2);
         font-size: clamp(12px, 3.1vw, 13px);
       }
+      /* Ficha a pantalla completa: la foto se queda con el alto que sobra
+         (nunca recortada a una franja) y el precio se lee primero. */
+      .producto-body > .producto-fotos {
+        flex: 1 0 auto;
+        display: flex;
+        flex-direction: column;
+      }
+      .producto-body .sk-carrusel-fotos {
+        flex: 1 1 auto;
+        aspect-ratio: auto;
+        min-height: clamp(190px, 58vw, 320px);
+      }
+      .producto-fotos, .producto-info { scroll-snap-align: start; }
+      .dato-contenido strong { font: var(--type-price); font-size: clamp(16px, 4.8vw, 21px); }
+      .producto-info h1 { font-size: clamp(20px, 6.4vw, 28px); }
+      .producto-descripcion { font: var(--type-body); line-height: 1.5; }
+      .producto-screen--gestionable .sk-carrusel-fotos { aspect-ratio: auto; max-height: none; min-height: clamp(150px, 44vw, 240px); }
+
+      /* ---------- calco del diseño de referencia ---------- */
+      /* La foto cede alto para que la ficha entera (datos, estado y botón) entre
+         sin desplazarse, como en el diseño. */
+      .producto-body .sk-carrusel-fotos { min-height: clamp(130px, 34vw, 250px); }
+      .producto-body { gap: var(--space-3); }
+
+      /* Flores del carrusel con presencia: más grandes, con halo claro y sombra
+         para que no se pierdan contra el fondo rosa. La activa crece y brilla. */
+      .lm-carousel__puntos { gap: var(--space-1); margin-top: var(--space-2); }
+      .sk-flor { opacity: 0.8; }
+      .sk-flor img {
+        width: clamp(26px, 7.4vw, 34px); height: clamp(26px, 7.4vw, 34px);
+        transform: scale(0.82);
+        filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.85)) drop-shadow(0 2px 4px rgba(94, 12, 44, 0.45));
+      }
+      .producto-screen--gestionable .sk-flor img { width: clamp(24px, 6.8vw, 30px); height: clamp(24px, 6.8vw, 30px); }
+      .sk-flor.on { opacity: 1; }
+      .sk-flor.on img {
+        transform: scale(1.15);
+        filter: drop-shadow(0 0 6px rgba(255, 255, 255, 1)) drop-shadow(0 2px 5px rgba(94, 12, 44, 0.5));
+      }
+
+      /* Acciones de gestión: dos mosaicos casi cuadrados, uno al lado del otro.
+         Editar en rosa; Quitar con un acento rojo fuerte para que se lea como
+         una acción negativa. */
+      .producto-screen--gestionable .lm-actionbar {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3); align-items: stretch;
+      }
+      .producto-screen--gestionable .lm-actionbar lm-boton { display: flex; }
+      .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn {
+        flex: 1 1 auto; flex-direction: column; justify-content: center; gap: var(--space-2);
+        aspect-ratio: 1.45 / 1; min-height: 0; padding: var(--space-3);
+        border-radius: 22px; text-align: center; line-height: 1.15;
+        font-size: clamp(14.5px, 4vw, 17px); font-weight: 800;
+      }
+      .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn .material-symbols-rounded {
+        font-size: clamp(38px, 11vw, 48px) !important; font-variation-settings: 'FILL' 1, 'wght' 600;
+      }
+      /* Los botones de acción son sólo ícono: el rótulo queda para lectores de pantalla. */
+      .solo-lector {
+        position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip: rect(0 0 0 0); white-space: nowrap;
+      }
+      .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger {
+        color: #FFFFFF;
+        background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%);
+        border: 2px solid rgba(255, 190, 180, 0.7);
+        box-shadow:
+          inset 0 2px 0 rgba(255, 255, 255, 0.35),
+          inset 0 -4px 10px rgba(80, 8, 4, 0.35),
+          0 0 0 1px rgba(192, 38, 26, 0.55),
+          0 8px 18px rgba(142, 22, 15, 0.45);
+      }
+      .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger:not(:disabled):active {
+        background: linear-gradient(180deg, #C0261A 0%, #8E160F 100%);
+      }
+
+      /* Las flechas van en las esquinas de abajo de la foto: la de la izquierda
+         abajo a la izquierda y la de la derecha abajo a la derecha. */
+      .lm-carousel__flecha { top: auto; bottom: var(--space-3); transform: none; }
+      .lm-carousel__flecha:active { transform: scale(0.93); }
+
+      /* Foto: marco claro y grueso, esquinas amplias y un halo rosa. */
+      .sk-carrusel-fotos {
+        border: 3px solid rgba(255, 255, 255, 0.88);
+        border-radius: 28px;
+        box-shadow: 0 0 0 3px rgba(255, 143, 180, 0.35), 0 12px 30px rgba(73, 4, 31, 0.28);
+      }
+      .lm-carousel__flecha {
+        width: clamp(44px, 12.5vw, 54px); height: clamp(44px, 12.5vw, 54px);
+        background: rgba(255, 244, 247, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.9);
+      }
+
+      /* Título y descripción sobre el rosa, con un brillo suave. */
+      .producto-info { gap: var(--space-3); }
+      .producto-info h1 {
+        font: 900 clamp(24px, 7.6vw, 34px)/1.08 var(--font-display);
+        letter-spacing: -0.4px;
+        background: linear-gradient(180deg, #FFFFFF 0%, #FFE3EC 100%);
+        -webkit-background-clip: text; background-clip: text;
+        -webkit-text-fill-color: transparent;
+        filter: drop-shadow(0 2px 6px rgba(94, 12, 44, 0.45));
+      }
+      .producto-descripcion {
+        font: 500 clamp(15.5px, 4.3vw, 19px)/1.42 var(--font-text);
+        color: rgba(255, 255, 255, 0.94);
+        text-shadow: 0 1px 4px rgba(94, 12, 44, 0.35);
+      }
+
+      /* Tarjetas de precio y elaboración: ícono en disco con aro, rótulo chico
+         y valor grande; ondas decorativas en la esquina inferior derecha. */
+      .dato-card {
+        position: relative; overflow: hidden; isolation: isolate;
+        gap: var(--space-2); padding: var(--space-4) var(--space-3);
+        border-radius: 22px;
+      }
+      .dato-icono {
+        width: clamp(34px, 9vw, 42px); height: clamp(34px, 9vw, 42px); flex: 0 0 auto;
+        color: #FFFFFF;
+        background: radial-gradient(circle at 35% 28%, #FF7AA8, #D62C69 75%);
+        box-shadow: 0 0 0 5px rgba(255, 122, 168, 0.25), 0 4px 10px rgba(168, 30, 72, 0.3);
+      }
+      .dato-card { flex-wrap: wrap; justify-content: center; }
+      .dato-contenido { gap: 2px; flex: 1 1 78px; max-width: 100%; }
+      .dato-contenido strong { overflow-wrap: break-word; }
+      .dato-contenido small { max-width: 100%; font-size: clamp(9.5px, 2.7vw, 12px); letter-spacing: 0.04em; }
+      .dato-contenido small { letter-spacing: 0.08em; color: var(--action-primary); }
+      .dato-contenido strong { font: 900 clamp(15px, 4.3vw, 20px)/1.05 var(--font-numeric); }
+
+      /* Estado y cantidad: la misma tarjeta, con el rótulo en rosa fuerte. */
+      .producto-estado, .producto-cantidad { border-radius: 22px; position: relative; overflow: hidden; }
+      .estado-chip { font: 800 clamp(14px, 3.9vw, 16px)/1.1 var(--font-text); min-height: clamp(30px, 8vw, 34px); }
+
+      /* Acción principal: botón rosa con brillo, borde claro y flores. Vale
+         para todos los roles, sea cual sea la acción que muestre. */
+      .lm-actionbar ::ng-deep .lm-btn--primary {
+        position: relative; overflow: hidden; isolation: isolate;
+        background: linear-gradient(180deg, #FF6AA0 0%, #E8336F 52%, #B81F55 100%);
+        color: #FFFFFF; font-size: clamp(17px, 5vw, 21px); font-weight: 800;
+        border: 2px solid rgba(255, 255, 255, 0.55);
+        border-radius: 24px;
+        box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.45), inset 0 -3px 8px rgba(110, 18, 52, 0.28), 0 8px 18px rgba(73, 4, 31, 0.35);
+      }
+      .lm-actionbar ::ng-deep .lm-btn--primary:not(:disabled):active {
+        background: linear-gradient(180deg, #E8336F 0%, #B81F55 100%);
+      }
+
     `,
   ],
 })
@@ -682,6 +816,8 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected readonly carrito = inject(CarritoService);
 
   private readonly posicionFoto = signal(0);
+  /* Hacia dónde barre la foto nueva: 1 entra desde la derecha, -1 desde la izquierda. */
+  protected readonly direccionFoto = signal<1 | -1>(1);
   private inicioSwipeX: number | null = null;
 
   protected readonly mesaId =
@@ -700,11 +836,12 @@ export class ProductoFichaPage extends PaginaConSesion {
 
   protected readonly puedeGestionar = computed(() => {
     const producto = this.producto();
+    const perfil = this.sesion.usuario()?.perfil;
 
     return (
-      this.sesion.usuario()?.perfil === 'COCINERO' &&
       producto !== undefined &&
-      producto.tipo !== 'BEBIDA'
+      ((perfil === 'COCINERO' && producto.tipo !== 'BEBIDA') ||
+        (perfil === 'CANTINERO' && producto.tipo === 'BEBIDA'))
     );
   });
 
@@ -772,12 +909,14 @@ export class ProductoFichaPage extends PaginaConSesion {
     const cantidad = this.cantidadFotos();
     if (!cantidad) return;
 
+    this.direccionFoto.set(paso < 0 ? -1 : 1);
     this.posicionFoto.set(
       (this.indiceActual() + paso + cantidad) % cantidad,
     );
   }
 
   protected irAFoto(indice: number): void {
+    this.direccionFoto.set(indice < this.indiceActual() ? -1 : 1);
     this.posicionFoto.set(indice);
   }
 
@@ -787,6 +926,14 @@ export class ProductoFichaPage extends PaginaConSesion {
 
   protected iniciarSwipe(evento: PointerEvent): void {
     if (this.cantidadFotos() <= 1) {
+      return;
+    }
+
+    /*
+     * Un toque sobre una flecha no es el inicio de un gesto: si el marco captura
+     * el puntero, el `click` se redirige al marco y la flecha nunca lo recibe.
+     */
+    if (evento.target instanceof Element && evento.target.closest('button')) {
       return;
     }
 
@@ -847,11 +994,6 @@ export class ProductoFichaPage extends PaginaConSesion {
     return 'Comida';
   }
 
-  protected iconoProducto(producto: Producto): string {
-    if (producto.tipo === 'BEBIDA') return 'local_bar';
-    if (producto.tipo === 'POSTRE') return 'icecream';
-    return 'restaurant';
-  }
 
   protected precio(valor: number): string {
     return `$ ${valor.toLocaleString('es-AR')}`;
@@ -860,7 +1002,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected editar(): void {
     const producto = this.producto();
 
-    if (!producto) {
+    if (!producto || !this.puedeGestionar()) {
       return;
     }
 
@@ -874,7 +1016,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected async quitar(): Promise<void> {
     const producto = this.producto();
 
-    if (!producto) {
+    if (!producto || !this.puedeGestionar()) {
       return;
     }
 

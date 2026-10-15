@@ -11,7 +11,7 @@ import { PaginaConSesion } from '../pagina-base';
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
       <div class="lm-body lm-body--gap12">
-        <lm-titulo bajada="Un único intento por pedido">Desafío Sakura</lm-titulo>
+        <lm-titulo>Desafío Sakura</lm-titulo>
 
         @if (!pedido()) {
           <lm-vacio icono="lock" titulo="Juegos bloqueados">
@@ -45,13 +45,13 @@ import { PaginaConSesion } from '../pagina-base';
     </div>
   `,
   styles: [`
-    :host{display:flex;flex:1;min-height:0}.juego{padding:var(--space-6);display:grid;gap:var(--space-4);text-align:center;justify-items:center}
-    .flor{font-size:clamp(46px,14.9vw,64px);line-height:1}.juego h2{margin:0;font:var(--type-section);color:var(--text-title)}
+    :host{display:flex;flex:1;min-height:0}.juego{flex:1 1 auto;padding:var(--space-6);display:grid;gap:var(--space-4);text-align:center;justify-items:center;align-content:space-evenly}
+    .flor{font-size:clamp(64px,24vw,110px);line-height:1}.juego h2{margin:0;font:var(--type-title-xl);color:var(--text-title)}.juego lm-boton{width:100%}
     /* El ancho de lectura va en caracteres y no en pixeles: así no queda un
        maximo que en un celular angosto no significa nada. */
     .juego p{margin:0;max-width:38ch;color:var(--text-muted)}
     .premios{display:flex;flex-wrap:wrap;justify-content:center;gap:var(--space-3)}
-    .premios b{padding:var(--space-3) var(--space-4);border-radius:var(--radius-field);background:var(--surface-sunken);color:var(--action-primary)}
+    .premios{width:100%;flex-wrap:nowrap}.premios b{flex:1 1 0;padding:var(--space-4) var(--space-3);border-radius:var(--radius-field);background:var(--surface-sunken);color:var(--action-primary);font:var(--type-numeral)}
   `],
 })
 export class JuegosPage extends PaginaConSesion implements OnInit {

@@ -142,6 +142,9 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         display: flex;
         flex-direction: column;
         align-items: center;
+        /* Separación pareja entre ícono, título, cuerpo y botón: sin cuerpo, el
+           título quedaba pegado al botón. */
+        gap: var(--space-5);
         text-align: center;
         box-shadow: 0 16px 36px rgba(110, 18, 52, 0.22);
         border: 1.5px solid rgba(46, 125, 50, 0.2);
@@ -154,7 +157,6 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         background: rgba(46, 125, 50, 0.12);
         display: grid;
         place-items: center;
-        margin-bottom: 12px;
       }
       .modal-exito__titulo {
         margin: 0;
@@ -162,7 +164,7 @@ import { SesionService } from './nucleo/servicios/sesion.service';
         color: var(--text-title);
       }
       .modal-exito__cuerpo {
-        margin: var(--space-2) 0 var(--space-4);
+        margin: 0;
         font: 500 clamp(13px, 3.3vw, 14px)/1.4 var(--font-text);
         color: var(--text-muted);
       }

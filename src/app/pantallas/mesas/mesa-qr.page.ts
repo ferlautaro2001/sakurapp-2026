@@ -33,7 +33,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
           <!-- Tarjeta 1: Información de la mesa -->
           <div class="tarjeta-blanca" [class.tarjeta-blanca--resaltada]="resaltar()">
             <!-- Lo que más importa de la mesa: si está libre u ocupada. -->
-            <div class="estado-mesa" [class.estado-mesa--ocupada]="ocupada()">
+            <div class="subtarjeta-info estado-mesa" [class.estado-mesa--ocupada]="ocupada()">
               <span class="dot dot--grande" [class.dot--ocupada]="ocupada()" [class.dot--libre]="!ocupada()"></span>
               <span class="estado-mesa__titulo">{{ ocupada() ? 'Mesa ocupada' : 'Mesa libre' }}</span>
               <button
@@ -74,10 +74,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 <div class="subtarjeta-info__icono">
                   <lm-icono [nombre]="iconoTipo()" [tamano]="22" color="#6E1234" />
                 </div>
-                <div class="subtarjeta-info__datos">
-                  <span class="subtarjeta-info__etiqueta">Tipo de mesa</span>
-                  <span class="subtarjeta-info__valor subtarjeta-info__valor--tipo">{{ tipo() }}</span>
-                </div>
+                <span class="subtarjeta-info__valor">{{ tipo() }}</span>
                 @if (puedeEditar()) {
                   <button
                     type="button"
@@ -90,11 +87,6 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 }
               </div>
             </div>
-            <!-- El número identifica la mesa y su QR: no se edita nunca. -->
-            <p class="numero-fijo">
-              <lm-icono nombre="lock" [tamano]="13" color="#A2708A" />
-              <span>Mesa {{ m.numero }} · el número no se puede editar</span>
-            </p>
           </div>
 
           <!-- Tarjeta 2: Código QR de la mesa -->
@@ -128,14 +120,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 <span>Tenés cambios sin guardar.</span>
               </p>
             }
-            <button type="button" class="btn-cancelar" (click)="volver()">
-              <lm-icono nombre="close" [tamano]="20" color="#FFFFFF" />
-              <span>Cancelar</span>
-            </button>
-            <button type="button" class="btn-guardar" (click)="guardarCambios()">
-              <lm-icono nombre="save" [tamano]="20" color="#B92E58" />
-              <span>Guardar cambios</span>
-            </button>
+            <lm-decision rotuloAceptar="Guardar cambios" (rechazar)="volver()" (aceptar)="guardarCambios()" />
           </div>
         </main>
 
@@ -192,10 +177,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 Entre {{ minComensales }} y {{ maxComensales }} personas.
               </p>
 
-              <div class="modal-editar__acciones">
-                <lm-boton variante="danger" icono="close" (presionar)="cerrarEdicion()"></lm-boton>
-                <lm-boton variante="success" icono="check" (presionar)="aplicarComensales()"></lm-boton>
-              </div>
+              <lm-decision class="modal-editar__acciones" rotuloAceptar="Aplicar" (rechazar)="cerrarEdicion()" (aceptar)="aplicarComensales()" />
             </div>
           </div>
         }
@@ -229,10 +211,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 }
               </div>
 
-              <div class="modal-editar__acciones">
-                <lm-boton variante="danger" icono="close" (presionar)="cerrarEdicion()"></lm-boton>
-                <lm-boton variante="success" icono="check" (presionar)="aplicarTipo()"></lm-boton>
-              </div>
+              <lm-decision class="modal-editar__acciones" rotuloAceptar="Aplicar" (rechazar)="cerrarEdicion()" (aceptar)="aplicarTipo()" />
             </div>
           </div>
         }
@@ -366,9 +345,10 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
        * el corte depende del ancho que le queda a la tarjeta, no del modelo
        * del equipo: la misma regla sirve dentro del modal, que es más angosto.
        */
+      /* Comensales y tipo, uno abajo del otro. */
       .grid-info {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(100%, 132px), 1fr));
+        grid-template-columns: 1fr;
         gap: var(--space-3);
       }
 
@@ -445,19 +425,19 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         justify-content: center;
       }
 
+      /* Rótulo y número en la misma línea que el ícono: "👥 Comensales 10". */
       .subtarjeta-info__datos {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        gap: 6px;
         min-width: 0;
       }
 
-      /* "Comensales" y "Número de mesa" viven en media columna. Son rótulos y
-         no texto de lectura, así que antes de partirse al medio prefieren
-         encogerse; el corte de emergencia de la base los dejaba como
-         "Comensale" y abajo la "s". */
+      /* "Comensales" vive en una fila angosta. Es rótulo y no texto de
+         lectura, así que antes de partirse al medio prefiere encogerse. */
       .subtarjeta-info__etiqueta {
-        font: var(--type-label);
-        font-size: clamp(10px, 2.9vw, 13px);
+        font: var(--type-section);
+        line-height: 1.15;
         color: #7A2E44;
         overflow-wrap: normal;
         word-break: keep-all;
@@ -468,13 +448,6 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         font: var(--type-section);
         color: #6E1234;
         line-height: 1.15;
-      }
-
-      .subtarjeta-info__valor--tipo {
-        font-size: clamp(13px, 3.3vw, 14px);
-        font-weight: 700;
-        /* Sin recorte: el texto largo pasa de renglon, nunca a puntos suspensivos. */
-        overflow-wrap: anywhere;
       }
 
       /* Disponibilidad */
@@ -520,7 +493,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
       }
 
       .switch--on {
-        background: #C72657;
+        background: var(--state-error);
       }
 
       .switch__perilla {
@@ -535,6 +508,16 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
       .switch--on .switch__perilla {
         transform: translateX(22px);
+      }
+
+      /* La perilla dice el estado: verde libre, roja ocupada. */
+      .switch__perilla {
+        background: linear-gradient(180deg, #4BE39B 0%, #1AA765 100%);
+        box-shadow: 0 0 0 2px #FFFFFF, 0 2px 4px rgba(0, 0, 0, 0.25);
+      }
+
+      .switch--on .switch__perilla {
+        background: linear-gradient(180deg, #E5503F 0%, #B01E13 100%);
       }
 
       .fila-disponibilidad-estado {
@@ -578,11 +561,10 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
       .dot--grande { width: 14px; height: 14px; margin-top: 0; }
 
+      /* Misma subtarjeta que comensales y tipo, con el mismo aire debajo. */
       .estado-mesa {
-        display: flex;
-        align-items: center;
         gap: 10px;
-        padding: 4px 2px 12px;
+        margin-bottom: var(--space-3);
       }
 
       .estado-mesa__titulo {
@@ -595,14 +577,24 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
       .estado-mesa--ocupada .estado-mesa__titulo { color: #D6336C; }
 
-      .numero-fijo {
-        display: flex;
-        align-items: center;
+      /* Estado, comensales y tipo: el contenido va centrado en su fila y el
+         lápiz o el interruptor quedan clavados a la derecha, con un relleno
+         igual a los dos lados para que el centro sea el de la fila. */
+      .tarjeta-blanca > .subtarjeta-info,
+      .grid-info > .subtarjeta-info {
+        position: relative;
         justify-content: center;
-        gap: 5px;
-        margin: 10px 0 0;
-        font: var(--type-caption);
-        color: #A2708A;
+        padding-inline: 64px;
+        text-align: center;
+      }
+      .estado-mesa__titulo { flex: 0 1 auto; }
+      .subtarjeta-info > .lapiz,
+      .subtarjeta-info > .switch {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        translate: 0 -50%;
+        margin: 0;
       }
 
       /* Tarjeta QR */
@@ -698,43 +690,6 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         background: rgba(255, 255, 255, 0.2);
         color: #FFFFFF;
         font: var(--type-caption);
-      }
-
-      .btn-guardar {
-        width: 100%;
-        background: #FFFFFF;
-        color: #B92E58;
-        border: none;
-        border-radius: 16px;
-        padding: 13px 18px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font: var(--type-button);
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
-        transition: transform 0.12s ease, opacity 0.12s ease;
-      }
-
-      .btn-guardar:active {
-        transform: scale(0.98);
-        opacity: 0.92;
-      }
-
-      .btn-cancelar {
-        background: transparent;
-        border: none;
-        color: #FFFFFF;
-        min-height: var(--touch-min);
-        padding: var(--space-2) var(--space-3);
-        font: var(--type-button);
-        cursor: pointer;
-        transition: opacity 0.12s ease;
-      }
-
-      .btn-cancelar:active {
-        opacity: 0.75;
       }
 
       /* Modal Pantalla Completa QR */
@@ -838,12 +793,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
       }
 
       .modal-editar__acciones {
-        width: 100%;
         margin-top: 18px;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        align-items: center;
       }
 
       /* Contador de comensales */

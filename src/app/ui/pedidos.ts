@@ -8,7 +8,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { IconoComponent, BotonComponent, ChipComponent } from './basicos';
+import { IconoComponent, ChipComponent, DecisionComponent } from './basicos';
 import { FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 import { Pedido, PedidoItem } from '../nucleo/modelos/modelos';
 import { MarcaRechazo, ROTULO_ESTADO_PEDIDO, ROTULO_MARCA_RECHAZO } from '../nucleo/modelos/enums';
@@ -380,7 +380,7 @@ export class RenglonPedidoComponent {
 @Component({
   selector: 'lm-fila-pedido',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, BotonComponent, ChipComponent, PesosPipe, HoraPipe],
+  imports: [IconoComponent, ChipComponent, DecisionComponent, PesosPipe, HoraPipe],
   template: `
     <div class="pedido">
       <button type="button" class="pedido__cuerpo" (click)="presionar.emit()">
@@ -430,10 +430,14 @@ export class RenglonPedidoComponent {
       }
 
       @if (conAcciones()) {
-        <div class="pedido__acciones">
-          <lm-boton compacto variante="success" icono="thumb_up" (presionar)="aceptar.emit()">Confirmar</lm-boton>
-          <lm-boton compacto variante="danger" icono="edit_note" (presionar)="rechazar.emit()">Devolver</lm-boton>
-        </div>
+        <lm-decision
+          compacto
+          class="pedido__acciones"
+          rotuloRechazar="Devolver"
+          rotuloAceptar="Confirmar"
+          (rechazar)="rechazar.emit()"
+          (aceptar)="aceptar.emit()"
+        />
       }
     </div>
   `,
@@ -504,7 +508,6 @@ export class RenglonPedidoComponent {
       .pedido__cuenta { font: var(--type-caption); color: var(--text-muted); }
       .pedido__total { font: 900 clamp(14px, 4.4vw, 19px)/1 var(--font-numeric); color: var(--action-primary); }
       .pedido__acciones {
-        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4);
         padding: 0 var(--space-4) var(--space-4);
       }
     `,

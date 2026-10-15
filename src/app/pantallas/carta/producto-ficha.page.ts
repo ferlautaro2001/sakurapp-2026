@@ -39,15 +39,21 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
           >
             <div
               class="lm-carousel__marco sk-carrusel-fotos"
-              [style.background-image]="
-                fotoActual()
-                  ? 'url(' + fotoActual() + ')'
-                  : null
-              "
               (pointerdown)="iniciarSwipe($event)"
               (pointerup)="terminarSwipe($event)"
               (pointercancel)="cancelarSwipe()"
             >
+              <!-- Cada foto es un elemento nuevo: el track hace que entre con barrido. -->
+              @for (foto of [fotoActual()]; track foto) {
+                @if (foto) {
+                  <div
+                    class="sk-foto"
+                    [class.sk-foto--atras]="direccionFoto() < 0"
+                    [style.background-image]="'url(' + foto + ')'"
+                  ></div>
+                }
+              }
+
               @if (!fotoActual()) {
                 <span class="lm-carousel__vacio">
                   <lm-icono
@@ -125,7 +131,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-icono">
                   <lm-icono
                     nombre="payments"
-                    [tamano]="26"
+                    [tamano]="20"
                   />
                 </span>
 
@@ -139,7 +145,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-icono">
                   <lm-icono
                     nombre="schedule"
-                    [tamano]="27"
+                    [tamano]="21"
                   />
                 </span>
 
@@ -152,19 +158,14 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
               </article>
             </div>
 
-            <div class="producto-estado">
-              <strong class="producto-estado__titulo">
-                Estado:
-              </strong>
-
-              <span
-                class="estado-chip"
-                [class.estado-chip--sin-stock]="!producto.disponible"
-              >
-                <span class="estado-chip__punto"></span>
-                {{ producto.disponible ? 'Disponible' : 'Sin stock' }}
-              </span>
-            </div>
+            @if (!producto.disponible) {
+              <div class="producto-estado">
+                <span class="estado-chip estado-chip--sin-stock">
+                  <span class="estado-chip__punto"></span>
+                  Sin stock
+                </span>
+              </div>
+            }
 
             @if (puedeAgregar()) {
               <div class="producto-cantidad">
@@ -199,14 +200,17 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         }
       </div>
 
-      <div class="lm-actionbar">
+      <!-- Sin acciones (sólo mirar) la barra queda invisible pero ocupando su
+           alto, para que la foto no cambie de tamaño; se vuelve con la flecha
+           del encabezado. -->
+      <div class="lm-actionbar" [class.barra-vacia]="!puedeGestionar() && !puedeAgregar()">
         @if (puedeGestionar()) {
           <lm-boton
             class="accion-editar"
             icono="edit"
             (presionar)="editar()"
           >
-            Editar producto
+            <span class="solo-lector">Editar producto</span>
           </lm-boton>
 
           <lm-boton
@@ -215,7 +219,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
             icono="delete_forever"
             (presionar)="quitar()"
           >
-            Quitar de la carta
+            <span class="solo-lector">Quitar de la carta</span>
           </lm-boton>
         } @else if (puedeAgregar()) {
           @if (marca(); as marcado) {
@@ -247,12 +251,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
             </lm-texto-boton>
           }
         } @else {
-          <lm-boton
-            icono="arrow_back"
-            (presionar)="volver()"
-          >
-            Volver a la carta
-          </lm-boton>
+          <lm-boton icono="arrow_back" aria-hidden="true" tabindex="-1">&nbsp;</lm-boton>
         }
       </div>
     </div>
@@ -279,6 +278,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         font-weight: 800;
       }
 
+      .barra-vacia { visibility: hidden; }
       .producto-body {
         display: flex;
         flex-direction: column;
@@ -297,7 +297,6 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         overflow: hidden;
         border: 2px solid rgba(255, 255, 255, 0.72);
         border-radius: 20px;
-        background-color: #fff7f8;
         background-position: center;
         background-size: cover;
         background-repeat: no-repeat;
@@ -310,6 +309,34 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         touch-action: pan-y;
         user-select: none;
         -webkit-user-select: none;
+      }
+
+      /* Barrido: la foto nueva entra por encima de la anterior, desde el lado del gesto. */
+      .sk-foto {
+        position: absolute;
+        inset: 0;
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        animation: sk-barrido-entrada 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+      }
+
+      .sk-foto--atras {
+        animation-name: sk-barrido-entrada-atras;
+      }
+
+      @keyframes sk-barrido-entrada {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+
+      @keyframes sk-barrido-entrada-atras {
+        from { transform: translateX(-100%); }
+        to { transform: translateX(0); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sk-foto { animation: none; }
       }
 
 
@@ -505,18 +532,10 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         align-items: center;
         gap: var(--space-4);
         margin-top: 3px;
-        padding: var(--space-4);
+        padding: var(--space-3);
         border-radius: 18px;
         background: var(--surface-card);
         box-shadow: 0 4px 12px rgba(73, 4, 31, 0.1);
-      }
-
-      .producto-estado__titulo {
-        flex: 0 0 auto;
-        color: var(--action-primary);
-        font: var(--type-body-medium);
-        font-weight: 800;
-        line-height: 1;
       }
 
       /* El chip no es un control, así que no le corresponde el área táctil
@@ -694,7 +713,12 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         font-size: clamp(14.5px, 4vw, 17px); font-weight: 800;
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn .material-symbols-rounded {
-        font-size: clamp(28px, 8vw, 36px) !important; font-variation-settings: 'FILL' 1, 'wght' 600;
+        font-size: clamp(38px, 11vw, 48px) !important; font-variation-settings: 'FILL' 1, 'wght' 600;
+      }
+      /* Los botones de acción son sólo ícono: el rótulo queda para lectores de pantalla. */
+      .solo-lector {
+        position: absolute; width: 1px; height: 1px; overflow: hidden;
+        clip: rect(0 0 0 0); white-space: nowrap;
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger {
         color: #FFFFFF;
@@ -751,7 +775,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         border-radius: 22px;
       }
       .dato-icono {
-        width: clamp(40px, 11vw, 52px); height: clamp(40px, 11vw, 52px); flex: 0 0 auto;
+        width: clamp(34px, 9vw, 42px); height: clamp(34px, 9vw, 42px); flex: 0 0 auto;
         color: #FFFFFF;
         background: radial-gradient(circle at 35% 28%, #FF7AA8, #D62C69 75%);
         box-shadow: 0 0 0 5px rgba(255, 122, 168, 0.25), 0 4px 10px rgba(168, 30, 72, 0.3);
@@ -761,12 +785,11 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
       .dato-contenido strong { overflow-wrap: break-word; }
       .dato-contenido small { max-width: 100%; font-size: clamp(9.5px, 2.7vw, 12px); letter-spacing: 0.04em; }
       .dato-contenido small { letter-spacing: 0.08em; color: var(--action-primary); }
-      .dato-contenido strong { font: 900 clamp(19px, 5.6vw, 26px)/1.05 var(--font-numeric); }
+      .dato-contenido strong { font: 900 clamp(15px, 4.3vw, 20px)/1.05 var(--font-numeric); }
 
       /* Estado y cantidad: la misma tarjeta, con el rótulo en rosa fuerte. */
       .producto-estado, .producto-cantidad { border-radius: 22px; position: relative; overflow: hidden; }
-      .producto-estado__titulo { font: 900 clamp(16px, 4.6vw, 20px)/1 var(--font-text); }
-      .estado-chip { font: 800 clamp(16px, 4.4vw, 19px)/1.1 var(--font-text); min-height: clamp(42px, 11.5vw, 50px); }
+      .estado-chip { font: 800 clamp(14px, 3.9vw, 16px)/1.1 var(--font-text); min-height: clamp(30px, 8vw, 34px); }
 
       /* Acción principal: botón rosa con brillo, borde claro y flores. Vale
          para todos los roles, sea cual sea la acción que muestre. */
@@ -793,6 +816,8 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected readonly carrito = inject(CarritoService);
 
   private readonly posicionFoto = signal(0);
+  /* Hacia dónde barre la foto nueva: 1 entra desde la derecha, -1 desde la izquierda. */
+  protected readonly direccionFoto = signal<1 | -1>(1);
   private inicioSwipeX: number | null = null;
 
   protected readonly mesaId =
@@ -811,11 +836,12 @@ export class ProductoFichaPage extends PaginaConSesion {
 
   protected readonly puedeGestionar = computed(() => {
     const producto = this.producto();
+    const perfil = this.sesion.usuario()?.perfil;
 
     return (
-      this.sesion.usuario()?.perfil === 'COCINERO' &&
       producto !== undefined &&
-      producto.tipo !== 'BEBIDA'
+      ((perfil === 'COCINERO' && producto.tipo !== 'BEBIDA') ||
+        (perfil === 'CANTINERO' && producto.tipo === 'BEBIDA'))
     );
   });
 
@@ -883,12 +909,14 @@ export class ProductoFichaPage extends PaginaConSesion {
     const cantidad = this.cantidadFotos();
     if (!cantidad) return;
 
+    this.direccionFoto.set(paso < 0 ? -1 : 1);
     this.posicionFoto.set(
       (this.indiceActual() + paso + cantidad) % cantidad,
     );
   }
 
   protected irAFoto(indice: number): void {
+    this.direccionFoto.set(indice < this.indiceActual() ? -1 : 1);
     this.posicionFoto.set(indice);
   }
 
@@ -974,7 +1002,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected editar(): void {
     const producto = this.producto();
 
-    if (!producto) {
+    if (!producto || !this.puedeGestionar()) {
       return;
     }
 
@@ -988,7 +1016,7 @@ export class ProductoFichaPage extends PaginaConSesion {
   protected async quitar(): Promise<void> {
     const producto = this.producto();
 
-    if (!producto) {
+    if (!producto || !this.puedeGestionar()) {
       return;
     }
 

@@ -47,6 +47,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
             forma="rectangulo"
             [tamano]="168"
             etiqueta="Tomar foto de la mesa con la cámara"
+            sinRotulo
             [error]="errorFoto()"
             (capturar)="tomarFoto()"
           />
@@ -79,15 +80,14 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
 
         <lm-interruptor
           etiqueta="Mesa disponible"
-          [ayuda]="disponible() ? 'Lista para asignar' : 'La mesa está ocupada'"
           [activo]="disponible()"
           (cambiar)="disponible.set($event)"
         />
       </div>
 
       <div class="lm-actionbar">
-        <lm-boton icono="add" (presionar)="guardar()">Agregar mesa</lm-boton>
-        <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
+        <!-- Cruz roja (cancelar) a la izquierda, tilde verde (agregar) a la derecha. -->
+        <lm-decision rotuloRechazar="Cancelar" rotuloAceptar="Agregar mesa" (rechazar)="volver()" (aceptar)="guardar()" />
       </div>
     </div>
 

@@ -35,7 +35,9 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
           </div>
         } @else {
           <lm-vacio icono="receipt_long" [titulo]="tituloVacio()">
-            {{ textoVacio() }}
+            @if (textoVacio(); as texto) {
+              {{ texto }}
+            }
           </lm-vacio>
         }
       </div>
@@ -70,7 +72,7 @@ export class MozoPedidosPage extends PaginaDeComandas {
 
   protected textoVacio(): string {
     return this.bandeja() === 'REVISAR'
-      ? 'Cuando un cliente termine su pedido, aparece acá con la mesa, el nombre y el importe.'
+      ? ''
       : 'Los pedidos que confirmes van a quedar acá mientras la cocina y la barra los preparan.';
   }
 

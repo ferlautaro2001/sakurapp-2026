@@ -24,7 +24,7 @@ import { EsperaService } from '../../nucleo/servicios/espera.service';
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
         @if (encuestas.total()) {
-          <lm-titulo [contador]="encuestas.total()">Encuestas</lm-titulo>
+          <lm-titulo>Encuestas</lm-titulo>
 
           <lm-diapositivas alto [etiquetas]="etiquetas">
             <lm-grafico-torta

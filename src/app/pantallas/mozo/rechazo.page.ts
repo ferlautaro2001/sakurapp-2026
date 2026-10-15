@@ -149,11 +149,9 @@ import { PaginaConSesion } from '../pagina-base';
           </label>
         </div>
 
-        <div class="lm-actionbar">
-          <lm-boton variante="ghost" icono="edit_note" (presionar)="rechazar()">
-            Devolver el pedido
-          </lm-boton>
-          <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
+        <div class="lm-actionbar acciones">
+          <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
+          <lm-boton variante="success" icono="edit_note" (presionar)="rechazar()">Devolver el pedido</lm-boton>
         </div>
       } @else {
         <div class="lm-body">
@@ -169,6 +167,16 @@ import { PaginaConSesion } from '../pagina-base';
   `,
   styles: [
     `
+      /* Cancelar y devolver lado a lado, con el aro de vidrio del botón de volver. */
+      .acciones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+      .acciones ::ng-deep .lm-btn {
+        background-clip: padding-box !important;
+        border: 1.5px solid rgba(255, 255, 255, .5) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .55),
+          inset 0 -6px 12px rgba(255, 255, 255, .06),
+          0 4px 10px rgba(94, 12, 44, .16) !important;
+      }
       :host {
         display: flex;
         flex: 1;

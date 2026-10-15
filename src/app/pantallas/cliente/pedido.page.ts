@@ -30,7 +30,7 @@ import { Unsubscribe } from 'firebase/firestore';
       </lm-encabezado>
 
       @if (pedido(); as p) {
-        <div class="lm-body lm-body--gap12">
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
           @if (!esperando()) {
             <lm-titulo>{{ titulo() }}</lm-titulo>
           }
@@ -110,7 +110,7 @@ import { Unsubscribe } from 'firebase/firestore';
 
           <!-- Renglones en modo editable (desde carrito) -->
           @if (editable()) {
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of carrito.items(); track item.producto.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -127,7 +127,7 @@ import { Unsubscribe } from 'firebase/firestore';
             }
           } @else {
             <!-- Renglones de pedido enviado o confirmado -->
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of p.items; track item.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -287,8 +287,12 @@ import { Unsubscribe } from 'firebase/firestore';
       .espera__titulo { font: var(--type-title-xl); }
       .espera b { font: var(--type-section); }
       .espera small { font: var(--type-body); }
-      /* Cada renglón entra entero: el snap lo alinea al tope. */
-      .lm-list > * { scroll-snap-align: start; }
+      /* El estado y el resumen dejan menos alto que en el borrador:
+         como en el carrito, se muestran hasta dos renglones por tanda. */
+      .pedido__detalle:has(> :nth-child(5)) { --por: 2; }
+      @media (max-height: 640px) {
+        .pedido__detalle:has(> :nth-child(3)) { --por: 1; }
+      }
 
     `,
   ],

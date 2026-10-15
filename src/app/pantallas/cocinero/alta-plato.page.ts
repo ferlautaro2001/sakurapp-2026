@@ -33,7 +33,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
             : (esPostre() ? 'Nuevo postre' : 'Nuevo plato')
         "
         conVolver
-        (volver)="ir(['/carta'])"
+        (volver)="ir(rutaCarta)"
       />
 
       <div class="lm-body lm-body--gap14">
@@ -52,6 +52,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
 
         <lm-segmentado
           etiqueta="Categoría"
+          vidrio
           [opciones]="tiposProducto"
           [valor]="tipoProducto()"
           [columnas]="2"
@@ -73,14 +74,15 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
           "
         />
 
-        <lm-campo
+        <lm-area
           [control]="formulario.controls.descripcion"
           icono="notes"
           etiqueta="Descripción"
+          [filas]="2"
           [marcador]="
             esPostre()
-              ? 'Sabores, ingredientes y forma de presentación'
-              : 'Ingredientes y forma de presentación'
+              ? 'Helado artesanal'
+              : 'Milanesa'
           "
         />
 
@@ -184,6 +186,11 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
         height: auto !important;
         aspect-ratio: 1 / 1;
       }
+
+      /* Casilla vacía: sólo la cámara, sin el rótulo "Foto del plato N". */
+      .fotos ::ng-deep .lm-photo__pie:not(.lm-photo__pie--cargada) {
+        display: none;
+      }
     
       /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
       /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
@@ -202,6 +209,9 @@ export class AltaPlatoPage extends PaginaConSesion {
 
   protected readonly editando =
     this.idProducto !== null;
+
+  /* Al editar se vuelve al detalle del producto, no a la lista de la carta. */
+  protected readonly rutaCarta = this.idProducto ? ['/carta', this.idProducto] : ['/carta'];
 
   protected readonly tipoProducto = signal<TipoProducto>('COMIDA');
   
@@ -479,7 +489,7 @@ protected async guardar(): Promise<void> {
     this.errorFotos.set(null);
     this.resumenError.set(null);
 
-    this.ir(['/carta']);
+    this.ir(this.rutaCarta);
   } catch (error) {
     console.error(
       'No se pudo guardar el producto:',

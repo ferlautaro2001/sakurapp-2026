@@ -13,7 +13,6 @@ import {
   clavesIguales,
   correoElectronico,
   cuil,
-  documento,
   largoMinimo,
   requerido,
   soloLetras,
@@ -76,27 +75,17 @@ import {
             </lm-banner>
           }
 
-          <div class="lm-fila-doc">
-            <lm-foto
-              [fuente]="foto()"
-              [tamano]="120"
-              etiqueta="Tomar foto"
-              [error]="errorFoto()"
-              (capturar)="tomarFoto()"
-            />
-            <lm-tarjeta-escaneo [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-          </div>
+          <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
+          <section class="lm-vidrio lm-doc">
+            <b>Cargá tu foto y escaneá tu DNI</b>
+            <div class="lm-fila-doc">
+              <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+              <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+            </div>
+          </section>
 
           <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
           <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-          <lm-campo
-            [control]="formulario.controls.dni"
-            icono="badge"
-            etiqueta="Número de documento"
-            marcador="44225858"
-            modo="numeric"
-            [largoMaximo]="8"
-          />
           <lm-campo
             [control]="formulario.controls.cuil"
             icono="credit_card"
@@ -138,9 +127,8 @@ import {
           />
         </div>
 
-        <div class="lm-actionbar acciones-par">
-          <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
-          <lm-boton icono="check" (presionar)="guardar()">Dar de alta</lm-boton>
+        <div class="lm-actionbar">
+          <lm-decision rotuloAceptar="Dar de alta" (rechazar)="volver()" (aceptar)="guardar()" />
         </div>
       }
     </div>
@@ -178,7 +166,6 @@ export class AltaEmpleadoPage extends PaginaConSesion {
   protected readonly formulario = this.fb.nonNullable.group({
     nombre: ['', [requerido('Escribí los nombres'), soloLetras(), largoMinimo(2, 'El nombre es demasiado corto')]],
     apellido: ['', [requerido('Escribí los apellidos'), soloLetras(), largoMinimo(2, 'El apellido es demasiado corto')]],
-    dni: ['', [requerido('Escribí el número de documento'), documento()]],
     cuil: ['', [requerido('Escribí el CUIL'), cuil()]],
     email: ['', [requerido('Escribí el correo electrónico'), correoElectronico()]],
     clave: ['', [requerido('Elegí una contraseña'), clave()]],
@@ -221,7 +208,6 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     this.formulario.patchValue({
       nombre: datos.nombres,
       apellido: datos.apellidos,
-      dni: datos.dni,
       cuil: datos.cuil,
     });
     this.leidoDelDocumento.set(true);
@@ -237,11 +223,8 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     if (this.usuarios.existeCorreo(this.formulario.controls.email.value)) {
       this.formulario.controls.email.setErrors({ lm: 'Ese correo electrónico ya está en uso' });
     }
-    if (this.usuarios.existeDocumento(this.formulario.controls.dni.value)) {
-      this.formulario.controls.dni.setErrors({ lm: 'Ese número de documento ya está registrado' });
-    }
-    if (!this.coincideCuil()) {
-      this.formulario.controls.cuil.setErrors({ lm: 'El CUIL no coincide con el número de documento' });
+    if (this.formulario.controls.cuil.valid && this.usuarios.existeDocumento(this.dni())) {
+      this.formulario.controls.cuil.setErrors({ lm: 'Ese número de documento ya está registrado' });
     }
 
     if (this.formulario.invalid || !this.foto()) {
@@ -252,6 +235,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     }
 
     const datos = this.formulario.getRawValue();
+    const dni = this.dni();
 
     const seguro = await this.preguntar({
       titulo: '¿Das de alta a esta persona?',
@@ -261,7 +245,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
       icono: 'person_add',
       detalle: [
         { rotulo: 'Nombre', valor: `${datos.nombre} ${datos.apellido}` },
-        { rotulo: 'Documento', valor: datos.dni },
+        { rotulo: 'Documento', valor: dni },
         { rotulo: 'Perfil', valor: ROTULO_PERFIL[this.perfil()] },
       ],
     });
@@ -271,7 +255,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
       this.usuarios.crearEmpleado({
         nombre: datos.nombre,
         apellido: datos.apellido,
-        dni: datos.dni,
+        dni,
         cuil: datos.cuil,
         email: datos.email,
         clave: datos.clave,
@@ -284,12 +268,9 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     this.avisos.exito('Empleado dado de alta', `${nuevo.nombre} ya aparece en el ingreso rápido.`);
   }
 
-  /** El CUIL tiene que llevar adentro el mismo número de documento. */
-  private coincideCuil(): boolean {
-    const dni = this.formulario.controls.dni.value.replace(/\D/g, '');
-    const cuil = this.formulario.controls.cuil.value.replace(/\D/g, '');
-    if (!dni || cuil.length !== 11) return true;
-    return cuil.slice(2, 10) === dni.padStart(8, '0');
+  /** El documento se infiere del CUIL: los ocho dígitos del medio, sin ceros a la izquierda. */
+  private dni(): string {
+    return this.formulario.controls.cuil.value.replace(/\D/g, '').slice(2, 10).replace(/^0+/, '');
   }
 
   private contarErrores(): number {

@@ -47,7 +47,7 @@ import { DatePipe } from '@angular/common';
                   </small>
                 </span>
                 @if (sala.cerrada) {
-                  <lm-icono nombre="task_alt" [tamano]="20" color="var(--state-success)" />
+                  <lm-icono nombre="task_alt" [tamano]="20" color="#FFFFFF" />
                 } @else if (sala.pendienteMozo) {
                   <!-- Un punto y no un número: lo que la bandeja sabe es que
                        hay algo sin abrir, no cuántos mensajes son. El "1" fijo
@@ -164,7 +164,7 @@ import { DatePipe } from '@angular/common';
       .sala__hora { font: 500 clamp(13px, 3.7vw, 16px)/1 var(--font-text); color: var(--text-muted); }
       .sala > lm-icono {
         width: clamp(36px, 10.5vw, 44px); height: clamp(36px, 10.5vw, 44px); justify-content: center;
-        border-radius: 50%; background: #D8F4E4; box-shadow: 0 3px 8px rgba(10, 120, 62, .22);
+        border-radius: 50%; background: var(--state-success); box-shadow: 0 3px 8px rgba(10, 120, 62, .22);
       }
     `,
   ],

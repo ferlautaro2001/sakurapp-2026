@@ -4,6 +4,7 @@ import { PaginaConSesion } from '../pagina-base';
 import { PROPINAS, QrService } from '../../nucleo/servicios/qr.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { Mesa } from '../../nucleo/modelos/modelos';
+import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
 interface CodigoPropina {
   porcentaje: number;
@@ -37,12 +38,11 @@ interface CodigoPropina {
           @case ('propinas') {
             <div class="lm-lista-uno">
               @for (codigo of propinas(); track codigo.porcentaje) {
-                <div class="lm-card propina">
+                <div class="lm-card propina" [attr.data-nivel]="codigo.porcentaje">
                   <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" />
                   <div class="propina__datos">
+                    <span class="propina__valor">{{ codigo.porcentaje }}<small>%</small></span>
                     <span class="propina__rotulo">{{ codigo.rotulo }}</span>
-                    <span class="propina__valor">{{ codigo.porcentaje }} %</span>
-                    <span class="propina__nota">de propina sobre el total</span>
                   </div>
                 </div>
               }
@@ -53,13 +53,13 @@ interface CodigoPropina {
             @if (mesas.todas().length) {
               <div class="lm-lista-uno">
                 @for (mesa of mesas.todas(); track mesa.id) {
-                  <button type="button" class="lm-card mesa" (click)="ir(['/mesas', mesa.id, 'qr'])">
+                  <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="ir(['/mesas', mesa.id, 'qr'])">
                     <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" />
-                    <div class="mesa__datos">
-                      <span class="mesa__numero">Mesa {{ mesa.numero }}</span>
-                      <span class="mesa__meta">{{ mesa.cantidadComensales }} personas</span>
+                    <!-- Igual que las propinas: número grande y una pastilla con el tipo, coloreada. -->
+                    <div class="propina__datos" [attr.data-tipo]="mesa.tipo">
+                      <span class="propina__valor">{{ mesa.numero }}</span>
+                      <span class="propina__rotulo">{{ rotuloTipo[mesa.tipo] }}</span>
                     </div>
-                    <lm-icono nombre="chevron_right" [tamano]="22" color="var(--action-primary)" />
                   </button>
                 }
               </div>
@@ -89,14 +89,39 @@ interface CodigoPropina {
          cuadrada: un QR deformado no lo lee ninguna cámara. */
       .propina img, .mesa img { flex: 0 0 auto; width: 46%; height: auto; max-height: 100%; aspect-ratio: 1; object-fit: contain; border-radius: var(--radius-card); background: #fff; }
       .propina__datos, .mesa__datos { flex: 1 1 0; min-width: 0; }
-      .mesa > lm-icono { display: none; }
       /* Los códigos van de a dos con alto de pantalla normal; en pantallas bajas, de a uno. */
       @media (max-height: 700px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
-      .propina__rotulo { display: block; font: var(--type-card-title); color: var(--text-title); }
-      .propina__valor { display: block; font: var(--type-numeral); color: var(--action-primary); }
-      .propina__nota { display: block; font: var(--type-caption); color: var(--text-muted); }
-      .mesa__numero { display: block; font: var(--type-title); color: var(--text-title); }
-      .mesa__meta { display: block; font: var(--type-caption); color: var(--text-muted); }
+      /* El porcentaje manda: es lo que distingue un código de otro de un vistazo.
+         La calificación va debajo, como etiqueta. */
+      .propina__datos { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-2); text-align: center; }
+      .propina__valor { font: 900 clamp(40px, 13vw, 60px)/1 var(--font-numeric); color: var(--action-primary); letter-spacing: -0.02em; }
+      .propina__valor small { font-size: .5em; margin-left: 2px; }
+      /* El QR lo más grande que entre en el alto de la tarjeta (sin pasar del
+         58% del ancho), y los datos centrados en el espacio que queda: así no
+         sobra aire arriba y abajo del código ni a la derecha del texto. */
+      .propina { padding: var(--space-4); gap: var(--space-4); align-items: stretch; }
+      .propina img { width: auto; height: 100%; max-width: 58%; align-self: center; }
+      .propina__rotulo {
+        font: 700 clamp(13px, 3.6vw, 15px)/1 var(--font-text); color: var(--text-title);
+        padding: 6px 14px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .7);
+        border: 1.5px solid rgba(255, 255, 255, .85); box-shadow: 0 0 0 1px rgba(232, 51, 111, .25);
+      }
+      /* Escala de color tipo formato condicional: de verde (excelente) a rojo (malo). */
+      .propina { --nivel: #1B7A4C; }
+      .propina[data-nivel="15"] { --nivel: #5E9E2F; }
+      .propina[data-nivel="10"] { --nivel: #C99A06; }
+      .propina[data-nivel="5"] { --nivel: #D9670F; }
+      .propina[data-nivel="0"] { --nivel: #C0261A; }
+      .propina__valor { color: var(--nivel); }
+      .propina__rotulo { background: var(--nivel); color: #FFFFFF; }
+      /* Mesas: el color lo da el tipo. */
+      .mesa { --nivel: var(--action-primary); align-items: stretch; padding: var(--space-4); }
+      .mesa img { width: auto; height: 100%; max-width: 58%; align-self: center; }
+      [data-tipo="VIP"] { --nivel: #B8860B; }
+      [data-tipo="MOVILIDAD_REDUCIDA"] { --nivel: #1565C0; }
+      .mesa .propina__valor small { font-size: .38em; margin: 0 2px 0 0; letter-spacing: 0; }
+      /* El QR con el mismo aro de vidrio que el resto de las piezas. */
+      .propina img, .mesa img { border: 2px solid rgba(255, 255, 255, .8); box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .16); box-sizing: border-box; }
     
       /* Distribución: llenar el alto disponible sin recortar tarjetas */
 
@@ -120,6 +145,7 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
 
   protected readonly ingreso = signal<string | null>(null);
   protected readonly propinas = signal<CodigoPropina[]>([]);
+  protected readonly rotuloTipo = ROTULO_TIPO_MESA;
   /** Código dibujado en el momento para cada mesa, indexado por su id. */
   private readonly codigosDeMesa = signal<Record<string, string>>({});
 

@@ -72,6 +72,9 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
          abajo. Los márgenes automáticos reparten ese aire arriba y abajo y se
          resuelven en cero cuando el teclado achica la pantalla, así el
          desplazamiento sigue empezando por el título. */
+      /* Sin pie: el círculo ya abre la cámara. */
+      lm-foto ::ng-deep .lm-photo__pie { display: none; }
+
       lm-foto {
         flex: 1 1 auto;
         display: flex;

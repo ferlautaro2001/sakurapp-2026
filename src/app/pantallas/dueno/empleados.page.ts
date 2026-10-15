@@ -28,9 +28,9 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
                   <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" />
                   <div class="lm-pending__datos">
                     <b class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</b>
-                    <span class="lm-pending__meta">{{ roles[empleado.perfil] }}</span>
+                    <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="18" />{{ roles[empleado.perfil] }}</span>
                     @if (empleado.email) {
-                      <span class="lm-pending__meta"><lm-icono nombre="mail" [tamano]="15" /><span>{{ empleado.email }}</span></span>
+                      <span class="lm-pending__meta"><lm-icono nombre="mail" [tamano]="18" /><span>{{ empleado.email }}</span></span>
                     }
                   </div>
                   <lm-chip [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
@@ -52,13 +52,19 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
     `
       :host { display: flex; flex: 1; min-height: 0; }
       .lm-avatar { object-fit: cover; flex-shrink: 0; }
+      /* Misma ficha que la de registros: foto grande, nombre y datos legibles. */
+      .lm-pending__fila { gap: 14px; }
+      .lm-pending__fila > .lm-avatar { width: 96px; border-radius: 18px; }
+      .lm-pending__datos { display: flex; flex-direction: column; gap: 6px; }
+      .lm-pending__nombre { font-size: 18px; }
+      .lm-pending__meta { font-size: 15px; }
       /* En la fila densa el chip de estado no cede ancho: lo que se recorta es
          el nombre y el correo, que se recuperan mirando el detalle. */
       .lm-pending__fila > lm-chip { flex: 0 0 auto; }
       /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla:
          nunca se estira hasta llenarla ni se sale de ella. */
       .casilla { display: flex; flex-direction: column; justify-content: center; }
-      .casilla > * { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
+      .casilla > * { flex: 1 1 auto; max-height: clamp(128px, 21dvh, 150px); justify-content: center; }
       /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
       @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
     `,

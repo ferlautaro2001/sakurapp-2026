@@ -262,6 +262,7 @@ export class FirestoreService {
             cantidadComensales: Number(data['cantidadComensales']) || 2,
             tipo: (data['tipo'] as TipoMesa) || 'ESTANDAR',
             estado: (data['estado'] as EstadoMesa) || 'VACIA',
+            clienteActualId: data['clienteActualId'] || null,
             fotoUrl: data['fotoUrl'] || undefined,
             qrCodeUrl: data['qrCodeUrl'] || undefined,
           });
@@ -311,6 +312,8 @@ export class FirestoreService {
       await updateDoc(mesaRef, {
         estado,
         estadoActualizadoEn: new Date().toISOString(),
+        // Una mesa liberada ya no tiene comensal asignado; si no, el metre no la vería más.
+        ...(estado === 'VACIA' ? { clienteActualId: null, clienteActualUid: null, reservaEsperaId: null } : {}),
       });
       console.log(`✅ Estado de mesa ${mesaId} actualizado a ${estado} en Firestore`);
     } catch (err) {
@@ -337,8 +340,18 @@ export class FirestoreService {
       const mesaDoc = await transaction.get(mesaRef);
       if (mesaDoc.exists()) {
         const mesaData = mesaDoc.data();
-        if (mesaData['estado'] !== 'VACIA' || mesaData['clienteActualId']) {
+        if (mesaData['estado'] !== 'VACIA') {
           throw new Error(`La mesa ${mesaNumero} ya no se encuentra libre.`);
+        }
+        // Un clienteActualId en una mesa VACIA sólo la bloquea si es una
+        // reserva viva: la entrada que la reservó sigue ASIGNADO. Los que
+        // quedaron de visitas viejas (sin reservaEsperaId) no cuentan.
+        const reservaId = mesaData['reservaEsperaId'];
+        if (reservaId && reservaId !== esperaId) {
+          const reserva = await transaction.get(doc(db, 'listaEspera', reservaId));
+          if (reserva.exists() && reserva.data()['estado'] === 'ASIGNADO') {
+            throw new Error(`La mesa ${mesaNumero} ya está reservada para otro comensal.`);
+          }
         }
       }
 
@@ -353,6 +366,7 @@ export class FirestoreService {
       transaction.update(mesaRef, {
         clienteActualId: clienteId,
         clienteActualUid: clienteUid,
+        reservaEsperaId: esperaId,
         asignadaEn: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });

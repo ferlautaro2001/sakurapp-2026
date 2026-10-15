@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IconoComponent, IconoBotonComponent } from './basicos';
 import { SesionService } from '../nucleo/servicios/sesion.service';
@@ -76,9 +76,11 @@ export class EncabezadoComponent {
       <!-- Columnas con mínimo cero: si el mínimo es el contenido, con cinco
            secciones el rótulo más largo fija su columna y la barra se pasa de
            la pantalla. -->
-      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',minmax(0,1fr))'">
-        @for (item of items(); track item.id) {
-          <button type="button" [class.on]="item.id === activo()" (click)="ir(item)">
+      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',minmax(0,1fr))'"
+        [style.--n]="items().length" [style.--i]="indice()">
+        <span class="lm-bottomnav__vidrio" aria-hidden="true"></span>
+        @for (item of items(); track item.id; let i = $index) {
+          <button type="button" [class.on]="i === indice()" (click)="ir(item, i)">
             <span class="lm-bottomnav__pastilla">
               <lm-icono [nombre]="item.icono" [tamano]="22" />
             </span>
@@ -95,8 +97,17 @@ export class BarraInferiorComponent {
   readonly items = input.required<ItemNavegacion[]>();
   readonly activo = input.required<string>();
 
-  protected ir(item: ItemNavegacion): void {
-    void this.router.navigate([item.ruta]);
+  /** Pestaña tocada: el vidrio se desliza hasta ella antes de cambiar de pantalla. */
+  private readonly tocado = signal<number | null>(null);
+  protected readonly indice = computed(
+    () => this.tocado() ?? this.items().findIndex((item) => item.id === this.activo()),
+  );
+
+  protected ir(item: ItemNavegacion, i: number): void {
+    if (i === this.indice()) return;
+    this.tocado.set(i);
+    // Cada pantalla trae su propia barra: se espera al deslizamiento para que se vea.
+    setTimeout(() => void this.router.navigate([item.ruta]), 260);
   }
 }
 

@@ -46,20 +46,14 @@ import {
           </lm-banner>
         }
 
-        <div class="lm-fila-doc">
-          <lm-foto
-            [fuente]="foto()"
-            [tamano]="124"
-            etiqueta="Tomar foto"
-            [error]="errorFoto()"
-            (capturar)="tomarFoto()"
-          />
-          <lm-tarjeta-escaneo
-            titulo="Escanear documento"
-            [escaneando]="escaneando()"
-            (escanear)="escanearDocumento()"
-          />
-        </div>
+        <!-- Igual que el alta de empleado: todo el mosaico de la foto dispara la cámara. -->
+        <section class="lm-vidrio lm-doc">
+          <b>Cargá tu foto y escaneá tu DNI</b>
+          <div class="lm-fila-doc">
+            <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+            <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+          </div>
+        </section>
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
         <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />

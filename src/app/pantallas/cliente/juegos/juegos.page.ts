@@ -500,6 +500,13 @@ export class ClienteJuegosPage extends PaginaConSesion {
     super();
     this.espera.iniciar();
     effect(() => {
+      // En la fila todavía no se juega: vuelve a su lugar.
+      const id = this.usuario()?.id;
+      const estado = id ? this.espera.activaDe(id)?.estado : undefined;
+      if (estado === 'ESPERANDO' || estado === 'ASIGNADO') {
+        void this.router.navigate(['/cliente/espera'], { replaceUrl: true });
+        return;
+      }
       if (!this.enEspera() && !this.enMesa()) {
         void this.router.navigate(['/cliente/ingreso'], { replaceUrl: true });
       }

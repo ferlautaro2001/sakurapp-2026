@@ -41,8 +41,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: '¿Confirmás el pedido?',
-      mensaje:
-        'Se deriva en el momento: las comidas y los postres van a la cocina y las bebidas a la barra. El cliente pasa a ver el estado.',
+      mensaje: '',
       confirmar: 'Confirmar',
       tono: 'exito',
       icono: 'thumb_up',
@@ -64,10 +63,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
       ),
     );
 
-    this.avisos.exito(
-      `Mesa ${this.numeroMesa(pedido)} confirmada`,
-      'El pedido ya está en los sectores de cocina y barra.',
-    );
+    this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} confirmada`);
     return true;
   }
 }

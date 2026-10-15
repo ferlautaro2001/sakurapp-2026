@@ -125,9 +125,10 @@ export class AreaComponent {
         (click)="capturar.emit()"
       >
         @if (!fuente()) {
-          <lm-icono nombre="photo_camera" tamano="clamp(22px, 7vw, 30px)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+          <lm-icono nombre="photo_camera" [tamano]="medida(0.4)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
       </button>
+      @if (fuente() || !sinRotulo()) {
       <button
         type="button"
         class="lm-photo__pie"
@@ -142,6 +143,7 @@ export class AreaComponent {
           {{ etiqueta() }}
         }
       </button>
+      }
       @if (error()) {
         <span class="lm-field__error" style="margin-top:0">
           <lm-icono nombre="error" [tamano]="16" />
@@ -163,6 +165,8 @@ export class FotoComponent {
   readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('circulo');
   readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
+  /** Sin el botón de texto debajo: el marco solo ya invita a sacar la foto. */
+  readonly sinRotulo = input(false, { transform: booleanAttribute });
   readonly capturar = output<void>();
 
   /**
@@ -185,7 +189,13 @@ export class FotoComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent],
   template: `
-    <button type="button" class="lm-qrscan" [class.lm-qrscan--scanning]="escaneando()" (click)="escanear.emit()">
+    <button
+      type="button"
+      class="lm-qrscan"
+      [class.lm-qrscan--scanning]="escaneando()"
+      [attr.aria-label]="escaneando() ? 'Escaneando…' : titulo()"
+      (click)="escanear.emit()"
+    >
       <span class="lm-qrscan__icono">
         <lm-icono nombre="document_scanner" tamano="clamp(26px, 8.4vw, 36px)" color="var(--text-on-primary)" />
       </span>
@@ -279,9 +289,11 @@ export class FiltrosComponent {
     }
     <!-- Columnas con mínimo cero: de lo contrario ninguna baja del ancho de su
          propio rótulo y el control entero se sale de la pantalla. -->
+    <!-- Sólo el de vidrio (filtros) desliza la pastilla; en los formularios
+         la opción elegida se pinta y crece desde adentro, igual en todos. -->
     <div
       class="lm-segmented"
-      [class.lm-segmented--desliza]="opciones().length <= (columnas() ?? opciones().length)"
+      [class.lm-segmented--desliza]="vidrio() && opciones().length <= (columnas() ?? opciones().length)"
       [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',minmax(0,1fr))'"
       [style.--n]="opciones().length"
       [class.lm-segmented--sin]="indice() < 0"

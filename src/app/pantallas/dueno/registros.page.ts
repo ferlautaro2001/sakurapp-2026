@@ -3,7 +3,7 @@ import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { DocumentoPipe, UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Usuario } from '../../nucleo/modelos/modelos';
-import { EstadoUsuario, ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
+import { ROTULO_ESTADO_USUARIO } from '../../nucleo/modelos/enums';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { CorreoService } from '../../nucleo/servicios/correo.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
@@ -18,13 +18,6 @@ const FILTROS = [
   { valor: 'Aprobado', rotulo: 'Aprobados' },
   { valor: 'Rechazado', rotulo: 'Rechazados' },
 ];
-
-/** Qué significa cada estado para quien mira la ficha. */
-const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
-  PENDIENTE: 'Todavía no resolviste este registro. Podés aprobarlo o rechazarlo desde su fila.',
-  APROBADO: 'La cuenta está habilitada: puede iniciar sesión en la aplicación.',
-  RECHAZADO: 'La cuenta está bloqueada: no puede iniciar sesión en la aplicación.',
-};
 
 /**
  * Punto 6 · Listado de clientes pendientes de aprobación.
@@ -169,7 +162,7 @@ export class DuenoRegistrosPage extends PaginaConSesion {
   protected verFicha(cliente: Usuario): void {
     void this.confirmacion.mostrar({
       titulo: this.usuarios.nombreCompleto(cliente),
-      mensaje: MENSAJE_ESTADO[cliente.estado],
+      mensaje: '',
       // La ficha no decide nada: el botón va neutro. Un "Cerrar" en rojo o en
       // verde se lee como si aprobara o rechazara. El estado se cuenta con
       // palabras, en el mensaje y en su propia fila.
@@ -210,9 +203,7 @@ export class DuenoRegistrosPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: aprobar ? '¿Aprobás este registro?' : '¿Rechazás este registro?',
-      mensaje: aprobar
-        ? 'La cuenta queda habilitada para entrar a la aplicación.'
-        : 'La cuenta queda bloqueada y la persona no va a poder iniciar sesión.',
+      mensaje: '',
       confirmar: aprobar ? 'Aprobar' : 'Rechazar',
       tono: aprobar ? 'exito' : 'peligro',
       icono: aprobar ? 'check' : 'close',

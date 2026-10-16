@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Pedido, PedidoItem } from '../../nucleo/modelos/modelos';
@@ -26,7 +26,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         @if (comandas().length) {
           <div class="sector__lista">
           @for (pedido of comandas(); track pedido.id) {
-            <div class="ticket">
+            <div class="ticket" [class.ticket--abierto]="abierto() === pedido.id" [id]="'ticket-' + pedido.id">
               <div class="ticket__cabecera">
                 <span class="ticket__mesa">Mesa {{ numeroMesa(pedido) }}</span>
                 <span class="ticket__cliente">{{ comensal(pedido) }}</span>
@@ -41,7 +41,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
               </div>
 
               <div class="ticket__items">
-                @for (item of itemsDe(pedido); track item.id) {
+                @for (item of visiblesDe(pedido); track item.id) {
                   <div class="item">
                     <span class="item__cantidad">×{{ item.cantidad }}</span>
                     <span class="item__nombre">{{ item.productoNombre }}</span>
@@ -49,6 +49,13 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
                   </div>
                 }
               </div>
+
+              @if (restantesDe(pedido) > 0) {
+                <button type="button" class="ticket__mas" [attr.aria-expanded]="abierto() === pedido.id" (click)="alternar(pedido.id)">
+                  <lm-icono [nombre]="abierto() === pedido.id ? 'expand_less' : 'expand_more'" [tamano]="18" />
+                  {{ abierto() === pedido.id ? 'Ver menos' : 'Ver los ' + restantesDe(pedido) + ' restantes' }}
+                </button>
+              }
 
               <div class="ticket__pie">
                 @if (estadoDe(pedido) === 'PENDIENTE') {
@@ -92,8 +99,21 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
       }
       .sector__lista::-webkit-scrollbar { display: none; }
       .sector__lista > .ticket {
-        flex: 0 0 100cqh; min-height: min-content;
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content;
         scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      /* De a dos sólo si la lista alcanza: cada ticket mide hasta ~217px. */
+      @container sector (min-height: 444px) { .sector__lista > .ticket { --por: 2; } }
+      /* El ticket abierto ocupa toda la lista, como el correo abierto. */
+      .sector__lista > .ticket.ticket--abierto { flex: 0 0 100cqh !important; }
+      .ticket__mas {
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        width: 100%; min-height: 36px; padding: 6px var(--space-4);
+        border: none; border-top: 1px solid var(--surface-sunken);
+        background: rgba(255, 215, 223, 0.24); cursor: pointer;
+        font: var(--type-body-small); font-weight: 700; color: var(--action-primary);
       }
       .ticket__pie { margin-top: auto; }
       .ticket {
@@ -102,7 +122,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         background: var(--surface-card); box-shadow: var(--shadow-raised);
         overflow: hidden;
       }
-      .ticket__cabecera { display: flex; align-items: center; gap: 10px; padding: var(--space-3) var(--space-4) 6px; }
+      .ticket__cabecera { display: flex; align-items: center; gap: 8px; padding: 8px var(--space-4) 4px; }
       .ticket__mesa {
         flex: 0 0 auto; padding: 5px 11px; border-radius: var(--radius-pill);
         background: var(--action-primary); color: #FFFFFF;
@@ -114,26 +134,26 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .ticket__meta {
-        display: flex; align-items: center; gap: 5px; padding: 0 var(--space-4) 10px;
+        display: flex; align-items: center; gap: 5px; padding: 0 var(--space-4) 6px;
         font: var(--type-caption); color: var(--text-muted);
       }
       .ticket__items {
-        display: flex; flex-direction: column; gap: 8px;
-        padding: var(--space-3) var(--space-4);
+        display: flex; flex-direction: column; gap: 6px;
+        padding: 8px var(--space-4);
         border-top: 1px solid var(--surface-sunken);
         border-bottom: 1px solid var(--surface-sunken);
         background: rgba(255, 215, 223, 0.24);
       }
       .item { display: flex; align-items: center; gap: var(--space-3); }
       .item__cantidad {
-        flex: 0 0 auto; min-width: var(--size-icono-caja); min-height: 34px; padding: 0 8px;
+        flex: 0 0 auto; min-width: var(--size-icono-caja); min-height: 30px; padding: 0 8px;
         border-radius: 11px; display: grid; place-items: center;
         background: var(--action-primary); color: #FFFFFF;
         font: 900 clamp(13px, 4vw, 17px)/1 var(--font-numeric);
       }
       .item__nombre { flex: 1 1 auto; min-width: 0; font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
       .item__tiempo { flex: 0 0 auto; font: var(--type-caption); color: var(--text-muted); }
-      .ticket__pie { padding: var(--space-3) var(--space-4); }
+      .ticket__pie { padding: 8px var(--space-4); }
       .ticket__listo {
         margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
         font: var(--type-body-small); color: var(--state-success);
@@ -197,6 +217,40 @@ export class SectorPedidosPage extends PaginaConSesion {
 
   protected itemsDe(pedido: Pedido): PedidoItem[] {
     return pedido.items.filter((i) => i.sector === this.sector());
+  }
+
+  /**
+   * Con el ticket cerrado se ven hasta dos productos. Si trae más de dos, se ve
+   * sólo uno y el resto se abre con "Ver los N restantes": así el ticket cabe
+   * entero en su mitad de la lista.
+   */
+  private readonly TOPE = 2;
+  /** Sólo un ticket abierto a la vez, como el correo: ocupa toda la lista. */
+  protected readonly abierto = signal<string | null>(null);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
+  protected visiblesDe(pedido: Pedido): PedidoItem[] {
+    const items = this.itemsDe(pedido);
+    if (this.abierto() === pedido.id || items.length <= this.TOPE) return items;
+    return items.slice(0, 1);
+  }
+
+  protected restantesDe(pedido: Pedido): number {
+    const total = this.itemsDe(pedido).length;
+    return total > this.TOPE ? total - 1 : 0;
+  }
+
+  protected alternar(id: string): void {
+    const abrir = this.abierto() !== id;
+    this.abierto.set(abrir ? id : null);
+    if (abrir) {
+      // Como en los correos: el ticket abierto se lleva al tope de la lista.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() =>
+          this.host.nativeElement.querySelector(`#ticket-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+        ),
+      );
+    }
   }
 
   protected tiempoItem(item: PedidoItem): number {

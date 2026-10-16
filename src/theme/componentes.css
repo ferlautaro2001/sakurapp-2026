@@ -2978,13 +2978,10 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 }
 .carta__lista .lm-product__ir .material-symbols-rounded { font-size: clamp(24px, 6.6vw, 28px) !important; }
 
-/* El comensal no tiene flecha. El control de cantidad va sobre la esquina
-   inferior derecha de la foto, dentro de su misma celda: al pasar de "+" a
-   "− n +" no mueve las píldoras ni cambia el alto de la tarjeta. Las píldoras
-   usan todo el ancho del pie. */
-.carta__lista .lm-product-fila--carrito .lm-product__ir { display: none !important; }
-/* Las píldoras se corren unos píxeles hacia adentro: el borde derecho no toca el de la tarjeta. */
-.carta__lista .lm-product-fila--carrito .lm-product__pie { grid-column: 1 / -1; padding-right: 8px; }
+/* El comensal ve la misma flecha que el resto. El control de cantidad va sobre
+   la esquina inferior derecha de la foto, dentro de su misma celda: al pasar de
+   "+" a "− n +" no mueve las píldoras ni cambia el alto de la tarjeta. */
+.carta__lista .lm-product-fila--carrito .lm-product__pie { grid-column: 1; }
 
 .carta__lista .lm-product-fila--carrito .lm-product__carrito {
   grid-column: 1 / -1;

@@ -116,15 +116,16 @@ const FILTROS = [
         scroll-snap-stop: always;
       }
       lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; justify-content: center; }
-      /* La tarjeta más alta mide ~158px (con botones, estado y el correo en
-         dos renglones): cada corte deja que entren enteras con 165px. */
-      @container registros (min-height: 342px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
-      @container registros (min-height: 519px) { .registros__lista > lm-fila-pendiente { --por: 3; } }
-      @container registros (min-height: 696px) { .registros__lista > lm-fila-pendiente { --por: 4; } }
-      /* Angosto: las tarjetas llegan a ~168px, así que cada tanda pide 178. */
-      @container registros (max-width: 286px) and (max-height: 367px) { .registros__lista > lm-fila-pendiente { --por: 1; } }
-      @container registros (max-width: 286px) and (min-height: 519px) and (max-height: 557px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
-      @container registros (max-width: 286px) and (min-height: 696px) and (max-height: 747px) { .registros__lista > lm-fila-pendiente { --por: 3; } }
+      /* De a dos por pantalla. La tarjeta mide hasta ~177px, así que de a dos
+         necesita al menos 326px de lista. Si la lista es más baja, la tarjeta se
+         achica (foto, espacios y relleno) para que entren dos igual. */
+      @container registros (min-height: 326px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
+      @container registros (max-height: 365px) {
+        .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending { padding: 7px 10px; gap: 6px; }
+        .registros__lista > lm-fila-pendiente ::ng-deep .fila { gap: 4px; }
+        .registros__lista > lm-fila-pendiente ::ng-deep .fila .lm-avatar { width: 44px; }
+        .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending__datos { gap: 2px; }
+      }
     `,
   ],
 })

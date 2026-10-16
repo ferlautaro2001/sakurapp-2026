@@ -166,13 +166,13 @@ export class TarjetaPerfilComponent {
       /* Una tarjeta, de arriba hacia abajo y centrada: la foto, el nombre, el
          DNI, el correo y el estado. Las dos decisiones quedan apiladas a la
          derecha, centradas en su columna, para no sumar alto. */
-      .lm-pending { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
-      .fila { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+      .lm-pending { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; }
+      .fila { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
       /* La foto cede con el ancho del equipo: con 96px fijos, en un celular
          angosto a los datos les quedaban ~125px y el DNI y el correo se
          partían en dos renglones cada uno, lo que estiraba la tarjeta. */
-      .fila .lm-avatar { width: clamp(56px, 16vw, 72px); border-radius: 18px; }
-      .lm-pending__datos { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+      .fila .lm-avatar { width: clamp(48px, 13.5vw, 64px); border-radius: 16px; }
+      .lm-pending__datos { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; max-width: 100%; }
       .lm-pending__meta { justify-content: center; max-width: 100%; }
       .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
       .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); }

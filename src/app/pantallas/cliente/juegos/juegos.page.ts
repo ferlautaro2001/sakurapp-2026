@@ -11,14 +11,6 @@ interface Minijuego {
   bajada: string;
   icono: string;
   ruta: string | null;
-  ritmo: string;
-  iconoRitmo: string;
-  categoria: string;
-  /**
-   * Porcentaje que paga ganar este juego. Espeja el valor que cada pantalla
-   * de juego le pasa a `PedidosService.jugar`; si allá cambia, cambia acá.
-   */
-  premio: number;
 }
 
 /**
@@ -32,11 +24,26 @@ interface Minijuego {
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--gap12 lm-body--pantalla">
-        <lm-titulo
-          >Juegos</lm-titulo
-        >
+        <lm-titulo>
+          Juegos
+          <lm-boton
+            accion
+            variante="secondary"
+            icono="info"
+            [ancho]="false"
+            compacto
+            sobreOscuro
+            class="como-ganar"
+            (presionar)="verComoGanar()"
+          >
+            Cómo ganar descuentos
+          </lm-boton>
+        </lm-titulo>
 
-        <div class="lista lm-lista-fija">
+        <!-- Los tres juegos entran juntos en la pantalla: cada uno mide un
+             tercio del alto que sobra. En una pantalla baja van de a dos o de
+             a uno, con snap, y siempre enteros. -->
+        <div class="lista">
           @for (juego of juegos; track juego.id) {
           <button
             type="button"
@@ -48,7 +55,7 @@ interface Minijuego {
             <span class="juego__icono" aria-hidden="true">
               <lm-icono
                 [nombre]="juego.icono"
-                [tamano]="72"
+                tamano="calc(var(--disco) * .55)"
                 color="var(--action-primary)"
               />
             </span>
@@ -59,97 +66,14 @@ interface Minijuego {
             <span class="juego__accion">
               @if (juego.ruta) {
               <span class="juego__ir" aria-hidden="true">
-                <lm-icono nombre="chevron_right" [tamano]="26" />
+                <lm-icono nombre="sports_esports" [tamano]="26" />
               </span>
               } @else {
               <lm-chip estado="inactiva">Pronto</lm-chip>
               }
             </span>
-            <span class="juego__etiquetas">
-              <span class="juego__etiqueta"
-                ><lm-icono
-                  [nombre]="juego.iconoRitmo"
-                  [tamano]="14"
-                  aria-hidden="true"
-                />{{ juego.ritmo }}</span
-              >
-              <span class="juego__etiqueta"
-                ><lm-icono nombre="person" [tamano]="14" aria-hidden="true" />1
-                jugador</span
-              >
-              <span class="juego__etiqueta"
-                ><lm-icono
-                  nombre="sports_esports"
-                  [tamano]="14"
-                  aria-hidden="true"
-                />{{ juego.categoria }}</span
-              >
-            </span>
           </button>
           }
-
-        <!--
-          El premio no es obvio y no se puede deshacer: se juega una sola vez
-          por pedido y sólo paga si esa partida se gana. Decirlo acá evita que
-          alguien queme el intento sin saberlo, y aclara lo otro que no se
-          adivina: que después puede seguir jugando igual.
-        -->
-        <!-- El @if hace que Angular cree esta tarjeta después de las de los
-             juegos: si naciera antes, el navegador la recordaría como la
-             tarjeta "actual" del snap y abriría la pantalla en la última. -->
-        @if (juegos.length) {
-        <section class="dto">
-          <span class="dto__icono" aria-hidden="true">
-            <lm-icono
-              nombre="redeem"
-              [tamano]="72"
-              color="var(--state-success)"
-            />
-          </span>
-          @if (intentoUsado() && descuentoGanado() > 0) {
-          <span class="dto__titulo dto__titulo--ganado"
-            >¡Ganaste tu {{ descuentoGanado() }}% de descuento!</span
-          >
-          } @else {
-          <span class="dto__titulo">Cómo funciona el descuento</span>
-          }
-
-          @if (intentoUsado()) { @if (descuentoGanado() > 0) {
-          <p class="dto__texto">
-            Ya está aplicado en el total de tu compra. El intento de este pedido
-            está usado, así que seguí jugando las veces que quieras: ahora es
-            sólo por diversión.
-          </p>
-          } @else {
-          <p class="dto__texto">
-            Esta vez no hubo premio, y era el único intento de esta comanda.
-            Igual podés seguir jugando todo lo que quieras mientras esperás.
-          </p>
-          } } @else {
-          <p class="dto__texto">
-            Tenés <b>un solo intento por pedido</b> y vale la primera partida
-            que termines, en cualquiera de los tres juegos. Si la ganás, el
-            descuento se aplica solo en tu comanda; si la perdés, el intento se
-            usa igual y no hay premio. Después podés seguir jugando las veces
-            que quieras, sólo que ya por diversión.
-          </p>
-
-          <span class="dto__premios">
-            @for (juego of juegos; track juego.id) {
-            <span class="dto__premio"
-              ><b>{{ juego.premio }}%</b>{{ juego.nombre }}</span
-            >
-            }
-          </span>
-
-          @if (!intentoDisponible()) {
-          <span class="dto__nota">
-            <lm-icono nombre="info" [tamano]="15" />
-            El intento se habilita cuando el mozo confirma tu pedido.
-          </span>
-          } }
-        </section>
-        }
         </div>
       </div>
 
@@ -163,37 +87,60 @@ interface Minijuego {
         flex: 1;
         min-height: 0;
       }
+      /* El título deja el botón de los descuentos centrado con el texto. */
+      lm-titulo ::ng-deep .lm-title { align-items: center; }
+      .como-ganar ::ng-deep .lm-btn {
+        min-height: 40px;
+        padding: 0 clamp(10px, 3vw, 14px);
+        gap: 6px;
+        font-size: clamp(12.5px, 3.5vw, 14px);
+        white-space: nowrap;
+      }
+
+      /* La lista ocupa el alto que sobra y los juegos se lo reparten por
+         tandas: de a tres mientras la descripción entre completa en un tercio,
+         de a dos o de a uno si la pantalla es baja. Cada juego mide justo su
+         parte y se ancla con snap, así cada parada muestra tarjetas enteras.
+         Si aun así el texto no entrara, la tarjeta crece: nunca se corta. */
       .lista {
+        flex: 1 1 0;
+        min-height: 0;
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: var(--space-3);
+        container: juegos / size;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scroll-snap-type: y mandatory;
+        scrollbar-width: none;
       }
+      .lista::-webkit-scrollbar { display: none; }
       .juego {
+        --por: 3;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
         position: relative;
         isolation: isolate;
         overflow: hidden;
         display: grid;
         /* Las tres columnas ceden con el ancho del equipo en vez de saltar en
            un punto fijo: el disco del juego y la flecha encogen a la par y la
-           columna del medio se queda con lo que sobra. */
-        grid-template-columns: clamp(64px, 20vw, 86px) minmax(0, 1fr) clamp(30px, 9vw, 34px);
+           columna del medio se queda con lo que sobra. El disco además sigue
+           al alto de la pantalla, porque la tarjeta mide un tercio de él. */
+        grid-template-columns: var(--disco) minmax(0, 1fr) auto;
+        --disco: clamp(56px, min(20vw, 11dvh), 96px);
         align-items: center;
         column-gap: var(--space-3);
-        row-gap: var(--space-3);
-        min-height: clamp(132px, 20dvh, 190px);
-        padding: var(--space-6) var(--space-4) var(--space-5) var(--space-3);
+        padding: var(--space-3) var(--space-4) var(--space-3) var(--space-3);
+        background: var(--surface-card-degradado);
         text-align: left;
         width: 100%;
         cursor: pointer;
         font: inherit;
         border: 1px solid rgba(255, 255, 255, 0.8);
         border-radius: 22px;
-        background: linear-gradient(
-          110deg,
-          #fbd5e4 0%,
-          #fce8ef 48%,
-          #fffaf7 100%
-        );
         box-shadow: 0 8px 20px rgba(104, 17, 51, 0.17),
           inset 0 1px 0 rgba(255, 255, 255, 0.65);
         transition: transform var(--dur-fast), box-shadow var(--dur-fast);
@@ -225,9 +172,8 @@ interface Minijuego {
       }
       .juego__icono {
         grid-column: 1;
-        grid-row: 1 / 3;
-        width: clamp(64px, 20vw, 86px);
-        height: clamp(64px, 20vw, 86px);
+        width: var(--disco);
+        height: var(--disco);
         border-radius: 50%;
         display: grid;
         place-items: center;
@@ -249,141 +195,34 @@ interface Minijuego {
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 8px;
+        gap: clamp(4px, 1dvh, 8px);
       }
       .juego__nombre {
-        font: 800 clamp(15px, 4vw, 17px)/1.2 var(--font-display);
+        font: 800 clamp(16px, min(4.6vw, 2.8dvh), 21px)/1.2 var(--font-display);
         color: var(--text-title);
       }
       .juego__bajada {
-        font: 500 clamp(12px, 3.1vw, 13px)/1.45 var(--font-text);
+        font: 550 clamp(12.5px, min(3.6vw, 2.1dvh), 15px)/1.4 var(--font-text);
         color: var(--text-muted);
         text-wrap: pretty;
       }
+      /* Pantallas bajas: un tercio ya no alcanza para la descripción entera,
+         así que los juegos pasan a ir de a dos, y en una muy baja de a uno.
+         En una angosta (un plegable cerrado) el texto ocupa más renglones, así
+         que el corte de a dos llega antes. */
+      @container juegos (max-height: 330px) { .juego { --por: 2; } }
+      @container juegos (max-width: 286px) and (max-height: 480px) { .juego { --por: 2; } }
+      @container juegos (max-height: 200px) { .juego { --por: 1; } }
       .juego__accion {
         grid-column: 3;
-        align-self: end;
-        padding-bottom: 5px;
+        align-self: center;
       }
-      .juego__ir {
-        width: clamp(30px, 9vw, 34px);
-        height: clamp(30px, 9vw, 34px);
-        display: grid;
-        place-items: center;
-        border-radius: 50%;
-        color: var(--action-primary);
-        background: linear-gradient(145deg, #ffe7f0, #fbcddd);
-        box-shadow: 0 4px 9px rgba(164, 42, 86, 0.13),
-          inset 0 1px 0 rgba(255, 255, 255, 0.7);
-      }
-      .juego__etiquetas {
-        grid-column: 2 / 4;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-      }
-      .juego__etiqueta {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 5px 8px;
-        border-radius: var(--radius-pill);
-        background: rgba(249, 157, 191, 0.22);
-        color: var(--text-muted);
-        font: var(--type-label);
-        white-space: nowrap;
-      }
-      .dto {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 16px 16px 18px;
-        border-radius: 22px;
-        border: 1px solid rgba(255, 255, 255, 0.85);
-        background: linear-gradient(150deg, #ffffff 0%, #fff5f8 100%);
-        box-shadow: 0 8px 20px rgba(104, 17, 51, 0.13),
-          inset 0 1px 0 rgba(255, 255, 255, 0.7);
-      }
-      .dto__titulo {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        font: 800 clamp(13.5px, 3.5vw, 15px)/1.2 var(--font-display);
-        color: var(--text-title);
-      }
-      .dto__texto {
-        margin: 0;
-        font: 500 clamp(12px, 3.1vw, 13px)/1.5 var(--font-text);
-        color: var(--text-muted);
-        text-wrap: pretty;
-      }
-      .dto__texto b {
-        color: var(--text-title);
-        font-weight: 800;
-      }
-      .dto__premios {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .dto__premio {
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
-        padding: 5px 9px;
-        border-radius: var(--radius-pill);
-        background: var(--state-success-surface);
-        color: var(--state-success);
-        font: 600 clamp(10.5px, 2.6vw, 11px)/1.2 var(--font-text);
-        white-space: nowrap;
-      }
-      .dto__premio b {
-        font: 800 clamp(11px, 2.9vw, 12px)/1.25 var(--font-numeric);
-      }
-      .dto__nota {
-        display: inline-flex;
-        align-items: flex-start;
-        gap: 6px;
-        font: 500 clamp(11px, 2.9vw, 12px)/1.4 var(--font-text);
-        color: var(--text-muted);
-      }
-
-      /* Un juego por pantalla, centrado: la lista (lm-lista-fija) mide el alto
-         que sobra y cada juego mide exactamente eso. El disco, el nombre y los
-         textos crecen con el alto disponible para no dejar huecos. */
-      .lista { gap: var(--space-3); overflow-anchor: none; }
-      .lista .juego {
-        display: flex; flex-direction: column; align-items: center; justify-content: space-evenly;
-        text-align: center; min-height: 0; height: 100%;
-        padding: var(--space-5) var(--space-4);
-        background: var(--surface-card-degradado);
-      }
-      .lista .juego__icono {
-        /* Círculo perfecto: la proporción 1:1 manda y el disco no crece ni se
-           encoge en la columna (antes el alto se estiraba y salía un óvalo). */
-        order: 1; width: clamp(88px, 17dvh, 150px); height: auto; aspect-ratio: 1 / 1;
-        flex: 0 0 auto; align-self: center; min-height: 0; max-height: none;
-      }
-      .lista .juego__texto { order: 2; align-items: center; gap: var(--space-3); }
-      .lista .juego__nombre { font: var(--type-title-xl); }
-      .lista .juego__bajada { font: var(--type-body); text-wrap: balance; }
-      .lista .juego__etiquetas { order: 3; justify-content: center; align-items: center; align-content: center; flex: 0 0 auto; height: auto; }
-      .lista .juego__etiqueta { flex: 0 0 auto; height: auto; }
-      .lista .juego__etiqueta { font: var(--type-body-small); font-weight: 700; padding: 7px 12px; }
-      /* Mismo contorno de vidrio que los botones de ícono, en rosa claro porque
-         van sobre la tarjeta: borde fino, brillo interior y sombra suave. */
-      .lista .juego__etiqueta {
-        border-radius: 14px; gap: 6px; color: var(--action-primary);
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 215, 223, 0.8) 100%);
-        border: 1.5px solid rgba(255, 79, 139, 0.45);
-        box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, 0.14);
-      }
-      .lista .juego__accion { order: 4; padding: 0; align-self: center; }
       /* Mismo vidrio que los botones de ícono, pero en rosa fuerte y oscuro
          y todavía traslúcido: forma amplia, contorno claro, brillo interior. */
-      .lista .juego__ir {
-        width: clamp(52px, 8dvh, 68px); height: clamp(52px, 8dvh, 68px);
-        border-radius: 22px; color: #fff;
+      .juego__ir {
+        width: clamp(40px, 7dvh, 52px); height: clamp(40px, 7dvh, 52px);
+        display: grid; place-items: center;
+        border-radius: 16px; color: #fff;
         background: linear-gradient(180deg, rgba(226, 48, 108, 0.82) 0%, rgba(168, 28, 78, 0.74) 100%);
         border: 1.5px solid rgba(255, 255, 255, 0.5);
         box-shadow:
@@ -392,33 +231,6 @@ interface Minijuego {
           0 6px 14px rgba(94, 12, 44, 0.3);
         -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
       }
-      /* "Cómo funciona el descuento" es la última tarjeta de la lista: ocupa
-         la pantalla igual que un juego, y si el texto es más largo se desplaza
-         por dentro sin soltar el anclaje. */
-      .lista .dto {
-        height: 100%; justify-content: center; gap: var(--space-4);
-        overflow-y: auto; padding: var(--space-5);
-        background: var(--surface-card-degradado);
-      }
-      /* El ícono es el mismo disco que el de los juegos: círculo perfecto del
-         mismo tamaño, y la información va debajo, centrada y más grande. */
-      .dto__icono {
-        flex: 0 0 auto; align-self: center; display: grid; place-items: center;
-        width: clamp(88px, 17dvh, 150px); height: auto; aspect-ratio: 1 / 1;
-        border-radius: 50%;
-        background: radial-gradient(circle at 32% 22%, #f2fff8 0%, #cdf1de 52%, #8fd5b0 100%);
-        border: 1px solid rgba(255, 255, 255, 0.85);
-        box-shadow: 0 8px 18px rgba(27, 122, 76, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.9);
-      }
-      .dto__icono lm-icono { filter: drop-shadow(0 2px 2px rgba(10, 100, 60, 0.18)); }
-      .lista .dto { align-items: center; text-align: center; justify-content: safe center; gap: var(--space-3); padding: var(--space-4); }
-      .lista .dto__titulo { font: var(--type-title); text-align: center; text-wrap: balance; }
-      .lista .dto__titulo--ganado { color: var(--state-success); }
-      .lista .dto__texto { font: 500 clamp(14.5px, 3.9vw, 17px)/1.4 var(--font-text); text-align: center; text-wrap: pretty; }
-      .lista .dto__premios { justify-content: center; gap: 8px; }
-      .lista .dto__premio { font: 700 clamp(13px, 3.5vw, 15.5px)/1.2 var(--font-text); padding: 6px 12px; }
-      .lista .dto__premio b { font-size: clamp(14.5px, 4vw, 18px); }
-      .lista .dto__nota { font: 500 clamp(13px, 3.5vw, 15px)/1.35 var(--font-text); text-align: left; }
     `,
   ],
 })
@@ -429,38 +241,26 @@ export class ClienteJuegosPage extends PaginaConSesion {
   protected readonly juegos: Minijuego[] = [
     {
       id: 'ninja',
-      premio: 20,
       nombre: 'Ninja de Sakura',
       bajada:
         'Atrapá las flores de sakura que caen antes de que se acabe el tiempo.',
       icono: 'local_florist',
-      ritmo: 'Rápido',
-      iconoRitmo: 'bolt',
-      categoria: 'Casual',
       ruta: '/cliente/juegos/ninja-sakura',
     },
     {
       id: 'sushis',
-      premio: 10,
       nombre: 'Emparejando sushis',
       bajada:
         'Doce cartas boca abajo: encontrá las seis parejas de sushi contra reloj.',
       icono: 'style',
-      ritmo: 'Desafío',
-      iconoRitmo: 'schedule',
-      categoria: 'Memoria',
       ruta: '/cliente/juegos/emparejando-sushis',
     },
     {
       id: 'tateti',
-      premio: 15,
       nombre: 'Tateti de sushis',
       bajada:
         'Tres en línea contra la máquina, cada uno con su pieza de sushi.',
       icono: 'grid_3x3',
-      ritmo: 'Estrategia',
-      iconoRitmo: 'psychology',
-      categoria: 'Lógica',
       ruta: '/cliente/juegos/tateti-sushis',
     },
   ];
@@ -468,27 +268,6 @@ export class ClienteJuegosPage extends PaginaConSesion {
   protected readonly enEspera = computed(() => {
     const id = this.usuario()?.id;
     return id ? !!this.espera.activaDe(id) : false;
-  });
-
-  /** El pedido que el intento descuenta, si hay uno en curso. */
-  protected readonly pedidoActivo = computed(() => {
-    const id = this.usuario()?.id;
-    return id ? this.pedidos.activoDe(id) : undefined;
-  });
-
-  protected readonly intentoUsado = computed(
-    () => this.pedidoActivo()?.juegoIntentado === true
-  );
-  protected readonly descuentoGanado = computed(
-    () => this.pedidoActivo()?.descuentoJuego ?? 0
-  );
-  protected readonly intentoDisponible = computed(() => {
-    const pedido = this.pedidoActivo();
-    return (
-      !!pedido &&
-      this.pedidos.juegosHabilitados(pedido) &&
-      !pedido.juegoIntentado
-    );
   });
 
   protected readonly enMesa = computed(() => {
@@ -516,5 +295,18 @@ export class ClienteJuegosPage extends PaginaConSesion {
   protected abrir(juego: Minijuego): void {
     if (!juego.ruta) return;
     this.ir([juego.ruta]);
+  }
+
+  /**
+   * Las reglas del descuento, en el modal de ficha (sólo la cruz para cerrar).
+   * El porcentaje que se gana es aleatorio, así que no se promete uno por juego.
+   */
+  protected verComoGanar(): void {
+    void this.confirmacion.mostrar({
+      titulo: 'Cómo ganar descuentos',
+      icono: 'info',
+      mensaje:
+        'Tenés un solo intento para ganar el descuento. Si ganás tu primera partida de cualquier juego, se le aplicará un descuento a tu pedido. Si perdés, podrás seguir jugando pero no se otorgarán descuentos.',
+    });
   }
 }

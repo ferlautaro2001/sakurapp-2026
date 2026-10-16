@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
+import { guardiaJuegos, guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
 import { SesionService } from './nucleo/servicios/sesion.service';
 
 /**
@@ -253,6 +253,7 @@ export const routes: Routes = [
       },
       {
         path: 'juegos',
+        canActivate: [guardiaJuegos],
         children: [
           {
             path: '',

@@ -85,20 +85,13 @@ type Categoria = 'TODOS' | TipoProducto;
       </div>
 
       @if (esComensal()) {
-        <div class="lm-actionbar">
+        <div class="lm-actionbar carta__barra">
+          <!-- Sin botón: el pedido se abre desde la barra de abajo ("Mi pedido"). -->
           <lm-resumen-pedido
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
-          >
-            <lm-boton
-              icono="receipt_long"
-              [deshabilitado]="carrito.cantidadTotal() === 0"
-              (presionar)="ir(['/cliente/pedido'])"
-            >
-              {{ carrito.cantidadTotal() ? 'Ver mi pedido' : 'Elegí lo primero' }}
-            </lm-boton>
-          </lm-resumen-pedido>
+          />
         </div>
       }
 
@@ -163,12 +156,6 @@ export class CartaPage extends PaginaConSesion {
 
   constructor() {
     super();
-
-    effect(() => {
-      if (this.sesion.esCliente() && this.pedido()?.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-        void this.router.navigate(['/cliente/pedido'], { replaceUrl: true });
-      }
-    });
 
     effect(() => {
       const mid = this.mesaId();

@@ -43,7 +43,7 @@ import { PaginaConSesion } from '../pagina-base';
       <lm-encabezado titulo="Devolver el pedido" conVolver (volver)="volver()" />
 
       @if (pedido(); as p) {
-        <div class="lm-body lm-body--gap12">
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
           <div class="lm-card mesa">
             <span class="mesa__icono">
               <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
@@ -57,18 +57,18 @@ import { PaginaConSesion } from '../pagina-base';
             <lm-banner tono="error" titulo="Falta información">{{ resumenError() }}</lm-banner>
           }
 
-          <lm-separador flor rotulo="Marcá los productos afectados" />
+          <lm-separador flor rotulo="Marcá los afectados" />
 
           <div class="lm-card leyenda">
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cantidad">
-                <lm-icono nombre="warning" [tamano]="30" color="#FFFFFF" />
+                <lm-icono nombre="warning" [tamano]="20" color="#FFFFFF" />
               </i>
               Bajo stock
             </span>
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cambiar">
-                <lm-icono nombre="block" [tamano]="30" color="#FFFFFF" />
+                <lm-icono nombre="block" [tamano]="20" color="#FFFFFF" />
               </i>
               Agotado
             </span>
@@ -76,7 +76,7 @@ import { PaginaConSesion } from '../pagina-base';
 
           <lm-separador flor rotulo="Detalle" />
 
-          <div class="lm-list">
+          <div class="devolver__lista">
             @for (item of p.items; track item.id) {
               <div
                 class="marcar"
@@ -89,9 +89,6 @@ import { PaginaConSesion } from '../pagina-base';
                     {{ item.cantidad }} ×
                     {{ item.precioUnitario | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
                   </small>
-                  @if (marcaDe(item.productoId); as marca) {
-                    <span class="marcar__rotulo">{{ rotuloMarca(marca) }}</span>
-                  }
                 </div>
 
                 <div class="marcar__botones">
@@ -130,7 +127,7 @@ import { PaginaConSesion } from '../pagina-base';
                 [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'"
               />
               <textarea
-                rows="3"
+                rows="2"
                 maxlength="240"
                 enterkeyhint="done"
                 [formControl]="formulario.controls.motivo"
@@ -143,8 +140,6 @@ import { PaginaConSesion } from '../pagina-base';
                 <lm-icono nombre="error" [tamano]="16" />
                 {{ error() }}
               </span>
-            } @else {
-              <span class="lm-field__hint">El comensal lee este texto tal como lo escribís.</span>
             }
           </label>
         </div>
@@ -199,31 +194,31 @@ import { PaginaConSesion } from '../pagina-base';
       .mesa {
         display: flex;
         align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-4);
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
       }
 
       .mesa__icono {
         display: grid;
         flex: 0 0 auto;
-        width: var(--touch-min);
-        min-height: var(--touch-min);
+        width: 40px;
+        min-height: 40px;
         place-items: center;
-        border-radius: 14px;
+        border-radius: 12px;
         background: var(--surface-sunken);
       }
 
       /* El título ocupa todo el ancho que deja el ícono y va centrado; el ícono
          se equilibra con un hueco del mismo ancho a la derecha. */
       .mesa { align-items: center; justify-content: center; }
-      .mesa::after { content: ''; flex: 0 0 var(--touch-min); }
+      .mesa::after { content: ''; flex: 0 0 40px; }
       .mesa__datos { flex: 1 1 auto; min-width: 0; text-align: center; }
       .mesa__datos b { text-wrap: balance; overflow-wrap: anywhere; }
 
       .mesa__datos b {
         display: block;
         color: var(--text-title);
-        font: var(--type-section);
+        font: var(--type-card-title);
       }
 
       .mesa__datos small {
@@ -233,15 +228,16 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .leyenda {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
         gap: 10px;
-        padding: var(--space-4);
+        padding: var(--space-2) var(--space-3);
       }
 
       .leyenda__item {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         gap: 8px;
         text-align: center;
@@ -255,8 +251,8 @@ import { PaginaConSesion } from '../pagina-base';
       .leyenda__sello {
         display: grid;
         flex: 0 0 auto;
-        width: 56px;
-        height: 56px;
+        width: 34px;
+        height: 34px;
         place-items: center;
         border-radius: 50%;
       }
@@ -269,13 +265,35 @@ import { PaginaConSesion } from '../pagina-base';
         background: var(--state-error);
       }
 
+      /* Sólo el detalle se desplaza, en tandas exactas: cada producto mide justo
+         una parte de la lista y se ancla entero. El resto de la pantalla queda fijo. */
+      .devolver__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: devolver / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .devolver__lista::-webkit-scrollbar { display: none; }
+      .devolver__lista > .marcar {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      @container devolver (min-height: 210px) { .devolver__lista > .marcar { --por: 2; } }
+      @container devolver (min-height: 318px) { .devolver__lista > .marcar { --por: 3; } }
+      @container devolver (min-height: 426px) { .devolver__lista > .marcar { --por: 4; } }
+
+      /* Tarjeta en grilla: el nombre ocupa la fila de arriba a todo el ancho;
+         abajo, a la izquierda la cantidad con el precio y a la derecha los
+         botones de stock. */
       .marcar {
         position: relative;
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        gap: 10px;
+        column-gap: 10px;
+        row-gap: 6px;
         overflow: hidden;
-        padding: 10px var(--space-3);
+        padding: 8px var(--space-3);
         border-radius: var(--radius-card);
         background: var(--surface-card);
         box-shadow: var(--shadow-card);
@@ -321,10 +339,12 @@ import { PaginaConSesion } from '../pagina-base';
         box-shadow: 0 0 0 2px var(--state-error), var(--shadow-card);
       }
 
-      .marcar__datos {
-        min-width: 0;
-        flex: 1 1 auto;
-      }
+      .marcar__datos { display: contents; }
+      /* Con prioridad alta: el nombre siempre ocupa la fila de arriba entera. */
+      .devolver__lista > .marcar > .marcar__datos > b { grid-column: 1 / -1 !important; grid-row: 1 !important; min-width: 0; text-align: center; }
+      .devolver__lista > .marcar > .marcar__datos > small { grid-column: 1 !important; grid-row: 2 !important; min-width: 0; }
+      .devolver__lista > .marcar > .marcar__datos > .marcar__rotulo { grid-column: 1 / -1 !important; grid-row: 3 !important; }
+      .devolver__lista > .marcar > .marcar__botones { grid-column: 2 !important; grid-row: 2 !important; }
 
       /* Un escalón por encima del resto de las tarjetas de la aplicación: esta
          lista se lee de parado, con el teléfono a la altura de la cintura. */
@@ -338,7 +358,7 @@ import { PaginaConSesion } from '../pagina-base';
       .marcar__datos small {
         display: block;
         color: var(--text-muted);
-        font: var(--type-body-small);
+        font: 600 clamp(15px, 4.2vw, 17px)/1.3 var(--font-text);
       }
 
       .marcar__rotulo {
@@ -357,7 +377,6 @@ import { PaginaConSesion } from '../pagina-base';
 
       .marcar__botones {
         display: flex;
-        flex: 0 0 auto;
         gap: 6px;
       }
 

@@ -24,7 +24,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (comandas().length) {
-          <div class="lm-lista-libre">
+          <div class="sector__lista">
           @for (pedido of comandas(); track pedido.id) {
             <div class="ticket">
               <div class="ticket__cabecera">
@@ -82,6 +82,20 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      /* Un ticket por parada: cada comanda ocupa la lista entera (más alto que
+         la pantalla, su contenido se mira entero) y se ancla al tope, así nunca
+         queda uno cortado abajo. El botón de acción va al pie de la tarjeta. */
+      .sector__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: sector / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .sector__lista::-webkit-scrollbar { display: none; }
+      .sector__lista > .ticket {
+        flex: 0 0 100cqh; min-height: min-content;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      .ticket__pie { margin-top: auto; }
       .ticket {
         display: flex; flex-direction: column;
         border-radius: var(--radius-card);

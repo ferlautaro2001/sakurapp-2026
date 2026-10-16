@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, effect, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
@@ -13,6 +13,7 @@ import { ConfirmacionService } from './nucleo/servicios/confirmacion.service';
 import { EscanerService } from './nucleo/servicios/escaner.service';
 import { SesionService } from './nucleo/servicios/sesion.service';
 import { TransicionService } from './nucleo/servicios/transicion.service';
+import { PedidosService } from './nucleo/servicios/pedidos.service';
 
 /**
  * Cáscara de la aplicación para v0 (MVP).
@@ -166,7 +167,7 @@ import { TransicionService } from './nucleo/servicios/transicion.service';
       }
       .modal-exito__cuerpo {
         margin: 0;
-        font: 500 clamp(13px, 3.3vw, 14px)/1.4 var(--font-text);
+        font: 550 clamp(13px, 3.3vw, 14px)/1.4 var(--font-text);
         color: var(--text-muted);
       }
       .modal-exito__btn {
@@ -208,6 +209,27 @@ export class AppComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly sesion = inject(SesionService);
   private readonly transicion = inject(TransicionService);
+  private readonly pedidos = inject(PedidosService);
+
+  /** Pedido del comensal visto en la pasada anterior, para notar cuándo se confirma. */
+  private pedidoVisto: { id: string; juegos: boolean } | null = null;
+
+  constructor() {
+    // Cuando el mozo confirma el pedido con la app abierta, el comensal se
+    // entera en el momento: desde ahí aparece Juegos en la barra de abajo.
+    // Sólo cuenta el cambio en vivo; al abrir la app con el pedido ya
+    // confirmado no se avisa de nuevo.
+    effect(() => {
+      const usuario = this.sesion.usuario();
+      const pedido = this.sesion.esCliente() ? this.pedidos.activoDe(usuario) : undefined;
+      const ahora = pedido ? { id: pedido.id, juegos: this.pedidos.juegosHabilitados(pedido) } : null;
+      const antes = this.pedidoVisto;
+      this.pedidoVisto = ahora;
+      if (antes && ahora && antes.id === ahora.id && !antes.juegos && ahora.juegos) {
+        this.avisos.exito('¡Tu pedido fue confirmado!', 'Ya podés jugar por un descuento: tocá Juegos en la barra de abajo.');
+      }
+    });
+  }
 
   async ngOnInit(): Promise<void> {
     if (Capacitor.isNativePlatform()) {

@@ -269,6 +269,17 @@ export class PedidosService {
       items: itemsSectorizados,
     });
 
+    // Al comensal: la confirmación le abre los juegos, que hasta acá no veía.
+    const comensal = [pedido.clienteUid, pedido.clienteId].filter(Boolean) as string[];
+    if (comensal.length) {
+      await this.notificaciones.enviar(
+        comensal,
+        '¡Tu pedido fue confirmado!',
+        'Ya podés jugar por un descuento: buscá Juegos en la barra de abajo.',
+        ['/cliente/juegos'],
+      );
+    }
+
     const mensaje = `Mesa ${pedido.mesaNumero}: ${pedido.items.length} producto${pedido.items.length === 1 ? '' : 's'} para preparar.`;
     if (hayCocina) {
       await this.notificaciones.enviarPorRol(

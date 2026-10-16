@@ -55,9 +55,6 @@ import { Unsubscribe } from 'firebase/firestore';
                 <lm-icono nombre="hourglass_top" [tamano]="30" color="var(--action-primary)" />
               </span>
               <b>El mozo está revisando tu pedido</b>
-              <div style="margin-top: 12px; width: 100%;">
-                <lm-boton icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">Jugar mientras esperás</lm-boton>
-              </div>
             </div>
           }
 
@@ -110,7 +107,7 @@ import { Unsubscribe } from 'firebase/firestore';
 
           <!-- Renglones en modo editable (desde carrito) -->
           @if (editable()) {
-            <div class="lm-lista-n pedido__detalle">
+            <div class="pedido__lista">
               @for (item of carrito.items(); track item.producto.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -127,7 +124,7 @@ import { Unsubscribe } from 'firebase/firestore';
             }
           } @else {
             <!-- Renglones de pedido enviado o confirmado -->
-            <div class="lm-lista-n pedido__detalle">
+            <div class="pedido__lista pedido__lista--compacta">
               @for (item of p.items; track item.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -152,6 +149,7 @@ import { Unsubscribe } from 'firebase/firestore';
 
         <div class="lm-actionbar">
           <lm-resumen-pedido
+            [class.resumen--con-enviar]="editable()"
             [total]="editable() ? carrito.importeTotal() : p.totalFinal"
             [tiempo]="editable() ? carrito.tiempoEstimado() : p.tiempoEstimado"
             [unidades]="editable() ? carrito.cantidadTotal() : unidadesPedido(p)"
@@ -161,16 +159,12 @@ import { Unsubscribe } from 'firebase/firestore';
           >
             @if (editable()) {
               <lm-boton
-                icono="send"
+                compacto
+                [ancho]="false"
                 [deshabilitado]="!carrito.items().length || traba() !== null"
                 (presionar)="enviar()"
               >
-                {{ p.estadoGlobal === 'RECHAZADO' ? 'Reenviar el pedido corregido' : 'Enviar el pedido al mozo' }}
-              </lm-boton>
-              <lm-texto-boton (presionar)="ir(['/carta'])">Volver a la carta</lm-texto-boton>
-            } @else if (p.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-              <lm-boton variante="secondary" icono="hourglass_top" [deshabilitado]="true">
-                Esperando al mozo
+                {{ p.estadoGlobal === 'RECHAZADO' ? 'Reenviar' : 'Pedir' }}
               </lm-boton>
             } @else if (p.estadoGlobal === 'LISTO') {
               <lm-boton icono="check_circle" (presionar)="recibir(p)">
@@ -180,10 +174,6 @@ import { Unsubscribe } from 'firebase/firestore';
               <lm-boton icono="receipt" (presionar)="pedirCuenta(p)">
                 Pedir la cuenta al mozo
               </lm-boton>
-            } @else {
-              <lm-boton variante="secondary" icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">
-                Jugar mientras esperás
-              </lm-boton>
             }
           </lm-resumen-pedido>
         </div>
@@ -192,7 +182,7 @@ import { Unsubscribe } from 'firebase/firestore';
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
           <lm-titulo>Mi pedido</lm-titulo>
 
-          <div class="lm-lista-n">
+          <div class="pedido__lista">
             @for (item of carrito.items(); track item.producto.id) {
               <lm-renglon-pedido
                 [item]="item"
@@ -206,18 +196,19 @@ import { Unsubscribe } from 'firebase/firestore';
 
         <div class="lm-actionbar">
           <lm-resumen-pedido
+            class="resumen--con-enviar"
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
           >
             <lm-boton
-              icono="send"
+              compacto
+              [ancho]="false"
               [deshabilitado]="!carrito.items().length"
               (presionar)="enviarNuevo()"
             >
-              Enviar el pedido al mozo
+              Pedir
             </lm-boton>
-            <lm-texto-boton (presionar)="ir(['/carta'])">Volver a la carta</lm-texto-boton>
           </lm-resumen-pedido>
         </div>
       } @else {
@@ -237,6 +228,35 @@ import { Unsubscribe } from 'firebase/firestore';
     </div>
   `,
   styles: [
+    `
+      /* Resumen y "Enviar" en una misma fila: el resumen toma el ancho que
+         sobra y el botón queda a la derecha, sin apilar. */
+      .resumen--con-enviar {
+        flex-direction: row !important;
+        align-items: stretch;
+        gap: var(--space-2);
+      }
+      /* El resumen toma el ancho que sobra; el botón tiene el mismo alto. */
+      .resumen--con-enviar ::ng-deep .lm-resumen {
+        flex: 1 1 auto; min-width: 0; padding: var(--space-3) var(--space-3); justify-content: center;
+      }
+      .resumen--con-enviar ::ng-deep .lm-resumen__cifras { align-items: center; }
+      /* Total a la izquierda; tiempo y cantidad apilados a la derecha, sin
+         partirse en la mitad de un renglón. */
+      /* El ícono del reloj va siempre al lado del tiempo (sin cortarse de la
+         línea); la cantidad de productos, en su propio renglón debajo. */
+      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo {
+        display: block; text-align: right; white-space: nowrap;
+      }
+      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo small { white-space: normal; }
+      .resumen--con-enviar ::ng-deep .lm-resumen__total { font-size: clamp(17px, 5.4vw, 22px); }
+      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo small { display: block; }
+      .resumen--con-enviar > lm-boton { flex: 0 0 auto; display: flex; }
+      .resumen--con-enviar > lm-boton ::ng-deep .lm-btn {
+        height: 100%; min-height: 0; width: auto; margin: 0; padding: 0 4px; min-width: 0;
+        font-size: 14px; white-space: nowrap;
+      }
+    `,
     `
       :host { display: flex; flex: 1; min-height: 0; }
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
@@ -280,19 +300,40 @@ import { Unsubscribe } from 'firebase/firestore';
       lm-vacio { display: flex; flex-direction: column; flex: 1 1 auto; }
       lm-vacio ::ng-deep .lm-empty { flex: 1 1 auto; justify-content: center; }
 
-      /* Esperando al mozo: la tarjeta ocupa el alto disponible y el reloj
-         y el título crecen con él, en lugar de quedar chicos arriba. */
-      .espera { flex: 1 1 auto; justify-content: center; gap: var(--space-3); }
+      /* Esperando al mozo: la tarjeta ocupa aproximadamente un tercio de la
+         pantalla, con el contenido centrado y el detalle del pedido debajo. */
+      .espera { flex: 0 0 auto; height: 33dvh; min-height: 0; justify-content: center; gap: var(--space-3); }
       .espera__reloj { width: clamp(64px, 22vw, 96px); height: clamp(64px, 22vw, 96px); }
       .espera__titulo { font: var(--type-title-xl); }
       .espera b { font: var(--type-section); }
       .espera small { font: var(--type-body); }
+      /* "Mi pedido" en tandas exactas: cada renglón mide justo una parte del
+         alto de la lista (unos 110px de contenido), así entran enteros, sin
+         hueco de más, y el snap ancla de a uno, de a dos, de a tres o de a cuatro. */
+      .pedido__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: pedidolista / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .pedido__lista::-webkit-scrollbar { display: none; }
+      .pedido__lista > lm-renglon-pedido {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; display: flex; flex-direction: column; justify-content: center;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      @container pedidolista (min-height: 240px) { .pedido__lista > lm-renglon-pedido { --por: 2; } }
+      @container pedidolista (min-height: 370px) { .pedido__lista > lm-renglon-pedido { --por: 3; } }
+      @container pedidolista (min-height: 500px) { .pedido__lista > lm-renglon-pedido { --por: 4; } }
       /* El estado y el resumen dejan menos alto que en el borrador:
          como en el carrito, se muestran hasta dos renglones por tanda. */
-      .pedido__detalle:has(> :nth-child(5)) { --por: 2; }
-      @media (max-height: 640px) {
-        .pedido__detalle:has(> :nth-child(3)) { --por: 1; }
-      }
+      /* Detalle del pedido enviado: renglones más bajos que los del carrito,
+         así que se reparten en tandas más altas (de a dos hasta de a cinco). */
+      .pedido__lista--compacta { container: pedidodetalle / size; }
+      @container pedidodetalle (min-height: 172px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 2; } }
+      @container pedidodetalle (min-height: 264px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 3; } }
+      @container pedidodetalle (min-height: 356px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 4; } }
+      @container pedidodetalle (min-height: 448px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 5; } }
 
     `,
   ],
@@ -459,7 +500,7 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
         detalle: [
           { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
           { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
-          { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()} min` },
+          { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
         ],
       });
       if (!seguro) return;
@@ -508,7 +549,7 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
       detalle: [
         { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
         { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
-        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()} min` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
       ],
     });
     if (!seguro) return;

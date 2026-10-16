@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   booleanAttribute,
   inject,
   input,
@@ -50,7 +51,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         </span>
         <span class="lm-resumen__tiempo">
           <lm-icono nombre="schedule" [tamano]="16" color="var(--action-primary)" />
-          {{ tiempo() }} min
+          {{ tiempo() }}'
           <small>{{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }}</small>
         </span>
       </div>
@@ -245,15 +246,16 @@ export class CantidadComponent {
       }
 
       @if (editable()) {
-        <div class="renglon__datos">
+        <div class="renglon__datos renglon__datos--editable">
           <b>{{ nombre() }}</b>
           <small>
             <lm-icono [nombre]="sector() === 'BAR' ? 'local_bar' : 'restaurant'" [tamano]="14" />
-            {{ precioUnitario() | pesos }} c/u · {{ tiempo() }} min
+            {{ precioUnitario() | pesos }} c/u · {{ tiempo() }}'
           </small>
         </div>
 
         <div class="renglon__pie">
+          <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
           <lm-cantidad
             [cantidad]="cantidad()"
             [nombre]="nombre()"
@@ -261,16 +263,19 @@ export class CantidadComponent {
             (agregar)="agregar.emit()"
             (quitar)="quitar.emit()"
           />
-          <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
         </div>
       } @else {
         <div class="renglon__fila">
           <span class="renglon__cantidad"><small>×</small>{{ cantidad() }}</span>
           <span class="renglon__datos">
             <b>{{ nombre() }}</b>
-            <small>
+            <small class="renglon__precio">
               <lm-icono [nombre]="sector() === 'BAR' ? 'local_bar' : 'restaurant'" [tamano]="14" />
-              {{ precioUnitario() | pesos }} c/u · {{ tiempo() }} min
+              {{ precioUnitario() | pesos }} c/u
+            </small>
+            <small class="renglon__tiempo">
+              <lm-icono nombre="schedule" [tamano]="14" />
+              {{ tiempo() }}'
             </small>
           </span>
           <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
@@ -326,11 +331,29 @@ export class CantidadComponent {
       }
       .renglon__datos small {
         display: inline-flex; align-items: center; gap: 4px;
-        font: var(--type-caption); color: var(--text-muted);
+        font: 500 clamp(13px, 3.7vw, 15px)/1.3 var(--font-text); color: var(--text-muted);
       }
       .renglon__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-      .renglon__fila { display: flex; align-items: center; gap: 10px; }
-      .renglon__fila .renglon__datos { flex: 1 1 auto; }
+      /* Pedido enviado en tres filas: arriba el nombre; en el medio, el precio
+         unitario a la izquierda y la duración a la derecha; abajo, el total del
+         producto alineado con el precio. La cantidad queda a la izquierda. */
+      .renglon__fila {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 4px;
+      }
+      .renglon__fila .renglon__cantidad { grid-column: 1; grid-row: 1 / 4; align-self: center; }
+      .renglon__fila .renglon__datos { display: contents; }
+      .renglon__fila .renglon__datos b { grid-column: 2 / 4; grid-row: 1; min-width: 0; }
+      .renglon__fila .renglon__precio { grid-column: 2; grid-row: 2; min-width: 0; }
+      .renglon__fila .renglon__tiempo { grid-column: 3; grid-row: 2; justify-self: end; }
+      .renglon__fila .renglon__subtotal {
+        grid-column: 2 / 4; grid-row: 3; justify-self: end;
+        font: 800 clamp(18px, 5.4vw, 22px)/1 var(--font-numeric); color: var(--action-primary);
+      }
       /* Alto mínimo y no fijo: con el alto clavado y el interlineado atado a
          él, una cantidad de tres cifras se salía de la placa por abajo. */
       .renglon__cantidad {
@@ -342,6 +365,14 @@ export class CantidadComponent {
       .renglon__cantidad small { font: 700 11px/1 var(--font-numeric); opacity: .8; }
       .renglon__subtotal {
         flex: 0 0 auto; font: 800 clamp(14.5px, 3.7vw, 16px)/1 var(--font-numeric); color: var(--text-title); text-align: right;
+      }
+      /* En el renglón editable el precio acompaña el tamaño del botón "+". */
+      /* El nombre del producto también un poco más grande en el renglón editable. */
+      .renglon__datos--editable b {
+        font: 700 clamp(17.5px, 5vw, 21px)/1.25 var(--font-display); color: var(--text-title);
+      }
+      .renglon__pie .renglon__subtotal {
+        font: 800 clamp(19px, 5.6vw, 24px)/1 var(--font-numeric); color: var(--action-primary);
       }
     `,
   ],
@@ -400,6 +431,7 @@ export class RenglonPedidoComponent {
 @Component({
   selector: 'lm-fila-pedido',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { '[class.fila-pedido--abierto]': 'abierto()' },
   imports: [IconoComponent, ChipComponent, DecisionComponent, PesosPipe, HoraPipe],
   template: `
     <div class="pedido">
@@ -430,7 +462,7 @@ export class RenglonPedidoComponent {
 
         <span class="pedido__pie">
           <span class="pedido__cuenta">
-            {{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }} · {{ pedido().tiempoEstimado }} min
+            {{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }} · {{ pedido().tiempoEstimado }}'
           </span>
           <span class="pedido__total">{{ pedido().totalFinal | pesos }}</span>
         </span>
@@ -562,9 +594,17 @@ export class FilaPedidoComponent {
    * renglón dice cuántos falta ver, no sólo que falta algo.
    */
   protected readonly abierto = signal(false);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected alternar(): void {
     this.abierto.update((v) => !v);
+    // Como en los correos: la tarjeta abierta ocupa la lista y se la lleva al
+    // tope, para que el pedido entero se lea sin que quede a medias.
+    if (this.abierto()) {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => this.host.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' })),
+      );
+    }
   }
 
   protected visibles(): PedidoItem[] {

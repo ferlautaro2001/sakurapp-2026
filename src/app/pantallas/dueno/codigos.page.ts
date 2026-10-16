@@ -102,7 +102,7 @@ interface CodigoPropina {
       .propina { padding: var(--space-4); gap: var(--space-4); align-items: stretch; }
       .propina img { width: auto; height: 100%; max-width: 58%; align-self: center; }
       .propina__rotulo {
-        font: 700 clamp(13px, 3.6vw, 15px)/1 var(--font-text); color: var(--text-title);
+        font: 750 clamp(13px, 3.6vw, 15px)/1 var(--font-text); color: var(--text-title);
         padding: 6px 14px; border-radius: var(--radius-pill); background: rgba(255, 255, 255, .7);
         border: 1.5px solid rgba(255, 255, 255, .85); box-shadow: 0 0 0 1px rgba(232, 51, 111, .25);
       }

@@ -160,8 +160,8 @@ import { DatePipe } from '@angular/common';
       .sala__mesa small { font-size: clamp(10px, 2.9vw, 12px); color: var(--text-muted); }
       .sala__datos { display: flex; flex-direction: column; justify-content: center; gap: 1px; }
       .sala__datos > b { font: 900 clamp(17px, 5vw, 21px)/1.15 var(--font-display); color: var(--text-title); }
-      .sala__datos small { font: 500 clamp(14px, 3.9vw, 16px)/1.3 var(--font-text); color: var(--text-muted); }
-      .sala__hora { font: 500 clamp(13px, 3.7vw, 16px)/1 var(--font-text); color: var(--text-muted); }
+      .sala__datos small { font: 550 clamp(14px, 3.9vw, 16px)/1.3 var(--font-text); color: var(--text-muted); }
+      .sala__hora { font: 550 clamp(13px, 3.7vw, 16px)/1 var(--font-text); color: var(--text-muted); }
       .sala > lm-icono {
         width: clamp(36px, 10.5vw, 44px); height: clamp(36px, 10.5vw, 44px); justify-content: center;
         border-radius: 50%; background: var(--state-success); box-shadow: 0 3px 8px rgba(10, 120, 62, .22);

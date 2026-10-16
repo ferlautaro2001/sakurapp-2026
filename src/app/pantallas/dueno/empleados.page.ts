@@ -28,23 +28,21 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
         } @else if (cargandoLista()) {
           <p class="lm-parrafo" role="status">Cargando empleados…</p>
         } @else if (visibles().length) {
-          <div class="lm-lista-n">
+          <div class="empleados__lista">
             @for (empleado of visibles(); track empleado.uid || empleado.id) {
-              <div class="casilla">
-<article class="lm-pending">
-                <div class="lm-pending__fila">
-                  <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" />
-                  <div class="lm-pending__datos">
-                    <b class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</b>
-                    <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="18" />{{ roles[empleado.perfil] }}</span>
-                    @if (empleado.email) {
-                      <span class="lm-pending__meta"><lm-icono nombre="mail" [tamano]="18" /><span>{{ empleado.email }}</span></span>
-                    }
-                  </div>
-                  <lm-chip [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
-                </div>
+              <article class="lm-pending empleado">
+                <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" />
+                <b class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</b>
+                <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="18" />{{ roles[empleado.perfil] }}</span>
+                @if (correo(empleado); as partes) {
+                  <!-- Si no entra en un renglón, parte justo antes del "@". -->
+                  <span class="lm-pending__meta lm-pending__meta--correo">
+                    <lm-icono nombre="mail" [tamano]="18" />
+                    <span class="correo"><span class="correo__parte">{{ partes.usuario }}</span><wbr /><span class="correo__parte">{{ partes.dominio }}</span></span>
+                  </span>
+                }
+                <lm-chip [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
               </article>
-</div>
             }
           </div>
         } @else {
@@ -70,22 +68,39 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .lm-avatar { object-fit: cover; flex-shrink: 0; }
-      /* Misma ficha que la de registros: foto grande, nombre y datos legibles. */
-      .lm-pending__fila { gap: 14px; }
-      .lm-pending__fila > .lm-avatar { width: 96px; border-radius: 18px; }
-      .lm-pending__datos { display: flex; flex-direction: column; gap: 6px; }
-      .lm-pending__nombre { font-size: 18px; }
-      .lm-pending__meta { font-size: 15px; }
-      /* En la fila densa el chip de estado no cede ancho: lo que se recorta es
-         el nombre y el correo, que se recuperan mirando el detalle. */
-      .lm-pending__fila > lm-chip { flex: 0 0 auto; }
-      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla:
-         nunca se estira hasta llenarla ni se sale de ella. */
-      .casilla { display: flex; flex-direction: column; justify-content: center; }
-      .casilla > * { flex: 1 1 auto; max-height: clamp(128px, 21dvh, 150px); justify-content: center; }
-      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
-      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
+      /* La misma tarjeta que Registros: centrada, de arriba hacia abajo. */
+      .empleado {
+        min-width: 0; display: flex; flex-direction: column; align-items: center;
+        justify-content: center; text-align: center; gap: 6px;
+      }
+      .lm-avatar { object-fit: cover; flex-shrink: 0; width: clamp(56px, 16vw, 72px); border-radius: 18px; }
+      .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
+      .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); justify-content: center; max-width: 100%; }
+      .lm-pending__meta--correo { align-items: flex-start; }
+      .lm-pending__meta--correo .correo { text-align: left; min-width: 0; white-space: normal; overflow: visible; }
+      .correo__parte {
+        display: inline-block; max-width: 100%; vertical-align: top;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      /* Tandas exactas, como en Registros: cada tarjeta mide justo una parte del
+         alto de la lista y el snap ancla tarjetas enteras, sin huecos. */
+      .empleados__lista {
+        flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: empleados / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .empleados__lista::-webkit-scrollbar { display: none; }
+      .empleados__lista > .empleado {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      @container empleados (min-height: 342px) { .empleados__lista > .empleado { --por: 2; } }
+      @container empleados (min-height: 519px) { .empleados__lista > .empleado { --por: 3; } }
+      @container empleados (min-height: 696px) { .empleados__lista > .empleado { --por: 4; } }
+      @container empleados (max-width: 286px) and (max-height: 367px) { .empleados__lista > .empleado { --por: 1; } }
+      @container empleados (max-width: 286px) and (min-height: 519px) and (max-height: 557px) { .empleados__lista > .empleado { --por: 2; } }
+      @container empleados (max-width: 286px) and (min-height: 696px) and (max-height: 747px) { .empleados__lista > .empleado { --por: 3; } }
     `,
   ],
 })
@@ -103,6 +118,16 @@ export class DuenoEmpleadosPage extends PaginaConSesion {
       `${this.usuarios.nombreCompleto(u)} ${this.roles[u.perfil]}`.toLocaleLowerCase('es-AR').includes(texto),
     );
   });
+
+  /** El correo en dos mitades para poder partirlo antes del "@". */
+  protected correo(empleado: Usuario): { usuario: string; dominio: string } | null {
+    const email = empleado.email?.trim();
+    if (!email) return null;
+    const arroba = email.lastIndexOf('@');
+    return arroba > 0
+      ? { usuario: email.slice(0, arroba), dominio: email.slice(arroba) }
+      : { usuario: email, dominio: '' };
+  }
 
   constructor() {
     super();

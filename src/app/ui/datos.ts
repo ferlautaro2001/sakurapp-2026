@@ -116,9 +116,15 @@ export class TarjetaPerfilComponent {
             <lm-icono nombre="badge" [tamano]="18" />
             DNI: {{ cliente().dni | documento }}
           </span>
-          <span class="lm-pending__meta">
+          <span class="lm-pending__meta lm-pending__meta--correo">
             <lm-icono nombre="mail" [tamano]="18" />
-            <span>{{ cliente().email ?? 'Sin correo' }}</span>
+            @if (correo(); as partes) {
+              <!-- Si no entra en un renglón, parte justo antes del "@" y nunca
+                   en el medio del usuario o del dominio. -->
+              <span class="correo"><span class="correo__parte">{{ partes.usuario }}</span><wbr /><span class="correo__parte">{{ partes.dominio }}</span></span>
+            } @else {
+              <span>Sin correo</span>
+            }
           </span>
           <!-- El estado va debajo de los datos: al costado le comía el ancho al nombre y al correo. -->
           @if (mostrarEstado()) {
@@ -157,14 +163,30 @@ export class TarjetaPerfilComponent {
       }
       .fila:active { opacity: 0.7; }
 
-      /* Una sola fila: foto grande, datos legibles y las dos decisiones
-         apiladas a la derecha, del alto de la foto. */
-      .lm-pending { flex-direction: row; align-items: center; gap: 14px; }
-      .fila { flex: 1; min-width: 0; gap: 14px; }
-      .fila .lm-avatar { width: 96px; border-radius: 18px; }
-      .lm-pending__datos { display: flex; flex-direction: column; gap: 6px; }
-      .lm-pending__nombre { font-size: 18px; }
-      .lm-pending__meta { font-size: 15px; }
+      /* Una tarjeta, de arriba hacia abajo y centrada: la foto, el nombre, el
+         DNI, el correo y el estado. Las dos decisiones quedan apiladas a la
+         derecha, centradas en su columna, para no sumar alto. */
+      .lm-pending { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+      .fila { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+      /* La foto cede con el ancho del equipo: con 96px fijos, en un celular
+         angosto a los datos les quedaban ~125px y el DNI y el correo se
+         partían en dos renglones cada uno, lo que estiraba la tarjeta. */
+      .fila .lm-avatar { width: clamp(56px, 16vw, 72px); border-radius: 18px; }
+      .lm-pending__datos { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; max-width: 100%; }
+      .lm-pending__meta { justify-content: center; max-width: 100%; }
+      .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
+      .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); }
+      /* El correo se lee entero: en vez de cortarse con "…" baja de renglón
+         antes del "@". Cada mitad no se parte; sólo si una sola es más ancha
+         que la tarjeta se recorta, que es un caso extremo. */
+      .lm-pending__meta--correo { align-items: flex-start; }
+      .lm-pending__meta--correo .correo { text-align: left; }
+      .lm-pending__meta--correo lm-icono { margin-top: 1px; }
+      .lm-pending__meta .correo { white-space: normal; overflow: visible; text-overflow: clip; min-width: 0; }
+      .correo__parte {
+        display: inline-block; max-width: 100%; vertical-align: top;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
       .lm-pending__acciones { display: flex; flex-direction: column; width: auto; gap: 8px; flex: 0 0 auto; }
       .lm-pending__acciones ::ng-deep .dec { width: 48px; min-height: 0; height: 44px; border-radius: 14px; }
       .lm-pending__acciones ::ng-deep .dec .material-symbols-rounded { font-size: 22px !important; }
@@ -184,6 +206,16 @@ export class FilaPendienteComponent {
 
   protected rotuloEstado(): string {
     return ROTULO_ESTADO_USUARIO[this.cliente().estado];
+  }
+
+  /** El correo en dos mitades para poder partirlo antes del "@". */
+  protected correo(): { usuario: string; dominio: string } | null {
+    const email = this.cliente().email?.trim();
+    if (!email) return null;
+    const arroba = email.lastIndexOf('@');
+    return arroba > 0
+      ? { usuario: email.slice(0, arroba), dominio: email.slice(arroba) }
+      : { usuario: email, dominio: '' };
   }
 }
 
@@ -384,7 +416,7 @@ export class PlacaQrComponent {
                 <lm-icono nombre="schedule" [tamano]="18" />
               </span>
               <span class="lm-product__tiempo">
-                {{ producto().tiempoElaboracion }} minutos
+                {{ producto().tiempoElaboracion }}'
               </span>
             </span>
           </span>

@@ -30,30 +30,31 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
               <div #casilla class="casilla" [class.casilla--abierta]="abierto() === correo.id">
               <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
                 <button type="button" class="correo__fila" (click)="alternar(correo.id, casilla)">
-                  <span class="correo__icono" [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'">
-                    <lm-icono
-                      [nombre]="correo.plantilla === 'APROBACION' ? 'mark_email_read' : 'unsubscribe'"
-                      [tamano]="22"
-                      color="var(--lm-surface)"
-                    />
+                  <span
+                    class="correo__icono"
+                    [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'"
+                    [class.correo__icono--revision]="correo.plantilla === 'REGISTRO_RECIBIDO'"
+                  >
+                    <lm-icono [nombre]="aviso(correo).icono" [tamano]="22" color="var(--lm-surface)" />
                   </span>
                   <span class="correo__datos">
                     <b>{{ rotuloAsunto(correo.asunto) }}</b>
-                    <small>Para {{ correo.para }}</small>
+                    <!-- Si el correo no entra, parte antes del "@" en vez de cortarse. -->
+                    <small>Para {{ partesPara(correo.para).usuario }}<wbr />{{ partesPara(correo.para).dominio }}</small>
                     <small>{{ correo.enviadoEn | fechaHora }}</small>
                   </span>
-                  <!-- Qué se le avisó a la persona, a la altura del chevrón. -->
-                  <lm-chip [estado]="correo.plantilla === 'APROBACION' ? 'aprobado' : 'rechazado'">
-                    {{ correo.plantilla === 'APROBACION' ? 'Aprobado' : 'Rechazado' }}
-                  </lm-chip>
-                  <lm-icono [nombre]="abierto() === correo.id ? 'expand_less' : 'expand_more'" [tamano]="22" />
+                  <span class="correo__pie">
+                    <!-- Qué se le avisó a la persona, a la altura del chevrón. -->
+                    <lm-chip [estado]="aviso(correo).chip">{{ aviso(correo).rotulo }}</lm-chip>
+                    <lm-icono [nombre]="abierto() === correo.id ? 'expand_less' : 'expand_more'" [tamano]="22" />
+                  </span>
                 </button>
 
                 @if (abierto() === correo.id) {
                   <iframe
                     class="correo__vista"
                     title="Vista previa del correo"
-                    sandbox=""
+                    sandbox="allow-same-origin"
                     [srcdoc]="html(correo)"
                   ></iframe>
                 }
@@ -86,9 +87,23 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
       .correo__fila { display: flex; align-items: center; gap: var(--space-3); background: none; border: none; padding: 0; min-height: var(--touch-min); cursor: pointer; text-align: left; width: 100%; }
       .correo__icono { width: var(--size-icono-caja); height: var(--size-icono-caja); flex: 0 0 auto; border-radius: var(--radius-thumb); background: var(--state-success); display: grid; place-items: center; }
       .correo__icono--rechazo { background: var(--state-error); }
+      .correo__icono--revision { background: var(--state-pending); }
       .correo__datos { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
       .correo__datos b { display: block; font: var(--type-body-medium); color: var(--text-title); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
       .correo__datos small { display: block; font: var(--type-caption); color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      /* El pie (estado y chevrón) no cambia de lugar cuando la tarjeta está abierta. */
+      .correo__pie { display: contents; }
+      /* Tarjeta cerrada: todo en columna y centrado, y los textos bajan de
+         renglón en vez de cortarse. La abierta conserva la fila de encabezado. */
+      .correo:not(.correo--abierto) .correo__fila {
+        flex-direction: column; justify-content: center; text-align: center;
+        gap: 8px; min-height: 0; padding: 4px 0;
+      }
+      .correo:not(.correo--abierto) .correo__icono { width: clamp(34px, 9.5vw, 40px); height: clamp(34px, 9.5vw, 40px); }
+      .correo:not(.correo--abierto) .correo__datos { align-items: center; text-align: center; gap: 3px; width: 100%; }
+      .correo:not(.correo--abierto) .correo__datos b { white-space: normal; overflow: visible; text-overflow: clip; text-wrap: balance; line-height: 1.25; }
+      .correo:not(.correo--abierto) .correo__datos small { white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; text-wrap: balance; }
+      .correo:not(.correo--abierto) .correo__pie { display: flex; align-items: center; justify-content: center; gap: 10px; }
       /* El asunto y el destinatario ceden antes que el ícono y el chevrón, que
          son los que dicen de qué plantilla se trata y que la fila se abre. */
       .correo__fila > lm-icono { flex: 0 0 auto; }
@@ -140,11 +155,45 @@ export class DuenoCorreosPage extends PaginaConSesion {
   /**
    * El HTML lo genera la propia aplicación desde sus plantillas, así que se
    * muestra tal cual para que se vea exactamente lo que recibe el cliente.
-   * Va dentro de un marco aislado y sin permisos, para que sus estilos no se
-   * filtren a la aplicación.
+   * Va dentro de un marco aislado y sin scripts, para que sus estilos no se
+   * filtren a la aplicación. Comparte el origen de la app sólo para poder
+   * cargar el logo: con un origen nulo el navegador bloquea las imágenes del
+   * propio servidor. Sin `allow-scripts` el correo no puede ejecutar nada.
    */
   protected html(correo: CorreoEnviado): SafeHtml {
-    return this.sanitizer.bypassSecurityTrustHtml(correo.cuerpoHtml);
+    // Un marco con `srcdoc` no tiene dirección propia: sin una base, las
+    // rutas relativas de los correos viejos (el logo en `assets/…`) no cargan.
+    // Va dentro del <head>: antepuesta al DOCTYPE dejaría el correo en modo
+    // de compatibilidad y cambiaría cómo se dibuja.
+    const base = `<base href="${document.baseURI}">`;
+    // La barra de desplazamiento del marco se oculta, pero el correo sigue
+    // desplazándose con el dedo.
+    const sinBarra = '<style>html,body{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none}</style>';
+    const cabeza = base + sinBarra;
+    const html = /<head[^>]*>/i.test(correo.cuerpoHtml)
+      ? correo.cuerpoHtml.replace(/<head[^>]*>/i, (etiqueta) => etiqueta + cabeza)
+      : cabeza + correo.cuerpoHtml;
+    return this.sanitizer.bypassSecurityTrustHtml(html);
+  }
+
+  /** Lo que se le avisó a la persona con cada plantilla: ícono y estado del chip. */
+  protected aviso(correo: CorreoEnviado): { icono: string; chip: string; rotulo: string } {
+    switch (correo.plantilla) {
+      case 'APROBACION':
+        return { icono: 'mark_email_read', chip: 'aprobado', rotulo: 'Aprobado' };
+      case 'RECHAZO':
+        return { icono: 'unsubscribe', chip: 'rechazado', rotulo: 'Rechazado' };
+      default:
+        return { icono: 'forward_to_inbox', chip: 'pendiente', rotulo: 'En revisión' };
+    }
+  }
+
+  /** El destinatario en dos mitades para poder partirlo antes del "@". */
+  protected partesPara(para: string): { usuario: string; dominio: string } {
+    const arroba = para.lastIndexOf('@');
+    return arroba > 0
+      ? { usuario: para.slice(0, arroba), dominio: para.slice(arroba) }
+      : { usuario: para, dominio: '' };
   }
 
   /** En la lista el asunto va corto: el nombre del local sobra y el del rechazo es largo. */

@@ -57,7 +57,7 @@ const FILTROS = [
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (visibles().length) {
-          <div [class.lm-lista-uno]="filtro() === 'Todos' || filtro() === 'Pendiente'" [class.lm-lista-n]="filtro() !== 'Todos' && filtro() !== 'Pendiente'">
+          <div class="registros__lista">
             @for (cliente of visibles(); track cliente.id) {
               <lm-fila-pendiente
                 [cliente]="cliente"
@@ -82,16 +82,49 @@ const FILTROS = [
     `
       :host { display: flex; flex: 1; min-height: 0; }
 
-      /* Filas apiladas con la separación del sistema, como en correos:
-         cada fila mide lo que su tarjeta (con o sin Aceptar/Rechazar) y el
-         snap de la lista sigue anclando cada elemento al tope. */
-      .lm-lista-uno > lm-fila-pendiente,
-      .lm-lista-n > lm-fila-pendiente { flex: 0 0 auto; }
-      lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending { flex: 0 0 auto; max-height: none; justify-content: center; }
-      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
-      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
-      @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
+      /* Tandas exactas: cada tarjeta mide justo una fracción del alto de la
+         lista y el snap la ancla al tope, así cada parada muestra tarjetas
+         enteras y el final de la lista coincide con la última parada. Con
+         filas de alto natural (128 a 203px según tengan botones o el correo
+         en dos renglones) siempre quedaba una a medias.
+         Cuántas van por pantalla sale del alto de la lista: tienen que
+         entrar enteras aun las más altas, que en un equipo angosto lo son
+         más. La tarjeta se estira a su casilla y centra el contenido; si aun
+         así no entrara, la casilla crece: nunca se corta. */
+      .registros__lista {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        container: registros / size;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        overflow-anchor: none;
+        scroll-snap-type: y mandatory;
+        scroll-padding: 0;
+        scrollbar-width: none;
+      }
+      .registros__lista::-webkit-scrollbar { display: none; }
+      .registros__lista > lm-fila-pendiente {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content;
+        display: flex;
+        flex-direction: column;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; justify-content: center; }
+      /* La tarjeta más alta mide ~158px (con botones, estado y el correo en
+         dos renglones): cada corte deja que entren enteras con 165px. */
+      @container registros (min-height: 342px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
+      @container registros (min-height: 519px) { .registros__lista > lm-fila-pendiente { --por: 3; } }
+      @container registros (min-height: 696px) { .registros__lista > lm-fila-pendiente { --por: 4; } }
+      /* Angosto: las tarjetas llegan a ~168px, así que cada tanda pide 178. */
+      @container registros (max-width: 286px) and (max-height: 367px) { .registros__lista > lm-fila-pendiente { --por: 1; } }
+      @container registros (max-width: 286px) and (min-height: 519px) and (max-height: 557px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
+      @container registros (max-width: 286px) and (min-height: 696px) and (max-height: 747px) { .registros__lista > lm-fila-pendiente { --por: 3; } }
     `,
   ],
 })

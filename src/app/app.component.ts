@@ -12,6 +12,7 @@ import { BannerComponent, IconoComponent, ModalComponent, SpinnerComponent, Text
 import { ConfirmacionService } from './nucleo/servicios/confirmacion.service';
 import { EscanerService } from './nucleo/servicios/escaner.service';
 import { SesionService } from './nucleo/servicios/sesion.service';
+import { TransicionService } from './nucleo/servicios/transicion.service';
 
 /**
  * Cáscara de la aplicación para v0 (MVP).
@@ -206,6 +207,7 @@ export class AppComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly location = inject(Location);
   private readonly sesion = inject(SesionService);
+  private readonly transicion = inject(TransicionService);
 
   async ngOnInit(): Promise<void> {
     if (Capacitor.isNativePlatform()) {
@@ -278,6 +280,7 @@ export class AppComponent implements OnInit {
         if (canGoBack) {
           this.location.back();
         } else {
+          this.transicion.atras();
           void this.router.navigate([rutaInicio]);
         }
       });

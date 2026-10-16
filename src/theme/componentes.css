@@ -3266,28 +3266,37 @@ lm-mozo-rechazo .mesa__icono {
 }
 
 /* =========================================================================
-   Transiciones y animaciones
+   Transiciones entre pantallas
    -------------------------------------------------------------------------
-   Nada aparece ni desaparece de golpe. Las pantallas se funden con un leve
-   desplazamiento; los modales entran con un fundido del fondo y un rebote
-   suave de la tarjeta, y salen con el movimiento inverso. Con "reducir
-   movimiento" activado, todo es instantáneo (regla global de global.scss).
+   Barrido horizontal rápido (200ms, sin fundido): la pantalla nueva entra
+   desde la derecha al avanzar y desde la izquierda al retroceder. La
+   dirección la marca `TransicionService` en `data-nav-dir` antes de navegar,
+   según el botón tocado en la barra inferior respecto del activo. Sin
+   opacidades ni View Transitions: el fundido cruzado era el destello y el
+   `translateY` el salto vertical. Con "reducir movimiento" activado, todo es
+   instantáneo (regla global de global.scss).
    ========================================================================= */
-@keyframes sk-pantalla-entra { from { opacity: 0; transform: translateY(14px) scale(.992); } to { opacity: 1; transform: none; } }
-@keyframes sk-pantalla-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-8px) scale(.996); } }
+@keyframes sk-pantalla-der { from { transform: translateX(34px); } to { transform: none; } }
+@keyframes sk-pantalla-izq { from { transform: translateX(-34px); } to { transform: none; } }
+
+/* View Transitions queda desactivado: sin instantánea cruzada no hay destello. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none !important;
+}
+
+/* La pantalla nueva barre desde el costado que corresponde a la dirección. */
+.sk-app > router-outlet + * {
+  animation: sk-pantalla-der 200ms var(--ease-out-soft) both;
+}
+html[data-nav-dir='-1'] .sk-app > router-outlet + * {
+  animation-name: sk-pantalla-izq;
+}
 @keyframes sk-fondo-entra { from { opacity: 0; } to { opacity: 1; } }
 @keyframes sk-fondo-sale  { from { opacity: 1; } to { opacity: 0; } }
 @keyframes sk-modal-entra { 0% { opacity: 0; transform: translateY(22px) scale(.9); } 60% { opacity: 1; transform: translateY(-3px) scale(1.012); } 100% { opacity: 1; transform: none; } }
 @keyframes sk-modal-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(14px) scale(.94); } }
 @keyframes sk-aviso-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-14px); } }
-
-/* Entre pantallas: transición de vista del enrutador (Chrome 111+). */
-::view-transition-old(root) { animation: sk-pantalla-sale 200ms var(--ease-standard) both; }
-::view-transition-new(root) { animation: sk-pantalla-entra 340ms var(--ease-out-soft) both; }
-/* Donde no existe esa API, la pantalla nueva entra sola. */
-@supports not (view-transition-name: none) {
-  .sk-app > router-outlet + * { animation: sk-pantalla-entra 340ms var(--ease-out-soft) both; }
-}
 
 /* Entrada de los modales y de las capas. */
 .lm-modal__fondo, .modal-qr-fondo, .modal-exito-overlay, .lm-overlay { animation: sk-fondo-entra 240ms var(--ease-standard) both; }

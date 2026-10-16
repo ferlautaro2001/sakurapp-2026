@@ -72,7 +72,7 @@ export const ROTULO_ALCANCE_RECHAZO: Record<AlcanceRechazo, string> = {
 
 export const ROTULO_ESTADO_PEDIDO: Record<EstadoPedido, string> = {
   SELECCIONANDO: 'Seleccionando productos',
-  PENDIENTE_CONFIRMACION: 'Esperando confirmación',
+  PENDIENTE_CONFIRMACION: 'Sin confirmar',
   RECHAZADO: 'Rechazado',
   CONFIRMADO: 'Confirmado',
   EN_PREPARACION: 'En preparación',

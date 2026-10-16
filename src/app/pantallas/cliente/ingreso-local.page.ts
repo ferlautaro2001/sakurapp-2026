@@ -26,46 +26,16 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--gap14">
-        <lm-titulo bajada="Tocá el botón de abajo de todo para sumarte a la fila">
-          Hola, {{ usuario()?.nombre }}
-        </lm-titulo>
-
-        <div class="marco">
+        <!-- Sin barra de acción: el recuadro mismo abre el escáner. -->
+        <button type="button" class="marco" aria-label="Escanear el código de ingreso" (click)="escanear()">
           <span class="marco__esquina si"></span>
           <span class="marco__esquina sd"></span>
           <span class="marco__esquina ii"></span>
           <span class="marco__esquina id"></span>
           <span class="marco__linea"></span>
-          <lm-icono nombre="qr_code_scanner" [tamano]="76" color="#FFFFFF" />
+          <lm-icono nombre="qr_code_scanner" tamano="clamp(64px, 24vw, 120px)" color="#FFFFFF" />
           <span class="marco__rotulo">Código de ingreso al local</span>
-        </div>
-
-        <div class="lm-vidrio pasos">
-          <b>Qué pasa cuando lo escaneás</b>
-          <span class="paso">
-            <i>1</i>
-            Quedás anotado en la lista de espera del salón, con tu hora de llegada.
-          </span>
-          <span class="paso">
-            <i>2</i>
-            El metre recibe el aviso en el momento y te busca cuando se libera una mesa.
-          </span>
-          <span class="paso">
-            <i>3</i>
-            Mientras esperás podés mirar los resultados de las encuestas anteriores.
-          </span>
-        </div>
-
-        <lm-separador flor rotulo="Tu cuenta" />
-
-        <div class="lm-card cuenta">
-          <lm-icono [nombre]="registrado() ? 'verified' : 'person'" [tamano]="26" color="var(--action-primary)" />
-          <b>{{ detalleCuenta() }}</b>
-        </div>
-      </div>
-
-      <div class="lm-actionbar">
-        <lm-boton icono="qr_code_scanner" (presionar)="escanear()">Escanear el código de ingreso</lm-boton>
+        </button>
       </div>
     </div>
   `,
@@ -74,20 +44,22 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
       :host { display: flex; flex: 1; min-height: 0; }
       .marco {
         position: relative;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
-        min-height: 230px; padding: 26px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4);
+        flex: 1 1 auto; min-height: clamp(180px, 56vw, 230px); padding: var(--space-6);
         border-radius: var(--radius-card);
         background: rgba(110, 18, 52, .3);
         border: 1px solid rgba(255, 255, 255, .28);
         overflow: hidden;
+        color: inherit; font: inherit; cursor: pointer; width: 100%;
       }
-      .marco__esquina { position: absolute; width: 32px; height: 32px; border: 4px solid #FFFFFF; }
+      .marco:active { transform: scale(.98); }
+      .marco__esquina { position: absolute; width: clamp(24px, 8vw, 32px); height: clamp(24px, 8vw, 32px); border: 4px solid #FFFFFF; }
       .marco__esquina.si { top: 14px; left: 14px; border-right: none; border-bottom: none; border-top-left-radius: 14px; }
       .marco__esquina.sd { top: 14px; right: 14px; border-left: none; border-bottom: none; border-top-right-radius: 14px; }
       .marco__esquina.ii { bottom: 14px; left: 14px; border-right: none; border-top: none; border-bottom-left-radius: 14px; }
       .marco__esquina.id { bottom: 14px; right: 14px; border-left: none; border-top: none; border-bottom-right-radius: 14px; }
       .marco__linea {
-        position: absolute; left: 26px; right: 26px; top: 50%; height: 2px;
+        position: absolute; left: var(--space-6); right: var(--space-6); top: 50%; height: 2px;
         background: #FFFFFF; box-shadow: 0 0 16px #FFFFFF; opacity: .8;
         animation: lm-scan 2.6s var(--ease-standard) infinite;
       }
@@ -95,15 +67,6 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
         font: var(--type-label); letter-spacing: var(--tracking-label); text-transform: uppercase;
         color: var(--text-sobre-fondo); text-align: center;
       }
-      .pasos { display: flex; flex-direction: column; gap: 10px; }
-      .paso { display: flex; gap: 10px; align-items: flex-start; font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
-      .paso i {
-        flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
-        display: grid; place-items: center; font: 800 12px/1 var(--font-numeric); font-style: normal;
-        background: rgba(255, 255, 255, .9); color: var(--action-primary);
-      }
-      .cuenta { display: flex; align-items: center; gap: 12px; padding: 14px; }
-      .cuenta b { font: var(--type-card-title); color: var(--text-title); text-wrap: pretty; }
     `,
   ],
 })
@@ -113,8 +76,6 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
   private readonly qr = inject(QrService);
   private readonly usuarios = inject(UsuariosService);
   private readonly notificaciones = inject(NotificacionesService);
-
-  protected readonly registrado = computed(() => this.usuario()?.perfil === 'CLIENTE_REGISTRADO');
 
   /** Cualquier estado vivo —en la fila, con mesa o ya sentado— saca de acá. */
   protected readonly enLista = computed(() => {
@@ -131,12 +92,6 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
     effect(() => {
       if (this.enLista()) void this.router.navigate(['/cliente/espera'], { replaceUrl: true });
     });
-  }
-
-  protected detalleCuenta(): string {
-    return this.registrado()
-      ? 'Sos un cliente registrado, tu cuenta ya fue aprobada por el salón'
-      : 'Sos un cliente anónimo, tu cuenta no requiere aprobación';
   }
 
   /** Lectura del código de ingreso al local, que anota al comensal en la lista de espera. */

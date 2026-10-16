@@ -117,21 +117,33 @@ export class AreaComponent {
         [class.lm-photo__marco--ovalo]="forma() === 'ovalo'"
         [class.lm-photo__marco--rect]="forma() === 'rectangulo'"
         [class.lm-photo__marco--cargada]="!!fuente()"
-        [style.width.px]="forma() === 'ovalo' ? Math.round(tamano() * 0.88) : forma() === 'circulo' ? tamano() : null"
-        [style.height.px]="tamano()"
+        [style.width]="forma() === 'ovalo' ? medida(0.88) : forma() === 'circulo' ? medida(1) : null"
+        [style.height]="medida(1)"
         [style.background-image]="fuente() ? 'url(' + fuente() + ')' : null"
         [style.border-color]="error() ? 'var(--state-error)' : null"
         [attr.aria-label]="fuente() ? 'Reemplazar la foto' : etiqueta()"
         (click)="capturar.emit()"
       >
         @if (!fuente()) {
-          <lm-icono nombre="photo_camera" [tamano]="30" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+          <lm-icono nombre="photo_camera" [tamano]="medida(0.4)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
       </button>
-      <button type="button" class="lm-photo__pie" [class.lm-photo__pie--cargada]="!!fuente()" (click)="capturar.emit()">
-        <lm-icono [nombre]="fuente() ? 'cached' : 'add_a_photo'" [tamano]="16" />
-        {{ fuente() ? 'Reemplazar foto' : etiqueta() }}
+      @if (fuente() || !sinRotulo()) {
+      <button
+        type="button"
+        class="lm-photo__pie"
+        [class.lm-photo__pie--cargada]="!!fuente()"
+        [attr.aria-label]="fuente() ? 'Reemplazar la foto' : null"
+        (click)="capturar.emit()"
+      >
+        @if (fuente()) {
+          <lm-icono nombre="cached" [tamano]="34" />
+        } @else {
+          <lm-icono nombre="add_a_photo" [tamano]="16" />
+          {{ etiqueta() }}
+        }
       </button>
+      }
       @if (error()) {
         <span class="lm-field__error" style="margin-top:0">
           <lm-icono nombre="error" [tamano]="16" />
@@ -143,37 +155,61 @@ export class AreaComponent {
   styles: [':host{display:block}'],
 })
 export class FotoComponent {
-  protected readonly Math = Math;
   readonly fuente = input<string | null>(null);
   readonly etiqueta = input('Foto con cámara');
-  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('ovalo');
+  /**
+   * Círculo por omisión: toda foto de persona —registro y perfil— va redonda y
+   * llena. El óvalo quedó como opción porque alguna pantalla vieja lo pide por
+   * nombre, pero ninguna foto de cara debería usarlo: deformaba el rostro.
+   */
+  readonly forma = input<'circulo' | 'rectangulo' | 'ovalo'>('circulo');
   readonly tamano = input(140, { transform: (v: any) => Number(v) || 140 });
   readonly error = input<string | null>(null);
+  /** Sin el botón de texto debajo: el marco solo ya invita a sacar la foto. */
+  readonly sinRotulo = input(false, { transform: booleanAttribute });
   readonly capturar = output<void>();
+
+  /**
+   * El marco de la foto ocupaba 140px clavados: sumado al recuadro de la cámara
+   * y al pie, en un equipo de 320px se comía la mitad del formulario. El tamaño
+   * pedido pasa a ser el techo, y `proporcion` es lo que el óvalo angosta.
+   */
+  protected medida(proporcion: number): string {
+    const techo = this.tamano() * proporcion;
+    return `clamp(${Math.round(techo * 0.73)}px, ${(techo / 4.3).toFixed(1)}vw, ${Math.round(techo)}px)`;
+  }
 }
 
-/** Acceso destacado al escaneo del código del documento, arriba del formulario. */
+/**
+ * Acceso al escaneo del código del documento. Es un mosaico cuadrado, sólo
+ * con el ícono y un rótulo corto, para ir en la misma fila que la foto.
+ */
 @Component({
   selector: 'lm-tarjeta-escaneo',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent],
   template: `
-    <button type="button" class="lm-qrscan" [class.lm-qrscan--scanning]="escaneando()" (click)="escanear.emit()">
+    <button
+      type="button"
+      class="lm-qrscan"
+      [class.lm-qrscan--scanning]="escaneando()"
+      [attr.aria-label]="escaneando() ? 'Escaneando…' : titulo()"
+      (click)="escanear.emit()"
+    >
       <span class="lm-qrscan__icono">
-        <lm-icono nombre="qr_code_scanner" [tamano]="26" color="var(--text-on-primary)" />
+        <lm-icono nombre="document_scanner" tamano="clamp(26px, 8.4vw, 36px)" color="var(--text-on-primary)" />
       </span>
       <span class="lm-qrscan__texto">
         <b>{{ escaneando() ? 'Escaneando…' : titulo() }}</b>
-        <small>{{ escaneando() ? 'Sostené el documento dentro del marco' : ayuda() }}</small>
       </span>
-      <lm-icono nombre="chevron_right" [tamano]="22" color="var(--action-primary)" />
     </button>
   `,
   styles: [':host{display:block}'],
 })
 export class TarjetaEscaneoComponent {
-  readonly titulo = input('Escanear el código del documento');
-  readonly ayuda = input('Completá los datos automáticamente');
+  readonly titulo = input('Escanear documento');
+  /** Se conserva por compatibilidad: el mosaico ya no muestra texto de ayuda. */
+  readonly ayuda = input('');
   readonly escaneando = input(false, { transform: booleanAttribute });
   readonly escanear = output<void>();
 }
@@ -251,9 +287,22 @@ export class FiltrosComponent {
     @if (etiqueta()) {
       <span class="lm-label" style="margin-bottom:6px">{{ etiqueta() }}</span>
     }
-    <div class="lm-segmented" [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',1fr)'">
+    <!-- Columnas con mínimo cero: de lo contrario ninguna baja del ancho de su
+         propio rótulo y el control entero se sale de la pantalla. -->
+    <!-- Sólo el de vidrio (filtros) desliza la pastilla; en los formularios
+         la opción elegida se pinta y crece desde adentro, igual en todos. -->
+    <div
+      class="lm-segmented"
+      [class.lm-segmented--desliza]="vidrio() && opciones().length <= (columnas() ?? opciones().length)"
+      [style.grid-template-columns]="'repeat(' + (columnas() ?? opciones().length) + ',minmax(0,1fr))'"
+      [style.--n]="opciones().length"
+      [class.lm-segmented--sin]="indice() < 0"
+      [class.lm-segmented--vidrio]="vidrio()"
+      [style.--i]="Math.max(0, indice())"
+    >
+      <span class="lm-segmented__marca" aria-hidden="true"></span>
       @for (opcion of opciones(); track opcion.valor) {
-        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
+        <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(desactivable() && opcion.valor === valor() ? '' : opcion.valor)">
           {{ opcion.rotulo }}
         </button>
       }
@@ -262,11 +311,21 @@ export class FiltrosComponent {
   styles: [':host{display:block}'],
 })
 export class SegmentadoComponent {
+  protected readonly Math = Math;
+  /** Tocar de nuevo la opción activa la apaga: sin opción activa no se filtra. */
+  readonly desactivable = input(false, { transform: booleanAttribute });
+  /** Mismo aspecto que las pestañas: transparente, con la pastilla blanca. */
+  readonly vidrio = input(false, { transform: booleanAttribute });
   readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
   readonly valor = input.required<string>();
   readonly etiqueta = input<string | null>(null);
   readonly columnas = input<number | null>(null);
   readonly cambiar = output<string>();
+
+  /** Posición de la opción activa: la pastilla se desliza hasta ahí. */
+  protected indice(): number {
+    return this.opciones().findIndex((o) => o.valor === this.valor());
+  }
 }
 
 /** Interruptor de disponibilidad. Fila completa táctil. */

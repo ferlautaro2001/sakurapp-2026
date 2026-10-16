@@ -28,87 +28,56 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
-        <lm-titulo [bajada]="bajada()">{{ titulo() }}</lm-titulo>
+        @if (!esperando()) {
+          <lm-titulo>{{ titulo() }}</lm-titulo>
+        }
 
         @if (esperando()) {
+          <!-- El lugar real del comensal en la fila. -->
           <div class="turno">
-            <span class="turno__rotulo">Personas delante tuyo</span>
-            <span class="turno__numero">{{ delante() }}</span>
-            <span class="turno__mensaje">{{ mensajeFila() }}</span>
-            <span class="turno__pie">
-              <lm-icono nombre="schedule" [tamano]="15" color="var(--action-primary)" />
-              Llegaste a las {{ horaLlegada() }} · sos el número {{ posicion() }} de la fila
-            </span>
-          </div>
-
-          <div class="lm-vidrio pasos">
-            <span class="paso">
-              <lm-icono nombre="person_pin" [tamano]="19" color="#FFFFFF" />
-              El metre te asigna una mesa según la cantidad de comensales.
-            </span>
-            <span class="paso">
-              <lm-icono nombre="qr_code_2" [tamano]="19" color="#FFFFFF" />
-              Cuando lo haga, esta pantalla te va a pedir que escanees su código.
-            </span>
+            <span class="turno__rotulo">Tu lugar en la fila es:</span>
+            <span class="turno__numero">{{ posicion() }}</span>
+            @if (posicion() === 1) {
+              <span class="turno__mensaje">¡Sos el próximo!</span>
+            }
+            <span class="turno__mensaje">En unos instantes el metre te asignará una mesa</span>
           </div>
         } @else if (numeroMesa(); as numero) {
           <div class="turno">
-            <span class="turno__rotulo">{{ vinculado() ? 'Estás en la mesa' : 'Te tocó la mesa' }}</span>
+            @if (vinculado()) {
+              <span class="turno__rotulo">Estás en la mesa</span>
+            }
             <span class="turno__numero">{{ numero }}</span>
-            <span class="turno__mensaje">
-              {{
-                vinculado()
-                  ? 'Listo, quedaste vinculado con tu mesa.'
-                  : 'Buscá ese número y escaneá el código pegado sobre la mesa.'
-              }}
-            </span>
             @if (mesa(); as m) {
-              <span class="turno__datos">
-                <span>
-                  <lm-icono nombre="group" [tamano]="15" />
-                  {{ m.cantidadComensales }} lugares
+              <!-- Dos fichas iguales debajo del número: capacidad y tipo, ícono + dato. -->
+              <span class="turno__fichas">
+                <span class="ficha ficha--fila" [attr.aria-label]="m.cantidadComensales + ' lugares'">
+                  <lm-icono nombre="group" [tamano]="30" />
+                  <b>{{ m.cantidadComensales }}</b>
                 </span>
-                <span>
-                  <lm-icono [nombre]="iconoTipo(m.tipo)" [tamano]="15" />
-                  {{ rotuloTipo(m.tipo) }}
+                <span class="ficha">
+                  <lm-icono [nombre]="iconoTipo(m.tipo)" [tamano]="30" />
+                  <b>{{ rotuloTipo(m.tipo) }}</b>
                 </span>
-                <lm-chip [estado]="vinculado() ? 'ocupada' : 'reservada'">
-                  {{ vinculado() ? 'Ocupada por vos' : 'Reservada para vos' }}
-                </lm-chip>
               </span>
             }
           </div>
 
-          <div class="lm-vidrio pasos">
-            <span class="paso">
-              <lm-icono [nombre]="vinculado() ? 'insights' : 'qr_code_scanner'" [tamano]="19" color="#FFFFFF" />
-              {{
-                vinculado()
-                  ? 'Mientras esperás la atención, podés mirar los resultados de las encuestas anteriores.'
-                  : 'Sólo sirve el código de la mesa ' + numero + ': si escaneás otra, te lo vamos a avisar.'
-              }}
-            </span>
-          </div>
         }
       </div>
 
       @if (estado() === 'ASIGNADO') {
         <div class="lm-actionbar">
-          <lm-boton icono="qr_code_scanner" (presionar)="escanearMesa()">Escanear el código de mi mesa</lm-boton>
+          <lm-boton icono="document_scanner" (presionar)="escanearMesa()">Escanear el código de mi mesa</lm-boton>
         </div>
       } @else if (esperando()) {
         <div class="lm-actionbar">
           <lm-boton icono="refresh" (presionar)="actualizar()">Actualizar mi lugar</lm-boton>
         </div>
-      } @else if (vinculado() && entrada()?.mesaAsignadaId) {
-        <div class="lm-actionbar lm-actionbar--split">
-          <lm-boton icono="restaurant_menu" (presionar)="irCarta()">Explorar la carta</lm-boton>
-          <lm-boton icono="chat" (presionar)="abrirChatMozo()">Consulta al mozo</lm-boton>
-        </div>
       }
 
       @if (modalErrorMesa(); as err) {
-        <lm-modal
+        <lm-modal animate.leave="sk-modal-host-sale"
           titulo="Mesa incorrecta"
           [mensaje]="err.mensaje"
           rotuloConfirmar="Entendido"
@@ -135,13 +104,14 @@ import { QrService } from '../../nucleo/servicios/qr.service';
         flex: 1 1 auto;
         min-height: 0;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
-        padding: 16px 18px; text-align: center;
+        padding: var(--space-4) var(--space-5); text-align: center;
         border-radius: var(--radius-card); background: var(--surface-card);
         box-shadow: var(--shadow-raised);
         position: relative; overflow: hidden;
       }
       .turno::before {
-        content: ""; position: absolute; top: -24px; right: -24px; width: 112px; height: 112px;
+        content: ""; position: absolute; top: calc(-1 * var(--space-6)); right: calc(-1 * var(--space-6));
+        width: clamp(80px, 26vw, 112px); height: clamp(80px, 26vw, 112px);
         background: url("/assets/img/flor-2.png") center / contain no-repeat; opacity: .28;
       }
       .turno__rotulo {
@@ -150,18 +120,31 @@ import { QrService } from '../../nucleo/servicios/qr.service';
       }
       .turno__numero {
         font-family: var(--font-numeric); font-weight: 900; line-height: 1;
-        font-size: clamp(56px, 17vh, 104px);
+        /* El número manda en la ficha, pero no puede ser más ancho que un
+           cuarto de pantalla: en los equipos angostos y altos, el alto solo lo
+           dejaba crecer hasta desbordar a lo ancho. */
+        font-size: clamp(56px, min(17dvh, 26vw), 104px);
         color: var(--action-primary);
       }
       .turno__mensaje { font: var(--type-section); color: var(--text-title); text-wrap: balance; }
-      .turno__pie, .turno__datos {
+      .turno__pie {
         display: flex; align-items: center; justify-content: center; gap: 6px; flex-wrap: wrap;
         font: var(--type-caption); color: var(--text-muted);
       }
-      .turno__datos { gap: 12px; font: var(--type-body-small); margin-top: 2px; }
-      .turno__datos > span { display: inline-flex; align-items: center; gap: 5px; }
-      .pasos { display: flex; flex-direction: column; gap: 9px; padding: 13px 14px; }
+      .pasos { display: flex; flex-direction: column; gap: 9px; padding: var(--space-4); }
       .paso { display: flex; gap: 9px; align-items: flex-start; font: var(--type-body-small); color: var(--text-sobre-fondo); text-wrap: pretty; }
+      .turno__fichas { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 320px; }
+      .ficha {
+        display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 14px 8px;
+        border-radius: 18px; color: var(--action-primary);
+        background: linear-gradient(180deg, rgba(255, 255, 255, .85) 0%, rgba(255, 215, 223, .8) 100%);
+        border: 1.5px solid rgba(255, 79, 139, .45);
+        box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .14);
+      }
+      .ficha b { font: 800 20px/1.1 var(--font-text); color: var(--text-title); }
+      .ficha { justify-content: center; }
+      .ficha--fila { flex-direction: row; gap: 8px; }
+      .ficha--fila b { font-size: 26px; }
     `,
   ],
 })
@@ -214,27 +197,16 @@ export class ClienteEsperaPage extends PaginaConSesion {
 
   protected titulo(): string {
     if (this.vinculado()) return 'Tu mesa';
-    if (this.estado() === 'ASIGNADO') return 'Ya tenés mesa';
+    if (this.estado() === 'ASIGNADO') return 'Mesa asignada';
     return 'Esperando tu mesa';
   }
 
-  protected bajada(): string {
-    if (this.vinculado()) return 'Quedaste vinculado con la mesa que te asignó el metre';
-    if (this.estado() === 'ASIGNADO') return 'Escaneá el código de tu mesa para vincularte';
-    return 'Ya estás anotado en la lista de espera del salón';
-  }
 
   protected mensajeFila(): string {
     const delante = this.delante();
     if (delante === 0) return '¡Sos el próximo!';
     if (delante === 1) return 'Hay una persona delante tuyo.';
     return `Hay ${delante} personas delante tuyo.`;
-  }
-
-  protected horaLlegada(): string {
-    const entrada = this.entrada();
-    if (!entrada) return '—';
-    return new Date(entrada.timestamp).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
   }
 
   protected rotuloTipo(tipo: TipoMesa): string {

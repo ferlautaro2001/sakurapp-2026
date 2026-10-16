@@ -1,5 +1,7 @@
+import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 import { guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
+import { SesionService } from './nucleo/servicios/sesion.service';
 
 /**
  * Rutas de SakurApp agrupadas por rol y flujo de trabajo.
@@ -77,11 +79,6 @@ export const routes: Routes = [
     redirectTo: 'dueno/registros',
     pathMatch: 'full',
   },
-  {
-    path: 'admin/alta-empleado',
-    redirectTo: 'dueno/alta-empleado',
-    pathMatch: 'full',
-  },
 
   // --- mesas: dueño, supervisor, metre y mozo ---
   {
@@ -136,6 +133,12 @@ export const routes: Routes = [
       },
       {
         path: 'alta-bebida',
+        canActivate: [guardiaPerfil('CANTINERO')],
+        loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
+      },
+      {
+        path: ':id/editar',
+        canMatch: [() => inject(SesionService).tienePerfil('CANTINERO')],
         canActivate: [guardiaPerfil('CANTINERO')],
         loadComponent: () => import('./pantallas/cantinero/alta-bebida.page').then((m) => m.AltaBebidaPage),
       },

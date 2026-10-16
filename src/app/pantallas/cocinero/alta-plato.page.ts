@@ -33,7 +33,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
             : (esPostre() ? 'Nuevo postre' : 'Nuevo plato')
         "
         conVolver
-        (volver)="ir(['/carta'])"
+        (volver)="ir(rutaCarta)"
       />
 
       <div class="lm-body lm-body--gap14">
@@ -52,6 +52,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
 
         <lm-segmentado
           etiqueta="Categoría"
+          vidrio
           [opciones]="tiposProducto"
           [valor]="tipoProducto()"
           [columnas]="2"
@@ -73,14 +74,15 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
           "
         />
 
-        <lm-campo
+        <lm-area
           [control]="formulario.controls.descripcion"
           icono="notes"
           etiqueta="Descripción"
+          [filas]="2"
           [marcador]="
             esPostre()
-              ? 'Sabores, ingredientes y forma de presentación'
-              : 'Ingredientes y forma de presentación'
+              ? 'Helado artesanal'
+              : 'Milanesa'
           "
         />
 
@@ -102,18 +104,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
           [largoMaximo]="3"
         />
 
-        <section aria-labelledby="titulo-fotos">
-          <span
-            id="titulo-fotos"
-            class="lm-label"
-          >
-            {{
-              esPostre()
-                ? 'Fotos del postre - tres obligatorias'
-                : 'Fotos del plato - tres obligatorias'
-            }}
-          </span>
-
+        <section aria-label="Fotos del plato">
           <div class="fotos">
             @for (indice of [0, 1, 2]; track indice) {
               <lm-foto
@@ -139,11 +130,6 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
               />
 
               {{ errorFotos() }}
-            </span>
-          } @else {
-            <span class="lm-field__hint">
-              Podés tomar cada foto con la cámara o elegirla de la galería.
-              Cada imagen puede reemplazarse por separado.
             </span>
           }
         </section>
@@ -175,7 +161,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 14px;
+        padding: var(--space-4);
         font: var(--type-body-small);
         color: var(--text-body);
       }
@@ -190,6 +176,25 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
       .fotos lm-foto {
         min-width: 0;
       }
+
+      /* Tres columnas en un equipo de 320 dejan cada foto en unos 90px: con
+         el alto clavado en 104px la casilla quedaba más alta que ancha y el
+         renglón desparejo. Con proporción cuadrada cada una crece y se encoge
+         con su columna. El !important es para ganarle al alto en píxeles que
+         lm-foto escribe en el estilo del elemento. */
+      .fotos ::ng-deep .lm-photo__marco--rect {
+        height: auto !important;
+        aspect-ratio: 1 / 1;
+      }
+
+      /* Casilla vacía: sólo la cámara, sin el rótulo "Foto del plato N". */
+      .fotos ::ng-deep .lm-photo__pie:not(.lm-photo__pie--cargada) {
+        display: none;
+      }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
+      .lm-body { justify-content: space-between; }
     `,
   ],
 })
@@ -204,6 +209,9 @@ export class AltaPlatoPage extends PaginaConSesion {
 
   protected readonly editando =
     this.idProducto !== null;
+
+  /* Al editar se vuelve al detalle del producto, no a la lista de la carta. */
+  protected readonly rutaCarta = this.idProducto ? ['/carta', this.idProducto] : ['/carta'];
 
   protected readonly tipoProducto = signal<TipoProducto>('COMIDA');
   
@@ -404,7 +412,7 @@ protected async guardar(): Promise<void> {
       : `¿Agregás este ${nombreTipo}?`,
     mensaje: this.editando
       ? 'Los cambios se actualizarán en la carta.'
-      : `El ${nombreTipo} estará disponible en la carta.`,
+      : '',
     confirmar: this.editando
       ? 'Guardar cambios'
       : `Agregar ${nombreTipo}`,
@@ -481,7 +489,7 @@ protected async guardar(): Promise<void> {
     this.errorFotos.set(null);
     this.resumenError.set(null);
 
-    this.ir(['/carta']);
+    this.ir(this.rutaCarta);
   } catch (error) {
     console.error(
       'No se pudo guardar el producto:',

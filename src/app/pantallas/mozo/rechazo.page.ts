@@ -12,6 +12,7 @@ import {
   requerido,
 } from '../../nucleo/validacion/validadores';
 import { UI } from '../../ui';
+import { MarcaFicha } from '../../ui/basicos';
 import { PaginaConSesion } from '../pagina-base';
 
 /**
@@ -48,8 +49,7 @@ import { PaginaConSesion } from '../pagina-base';
               <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
             </span>
             <div class="mesa__datos">
-              <b>Mesa {{ p.mesaNumero }}</b>
-              <small>Pedido de {{ p.clienteNombre }}</small>
+              <b>Mesa {{ p.mesaNumero }} - {{ p.clienteNombre }}</b>
             </div>
           </div>
 
@@ -62,15 +62,15 @@ import { PaginaConSesion } from '../pagina-base';
           <div class="lm-card leyenda">
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cantidad">
-                <lm-icono nombre="warning" [tamano]="16" color="#FFFFFF" />
+                <lm-icono nombre="warning" [tamano]="30" color="#FFFFFF" />
               </i>
-              Hay, pero menos de lo pedido: tiene que bajar la cantidad.
+              Bajo stock
             </span>
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cambiar">
-                <lm-icono nombre="block" [tamano]="16" color="#FFFFFF" />
+                <lm-icono nombre="block" [tamano]="30" color="#FFFFFF" />
               </i>
-              No lo podés preparar: tiene que sacarlo o cambiarlo.
+              Agotado
             </span>
           </div>
 
@@ -149,11 +149,9 @@ import { PaginaConSesion } from '../pagina-base';
           </label>
         </div>
 
-        <div class="lm-actionbar">
-          <lm-boton variante="ghost" icono="edit_note" (presionar)="rechazar()">
-            Devolver el pedido
-          </lm-boton>
-          <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
+        <div class="lm-actionbar acciones">
+          <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
+          <lm-boton variante="success" icono="edit_note" (presionar)="rechazar()">Devolver el pedido</lm-boton>
         </div>
       } @else {
         <div class="lm-body">
@@ -169,28 +167,58 @@ import { PaginaConSesion } from '../pagina-base';
   `,
   styles: [
     `
+      /* Cancelar y devolver lado a lado, con el aro de vidrio del botón de volver. */
+      .acciones { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+      .acciones ::ng-deep .lm-btn {
+        background-clip: padding-box !important;
+        border: 1.5px solid rgba(255, 255, 255, .5) !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .55),
+          inset 0 -6px 12px rgba(255, 255, 255, .06),
+          0 4px 10px rgba(94, 12, 44, .16) !important;
+      }
       :host {
         display: flex;
         flex: 1;
         min-height: 0;
       }
 
+      /* La comanda corta dejaba media pantalla de color vacía abajo. Con los
+         márgenes automáticos el aire sobrante se reparte arriba y abajo, y
+         cuando la comanda es larga se resuelven en cero solos: el
+         desplazamiento sigue arrancando en el primer renglón en vez de
+         recortarlo, que es lo que pasaría con justify-content. */
+      .lm-body > :first-child {
+        margin-top: auto;
+      }
+
+      .lm-body > :last-child {
+        margin-bottom: auto;
+      }
+
       .mesa {
         display: flex;
         align-items: center;
-        gap: 12px;
-        padding: 14px;
+        gap: var(--space-3);
+        padding: var(--space-4);
       }
 
       .mesa__icono {
         display: grid;
         flex: 0 0 auto;
-        width: 44px;
-        height: 44px;
+        width: var(--touch-min);
+        min-height: var(--touch-min);
         place-items: center;
         border-radius: 14px;
         background: var(--surface-sunken);
       }
+
+      /* El título ocupa todo el ancho que deja el ícono y va centrado; el ícono
+         se equilibra con un hueco del mismo ancho a la derecha. */
+      .mesa { align-items: center; justify-content: center; }
+      .mesa::after { content: ''; flex: 0 0 var(--touch-min); }
+      .mesa__datos { flex: 1 1 auto; min-width: 0; text-align: center; }
+      .mesa__datos b { text-wrap: balance; overflow-wrap: anywhere; }
 
       .mesa__datos b {
         display: block;
@@ -205,16 +233,19 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .leyenda {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
         gap: 10px;
-        padding: 14px;
+        padding: var(--space-4);
       }
 
       .leyenda__item {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
+        text-align: center;
+        font-weight: 800;
         color: var(--text-body);
         font: var(--type-body-small);
         text-wrap: pretty;
@@ -224,8 +255,8 @@ import { PaginaConSesion } from '../pagina-base';
       .leyenda__sello {
         display: grid;
         flex: 0 0 auto;
-        width: 26px;
-        height: 26px;
+        width: 56px;
+        height: 56px;
         place-items: center;
         border-radius: 50%;
       }
@@ -244,7 +275,7 @@ import { PaginaConSesion } from '../pagina-base';
         align-items: center;
         gap: 10px;
         overflow: hidden;
-        padding: 10px 12px;
+        padding: 10px var(--space-3);
         border-radius: var(--radius-card);
         background: var(--surface-card);
         box-shadow: var(--shadow-card);
@@ -254,7 +285,7 @@ import { PaginaConSesion } from '../pagina-base';
          tinte del fondo tiene que quedarse claro para no tapar el texto. */
       .marcar--cantidad,
       .marcar--cambiar {
-        padding-left: 30px;
+        padding-left: clamp(24px, 7vw, 30px);
       }
 
       /* Bandita diagonal cruzando la esquina de arriba a la izquierda, de
@@ -295,22 +326,24 @@ import { PaginaConSesion } from '../pagina-base';
         flex: 1 1 auto;
       }
 
+      /* Un escalón por encima del resto de las tarjetas de la aplicación: esta
+         lista se lee de parado, con el teléfono a la altura de la cintura. */
       .marcar__datos b {
         display: block;
         color: var(--text-title);
-        font: var(--type-card-title);
+        font: var(--type-section);
         text-wrap: pretty;
       }
 
       .marcar__datos small {
         display: block;
         color: var(--text-muted);
-        font: var(--type-caption);
+        font: var(--type-body-small);
       }
 
       .marcar__rotulo {
         display: block;
-        font: var(--type-caption);
+        font: var(--type-body-small);
         font-weight: 800;
       }
 
@@ -330,10 +363,13 @@ import { PaginaConSesion } from '../pagina-base';
 
       /* Apagados van en borde; encendidos, en color pleno. Así se ve de un
          vistazo cuáles marcó, sin tener que leer. */
+      /* Los dos sellos son lo único que se toca en esta pantalla y están
+         pegados uno al otro: no bajan del área táctil mínima ni cuando el
+         nombre del producto pide todo el ancho. */
       .marca {
         display: grid;
-        width: 40px;
-        height: 40px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         place-items: center;
         border-radius: 50%;
         background: var(--surface-card);
@@ -369,15 +405,22 @@ import { PaginaConSesion } from '../pagina-base';
         padding-top: 10px;
       }
 
+      /* El motivo viaja tal cual al teléfono del comensal y se revisa antes de
+         mandarlo: se escribe y se relee con el mismo cuerpo del texto de
+         lectura, no con el del pie de una tarjeta. */
       .motivo textarea {
         width: 100%;
         min-height: 76px;
         border: 0;
         background: transparent;
         color: var(--text-title);
-        font: inherit;
+        font: var(--type-body-medium);
         resize: none;
         outline: none;
+      }
+
+      .motivo .lm-field__hint {
+        font: var(--type-body-small);
       }
     `,
   ],
@@ -455,17 +498,26 @@ export class MozoRechazoPage extends PaginaConSesion {
       }));
   }
 
-  /** Lo marcado, en una línea por renglón, para la ficha del modal. */
-  private resumenMarcado(): string {
+  /**
+   * Lo marcado, un renglón por producto, para la ficha del modal.
+   *
+   * Cada uno lleva el mismo sello que tenía su tarjeta acá arriba —amarillo
+   * con la advertencia, rojo con el bloqueo—, así el mozo reconoce de un
+   * vistazo lo que acaba de marcar en vez de releer una lista separada por
+   * comas.
+   */
+  private marcasAfectadas(): MarcaFicha[] {
     const p = this.pedido();
-    if (!p) return '';
-    return this.observaciones()
-      .map((observacion) => {
-        const nombre =
-          p.items.find((item) => item.productoId === observacion.productoId)?.productoNombre ?? '';
-        return `${nombre} (${ROTULO_MARCA_MOZO[observacion.marca].toLowerCase()})`;
-      })
-      .join(', ');
+    if (!p) return [];
+    return this.observaciones().map((observacion) => {
+      const nombre =
+        p.items.find((item) => item.productoId === observacion.productoId)?.productoNombre ?? '';
+      return {
+        icono: observacion.marca === 'CANTIDAD' ? 'warning' : 'block',
+        tono: observacion.marca === 'CANTIDAD' ? ('pendiente' as const) : ('peligro' as const),
+        texto: `${nombre} · ${ROTULO_MARCA_MOZO[observacion.marca].toLowerCase()}`,
+      };
+    });
   }
 
   protected async rechazar(): Promise<void> {
@@ -486,7 +538,16 @@ export class MozoRechazoPage extends PaginaConSesion {
     }
 
     const motivo = this.formulario.controls.motivo.value.trim();
-    const marcado = this.resumenMarcado();
+    const marcado = this.marcasAfectadas();
+
+    const detalleConIconos = [
+      { rotulo: 'Mesa', valor: String(p.mesaNumero), icono: 'table_restaurant' },
+      { rotulo: 'Comensal', valor: p.clienteNombre, icono: 'person' },
+      ...(marcado.length
+        ? [{ rotulo: 'Afectados', valor: '', icono: 'remove_shopping_cart', marcas: marcado }]
+        : []),
+      { rotulo: 'Motivo', valor: motivo, icono: 'notes' },
+    ];
 
     const seguro = await this.preguntar({
       titulo: '¿Devolvés el pedido?',
@@ -495,12 +556,10 @@ export class MozoRechazoPage extends PaginaConSesion {
       confirmar: 'Devolver',
       tono: 'peligro',
       icono: 'edit_note',
-      detalle: [
-        { rotulo: 'Mesa', valor: String(p.mesaNumero) },
-        { rotulo: 'Comensal', valor: p.clienteNombre },
-        ...(marcado ? [{ rotulo: 'Afectados', valor: marcado }] : []),
-        { rotulo: 'Motivo', valor: motivo },
-      ],
+      // Cuatro renglones de texto plano se leen como un párrafo. El ícono de
+      // cada uno dice de qué habla la fila antes de leer el rótulo, que es lo
+      // que hace falta cuando se confirma algo que no tiene vuelta atrás.
+      detalle: detalleConIconos,
     });
     if (!seguro) return;
 

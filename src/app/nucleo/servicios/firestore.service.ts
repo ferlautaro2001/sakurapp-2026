@@ -16,7 +16,7 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario } from '../modelos/modelos';
+import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
 import {
   AlcanceRechazo,
   EstadoMesa,
@@ -262,6 +262,7 @@ export class FirestoreService {
             cantidadComensales: Number(data['cantidadComensales']) || 2,
             tipo: (data['tipo'] as TipoMesa) || 'ESTANDAR',
             estado: (data['estado'] as EstadoMesa) || 'VACIA',
+            clienteActualId: data['clienteActualId'] || null,
             fotoUrl: data['fotoUrl'] || undefined,
             qrCodeUrl: data['qrCodeUrl'] || undefined,
           });
@@ -311,6 +312,8 @@ export class FirestoreService {
       await updateDoc(mesaRef, {
         estado,
         estadoActualizadoEn: new Date().toISOString(),
+        // Una mesa liberada ya no tiene comensal asignado; si no, el metre no la vería más.
+        ...(estado === 'VACIA' ? { clienteActualId: null, clienteActualUid: null, reservaEsperaId: null } : {}),
       });
       console.log(`✅ Estado de mesa ${mesaId} actualizado a ${estado} en Firestore`);
     } catch (err) {
@@ -337,8 +340,18 @@ export class FirestoreService {
       const mesaDoc = await transaction.get(mesaRef);
       if (mesaDoc.exists()) {
         const mesaData = mesaDoc.data();
-        if (mesaData['estado'] !== 'VACIA' || mesaData['clienteActualId']) {
+        if (mesaData['estado'] !== 'VACIA') {
           throw new Error(`La mesa ${mesaNumero} ya no se encuentra libre.`);
+        }
+        // Un clienteActualId en una mesa VACIA sólo la bloquea si es una
+        // reserva viva: la entrada que la reservó sigue ASIGNADO. Los que
+        // quedaron de visitas viejas (sin reservaEsperaId) no cuentan.
+        const reservaId = mesaData['reservaEsperaId'];
+        if (reservaId && reservaId !== esperaId) {
+          const reserva = await transaction.get(doc(db, 'listaEspera', reservaId));
+          if (reserva.exists() && reserva.data()['estado'] === 'ASIGNADO') {
+            throw new Error(`La mesa ${mesaNumero} ya está reservada para otro comensal.`);
+          }
         }
       }
 
@@ -353,6 +366,7 @@ export class FirestoreService {
       transaction.update(mesaRef, {
         clienteActualId: clienteId,
         clienteActualUid: clienteUid,
+        reservaEsperaId: esperaId,
         asignadaEn: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       });
@@ -450,6 +464,43 @@ export class FirestoreService {
       console.log(`✅ Producto ${productoId} actualizado en Firestore`);
     } catch (err) {
       console.warn('⚠️ Error actualizando producto en Firestore:', err);
+    }
+  }
+
+  /** Mantiene sincronizados en tiempo real los pedidos operativos del salón. */
+  escucharCorreos(callback: (correos: CorreoEnviado[]) => void): Unsubscribe {
+    const colRef = collection(this.obtenerDb(), 'correos');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const correos = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: String(data['id'] ?? docSnap.id),
+              para: String(data['para'] ?? ''),
+              asunto: String(data['asunto'] ?? ''),
+              plantilla: (data['plantilla'] as CorreoEnviado['plantilla']) || 'REGISTRO_RECIBIDO',
+              cuerpoHtml: String(data['cuerpoHtml'] ?? ''),
+              enviadoEn: String(data['enviadoEn'] ?? ''),
+              entregado: data['entregado'] === true,
+              detalle: String(data['detalle'] ?? ''),
+            } as CorreoEnviado;
+          })
+          .sort((a, b) => b.enviadoEn.localeCompare(a.enviadoEn));
+        callback(correos);
+      },
+      (error) => console.warn('⚠️ Error en listener de correos Firestore:', error),
+    );
+  }
+
+  /** Publica un correo enviado para que todos los dispositivos lo vean. */
+  async guardarCorreo(correo: CorreoEnviado): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      await setDoc(doc(db, 'correos', correo.id), { ...correo }, { merge: true });
+    } catch (err) {
+      console.warn('⚠️ Error al sincronizar correo en Firestore:', err);
     }
   }
 

@@ -38,6 +38,7 @@ export class AlmacenService {
   private desuscribirUsuarios?: () => void;
   private desuscribirMesas?: () => void;
   private desuscribirProductos?: () => void;
+  private desuscribirCorreos?: () => void;
 
   async iniciar(sembrar: () => Promise<Semilla> | Semilla): Promise<void> {
     if (this.iniciado) return;
@@ -217,6 +218,28 @@ export class AlmacenService {
             }
           }
         });
+
+        this.desuscribirCorreos = this.firestore.escucharCorreos((listaFirestoreCorreos) => {
+          if (listaFirestoreCorreos.length > 0) {
+            this.correos.update((actuales) => {
+              const mapa = new Map<string, CorreoEnviado>();
+              for (const c of actuales) mapa.set(c.id, c);
+              for (const c of listaFirestoreCorreos) {
+                const previo = mapa.get(c.id);
+                mapa.set(c.id, { ...previo, ...c });
+              }
+              const combinados = Array.from(mapa.values())
+                .sort((a, b) => b.enviadoEn.localeCompare(a.enviadoEn))
+                .slice(0, 50);
+              void this.guardar(CLAVE.correos, combinados);
+              return combinados;
+            });
+          } else if (correosCargados.length > 0) {
+            for (const c of correosCargados) {
+              void this.firestore.guardarCorreo(c);
+            }
+          }
+        });
       } catch (fsErr) {
         console.warn('⚠️ No se pudo iniciar escucha en tiempo real de Firestore:', fsErr);
       }
@@ -282,9 +305,11 @@ export class AlmacenService {
     this.desuscribirUsuarios?.();
     this.desuscribirMesas?.();
     this.desuscribirProductos?.();
+    this.desuscribirCorreos?.();
     this.desuscribirUsuarios = undefined;
     this.desuscribirMesas = undefined;
     this.desuscribirProductos = undefined;
+    this.desuscribirCorreos = undefined;
     this.iniciado = false;
     this.inicioEnCurso = undefined;
   }

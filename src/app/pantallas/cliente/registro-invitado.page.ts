@@ -22,7 +22,7 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
       <lm-encabezado titulo="Ingresar como invitado" conVolver (volver)="volver()" />
 
       <div class="lm-body">
-        <lm-titulo bajada="Sin aprobación: entrás directo">
+        <lm-titulo>
           Registro rápido
         </lm-titulo>
 
@@ -30,9 +30,16 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
           <lm-banner tono="error" titulo="Faltan datos">{{ resumenError() }}</lm-banner>
         }
 
+        <!--
+          Círculo y no óvalo: es la foto con la que el salón reconoce a la
+          persona, y el mismo recorte redondo que usa el avatar en el resto de
+          la aplicación. El óvalo la estiraba y hacía ver el ícono de la cámara
+          corrido dentro del marco.
+        -->
         <lm-foto
+          forma="circulo"
           [fuente]="foto()"
-          [tamano]="148"
+          [tamano]="230"
           etiqueta="Foto con cámara"
           [error]="errorFoto()"
           (capturar)="tomarFoto()"
@@ -40,20 +47,48 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombre" marcador="Cómo te llamamos" />
 
-        <lm-separador />
-        <p class="lm-parrafo">
-          La foto se utiliza para reconocerte en el restaurante. Si querés guardar tus datos permanentemente,
-          registrate con una cuenta completa.
-        </p>
+        <!--
+          El separador va con el pétalo de la marca: los tres cortes al bies
+          sueltos, a este tamaño, se leían como un glifo roto y no como un
+          remate.
+        -->
       </div>
 
-      <div class="lm-actionbar">
-        <lm-boton icono="how_to_reg" (presionar)="ingresar()">Ingresar como invitado</lm-boton>
-        <lm-texto-boton (presionar)="cuentaCompleta()">Quiero una cuenta completa</lm-texto-boton>
+      <div class="lm-actionbar lm-actionbar--split">
+        <lm-boton variante="danger" (presionar)="volver()">Volver</lm-boton>
+        <lm-boton variante="success" icono="how_to_reg" (presionar)="ingresar()">Ingresar</lm-boton>
       </div>
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host {
+        display: flex;
+        flex: 1;
+        min-height: 0;
+      }
+
+      /* El formulario son cuatro cosas y dejaba media pantalla de color vacía
+         abajo. Los márgenes automáticos reparten ese aire arriba y abajo y se
+         resuelven en cero cuando el teclado achica la pantalla, así el
+         desplazamiento sigue empezando por el título. */
+      /* Sin pie: el círculo ya abre la cámara. */
+      lm-foto ::ng-deep .lm-photo__pie { display: none; }
+
+      lm-foto {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Es la única explicación de la pantalla y la lee alguien que acaba de
+         entrar sin cuenta: va en el cuerpo de lectura, no en el de un pie. */
+      .lm-body .lm-parrafo {
+        font: var(--type-body);
+      }
+    `,
+  ],
 })
 export class RegistroInvitadoPage {
   private readonly fb = inject(FormBuilder);

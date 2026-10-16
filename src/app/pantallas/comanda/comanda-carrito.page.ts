@@ -33,14 +33,9 @@ import { PaginaConSesion } from '../pagina-base';
         }
       </lm-encabezado>
 
-      <div class="lm-body lm-body--gap12 contenido">
+      <div class="lm-body lm-body--gap12 contenido" [class.lm-body--pantalla]="!devuelto()">
         <lm-titulo
           [contador]="carrito.cantidadTotal()"
-          [bajada]="
-            corrigiendo()
-              ? 'Corregí lo que marcó el mozo y volvé a mandarlo'
-              : 'Modificá las cantidades antes de confirmar tu pedido'
-          "
         >
           Tu comanda
         </lm-titulo>
@@ -101,7 +96,7 @@ import { PaginaConSesion } from '../pagina-base';
         }
 
         @if (carrito.items().length) {
-          <div class="lista-carrito">
+          <div class="lista-carrito" [class.lm-lista-n]="!devuelto()">
             @for (
               item of carrito.items();
               track item.producto.id
@@ -238,35 +233,44 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .contenido {
-        padding-bottom: 12px;
+        padding-bottom: var(--space-3);
       }
 
       .mesa-activa {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 8px 12px;
+        max-width: 100%;
+        padding: var(--space-2) var(--space-3);
         border: 1px solid rgba(255, 255, 255, 0.72);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.18);
         color: #ffffff;
         font: var(--type-body-small);
         font-weight: 800;
-        white-space: nowrap;
       }
 
       .lista-carrito {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: var(--gap-list);
       }
+      /* En tandas, pero nunca de a tres: el renglón lleva foto, datos y el
+         contador de unidades, y en un tercio del alto no entra entero. */
+      .lista-carrito.lm-lista-n:has(> :nth-child(5)) { --por: 2; }
+      .lista-carrito.lm-lista-n .item-carrito { min-height: 0; overflow: hidden; --foto-item: clamp(48px, 7.5dvh, 76px); }
 
+      /* Foto y datos arriba, el contador de unidades en su propio renglón: en
+         un celular las tres columnas nunca entraban a lo ancho, y lo que antes
+         hacía la consulta de ancho ahora es el único acomodo posible. */
       .item-carrito {
+        --foto-item: clamp(56px, 17.7vw, 76px);
+
         display: grid;
-        grid-template-columns: 76px minmax(0, 1fr) auto;
+        grid-template-columns: var(--foto-item) minmax(0, 1fr);
         align-items: center;
-        gap: 12px;
-        padding: 12px;
+        gap: var(--space-3);
+        padding: var(--space-3);
         border-radius: var(--radius-card);
         background: var(--surface-card);
         box-shadow: var(--shadow-raised);
@@ -275,8 +279,8 @@ import { PaginaConSesion } from '../pagina-base';
       .item-carrito__foto {
         display: grid;
         place-items: center;
-        width: 76px;
-        height: 76px;
+        width: var(--foto-item);
+        height: var(--foto-item);
         overflow: hidden;
         border-radius: 14px;
         background: var(--surface-soft);
@@ -331,14 +335,14 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .devuelto {
-        padding: 14px;
+        padding: var(--space-4);
         border-left: 4px solid var(--state-error);
       }
 
       .devuelto__encabezado {
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: var(--space-3);
       }
 
       .devuelto__encabezado b {
@@ -354,7 +358,7 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .devuelto__motivo {
-        margin: 10px 0 0;
+        margin: var(--space-3) 0 0;
         color: var(--text-body);
         font: var(--type-body);
         text-wrap: pretty;
@@ -363,14 +367,14 @@ import { PaginaConSesion } from '../pagina-base';
       .leyenda {
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 14px;
+        gap: var(--space-3);
+        padding: var(--space-4);
       }
 
       .leyenda__item {
         display: flex;
         align-items: flex-start;
-        gap: 10px;
+        gap: var(--space-3);
         color: var(--text-body);
         font: var(--type-body-small);
         text-wrap: pretty;
@@ -409,15 +413,17 @@ import { PaginaConSesion } from '../pagina-base';
 
       .cantidad {
         display: grid;
-        grid-template-columns: 40px 34px 40px;
+        grid-column: 1 / -1;
+        grid-template-columns: var(--touch-min) minmax(34px, auto) var(--touch-min);
+        justify-content: end;
         align-items: center;
         text-align: center;
       }
 
       .cantidad button {
         display: grid;
-        width: 40px;
-        height: 40px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         place-items: center;
         border: 2px solid var(--action-primary);
         border-radius: 50%;
@@ -437,7 +443,7 @@ import { PaginaConSesion } from '../pagina-base';
 
       .cantidad strong {
         color: var(--text-title);
-        font-size: 18px;
+        font-size: clamp(16.2px, 4.2vw, 18px);
       }
 
       .sk-barra-total {
@@ -446,8 +452,8 @@ import { PaginaConSesion } from '../pagina-base';
         bottom: 0;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        padding: 14px 18px calc(14px + env(safe-area-inset-bottom));
+        gap: var(--space-3);
+        padding: var(--space-4) var(--gutter-screen) calc(var(--space-4) + var(--safe-bottom));
         border-top: 2px solid rgba(255, 255, 255, 0.72);
         background: var(--action-primary);
         box-shadow: 0 -6px 22px rgba(38, 4, 17, 0.32);
@@ -456,8 +462,8 @@ import { PaginaConSesion } from '../pagina-base';
 
       .resumen {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: var(--space-3);
       }
 
       .resumen > span {
@@ -465,7 +471,7 @@ import { PaginaConSesion } from '../pagina-base';
         min-width: 0;
         flex-direction: column;
         gap: 3px;
-        padding: 10px 12px;
+        padding: var(--space-3);
         border: 1px solid rgba(255, 255, 255, 0.7);
         border-radius: 14px;
         background: rgba(58, 0, 22, 0.28);
@@ -473,7 +479,7 @@ import { PaginaConSesion } from '../pagina-base';
 
       .resumen small {
         color: #ffffff;
-        font-size: 11px;
+        font: var(--type-label);
         font-weight: 800;
         letter-spacing: 0.06em;
       }
@@ -486,22 +492,19 @@ import { PaginaConSesion } from '../pagina-base';
         font-size: clamp(18px, 5vw, 25px);
         font-weight: 900;
       }
-
-      @media (max-width: 480px) {
-        .item-carrito {
-          grid-template-columns: 64px minmax(0, 1fr);
-        }
-
-        .item-carrito__foto {
-          width: 64px;
-          height: 64px;
-        }
-
-        .cantidad {
-          grid-column: 1 / -1;
-          justify-content: end;
-        }
+      /* Los renglones nunca se cortan: el nombre pasa a dos líneas en vez de
+         truncarse y la foto crece con el ancho. */
+      .item-carrito { --foto-item: clamp(64px, 21vw, 92px); scroll-snap-align: start; }
+      .item-carrito__datos strong {
+        white-space: normal;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        font: var(--type-card-title);
       }
+      .resumen > span:first-child strong { font: var(--type-numeral-lg); }
+      .resumen > span:last-child strong { font: var(--type-price); }
+
     `,
   ],
 })

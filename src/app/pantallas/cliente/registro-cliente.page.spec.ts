@@ -19,7 +19,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
 
 class RegistroPrueba extends RegistroClientePage {
   preparar() {
-    this.formulario.setValue({ nombre: 'Ana', apellido: 'Perez', dni: '12345678', cuil: '20-12345678-6', email: 'ana@example.com', clave: 'Prueba123', repeticion: 'Prueba123' });
+    this.formulario.setValue({ nombre: 'Ana', apellido: 'Perez', cuil: '20-12345678-6', email: 'ana@example.com', clave: 'Prueba123', repeticion: 'Prueba123' });
     this.foto.set('foto');
   }
   registrarCliente() { return this.registrar(); }

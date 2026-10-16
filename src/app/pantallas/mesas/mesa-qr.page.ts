@@ -3,7 +3,13 @@ import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
-import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
+import { ICONO_TIPO_MESA, ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelos/enums';
+
+/** Rango admitido de comensales, el mismo que valida el alta de mesa. */
+const MIN_COMENSALES = 1;
+const MAX_COMENSALES = 10;
+
+const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
 
 /**
  * Detalle y gestión compacta de Mesa con código QR identificador,
@@ -25,41 +31,16 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
         <main class="contenedor-tarjetas">
           <!-- Tarjeta 1: Información de la mesa -->
-          <div class="tarjeta-blanca">
-            <div class="tarjeta-blanca__encabezado">
-              <lm-icono nombre="table_restaurant" [tamano]="20" color="#6E1234" />
-              <h2>Información de la mesa</h2>
-            </div>
-            <div class="grid-info">
-              <div class="subtarjeta-info">
-                <div class="subtarjeta-info__icono">
-                  <lm-icono nombre="group" [tamano]="22" color="#6E1234" />
-                </div>
-                <div class="subtarjeta-info__datos">
-                  <span class="subtarjeta-info__etiqueta">Comensales</span>
-                  <span class="subtarjeta-info__valor">{{ m.cantidadComensales }}</span>
-                </div>
-              </div>
-              <div class="subtarjeta-info">
-                <div class="subtarjeta-info__icono">
-                  <lm-icono nombre="event_seat" [tamano]="22" color="#6E1234" />
-                </div>
-                <div class="subtarjeta-info__datos">
-                  <span class="subtarjeta-info__etiqueta">Tipo de mesa</span>
-                  <span class="subtarjeta-info__valor subtarjeta-info__valor--tipo">{{ tipo() }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Tarjeta 2: Disponibilidad -->
-          <div class="tarjeta-blanca">
-            <div class="fila-disponibilidad-top">
-              <h2>Disponibilidad</h2>
+          <div class="tarjeta-blanca" [class.tarjeta-blanca--resaltada]="resaltar()">
+            <!-- Lo que más importa de la mesa: si está libre u ocupada. -->
+            <div class="subtarjeta-info estado-mesa" [class.estado-mesa--ocupada]="ocupada()">
+              <span class="dot dot--grande" [class.dot--ocupada]="ocupada()" [class.dot--libre]="!ocupada()"></span>
+              <span class="estado-mesa__titulo">{{ ocupada() ? 'Mesa ocupada' : 'Mesa libre' }}</span>
               <button
                 type="button"
                 role="switch"
                 [attr.aria-checked]="ocupada()"
+                aria-label="Marcar la mesa como ocupada"
                 class="switch"
                 [class.switch--on]="ocupada()"
                 (click)="toggleOcupada()"
@@ -67,27 +48,55 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
                 <span class="switch__perilla"></span>
               </button>
             </div>
-            <div class="fila-disponibilidad-estado">
-              <span class="dot" [class.dot--ocupada]="ocupada()" [class.dot--libre]="!ocupada()"></span>
-              <div class="disponibilidad-texto">
-                <span class="disponibilidad-texto__titulo">
-                  {{ ocupada() ? 'Mesa ocupada' : 'Mesa libre' }}
-                </span>
-                <span class="disponibilidad-texto__bajada">
-                  {{ ocupada() ? 'Desactivá para liberar la mesa.' : 'Activá para ocupar la mesa.' }}
-                </span>
+
+            <div class="grid-info">
+              <div class="subtarjeta-info" [class.subtarjeta-info--tocada]="comensales() !== m.cantidadComensales">
+                <div class="subtarjeta-info__icono">
+                  <lm-icono nombre="group" [tamano]="22" color="#6E1234" />
+                </div>
+                <div class="subtarjeta-info__datos">
+                  <span class="subtarjeta-info__etiqueta">Comensales</span>
+                  <span class="subtarjeta-info__valor">{{ comensales() }}</span>
+                </div>
+                @if (puedeEditar()) {
+                  <button
+                    type="button"
+                    class="lapiz"
+                    aria-label="Editar la cantidad de comensales"
+                    (click)="abrirEdicionComensales()"
+                  >
+                    <lm-icono nombre="edit" [tamano]="16" color="#FFFFFF" />
+                  </button>
+                }
+              </div>
+
+              <div class="subtarjeta-info" [class.subtarjeta-info--tocada]="tipoMesa() !== m.tipo">
+                <div class="subtarjeta-info__icono">
+                  <lm-icono [nombre]="iconoTipo()" [tamano]="22" color="#6E1234" />
+                </div>
+                <span class="subtarjeta-info__valor">{{ tipo() }}</span>
+                @if (puedeEditar()) {
+                  <button
+                    type="button"
+                    class="lapiz"
+                    aria-label="Editar el tipo de mesa"
+                    (click)="abrirEdicionTipo()"
+                  >
+                    <lm-icono nombre="edit" [tamano]="16" color="#FFFFFF" />
+                  </button>
+                }
               </div>
             </div>
           </div>
 
-          <!-- Tarjeta 3: Código QR de la mesa -->
+          <!-- Tarjeta 2: Código QR de la mesa -->
           <div class="tarjeta-blanca tarjeta-qr">
-            <div class="tarjeta-blanca__encabezado">
-              <lm-icono nombre="qr_code_2" [tamano]="20" color="#6E1234" />
-              <h2>Código QR de la mesa</h2>
-            </div>
-
-            <div class="qr-marco">
+            <button
+              type="button"
+              class="qr-marco"
+              aria-label="Ver el código QR en pantalla completa"
+              (click)="mostrarQrCompleto.set(true)"
+            >
               @if (fuenteQr() || m.qrCodeUrl) {
                 <img
                   [src]="fuenteQr() || m.qrCodeUrl"
@@ -100,38 +109,29 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
                   <span>Generando QR…</span>
                 </div>
               }
-            </div>
-
-            <p class="qr-bajada">
-              Este código permite a los clientes acceder desde sus dispositivos.
-            </p>
-
-            <button type="button" class="btn-fullscreen" (click)="mostrarQrCompleto.set(true)">
-              <lm-icono nombre="fullscreen" [tamano]="18" color="#7A1535" />
-              <span>Ver en pantalla completa</span>
             </button>
           </div>
 
           <!-- Botones inferiores de acción -->
           <div class="acciones-inferiores">
-            <button type="button" class="btn-guardar" (click)="guardarCambios()">
-              <lm-icono nombre="save" [tamano]="20" color="#B92E58" />
-              <span>Guardar cambios</span>
-            </button>
-            <button type="button" class="btn-cancelar" (click)="volver()">
-              Cancelar
-            </button>
+            @if (hayCambios()) {
+              <p class="pendiente">
+                <lm-icono nombre="edit_note" [tamano]="16" color="#FFFFFF" />
+                <span>Tenés cambios sin guardar.</span>
+              </p>
+            }
+            <lm-decision rotuloAceptar="Guardar cambios" (rechazar)="volver()" (aceptar)="guardarCambios()" />
           </div>
         </main>
 
         <!-- Modal QR en Pantalla Completa -->
         @if (mostrarQrCompleto()) {
-          <div class="modal-qr-fondo" (click)="mostrarQrCompleto.set(false)">
-            <div class="modal-qr-card" (click)="$event.stopPropagation()">
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="mostrarQrCompleto.set(false)">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card" (click)="$event.stopPropagation()">
               <div class="modal-qr-header">
                 <h3>Mesa {{ m.numero }}</h3>
                 <button type="button" class="btn-cerrar-modal" (click)="mostrarQrCompleto.set(false)">
-                  <lm-icono nombre="close" [tamano]="22" color="#6E1234" />
+                  <lm-icono nombre="close" [tamano]="26" color="#FFFFFF" />
                 </button>
               </div>
               <img
@@ -139,10 +139,79 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
                 [alt]="'QR Mesa ' + m.numero"
                 class="modal-qr-img"
               />
-              <p class="modal-qr-texto">Escaneá este código para ingresar a la mesa.</p>
-              <lm-boton variante="primary" (presionar)="mostrarQrCompleto.set(false)">
-                Cerrar
-              </lm-boton>
+            </div>
+          </div>
+        }
+
+        <!-- Modal de edición: comensales -->
+        @if (editando() === 'comensales') {
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="cerrarEdicion()">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
+              <div class="modal-qr-header">
+                <h3>Comensales</h3>
+              </div>
+
+              <div class="contador">
+                <button
+                  type="button"
+                  class="contador__btn"
+                  aria-label="Quitar un comensal"
+                  [disabled]="borradorComensales() <= minComensales"
+                  (click)="ajustarComensales(-1)"
+                >
+                  <lm-icono nombre="remove" [tamano]="22" color="#7A1535" />
+                </button>
+                <span class="contador__valor">{{ borradorComensales() }}</span>
+                <button
+                  type="button"
+                  class="contador__btn"
+                  aria-label="Sumar un comensal"
+                  [disabled]="borradorComensales() >= maxComensales"
+                  (click)="ajustarComensales(1)"
+                >
+                  <lm-icono nombre="add" [tamano]="22" color="#7A1535" />
+                </button>
+              </div>
+
+              <p class="modal-editar__limite">
+                Entre {{ minComensales }} y {{ maxComensales }} personas.
+              </p>
+
+              <lm-decision class="modal-editar__acciones" rotuloAceptar="Aplicar" (rechazar)="cerrarEdicion()" (aceptar)="aplicarComensales()" />
+            </div>
+          </div>
+        }
+
+        <!-- Modal de edición: tipo de mesa -->
+        @if (editando() === 'tipo') {
+          <div class="modal-qr-fondo" animate.leave="sk-fondo-sale" (click)="cerrarEdicion()">
+            <div animate.leave="sk-modal-sale" class="modal-qr-card modal-editar" (click)="$event.stopPropagation()">
+              <div class="modal-qr-header">
+                <h3>Tipo de mesa</h3>
+              </div>
+
+              <div class="opciones-tipo" role="radiogroup" aria-label="Tipo de mesa">
+                @for (opcion of tipos; track opcion) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="opcion-tipo"
+                    [class.opcion-tipo--elegida]="borradorTipo() === opcion"
+                    [attr.aria-checked]="borradorTipo() === opcion"
+                    (click)="borradorTipo.set(opcion)"
+                  >
+                    <span class="opcion-tipo__icono">
+                      <lm-icono [nombre]="iconoDe(opcion)" [tamano]="20" color="#6E1234" />
+                    </span>
+                    <span class="opcion-tipo__rotulo">{{ rotuloDe(opcion) }}</span>
+                    @if (borradorTipo() === opcion) {
+                      <lm-icono nombre="check_circle" [tamano]="20" color="#B92E58" />
+                    }
+                  </button>
+                }
+              </div>
+
+              <lm-decision class="modal-editar__acciones" rotuloAceptar="Aplicar" (rechazar)="cerrarEdicion()" (aceptar)="aplicarTipo()" />
             </div>
           </div>
         }
@@ -195,12 +264,12 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         align-items: center;
         gap: 12px;
         margin-bottom: 10px;
-        padding-top: max(2px, env(safe-area-inset-top));
+        padding-top: max(2px, var(--safe-top));
       }
 
       .hdr__volver {
-        width: 40px;
-        height: 40px;
+        width: var(--touch-min);
+        height: var(--touch-min);
         border-radius: 12px;
         background: rgba(255, 255, 255, 0.18);
         border: none;
@@ -219,7 +288,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
       .hdr__titulo {
         margin: 0;
         color: #FFFFFF;
-        font: var(--type-title, 700 22px var(--font-display, sans-serif));
+        font: var(--type-title);
         letter-spacing: -0.01em;
       }
 
@@ -247,15 +316,40 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
       .tarjeta-blanca__encabezado h2 {
         margin: 0;
-        font: var(--type-card-title, 700 15px var(--font-display, sans-serif));
+        font: var(--type-card-title);
         color: #6E1234;
       }
 
+      /*
+       * Cuando el lápiz llega desde el salón, la tarjeta de datos se anuncia
+       * sola con un latido corto: es la que se vino a tocar.
+       */
+      .tarjeta-blanca--resaltada {
+        animation: latido-edicion 1.5s ease-out 2;
+      }
+
+      @keyframes latido-edicion {
+        0%, 100% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
+        45% { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 4px rgba(255, 255, 255, 0.55); }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tarjeta-blanca--resaltada { animation: none; }
+      }
+
       /* Información de la mesa */
+      /*
+       * Comensales y tipo van lado a lado mientras cada columna tenga lugar
+       * para el valor más el lápiz; por debajo de eso pasan uno arriba del
+       * otro solos. Va con auto-fit y no con una consulta de medios porque
+       * el corte depende del ancho que le queda a la tarjeta, no del modelo
+       * del equipo: la misma regla sirve dentro del modal, que es más angosto.
+       */
+      /* Comensales y tipo, uno abajo del otro. */
       .grid-info {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
+        grid-template-columns: 1fr;
+        gap: var(--space-3);
       }
 
       .subtarjeta-info {
@@ -265,6 +359,64 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         display: flex;
         align-items: center;
         gap: 8px;
+        transition: background-color 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      /* El dato quedó tocado y todavía no se guardó. */
+      .subtarjeta-info--tocada {
+        background: #FCE8EE;
+        box-shadow: inset 0 0 0 1.5px rgba(185, 46, 88, 0.45);
+      }
+
+      .subtarjeta-info--fija {
+        margin-bottom: 10px;
+      }
+
+      .candado {
+        margin-left: auto;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      /* Lápiz de cada dato editable.
+         El círculo se queda en 30px porque a más tamaño desequilibra la fila
+         del dato, pero el blanco que recibe el toque se estira con un
+         pseudoelemento hasta el mínimo accesible. Sólo crece a lo alto y a lo
+         ancho de su propia fila, así que no pisa al lápiz de la fila de al
+         lado, que está separado por el alto completo del dato. */
+      .lapiz {
+        position: relative;
+        margin-left: auto;
+        width: 30px;
+        height: 30px;
+        flex-shrink: 0;
+        border: none;
+        border-radius: 50%;
+        background: #B92E58;
+        display: grid;
+        place-items: center;
+        cursor: pointer;
+        box-shadow: 0 2px 6px rgba(185, 46, 88, 0.34);
+        transition: transform 0.12s ease, background-color 0.12s ease;
+      }
+
+      .lapiz::after {
+        content: "";
+        position: absolute;
+        top: calc((var(--touch-min) - 100%) / -2);
+        bottom: calc((var(--touch-min) - 100%) / -2);
+        left: calc((var(--touch-min) - 100%) / -2);
+        right: calc((var(--touch-min) - 100%) / -2);
+      }
+
+      .lapiz:hover,
+      .lapiz:focus-visible {
+        background: #A32649;
+      }
+
+      .lapiz:active {
+        transform: scale(0.92);
       }
 
       .subtarjeta-info__icono {
@@ -273,29 +425,29 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         justify-content: center;
       }
 
+      /* Rótulo y número en la misma línea que el ícono: "👥 Comensales 10". */
       .subtarjeta-info__datos {
         display: flex;
-        flex-direction: column;
+        align-items: center;
+        gap: 6px;
         min-width: 0;
       }
 
+      /* "Comensales" vive en una fila angosta. Es rótulo y no texto de
+         lectura, así que antes de partirse al medio prefiere encogerse. */
       .subtarjeta-info__etiqueta {
-        font: var(--type-label, 500 11px var(--font-text, sans-serif));
+        font: var(--type-section);
+        line-height: 1.15;
         color: #7A2E44;
+        overflow-wrap: normal;
+        word-break: keep-all;
+        hyphens: none;
       }
 
       .subtarjeta-info__valor {
-        font: var(--type-section, 800 18px var(--font-display, sans-serif));
+        font: var(--type-section);
         color: #6E1234;
         line-height: 1.15;
-      }
-
-      .subtarjeta-info__valor--tipo {
-        font-size: 14px;
-        font-weight: 700;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       /* Disponibilidad */
@@ -308,7 +460,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
       .fila-disponibilidad-top h2 {
         margin: 0;
-        font: var(--type-card-title, 700 15px var(--font-display, sans-serif));
+        font: var(--type-card-title);
         color: #6E1234;
       }
 
@@ -327,8 +479,21 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         transition: background-color 0.22s ease;
       }
 
+      /* La pastilla mide 26px de alto porque a más tamaño deja de leerse como
+         un interruptor, así que el blanco que recibe el dedo se estira aparte
+         hasta el mínimo accesible. Estira sólo a lo alto: a lo ancho ya mide
+         48px y no hay ningún otro control en la fila con el que pueda pisarse. */
+      .switch::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc((var(--touch-min) - 100%) / -2);
+        bottom: calc((var(--touch-min) - 100%) / -2);
+      }
+
       .switch--on {
-        background: #C72657;
+        background: var(--state-error);
       }
 
       .switch__perilla {
@@ -343,6 +508,16 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
       .switch--on .switch__perilla {
         transform: translateX(22px);
+      }
+
+      /* La perilla dice el estado: verde libre, roja ocupada. */
+      .switch__perilla {
+        background: linear-gradient(180deg, #4BE39B 0%, #1AA765 100%);
+        box-shadow: 0 0 0 2px #FFFFFF, 0 2px 4px rgba(0, 0, 0, 0.25);
+      }
+
+      .switch--on .switch__perilla {
+        background: linear-gradient(180deg, #E5503F 0%, #B01E13 100%);
       }
 
       .fila-disponibilidad-estado {
@@ -373,14 +548,53 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
       }
 
       .disponibilidad-texto__titulo {
-        font: var(--type-body-small, 700 13px var(--font-text, sans-serif));
+        font: var(--type-body-small);
         color: #6E1234;
       }
 
       .disponibilidad-texto__bajada {
-        font: var(--type-caption, 400 11px var(--font-text, sans-serif));
+        font: var(--type-caption);
         color: #7A2E44;
         margin-top: 1px;
+      }
+
+
+      .dot--grande { width: 14px; height: 14px; margin-top: 0; }
+
+      /* Misma subtarjeta que comensales y tipo, con el mismo aire debajo. */
+      .estado-mesa {
+        gap: 10px;
+        margin-bottom: var(--space-3);
+      }
+
+      .estado-mesa__titulo {
+        flex: 1 1 auto;
+        font: var(--type-card-title);
+        font-size: clamp(20px, 5.6vw, 24px);
+        font-weight: 800;
+        color: #1B7A4C;
+      }
+
+      .estado-mesa--ocupada .estado-mesa__titulo { color: #D6336C; }
+
+      /* Estado, comensales y tipo: el contenido va centrado en su fila y el
+         lápiz o el interruptor quedan clavados a la derecha, con un relleno
+         igual a los dos lados para que el centro sea el de la fila. */
+      .tarjeta-blanca > .subtarjeta-info,
+      .grid-info > .subtarjeta-info {
+        position: relative;
+        justify-content: center;
+        padding-inline: 64px;
+        text-align: center;
+      }
+      .estado-mesa__titulo { flex: 0 1 auto; }
+      .subtarjeta-info > .lapiz,
+      .subtarjeta-info > .switch {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        translate: 0 -50%;
+        margin: 0;
       }
 
       /* Tarjeta QR */
@@ -389,9 +603,13 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         padding-bottom: 14px;
       }
 
+      /* La vista previa se queda en 140px por diseño —el código escaneable es
+         el del modal, a un toque— pero cede ancho en los equipos angostos en
+         vez de empujar la tarjeta. */
       .qr-marco {
-        width: 140px;
-        height: 140px;
+        width: min(44vw, 140px);
+        aspect-ratio: 1;
+        height: auto;
         margin: 4px auto 8px;
         display: flex;
         align-items: center;
@@ -417,14 +635,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         justify-content: center;
         gap: 4px;
         color: #8C3A57;
-        font-size: 12px;
-      }
-
-      .qr-bajada {
-        margin: 0 auto 10px;
-        max-width: 250px;
-        font: var(--type-caption, 400 12px/1.3 var(--font-text, sans-serif));
-        color: #7A2E44;
+        font-size: clamp(11px, 2.9vw, 12px);
       }
 
       .btn-fullscreen {
@@ -432,19 +643,32 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         border: 1.5px solid #8C2549;
         background: transparent;
         border-radius: 12px;
-        padding: 9px 14px;
+        min-height: var(--touch-min);
+        padding: var(--space-2) var(--space-4);
         display: flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
         color: #7A1535;
-        font: var(--type-button, 700 13px var(--font-text, sans-serif));
+        font: var(--type-button);
         cursor: pointer;
         transition: background-color 0.12s ease;
       }
 
       .btn-fullscreen:active {
         background: #FDF2F4;
+      }
+
+      .qr-fijo {
+        margin: 8px auto 0;
+        max-width: min(280px, 100%);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 5px;
+        text-align: left;
+        font: var(--type-caption);
+        color: #A2708A;
       }
 
       /* Acciones inferiores */
@@ -456,40 +680,16 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         margin-top: 4px;
       }
 
-      .btn-guardar {
-        width: 100%;
-        background: #FFFFFF;
-        color: #B92E58;
-        border: none;
-        border-radius: 16px;
-        padding: 13px 18px;
+      .pendiente {
+        margin: 0 0 6px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font: var(--type-button, 800 15px var(--font-text, sans-serif));
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.14);
-        transition: transform 0.12s ease, opacity 0.12s ease;
-      }
-
-      .btn-guardar:active {
-        transform: scale(0.98);
-        opacity: 0.92;
-      }
-
-      .btn-cancelar {
-        background: transparent;
-        border: none;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.2);
         color: #FFFFFF;
-        padding: 8px;
-        font: var(--type-button, 700 14px var(--font-text, sans-serif));
-        cursor: pointer;
-        transition: opacity 0.12s ease;
-      }
-
-      .btn-cancelar:active {
-        opacity: 0.75;
+        font: var(--type-caption);
       }
 
       /* Modal Pantalla Completa QR */
@@ -512,7 +712,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
         border-radius: 24px;
         padding: 20px 24px 24px;
         width: 100%;
-        max-width: 320px;
+        max-width: min(320px, 100%);
         text-align: center;
         box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
         display: flex;
@@ -521,6 +721,7 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
       }
 
       .modal-qr-header {
+        gap: var(--space-2);
         width: 100%;
         display: flex;
         align-items: center;
@@ -530,25 +731,35 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
       .modal-qr-header h3 {
         margin: 0;
-        font: var(--type-title, 800 19px var(--font-display, sans-serif));
+        font: var(--type-title);
         color: #6E1234;
       }
 
-      .btn-cerrar-modal {
+      /* Los dos botones redondos de los modales: cerrar y los del contador. */
+      .btn-cerrar-modal,
+      .contador__btn {
         background: #FDF2F4;
         border: none;
         border-radius: 50%;
-        width: 34px;
-        height: 34px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
         cursor: pointer;
+        transition: transform 0.12s ease, background-color 0.12s ease, opacity 0.12s ease;
       }
 
+      .btn-cerrar-modal {
+        width: var(--touch-min);
+        height: var(--touch-min);
+      }
+
+      /* Este sí es el código que se escanea: ocupa el ancho que haya, siempre
+         cuadrado. El PNG se genera a 512px, así que siempre se reduce y nunca
+         se agranda. */
       .modal-qr-img {
-        width: 230px;
-        height: 230px;
+        width: min(var(--size-qr), 100%);
+        aspect-ratio: 1;
+        height: auto;
         object-fit: contain;
         display: block;
         margin: 8px auto 12px;
@@ -556,9 +767,120 @@ import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
       }
 
       .modal-qr-texto {
-        font: var(--type-body-small, 500 13px var(--font-text, sans-serif));
+        font: var(--type-body-small);
         color: #7A2E44;
         margin: 0 0 14px;
+      }
+
+      /* Modales de edición de un solo dato */
+      .modal-editar {
+        max-width: min(340px, 100%);
+        /* En pantallas bajas el modal scrollea solo, nunca se corta. */
+        max-height: calc(100dvh - 40px);
+        overflow-y: auto;
+      }
+
+      .modal-editar__bajada {
+        margin: 0 0 14px;
+        font: var(--type-body-small);
+        color: #7A2E44;
+      }
+
+      .modal-editar__limite {
+        margin: 10px 0 0;
+        font: var(--type-caption);
+        color: #A2708A;
+      }
+
+      .modal-editar__acciones {
+        margin-top: 18px;
+      }
+
+      /* Contador de comensales */
+      .contador {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+      }
+
+      .contador__btn {
+        width: 46px;
+        height: 46px;
+        border: 1.5px solid #E7C3D0;
+      }
+
+      .contador__btn:active {
+        transform: scale(0.92);
+        background: #F8DDE5;
+      }
+
+      .contador__btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      .contador__valor {
+        min-width: 62px;
+        text-align: center;
+        font: var(--type-numeral);
+        color: #6E1234;
+        font-variant-numeric: tabular-nums;
+      }
+
+      /* Opciones de tipo de mesa */
+      .opciones-tipo {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .opcion-tipo {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 13px;
+        border: 1.5px solid #EFD7E0;
+        border-radius: 14px;
+        background: #FFFFFF;
+        cursor: pointer;
+        text-align: left;
+        transition: border-color 0.14s ease, background-color 0.14s ease;
+      }
+
+      .opcion-tipo--elegida {
+        border-color: #B92E58;
+        background: #FDF2F4;
+      }
+
+      .opcion-tipo__icono {
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+      }
+
+      .opcion-tipo__rotulo {
+        flex: 1;
+        min-width: 0;
+        font: var(--type-body-small);
+        color: #6E1234;
+        overflow-wrap: anywhere;
+      }
+    
+      /* Distribución: llenar el alto disponible sin recortar tarjetas */
+
+      .pantalla-mesa { scroll-snap-type: y proximity; scroll-padding: 8px 0 16px; padding-bottom: max(16px, var(--safe-bottom)); }
+      .contenedor-tarjetas { flex: 1 1 auto; }
+      .tarjeta-blanca { scroll-snap-align: start; scroll-snap-stop: normal; }
+      .tarjeta-qr { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: center; }
+      .qr-marco { width: clamp(140px, min(58vw, 30dvh), 260px); }
+
+      /* Degradado de las tarjetas de la carta en lo que era blanco liso. */
+      .tarjeta-blanca, .modal-qr-card, .opcion-tipo:not(.opcion-tipo--elegida) {
+        background-image: var(--surface-card-degradado);
       }
     `,
   ],
@@ -569,56 +891,184 @@ export class MesaQrPage extends PaginaConSesion implements OnInit {
 
   readonly id = input.required<string>();
 
+  /** Se abre con ?editar=1 desde el lápiz del salón. */
+  readonly editar = input<string | undefined>(undefined);
+
   protected readonly mesa = computed(() => this.mesas.porId(this.id()));
   protected readonly fuenteQr = signal('');
   protected readonly ocupada = signal(false);
   protected readonly mostrarQrCompleto = signal(false);
 
+  /** Dueño y supervisor editan comensales y tipo; el resto sólo mira. */
+  protected readonly puedeEditar = computed(() => this.sesion.esAdministrador());
+
+  protected readonly tipos = TIPOS;
+  protected readonly minComensales = MIN_COMENSALES;
+  protected readonly maxComensales = MAX_COMENSALES;
+
+  /** Valores en pantalla: se tocan con el lápiz y recién viajan al guardar. */
+  protected readonly comensales = signal(0);
+  protected readonly tipoMesa = signal<TipoMesa>('ESTANDAR');
+
+  protected readonly editando = signal<'comensales' | 'tipo' | null>(null);
+  protected readonly borradorComensales = signal(0);
+  protected readonly borradorTipo = signal<TipoMesa>('ESTANDAR');
+  protected readonly resaltar = signal(false);
+
+  protected readonly hayCambios = computed(() => {
+    const m = this.mesa();
+    if (!m) return false;
+    return (
+      m.estado !== (this.ocupada() ? 'OCUPADA' : 'VACIA') ||
+      m.cantidadComensales !== this.comensales() ||
+      m.tipo !== this.tipoMesa()
+    );
+  });
+
+  /**
+   * Mesa ya volcada a los campos de pantalla.
+   *
+   * La sincronización en vivo reescribe la mesa cada tanto: sin esta marca,
+   * un cambio a medio editar se perdería solo.
+   */
+  private volcada = '';
+
   constructor() {
     super();
     effect(() => {
       const m = this.mesa();
-      if (m) {
+      if (m && this.volcada !== m.id) {
+        this.volcada = m.id;
         this.ocupada.set(m.estado === 'OCUPADA');
+        this.comensales.set(m.cantidadComensales);
+        this.tipoMesa.set(m.tipo);
       }
     });
   }
 
   async ngOnInit(): Promise<void> {
     const mesa = this.mesa();
-    if (mesa) {
-      this.ocupada.set(mesa.estado === 'OCUPADA');
-      this.fuenteQr.set(await this.qr.generarDeMesa(mesa.id, mesa.numero));
+    if (!mesa) return;
+
+    this.volcada = mesa.id;
+    this.ocupada.set(mesa.estado === 'OCUPADA');
+    this.comensales.set(mesa.cantidadComensales);
+    this.tipoMesa.set(mesa.tipo);
+
+    if (this.editar() && this.puedeEditar()) {
+      this.resaltar.set(true);
     }
+
+    this.fuenteQr.set(await this.qr.generarDeMesa(mesa.id, mesa.numero));
   }
 
   protected tipo(): string {
-    const m = this.mesa();
-    return m ? ROTULO_TIPO_MESA[m.tipo] : '';
+    return ROTULO_TIPO_MESA[this.tipoMesa()];
+  }
+
+  protected iconoTipo(): string {
+    return ICONO_TIPO_MESA[this.tipoMesa()];
+  }
+
+  protected rotuloDe(tipo: TipoMesa): string {
+    return ROTULO_TIPO_MESA[tipo];
+  }
+
+  protected iconoDe(tipo: TipoMesa): string {
+    return ICONO_TIPO_MESA[tipo];
   }
 
   protected toggleOcupada(): void {
     this.ocupada.update((v) => !v);
   }
 
+  protected abrirEdicionComensales(): void {
+    this.borradorComensales.set(this.comensales());
+    this.editando.set('comensales');
+  }
+
+  protected abrirEdicionTipo(): void {
+    this.borradorTipo.set(this.tipoMesa());
+    this.editando.set('tipo');
+  }
+
+  protected cerrarEdicion(): void {
+    this.editando.set(null);
+  }
+
+  protected ajustarComensales(paso: number): void {
+    this.borradorComensales.update((v) =>
+      Math.min(MAX_COMENSALES, Math.max(MIN_COMENSALES, v + paso)),
+    );
+  }
+
+  protected aplicarComensales(): void {
+    this.comensales.set(this.borradorComensales());
+    this.cerrarEdicion();
+  }
+
+  protected aplicarTipo(): void {
+    this.tipoMesa.set(this.borradorTipo());
+    this.cerrarEdicion();
+  }
+
   protected async guardarCambios(): Promise<void> {
     const m = this.mesa();
     if (!m) return;
 
-    const nuevoEstado = this.ocupada() ? 'OCUPADA' : 'VACIA';
-    const hayCambioEstado = m.estado !== nuevoEstado;
-
-    if (!hayCambioEstado) {
-      this.avisos.info('Sin cambios', 'No modificaste la disponibilidad de la mesa.');
+    if (!this.hayCambios()) {
+      this.avisos.info('Sin cambios', 'No modificaste ningún dato de la mesa.');
       this.volver();
       return;
     }
 
-    await this.cargando.conEsperaMinima('Guardando disponibilidad…', async () => {
-      await this.mesas.cambiarEstado(m.id, nuevoEstado);
+    const nuevoEstado = this.ocupada() ? 'OCUPADA' : 'VACIA';
+    const cambiaEstado = m.estado !== nuevoEstado;
+    const cambiaComensales = m.cantidadComensales !== this.comensales();
+    const cambiaTipo = m.tipo !== this.tipoMesa();
+
+    // En el modal va sólo lo que cambia: así se lee de un vistazo qué se toca.
+    const detalle = [{ rotulo: 'Mesa', valor: String(m.numero) }];
+    if (cambiaComensales) {
+      detalle.push({ rotulo: 'Comensales', valor: `${m.cantidadComensales} → ${this.comensales()}` });
+    }
+    if (cambiaTipo) {
+      detalle.push({
+        rotulo: 'Tipo',
+        valor: `${ROTULO_TIPO_MESA[m.tipo]} → ${ROTULO_TIPO_MESA[this.tipoMesa()]}`,
+      });
+    }
+    if (cambiaEstado) {
+      detalle.push({ rotulo: 'Queda', valor: this.ocupada() ? 'Ocupada' : 'Vacía' });
+    }
+
+    const seguro = await this.preguntar({
+      titulo: '¿Guardás los cambios de la mesa?',
+      mensaje: 'El salón ve los datos nuevos al instante. El número y el código QR no cambian.',
+      confirmar: 'Guardar cambios',
+      icono: 'save',
+      detalle,
+    });
+    if (!seguro) return;
+
+    await this.cargando.conEsperaMinima('Guardando los cambios…', async () => {
+      if (cambiaComensales || cambiaTipo) {
+        await this.mesas.editar(m.id, {
+          cantidadComensales: this.comensales(),
+          tipo: this.tipoMesa(),
+        });
+      }
+      if (cambiaEstado) {
+        await this.mesas.cambiarEstado(m.id, nuevoEstado);
+      }
     });
 
-    this.avisos.exito(`Mesa ${m.numero} actualizada`, `Quedó marcada como ${this.ocupada() ? 'ocupada' : 'libre'}.`);
+    this.avisos.exito(
+      `Mesa ${m.numero} actualizada`,
+      cambiaEstado
+        ? `Quedó marcada como ${this.ocupada() ? 'ocupada' : 'libre'}.`
+        : 'Los datos nuevos ya están en el salón.',
+    );
     this.volver();
   }
 

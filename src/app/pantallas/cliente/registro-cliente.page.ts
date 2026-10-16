@@ -17,8 +17,6 @@ import {
   clavesIguales,
   correoElectronico,
   cuil,
-  cuilDelDocumento,
-  documento,
   largoMinimo,
   requerido,
   soloLetras,
@@ -46,31 +44,17 @@ import {
           </lm-banner>
         }
 
-        <lm-foto
-          [fuente]="foto()"
-          [tamano]="124"
-          etiqueta="Foto con cámara"
-          [error]="errorFoto()"
-          (capturar)="tomarFoto()"
-        />
-
-        <lm-tarjeta-escaneo
-          titulo="Escanear el código del documento"
-          ayuda="Es más rápido que escribir todo"
-          [escaneando]="escaneando()"
-          (escanear)="escanearDocumento()"
-        />
+        <!-- Igual que el alta de empleado: todo el mosaico de la foto dispara la cámara. -->
+        <section class="lm-vidrio lm-doc">
+          <b>{{ desdePersonal() ? 'Cargá su foto y escaneá su DNI' : 'Cargá tu foto y escaneá tu DNI' }}</b>
+          <div class="lm-fila-doc">
+            <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+            <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+          </div>
+        </section>
 
         <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
         <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-        <lm-campo
-          [control]="formulario.controls.dni"
-          icono="badge"
-          etiqueta="Número de documento"
-          marcador="44225858"
-          modo="numeric"
-          [largoMaximo]="8"
-        />
         <lm-campo
           [control]="formulario.controls.cuil"
           icono="fingerprint"
@@ -78,7 +62,6 @@ import {
           marcador="20-44225858-9"
           modo="numeric"
           [largoMaximo]="13"
-          ayuda="Lo completamos solos al escanear el documento"
         />
         <lm-campo
           [control]="formulario.controls.email"
@@ -87,7 +70,6 @@ import {
           modo="email"
           etiqueta="Correo electrónico"
           marcador="sofia@correo.com.ar"
-          ayuda="Ahí te avisamos si tu cuenta quedó aprobada o rechazada"
         />
         <lm-campo
           [control]="formulario.controls.clave"
@@ -107,8 +89,13 @@ import {
       </div>
 
       <div class="lm-actionbar">
-        <lm-boton icono="how_to_reg" [deshabilitado]="enviando()" (presionar)="registrar()">{{ desdePersonal() ? 'Registrar cliente' : 'Registrarse' }}</lm-boton>
-        <lm-texto-boton (presionar)="volver()">{{ desdePersonal() ? 'Volver' : 'Ya tengo cuenta' }}</lm-texto-boton>
+        <lm-decision
+          [rotuloRechazar]="desdePersonal() ? 'Volver' : 'Cancelar'"
+          [rotuloAceptar]="desdePersonal() ? 'Registrar cliente' : 'Registrarse'"
+          [deshabilitado]="enviando()"
+          (rechazar)="volver()"
+          (aceptar)="registrar()"
+        />
       </div>
     </div>
   `,
@@ -140,13 +127,12 @@ export class RegistroClientePage {
     {
       nombre: ['', [requerido('Escribí tus nombres'), soloLetras(), largoMinimo(2, 'El nombre es demasiado corto')]],
       apellido: ['', [requerido('Escribí tus apellidos'), soloLetras(), largoMinimo(2, 'El apellido es demasiado corto')]],
-      dni: ['', [requerido('Escribí tu número de documento'), documento()]],
       cuil: ['', [requerido('Escribí tu CUIL'), cuil()]],
       email: ['', [requerido('Escribí tu correo electrónico'), correoElectronico()]],
       clave: ['', [requerido('Elegí una contraseña'), clave()]],
       repeticion: ['', [requerido('Repetí la contraseña')]],
     },
-    { validators: [clavesIguales('clave', 'repeticion'), cuilDelDocumento('dni', 'cuil')] },
+    { validators: [clavesIguales('clave', 'repeticion')] },
   );
 
   protected async tomarFoto(): Promise<void> {
@@ -180,12 +166,16 @@ export class RegistroClientePage {
     this.formulario.patchValue({
       nombre: datos.nombres,
       apellido: datos.apellidos,
-      dni: datos.dni,
       // El código del documento no trae el CUIL: se deduce del documento y el sexo.
       cuil: datos.cuil,
     });
     this.leidoDelDocumento.set(true);
-    this.avisos.exito('Documento leído', `${datos.nombres} ${datos.apellidos}, documento ${datos.dni}.`);
+    this.avisos.exito('Documento leído', `${datos.nombres} ${datos.apellidos}, CUIL ${datos.cuil}.`);
+  }
+
+  /** El documento se infiere del CUIL: los ocho dígitos del medio, sin ceros a la izquierda. */
+  private dni(): string {
+    return this.formulario.controls.cuil.value.replace(/\D/g, '').slice(2, 10).replace(/^0+/, '');
   }
 
   protected async registrar(): Promise<void> {
@@ -200,8 +190,9 @@ export class RegistroClientePage {
     if (this.usuarios.existeCorreo(this.formulario.controls.email.value)) {
       this.formulario.controls.email.setErrors({ lm: 'Ese correo electrónico ya tiene una cuenta' });
     }
-    if (this.usuarios.existeDocumento(this.formulario.controls.dni.value)) {
-      this.formulario.controls.dni.setErrors({ lm: 'Ese número de documento ya está registrado' });
+    const dniDeducido = this.dni();
+    if (this.formulario.controls.cuil.valid && this.usuarios.existeDocumento(dniDeducido)) {
+      this.formulario.controls.cuil.setErrors({ lm: 'Ese número de documento ya está registrado' });
     }
     if (this.usuarios.existeCuil(this.formulario.controls.cuil.value)) {
       this.formulario.controls.cuil.setErrors({ lm: 'Ese CUIL ya está registrado' });
@@ -221,14 +212,13 @@ export class RegistroClientePage {
     const seguro = await this.confirmacion.pedir({
       titulo: this.desdePersonal() ? '¿Registrás a este cliente?' : '¿Enviás tu registro?',
       mensaje: this.desdePersonal()
-        ? 'El registro queda pendiente. El cliente recibirá la respuesta por correo.'
+        ? undefined
         : 'Te avisaremos por correo cuando el dueño o el supervisor revise tu registro.',
       confirmar: 'Enviar registro',
       tono: 'exito',
       icono: 'how_to_reg',
       detalle: [
         { rotulo: 'Nombre', valor: `${datos.nombre} ${datos.apellido}` },
-        { rotulo: 'Documento', valor: datos.dni },
         { rotulo: 'CUIL', valor: datos.cuil },
         { rotulo: 'Correo', valor: datos.email },
       ],
@@ -241,7 +231,7 @@ export class RegistroClientePage {
         this.usuarios.crearClienteRegistrado({
           nombre: datos.nombre,
           apellido: datos.apellido,
-          dni: datos.dni,
+          dni: dniDeducido,
           cuil: datos.cuil,
           email: datos.email,
           clave: datos.clave,

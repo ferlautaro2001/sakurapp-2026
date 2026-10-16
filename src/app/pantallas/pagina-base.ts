@@ -29,7 +29,10 @@ export abstract class PaginaConSesion {
     const pedido = this.pedidosNavegacion.activoDe(usuario);
     const mesa = this.sesion.mesaActivaId();
     const esperaActiva = usuario ? this.esperaNavegacion.activaDe(usuario.id) : undefined;
-    const enMesa = Boolean(mesa || esperaActiva?.estado === 'FINALIZADO' || pedido);
+    // Mientras está en la fila (o yendo a la mesa asignada) no está sentado,
+    // aunque quede una mesa o un pedido de una visita anterior.
+    const enFila = esperaActiva?.estado === 'ESPERANDO' || esperaActiva?.estado === 'ASIGNADO';
+    const enMesa = !enFila && Boolean(mesa || esperaActiva?.estado === 'FINALIZADO' || pedido);
     return navegacionDe(usuario?.perfil, {
       enMesa,
       estadoPedido: pedido?.estadoGlobal,
@@ -51,7 +54,7 @@ export abstract class PaginaConSesion {
   protected async cerrarSesion(): Promise<void> {
     const seguro = await this.preguntar({
       titulo: '¿Cerrás la sesión?',
-      mensaje: 'Vas a volver a la pantalla de ingreso.',
+      mensaje: '',
       confirmar: 'Cerrar sesión',
       tono: 'peligro',
       icono: 'logout',

@@ -82,7 +82,7 @@ export function navegacionDe(
 /**
  * La barra del comensal, que es la que más cambia.
  *
- *  1. En la fila → su lugar, los juegos de la espera y las encuestas.
+ *  1. En la fila → su lugar y las encuestas (todavía no puede jugar).
  *  2. Sentado, armando el pedido → su mesa, la carta y el pedido.
  *  3. Con el pedido mandado → sólo el pedido, hasta que el mozo lo resuelva.
  *  4. Con el pedido confirmado o posterior → el estado del pedido y los juegos.
@@ -97,7 +97,6 @@ function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
   if (!contexto.enMesa) {
     return [
       { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
-      juegos,
       encuestas,
     ];
   }

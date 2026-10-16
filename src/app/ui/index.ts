@@ -1,6 +1,7 @@
 import {
   BannerComponent,
   BotonComponent,
+  DecisionComponent,
   ChipComponent,
   IconoBotonComponent,
   IconoComponent,
@@ -63,6 +64,7 @@ export * from './pesos.pipe';
 export const UI = [
   IconoComponent,
   BotonComponent,
+  DecisionComponent,
   TextoBotonComponent,
   IconoBotonComponent,
   ChipComponent,

@@ -8,7 +8,7 @@ import {
   ROTULO_TIPO_MESA,
 } from '../nucleo/modelos/enums';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
-import { BotonComponent, ChipComponent, IconoBotonComponent, IconoComponent } from './basicos';
+import { ChipComponent, DecisionComponent, IconoBotonComponent, IconoComponent } from './basicos';
 import { CantidadComponent } from './pedidos';
 import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 
@@ -30,9 +30,10 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
   styles: [
     `
       :host { display: block; }
+      .lm-pending__estado { display: block; margin-top: 4px; }
       .lm-profile {
         display: flex; align-items: center; gap: 10px; width: 100%;
-        min-height: 46px; padding: 4px 10px; text-align: left; cursor: pointer;
+        min-height: var(--touch-min); padding: 4px 10px; text-align: left; cursor: pointer;
         border-radius: var(--radius-field); background: var(--surface-card);
         border: 1.5px solid var(--border-field);
         box-shadow: 0 1px 3px rgba(110, 18, 52, 0.05);
@@ -44,20 +45,29 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
         transform: scale(0.98);
       }
       .lm-profile__avatar {
-        width: 38px; height: 38px; flex: 0 0 auto; border-radius: 50%;
+        /* Como no se encoge, el lado tiene que bajar solo con el ancho del
+           equipo o se come el renglón del nombre. La proporción va clavada en
+           uno para que el círculo no se vuelva óvalo si el alto de la fila
+           empuja. */
+        width: clamp(30px, 8.8vw, 38px); aspect-ratio: 1; height: auto;
+        flex: 0 0 auto; border-radius: 50%;
         background: #FFFFFF;
         border: 1.5px solid rgba(185, 46, 88, 0.18);
         display: grid; place-items: center;
         overflow: hidden;
         box-shadow: 0 2px 5px rgba(110, 18, 52, 0.08);
       }
+      /* La imagen llena el círculo: acá entra tanto el sushi de reserva como la
+         foto real de la persona, y contenida al 74% la foto quedaba chica y
+         con aire a los costados. Recorta desde el centro, que es donde está la
+         cara; el sushi es cuadrado, así que no pierde nada. */
       .lm-profile__avatar img {
-        width: 28px; height: 28px; object-fit: contain; display: block;
+        width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;
       }
       .lm-profile__texto { flex: 1; min-width: 0; }
       .lm-profile__texto b {
         display: block;
-        font: 700 13.5px/1.2 var(--font-display, inherit);
+        font: 700 clamp(12.5px, 3.1vw, 13.5px)/1.2 var(--font-display, inherit);
         color: var(--text-title);
         white-space: nowrap;
         overflow: hidden;
@@ -65,7 +75,7 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
       }
       .lm-profile__texto small {
         display: block;
-        font: 500 11.5px/1.2 var(--font-text, inherit);
+        font: 500 clamp(10.5px, 2.7vw, 11.5px)/1.2 var(--font-text, inherit);
         color: var(--text-muted);
       }
     `,
@@ -95,7 +105,7 @@ export class TarjetaPerfilComponent {
 @Component({
   selector: 'lm-fila-pendiente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent, BotonComponent, DocumentoPipe],
+  imports: [IconoComponent, ChipComponent, DecisionComponent, DocumentoPipe],
   template: `
     <div class="lm-pending">
       <button type="button" class="lm-pending__fila fila" (click)="abrir.emit()">
@@ -103,21 +113,27 @@ export class TarjetaPerfilComponent {
         <span class="lm-pending__datos">
           <span class="lm-pending__nombre">{{ usuarios.nombreCompleto(cliente()) }}</span>
           <span class="lm-pending__meta">
-            <lm-icono nombre="badge" [tamano]="15" />
+            <lm-icono nombre="badge" [tamano]="18" />
             DNI: {{ cliente().dni | documento }}
           </span>
           <span class="lm-pending__meta">
-            <lm-icono nombre="mail" [tamano]="15" />
+            <lm-icono nombre="mail" [tamano]="18" />
             <span>{{ cliente().email ?? 'Sin correo' }}</span>
           </span>
+          <!-- El estado va debajo de los datos: al costado le comía el ancho al nombre y al correo. -->
+          @if (mostrarEstado()) {
+            <lm-chip class="lm-pending__estado" [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
+          }
         </span>
-        <lm-chip [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
       </button>
       @if (cliente().estado === 'PENDIENTE' && conAcciones()) {
-        <div class="lm-pending__acciones">
-          <lm-boton variante="danger" icono="close" (presionar)="rechazar.emit()">Rechazar</lm-boton>
-          <lm-boton variante="success" icono="check" (presionar)="aceptar.emit()">Aceptar</lm-boton>
-        </div>
+        <lm-decision
+          compacto
+          class="lm-pending__acciones"
+          rotuloRechazar="Rechazar"
+          (rechazar)="rechazar.emit()"
+          (aceptar)="aceptar.emit()"
+        />
       }
     </div>
   `,
@@ -140,6 +156,18 @@ export class TarjetaPerfilComponent {
         color: inherit;
       }
       .fila:active { opacity: 0.7; }
+
+      /* Una sola fila: foto grande, datos legibles y las dos decisiones
+         apiladas a la derecha, del alto de la foto. */
+      .lm-pending { flex-direction: row; align-items: center; gap: 14px; }
+      .fila { flex: 1; min-width: 0; gap: 14px; }
+      .fila .lm-avatar { width: 96px; border-radius: 18px; }
+      .lm-pending__datos { display: flex; flex-direction: column; gap: 6px; }
+      .lm-pending__nombre { font-size: 18px; }
+      .lm-pending__meta { font-size: 15px; }
+      .lm-pending__acciones { display: flex; flex-direction: column; width: auto; gap: 8px; flex: 0 0 auto; }
+      .lm-pending__acciones ::ng-deep .dec { width: 48px; min-height: 0; height: 44px; border-radius: 14px; }
+      .lm-pending__acciones ::ng-deep .dec .material-symbols-rounded { font-size: 22px !important; }
     `,
   ],
 })
@@ -147,6 +175,8 @@ export class FilaPendienteComponent {
   protected readonly usuarios = inject(UsuariosService);
   readonly cliente = input.required<Usuario>();
   readonly conAcciones = input(true, { transform: booleanAttribute });
+  /** Con un filtro de estado activo el estado ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
   readonly aceptar = output<void>();
   readonly rechazar = output<void>();
   /** Toque sobre la fila: abre la ficha ampliada de la persona. */
@@ -165,7 +195,7 @@ export class FilaPendienteComponent {
 @Component({
   selector: 'lm-tarjeta-mesa',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent],
+  imports: [IconoComponent],
   template: `
 <button
   type="button"
@@ -185,12 +215,19 @@ export class FilaPendienteComponent {
     "
   ></span>
 
-  <span class="lm-mesa__tipo">
-    <lm-icono
-      [nombre]="iconoTipo()"
-      [tamano]="14"
-    />
-    {{ rotuloTipo() }}
+  <!-- Tipo (sólo el ícono) y comensales en una sola píldora arriba a la derecha. -->
+  <span
+    class="lm-mesa__arriba lm-mesa__meta"
+    [attr.aria-label]="(mostrarTipo() ? rotuloTipo() + ', ' : '') + mesa().cantidadComensales + ' personas'"
+  >
+    @if (mostrarTipo()) {
+      <span class="lm-mesa__tipo">
+        <lm-icono [nombre]="iconoTipo()" [tamano]="18" />
+      </span>
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    }
+    <lm-icono nombre="group" [tamano]="20" />
+    {{ mesa().cantidadComensales }}
   </span>
 
   <span class="lm-mesa__numero">
@@ -199,44 +236,51 @@ export class FilaPendienteComponent {
 
 </span>
 
-  <!-- CUERPO -->
-  <span class="lm-mesa__cuerpo">
-
-    <span class="lm-mesa__cabecera">
-      <span class="lm-mesa__datos">
-        <span class="lm-mesa__rotulo">
-          Mesa {{ mesa().numero }}
-        </span>
-
-        <span class="lm-mesa__meta">
-          <lm-icono
-            nombre="group"
-            [tamano]="16"
-          />
-          {{ mesa().cantidadComensales }} personas
-        </span>
+  <!--
+    Abajo a la derecha, en una sola píldora separada por pipes: editar, QR y el
+    estado. Los atajos van con el rol de botón y no como un elemento button,
+    porque la tarjeta entera ya es uno y el HTML no permite anidarlos; por eso
+    cada uno frena la propagación, para que tocar el lápiz no abra además la
+    ficha que hay detrás.
+  -->
+  <span class="lm-mesa__abajo">
+    @if (conEdicion()) {
+      <span
+        class="lm-mesa__atajo"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Editar la mesa ' + mesa().numero"
+        (click)="editar($event)"
+        (keydown.enter)="editar($event)"
+        (keydown.space)="editar($event)"
+      >
+        <lm-icono nombre="edit" [tamano]="20" />
       </span>
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    }
 
-      <span class="lm-mesa__flecha">
-        <lm-icono
-          nombre="chevron_right"
-          [tamano]="19"
-        />
-      </span>
-    </span>
-
-    <!-- ESTADO -->
     <span
-      class="lm-mesa__estado"
-      [class.lm-mesa__estado--vacia]="mesa().estado.toLowerCase() === 'vacia'"
-      [class.lm-mesa__estado--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
-      [class.lm-mesa__estado--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+      class="lm-mesa__atajo"
+      role="button"
+      tabindex="0"
+      [attr.aria-label]="'Ver el código QR de la mesa ' + mesa().numero"
+      (click)="verQr($event)"
+      (keydown.enter)="verQr($event)"
+      (keydown.space)="verQr($event)"
     >
-      <span class="lm-mesa__estado-punto"></span>
-
-      {{ rotuloEstado() }}
+      <lm-icono nombre="qr_code_2" [tamano]="20" />
     </span>
 
+    @if (mostrarEstado()) {
+      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+      <span
+        class="lm-mesa__semaforo"
+        [class.lm-mesa__semaforo--vacia]="mesa().estado.toLowerCase() === 'vacia'"
+        [class.lm-mesa__semaforo--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
+        role="img"
+        [attr.aria-label]="rotuloEstado()"
+      ></span>
+    }
   </span>
 </button>
   `,
@@ -244,7 +288,25 @@ export class FilaPendienteComponent {
 })
 export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
+  /** El lápiz sólo lo ven los perfiles que pueden editar la mesa. */
+  readonly conEdicion = input(false, { transform: booleanAttribute });
+  /** Con un filtro de estado o de tipo activo, ese dato ya es obvio: se oculta. */
+  readonly mostrarEstado = input(true, { transform: booleanAttribute });
+  readonly mostrarTipo = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
+  readonly abrirQr = output<void>();
+  readonly abrirEdicion = output<void>();
+
+  protected verQr(evento: Event): void {
+    evento.preventDefault();
+    evento.stopPropagation();
+    this.abrirQr.emit();
+  }
+  protected editar(evento: Event): void {
+    evento.preventDefault();
+    evento.stopPropagation();
+    this.abrirEdicion.emit();
+  }
 
   protected iconoTipo(): string {
     return ICONO_TIPO_MESA[this.mesa().tipo];
@@ -295,13 +357,8 @@ export class PlacaQrComponent {
           [style.background-image]="portada() ? 'url(' + portada() + ')' : null"
         >
           @if (!portada()) {
-            <lm-icono [nombre]="glifo()" [tamano]="26" color="var(--action-accent)" />
+            <lm-icono [nombre]="glifo()" tamano="clamp(19px, 6vw, 26px)" color="var(--action-accent)" />
           }
-
-          <span class="lm-product__flores" aria-hidden="true">
-            <img src="assets/img/flor-2.png" alt="" />
-            <img src="assets/img/flor-2.png" alt="" />
-          </span>
         </span>
 
         <span class="lm-product__datos">
@@ -347,9 +404,6 @@ export class PlacaQrComponent {
             (agregar)="agregar.emit()"
             (quitar)="quitar.emit()"
           />
-          <span class="lm-product__subtotal">
-            {{ cantidad() > 0 ? (producto().precio * cantidad() | pesos) : '' }}
-          </span>
         </div>
       }
     </div>
@@ -366,13 +420,9 @@ export class PlacaQrComponent {
       .lm-product-fila--pedido { box-shadow: 0 0 0 2px var(--action-primary), var(--shadow-card); }
       .lm-product-fila--carrito .lm-product { flex: 1 1 auto; min-width: 0; box-shadow: none; }
       .lm-product__carrito {
-        flex: 0 0 98px; width: 98px; box-sizing: border-box;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 4px; padding: 8px 8px 8px 0;
-      }
-      .lm-product__subtotal {
-        min-height: 13px;
-        font: 800 13px/1 var(--font-numeric); color: var(--action-primary); white-space: nowrap;
+        flex: 0 0 auto; width: clamp(78px, 23vw, 98px); box-sizing: border-box;
+        display: flex; align-items: center; justify-content: center;
+        padding: 8px 12px 8px 0;
       }
     `,
   ],
@@ -459,12 +509,12 @@ export class FilaEsperaComponent {
     <div>
       <div
         class="lm-carousel__marco"
-        [style.height.px]="alto()"
+        [style.height]="altoCss()"
         [style.background-image]="actual() ? 'url(' + actual() + ')' : null"
       >
         @if (!actual()) {
           <span class="lm-carousel__vacio">
-            <lm-icono nombre="add_a_photo" [tamano]="30" color="var(--action-accent)" />
+            <lm-icono nombre="add_a_photo" tamano="clamp(22px, 7vw, 30px)" color="var(--action-accent)" />
             <span>Foto {{ indice() + 1 }} de {{ cantidad() }} · sin cargar</span>
           </span>
         }
@@ -500,6 +550,16 @@ export class CarruselComponent {
   readonly fotos = input.required<string[]>();
   readonly alto = input(226, { transform: numberAttribute });
   private readonly posicion = signal(0);
+
+  /**
+   * El alto pedido es el techo, no una medida clavada: en un equipo angosto el
+   * marco de la foto se quedaba con más de la mitad de la pantalla y empujaba
+   * los pétalos del pie fuera de la vista.
+   */
+  protected altoCss(): string {
+    const techo = this.alto();
+    return `clamp(${Math.round(techo * 0.73)}px, ${(techo / 4.3).toFixed(1)}vw, ${techo}px)`;
+  }
 
   protected indice(): number {
     return Math.min(this.posicion(), Math.max(0, this.cantidad() - 1));

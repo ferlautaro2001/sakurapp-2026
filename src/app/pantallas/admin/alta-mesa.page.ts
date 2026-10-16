@@ -47,6 +47,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
             forma="rectangulo"
             [tamano]="168"
             etiqueta="Tomar foto de la mesa con la cámara"
+            sinRotulo
             [error]="errorFoto()"
             (capturar)="tomarFoto()"
           />
@@ -79,25 +80,19 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
 
         <lm-interruptor
           etiqueta="Mesa disponible"
-          [ayuda]="disponible() ? 'Lista para asignar' : 'La mesa está ocupada'"
           [activo]="disponible()"
           (cambiar)="disponible.set($event)"
         />
-
-        <lm-separador rotulo="Código QR" />
-        <p class="lm-parrafo">
-          Al guardar la mesa, tendrás su código listo para imprimir.
-        </p>
       </div>
 
       <div class="lm-actionbar">
-        <lm-boton icono="add" (presionar)="guardar()">Agregar mesa</lm-boton>
-        <lm-texto-boton (presionar)="volver()">Cancelar</lm-texto-boton>
+        <!-- Cruz roja (cancelar) a la izquierda, tilde verde (agregar) a la derecha. -->
+        <lm-decision rotuloRechazar="Cancelar" rotuloAceptar="Agregar mesa" (rechazar)="volver()" (aceptar)="guardar()" />
       </div>
     </div>
 
     @if (mesaCreada(); as m) {
-      <lm-modal
+      <lm-modal animate.leave="sk-modal-host-sale"
         titulo="Mesa agregada con éxito"
         [mensaje]="'La mesa ' + m.numero + ' ya está registrada.'"
         rotuloCancelar="Volver a mesas"
@@ -118,6 +113,14 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
         flex-direction: column;
         gap: 6px;
       }
+    
+      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
+      /* La foto es la parte flexible: absorbe lo que sobra del alto. */
+      .lm-body { justify-content: space-between; }
+      .foto-seccion { flex: 1 0 auto; min-height: clamp(150px, 24dvh, 300px); }
+      .foto-seccion lm-foto { flex: 1; display: flex; }
+      .foto-seccion ::ng-deep .lm-photo { flex: 1; width: 100%; }
+      .foto-seccion ::ng-deep .lm-photo__marco--rect { flex: 1; height: auto !important; min-height: 120px; }
     `,
   ],
 })

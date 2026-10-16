@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IconoComponent, IconoBotonComponent } from './basicos';
 import { SesionService } from '../nucleo/servicios/sesion.service';
@@ -26,14 +26,14 @@ export interface ItemNavegacion {
           <lm-icono-boton icono="arrow_back" rotulo="Volver" pegadoIzquierda (presionar)="volver.emit()" />
         } @else if (usuario()) {
           <span class="lm-header__avatar">
-            <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario()?.nombre ?? 'Avatar'" width="30" height="30" />
+            <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario()?.nombre ?? 'Avatar'" width="56" height="56" />
           </span>
         }
         <div class="lm-header__texto">
           <span class="lm-header__nombre">{{ titulo() ?? usuarios.nombreCompleto(usuario()) }}</span>
           @if (!titulo() && usuario()) {
             <span class="lm-header__rol">
-              <lm-icono nombre="badge" [tamano]="13" />
+              <lm-icono nombre="badge" [tamano]="16" />
               {{ rotulo() }}
             </span>
           }
@@ -73,9 +73,14 @@ export class EncabezadoComponent {
   imports: [IconoComponent],
   template: `
     @if (items().length > 1) {
-      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',1fr)'">
-        @for (item of items(); track item.id) {
-          <button type="button" [class.on]="item.id === activo()" (click)="ir(item)">
+      <!-- Columnas con mínimo cero: si el mínimo es el contenido, con cinco
+           secciones el rótulo más largo fija su columna y la barra se pasa de
+           la pantalla. -->
+      <nav class="lm-bottomnav" [style.grid-template-columns]="'repeat(' + items().length + ',minmax(0,1fr))'"
+        [style.--n]="items().length" [style.--i]="indice()">
+        <span class="lm-bottomnav__vidrio" aria-hidden="true"></span>
+        @for (item of items(); track item.id; let i = $index) {
+          <button type="button" [class.on]="i === indice()" (click)="ir(item, i)">
             <span class="lm-bottomnav__pastilla">
               <lm-icono [nombre]="item.icono" [tamano]="22" />
             </span>
@@ -92,8 +97,17 @@ export class BarraInferiorComponent {
   readonly items = input.required<ItemNavegacion[]>();
   readonly activo = input.required<string>();
 
-  protected ir(item: ItemNavegacion): void {
-    void this.router.navigate([item.ruta]);
+  /** Pestaña tocada: el vidrio se desliza hasta ella antes de cambiar de pantalla. */
+  private readonly tocado = signal<number | null>(null);
+  protected readonly indice = computed(
+    () => this.tocado() ?? this.items().findIndex((item) => item.id === this.activo()),
+  );
+
+  protected ir(item: ItemNavegacion, i: number): void {
+    if (i === this.indice()) return;
+    this.tocado.set(i);
+    // Cada pantalla trae su propia barra: se espera al deslizamiento para que se vea.
+    setTimeout(() => void this.router.navigate([item.ruta]), 260);
   }
 }
 
@@ -102,7 +116,8 @@ export class BarraInferiorComponent {
   selector: 'lm-pestanas',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="lm-tabs">
+    <div class="lm-tabs" [style.--n]="opciones().length" [style.--i]="indice()">
+      <span class="lm-tabs__marca" aria-hidden="true"></span>
       @for (opcion of opciones(); track opcion.valor) {
         <button type="button" [class.on]="opcion.valor === valor()" (click)="cambiar.emit(opcion.valor)">
           {{ opcion.rotulo }}
@@ -116,5 +131,10 @@ export class PestanasComponent {
   readonly opciones = input.required<{ valor: string; rotulo: string }[]>();
   readonly valor = input.required<string>();
   readonly cambiar = output<string>();
+
+  /** Posición de la opción activa: la pastilla se desliza hasta ahí. */
+  protected indice(): number {
+    return Math.max(0, this.opciones().findIndex((o) => o.valor === this.valor()));
+  }
 }
 

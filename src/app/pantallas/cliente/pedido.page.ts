@@ -30,9 +30,9 @@ import { Unsubscribe } from 'firebase/firestore';
       </lm-encabezado>
 
       @if (pedido(); as p) {
-        <div class="lm-body lm-body--gap12">
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
           @if (!esperando()) {
-            <lm-titulo [bajada]="bajada()">{{ titulo() }}</lm-titulo>
+            <lm-titulo>{{ titulo() }}</lm-titulo>
           }
 
           @if (p.estadoGlobal === 'RECHAZADO') {
@@ -55,9 +55,8 @@ import { Unsubscribe } from 'firebase/firestore';
                 <lm-icono nombre="hourglass_top" [tamano]="30" color="var(--action-primary)" />
               </span>
               <b>El mozo está revisando tu pedido</b>
-              <small>Cuando lo confirme te avisamos. Mientras esperás podés mirar los resultados de las encuestas.</small>
               <div style="margin-top: 12px; width: 100%;">
-                <lm-boton icono="insights" (presionar)="ir(['/cliente/encuestas'])">Ver encuestas</lm-boton>
+                <lm-boton icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">Jugar mientras esperás</lm-boton>
               </div>
             </div>
           }
@@ -111,7 +110,7 @@ import { Unsubscribe } from 'firebase/firestore';
 
           <!-- Renglones en modo editable (desde carrito) -->
           @if (editable()) {
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of carrito.items(); track item.producto.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -125,14 +124,10 @@ import { Unsubscribe } from 'firebase/firestore';
 
             @if (traba(); as motivo) {
               <lm-banner tono="error" titulo="Todavía no lo podés mandar">{{ motivo }}</lm-banner>
-            } @else {
-              <p class="lm-parrafo">
-                Podés cambiar las cantidades acá o volver a la carta para sumar o sacar productos.
-              </p>
             }
           } @else {
             <!-- Renglones de pedido enviado o confirmado -->
-            <div class="lm-list">
+            <div class="lm-lista-n pedido__detalle">
               @for (item of p.items; track item.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -142,12 +137,16 @@ import { Unsubscribe } from 'firebase/firestore';
             </div>
           }
 
-          @if (confirmado()) {
-            @if (p.juegoIntentado) {
-              <lm-banner icono="redeem" [titulo]="p.descuentoJuego ? 'Descuento aplicado' : 'Intento utilizado'">
-                {{ p.descuentoJuego ? '¡Ganaste un ' + p.descuentoJuego + '% de descuento en tu comanda!' : 'Esta vez no hubo descuento para este pedido.' }}
-              </lm-banner>
-            }
+          <!--
+            El descuento ganado ya no se avisa acá: vive en el resumen, como
+            renglón entre el subtotal y el total, que es donde se lo busca.
+            El banner queda sólo para el intento sin premio, que no tiene
+            renglón propio, y en tono informativo: no es un error.
+          -->
+          @if (confirmado() && p.juegoIntentado && !p.descuentoJuego) {
+            <lm-banner tono="info" titulo="Intento utilizado">
+              Esta vez no hubo descuento para este pedido.
+            </lm-banner>
           }
         </div>
 
@@ -156,6 +155,9 @@ import { Unsubscribe } from 'firebase/firestore';
             [total]="editable() ? carrito.importeTotal() : p.totalFinal"
             [tiempo]="editable() ? carrito.tiempoEstimado() : p.tiempoEstimado"
             [unidades]="editable() ? carrito.cantidadTotal() : unidadesPedido(p)"
+            [subtotal]="editable() ? null : p.totalBruto"
+            [descuento]="editable() ? 0 : p.montoDescuentoJuego"
+            [porcentaje]="editable() ? 0 : p.descuentoJuego"
           >
             @if (editable()) {
               <lm-boton
@@ -187,10 +189,10 @@ import { Unsubscribe } from 'firebase/firestore';
         </div>
       } @else if (carrito.items().length) {
         <!-- Borrador antes de enviar -->
-        <div class="lm-body lm-body--gap12">
-          <lm-titulo bajada="Sumá o sacá lo que quieras antes de mandarlo">Mi pedido</lm-titulo>
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
+          <lm-titulo>Mi pedido</lm-titulo>
 
-          <div class="lm-list">
+          <div class="lm-lista-n">
             @for (item of carrito.items(); track item.producto.id) {
               <lm-renglon-pedido
                 [item]="item"
@@ -200,10 +202,6 @@ import { Unsubscribe } from 'firebase/firestore';
               />
             }
           </div>
-
-          <p class="lm-parrafo">
-            Podés cambiar las cantidades acá o volver a la carta para sumar otros productos.
-          </p>
         </div>
 
         <div class="lm-actionbar">
@@ -225,7 +223,7 @@ import { Unsubscribe } from 'firebase/firestore';
       } @else {
         <!-- Vacío -->
         <div class="lm-body">
-          <lm-titulo bajada="Todavía no armaste ningún pedido">Mi pedido</lm-titulo>
+          <lm-titulo>Mi pedido</lm-titulo>
           <lm-vacio icono="receipt_long" titulo="Tu pedido está vacío">
             Entrá a la carta, tocá el más en lo que quieras y el pedido se va armando solo.
             <lm-boton accion variante="secondary" icono="restaurant_menu" [ancho]="false" (presionar)="ir(['/carta'])">
@@ -241,14 +239,14 @@ import { Unsubscribe } from 'firebase/firestore';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .devuelto { padding: 14px; border-left: 4px solid var(--state-error); }
-      .devuelto__encabezado { display: flex; align-items: center; gap: 10px; }
+      .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
+      .devuelto__encabezado { display: flex; align-items: center; gap: var(--space-3); }
       .devuelto__encabezado b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto__encabezado small { display: block; font: var(--type-caption); color: var(--text-muted); }
-      .devuelto__motivo { margin: 10px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      .leyenda { display: flex; flex-direction: column; gap: 10px; padding: 14px; }
+      .devuelto__motivo { margin: var(--space-3) 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
+      .leyenda { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
       .leyenda__item {
-        display: flex; align-items: flex-start; gap: 10px;
+        display: flex; align-items: flex-start; gap: var(--space-3);
         font: var(--type-body-small); color: var(--text-body); text-wrap: pretty;
       }
       .leyenda__item b { color: var(--text-title); }
@@ -260,24 +258,42 @@ import { Unsubscribe } from 'firebase/firestore';
       .leyenda__sello--cambiar { background: var(--state-error); }
       .limpiar {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        width: 100%; min-height: var(--touch-min); padding: 10px 14px; margin-top: 2px;
+        width: 100%; min-height: var(--touch-min); padding: var(--space-3) var(--space-4); margin-top: 2px;
         border: none; border-radius: var(--radius-button); cursor: pointer;
         background: var(--state-error); color: #FFF6F5;
         font: var(--type-button); line-height: 1.25; text-align: center; text-wrap: balance;
       }
       .limpiar:active { background: #9E1D13; transform: scale(0.99); }
-      .sector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 8px; text-align: center; }
-      .espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px 16px; text-align: center; }
+      .sector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-3) var(--space-2); text-align: center; }
+      .espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-5) var(--space-4); text-align: center; }
       .espera__titulo {
         margin: 0 0 6px; font: var(--type-title); letter-spacing: var(--tracking-tight);
         color: var(--text-title); text-wrap: balance;
       }
       .espera__reloj {
-        width: 54px; height: 54px; border-radius: 50%; display: grid; place-items: center;
+        width: clamp(44px, 13.5vw, 54px); height: clamp(44px, 13.5vw, 54px); border-radius: 50%; display: grid; place-items: center;
         background: var(--surface-sunken);
       }
       .espera b { font: var(--type-card-title); color: var(--text-title); }
       .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
+      /* El estado vacío llena el alto que sobra: sin hueco debajo. */
+      lm-vacio { display: flex; flex-direction: column; flex: 1 1 auto; }
+      lm-vacio ::ng-deep .lm-empty { flex: 1 1 auto; justify-content: center; }
+
+      /* Esperando al mozo: la tarjeta ocupa el alto disponible y el reloj
+         y el título crecen con él, en lugar de quedar chicos arriba. */
+      .espera { flex: 1 1 auto; justify-content: center; gap: var(--space-3); }
+      .espera__reloj { width: clamp(64px, 22vw, 96px); height: clamp(64px, 22vw, 96px); }
+      .espera__titulo { font: var(--type-title-xl); }
+      .espera b { font: var(--type-section); }
+      .espera small { font: var(--type-body); }
+      /* El estado y el resumen dejan menos alto que en el borrador:
+         como en el carrito, se muestran hasta dos renglones por tanda. */
+      .pedido__detalle:has(> :nth-child(5)) { --por: 2; }
+      @media (max-height: 640px) {
+        .pedido__detalle:has(> :nth-child(3)) { --por: 1; }
+      }
+
     `,
   ],
 })
@@ -387,29 +403,6 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     return 'Mi pedido';
   }
 
-  protected bajada(): string | null {
-    const p = this.pedido();
-    if (!p) return 'Sumá o sacá lo que quieras antes de mandarlo';
-    switch (p.estadoGlobal) {
-      case 'RECHAZADO':
-        return 'El mozo te devolvió el pedido';
-      case 'PENDIENTE_CONFIRMACION':
-        return null;
-      case 'CONFIRMADO':
-        return `Salió para la cocina y la barra · listo en unos ${p.tiempoEstimado} minutos`;
-      case 'EN_PREPARACION':
-        return 'Ya lo están preparando';
-      case 'LISTO':
-        return 'El mozo te lo va a acercar en un momento';
-      case 'RECIBIDO':
-      case 'ENTREGADO':
-        return 'Esperamos que disfrutes tu comida';
-      case 'CUENTA_SOLICITADA':
-        return 'El mozo se acerca con la cuenta';
-      default:
-        return 'Sumá o sacá lo que quieras antes de mandarlo';
-    }
-  }
 
   protected alcance(): string {
     const p = this.pedido();

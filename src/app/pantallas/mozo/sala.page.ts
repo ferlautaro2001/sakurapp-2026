@@ -15,9 +15,30 @@ import { Unsubscribe } from 'firebase/firestore';
   imports: [ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen lm-screen--florida">
-      <lm-encabezado [titulo]="'Mesa ' + numeroMesa()" conVolver (volver)="volver()" />
+      <lm-encabezado [titulo]="'Mesa ' + numeroMesa()" conVolver (volver)="volver()">
+        <!--
+          Dar la consulta por resuelta es del mozo y va acá, que es donde ya
+          leyó todo: desde la bandeja no se sabe si quedó algo por contestar.
+        -->
+        <lm-icono-boton
+          accion
+          [icono]="cerrada() ? 'replay' : 'task_alt'"
+          [rotulo]="cerrada() ? 'Reabrir la consulta' : 'Marcar la consulta como resuelta'"
+          [tono]="cerrada() ? 'neutro' : 'primario'"
+          (presionar)="alternarCierre()"
+        />
+      </lm-encabezado>
 
       <div class="lm-body lm-body--gap12 sala">
+        @if (cerrada()) {
+          <p class="sala__resuelta">
+            <lm-icono nombre="task_alt" [tamano]="16" color="var(--state-success)" />
+            <span>
+              Consulta resuelta{{ cerradaPor() ? ' por ' + cerradaPor() : '' }}. Salió de las
+              pendientes; si la mesa vuelve a escribir, reaparece sola.
+            </span>
+          </p>
+        }
 
         <div class="sala__hilo">
           @if (mensajes().length) {
@@ -71,10 +92,18 @@ import { Unsubscribe } from 'firebase/firestore';
       }
       .sala__vacia {
         flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 6px; text-align: center; padding: 20px 10px;
+        gap: 6px; text-align: center; padding: var(--space-5) 10px;
       }
       .sala__vacia b { font: var(--type-card-title); color: var(--text-sobre-fondo); }
       .sala__vacia span { font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
+      .sala__resuelta {
+        flex: 0 0 auto; margin: 0;
+        display: flex; align-items: flex-start; gap: var(--space-2);
+        padding: var(--space-2) var(--space-3); border-radius: var(--radius-card);
+        background: var(--state-success-surface); color: var(--state-success);
+        font: var(--type-body-small); text-wrap: pretty;
+      }
+      .sala__resuelta lm-icono { flex: 0 0 auto; }
 
     `,
   ],
@@ -104,8 +133,20 @@ export class MozoSalaPage extends PaginaConSesion {
     };
   });
 
+  /** El estado de cierre vive en el resumen de la conversación, no en el hilo. */
+  private readonly resumen = computed(() =>
+    this.chat.conversacionesActivas().find((c) => c.mesaId === this.id()),
+  );
+  protected readonly cerrada = computed(() => this.resumen()?.cerrada ?? false);
+  protected readonly cerradaPor = computed(() => this.resumen()?.cerradaPor ?? '');
+
   constructor() {
     super();
+    // El resumen de la conversación es lo que dice si está cerrada. La escucha
+    // es una sola para toda la aplicación y está contada por referencias: darla
+    // de baja acá no apaga la de las otras pantallas.
+    const soltar = this.chat.iniciarEscuchaConversaciones();
+    this.destroyRef.onDestroy(soltar);
 
     effect(() => {
       const mid = this.id();
@@ -117,9 +158,10 @@ export class MozoSalaPage extends PaginaConSesion {
       if (mid && uid) {
         this.escuchaChat = this.chat.escucharMensajes(mid, uid, (msjs) => {
           this.mensajes.set(msjs);
-          if (msjs.some((m) => m.remitenteRol === 'CLIENTE' && !m.leido)) {
-            void this.chat.marcarLeidos(mid, 'CLIENTE');
-          }
+          // Sin condición: el `leido` de cada mensaje se marca una sola vez,
+          // pero la fecha de lectura de la conversación —lo que apaga el globo
+          // de la bandeja— hay que volver a estamparla cada vez que se entra.
+          void this.chat.marcarLeidos(mid, 'CLIENTE');
         });
       }
     });
@@ -179,6 +221,25 @@ export class MozoSalaPage extends PaginaConSesion {
       this.avisos.error('Error', 'No se pudo enviar la respuesta.');
       this.formulario.controls.texto.setValue(texto);
     }
+  }
+
+  /**
+   * Cerrar no archiva ni corta nada: el historial queda entero y la mesa puede
+   * seguir escribiendo. Lo único que cambia es que la consulta deja de figurar
+   * como pendiente, que era el problema —un hilo contestado hace media hora
+   * reclamaba igual que uno recién llegado—. Es reversible desde el mismo
+   * botón y, además, se deshace sola cuando la mesa vuelve a escribir: el
+   * costo de equivocarse cerrando tiene que ser cero.
+   */
+  protected async alternarCierre(): Promise<void> {
+    const mid = this.id();
+    if (this.cerrada()) {
+      await this.chat.reabrirConversacion(mid);
+      this.avisos.info('Consulta reabierta', 'Vuelve a figurar como pendiente en la bandeja.');
+      return;
+    }
+    await this.chat.cerrarConversacion(mid, this.usuario()?.nombre ?? '');
+    this.avisos.exito('Consulta resuelta', 'Sale de las pendientes. Si escriben de nuevo, vuelve sola.');
   }
 
   protected volver(): void {

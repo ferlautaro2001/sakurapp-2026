@@ -2154,7 +2154,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .carta__lista .lm-product__nombre { justify-content: center; flex-wrap: wrap; font-size: clamp(17px, 5vw, 21px); }
 .carta__lista .lm-product__nombre-texto { overflow: visible; text-overflow: clip; white-space: normal; text-wrap: balance; }
 .carta__lista .lm-product__pie { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-2); margin: 0; }
-.carta__lista .lm-product-fila--carrito .lm-product__carrito { width: 100%; flex-direction: row; justify-content: space-between; padding: 0 var(--space-3) var(--space-3); }
+.carta__lista .lm-product-fila--carrito .lm-product__carrito { width: 100%; flex-direction: row; justify-content: center; padding: 0 var(--space-3) var(--space-3); }
 .carta__lista .lm-product-fila--carrito { flex-direction: column; align-items: stretch; }
 
 /* ---------- pestañas y segmentado: la pastilla se desliza ----------
@@ -2572,14 +2572,18 @@ img.lm-avatar { object-fit: cover; object-position: center; }
    rosa, sin cambiar su relleno: conservan su degradado o su blanco. */
 .lm-profile,
 .lm-field:not(.lm-field--error) .lm-field__box:not(:focus-within),
-.lm-btn--primary {
+.lm-btn--primary,
+.lm-btn--danger,
+.lm-btn--success {
   border: 1.5px solid rgba(255, 255, 255, .65) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .7),
     0 0 0 1px rgba(232, 51, 111, .32),
     0 4px 10px rgba(94, 12, 44, .18) !important;
 }
-.lm-btn--primary:not(:disabled):active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 0 1px rgba(232, 51, 111, .32) !important; }
+.lm-btn--primary:not(:disabled):active,
+.lm-btn--danger:not(:disabled):active,
+.lm-btn--success:not(:disabled):active { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 0 0 1px rgba(232, 51, 111, .32) !important; }
 
 /* El borde translúcido sobre un relleno blanco se perdía: el blanco pasaba por
    debajo del borde y lo tapaba. Con `background-clip: padding-box` el relleno
@@ -2587,7 +2591,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
    rosa del fondo, como en los demás botones de vidrio. */
 .lm-profile,
 .lm-field:not(.lm-field--error) .lm-field__box:not(:focus-within),
-.lm-btn--primary {
+.lm-btn--primary,
+.lm-btn--danger,
+.lm-btn--success {
   background-clip: padding-box !important;
   border-width: 2.5px !important;
   border-color: rgba(255, 255, 255, .55) !important;
@@ -2748,7 +2754,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   background-clip: padding-box !important;
 }
 .carta__lista .lm-product-fila,
-.lm-product-fila--carrito {
+.lm-product-fila--carrito,
+.lm-actionbar .lm-resumen {
+  background-clip: padding-box !important;
   border: 2.5px solid rgba(255, 255, 255, .55) !important;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, .7),
@@ -2827,29 +2835,134 @@ img.lm-avatar { object-fit: cover; object-position: center; }
     0 4px 12px rgba(59, 8, 27, .2);
 }
 
-/* Carta: precio y tiempo ocupan todo el ancho de la fila, uno en cada punta.
-   El tiempo queda a la izquierda y el precio a la derecha. El margen derecho
-   que reservaba la flecha ya no hace falta porque la flecha no se muestra. */
-.carta__lista .lm-product__pie {
-  width: 100%; margin: 0 !important;
-  display: flex; flex-direction: row-reverse; flex-wrap: nowrap;
-  justify-content: space-between; align-items: center; gap: var(--space-2);
+/* Carta: redistribución de elementos según diseño de referencia:
+   - Título arriba centrado / destacado a todo el ancho (fila 1).
+   - Columna izquierda: imagen grande protagonista (fila 2 y 3).
+   - Columna derecha: píldoras de precio y tiempo (fila 2), y botón/cantidad (fila 3).
+   Cada elemento con su espacio dedicado, sin encimarse ni solaparse. */
+.carta__lista .lm-product-fila {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) clamp(118px, 32vw, 140px) !important;
+  grid-template-rows: auto auto auto 1fr !important;
+  align-items: stretch;
+  padding: clamp(10px, 2.8vw, 14px);
+  gap: clamp(8px, 2vw, 12px);
+  position: relative;
 }
-.carta__lista .lm-product__dato { flex: 0 1 auto; min-width: 0; }
-.carta__lista .lm-product__nombre { padding-right: 0 !important; width: 100%; }
 
-/* Carta: el título arriba de la foto, y precio y tiempo abajo, más grandes.
-   `display: contents` en el bloque de datos deja que el nombre y el pie se
-   ordenen por separado alrededor de la foto, sin tocar el template. */
-.carta__lista .lm-product__datos { display: contents; }
-.carta__lista .lm-product__nombre { order: 0; flex: 0 0 auto; font-size: clamp(19px, 5.4vw, 24px); }
-.carta__lista .lm-product__thumb { order: 1; }
-.carta__lista .lm-product__pie { order: 2; flex: 0 0 auto; }
-.carta__lista .lm-product__dato { padding: 7px 12px 7px 8px; gap: 8px; min-height: clamp(44px, 12vw, 52px); }
-.carta__lista .lm-product__dato-icono { width: clamp(30px, 8.4vw, 36px); height: clamp(30px, 8.4vw, 36px); }
-.carta__lista .lm-product__dato-icono .material-symbols-rounded { font-size: clamp(20px, 5.6vw, 24px) !important; }
-.carta__lista .lm-product__precio { font-size: clamp(19px, 5.4vw, 24px); }
-.carta__lista .lm-product__tiempo { font-size: clamp(15px, 4.2vw, 18px); }
+.carta__lista .lm-product {
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
+  display: grid !important;
+  grid-template-columns: subgrid !important;
+  grid-template-rows: subgrid !important;
+  gap: clamp(8px, 2vw, 12px);
+  padding: 0 !important;
+  margin: 0 !important;
+  align-items: stretch;
+  text-align: left;
+}
+
+.carta__lista .lm-product__datos {
+  display: contents !important;
+}
+
+.carta__lista .lm-product__nombre {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-content: center;
+  text-align: center;
+  font-size: clamp(16px, 4.3vw, 20px);
+  font-weight: 800;
+  line-height: 1.35;
+  padding: 6px 6px 2px;
+  margin: 0;
+}
+
+.carta__lista .lm-product__thumb {
+  grid-column: 1;
+  grid-row: 2 / -1;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: clamp(140px, 38vw, 190px);
+  align-self: stretch;
+  border-radius: calc(var(--radius-card) - 2px) !important;
+  box-shadow: 0 4px 14px rgba(59, 8, 27, 0.16) !important;
+}
+
+.carta__lista .lm-product__pie {
+  grid-column: 2;
+  grid-row: 2;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  gap: clamp(8px, 2vw, 12px) !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+
+.carta__lista .lm-product__dato {
+  width: 100%;
+  box-sizing: border-box;
+  padding: clamp(6px, 1.8vw, 8px) clamp(8px, 2.2vw, 10px);
+  gap: 6px;
+  min-height: clamp(38px, 10vw, 44px);
+  border-radius: 999px;
+  justify-content: flex-start;
+}
+
+.carta__lista .lm-product__dato-icono {
+  width: clamp(24px, 6.5vw, 28px);
+  height: clamp(24px, 6.5vw, 28px);
+  flex: 0 0 clamp(24px, 6.5vw, 28px);
+}
+
+.carta__lista .lm-product__dato-icono .material-symbols-rounded {
+  font-size: clamp(17px, 4.5vw, 20px) !important;
+}
+
+.carta__lista .lm-product__precio {
+  font-size: clamp(15px, 4vw, 18px);
+  font-weight: 900;
+}
+
+.carta__lista .lm-product__tiempo {
+  font-size: clamp(12px, 3.2vw, 13.5px);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* El control de carrito se ubica debajo de las píldoras en su propio renglón independiente,
+   con espacio propio para no sobreponerse ni integrarse con el tiempo de preparación */
+.carta__lista .lm-product-fila--carrito .lm-product__carrito {
+  grid-column: 2;
+  grid-row: 3 / -1;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  padding: 0 0 8px !important;
+  align-self: end;
+  justify-self: center;
+  z-index: 2;
+}
+
+.carta__lista .lm-product-fila--carrito .lm-product__carrito lm-cantidad,
+.carta__lista .lm-product-fila--carrito .lm-product__carrito .pastilla {
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.carta__lista .lm-product-fila--carrito .lm-product__carrito .agregar {
+  width: clamp(40px, 11vw, 46px);
+  height: clamp(40px, 11vw, 46px);
+  margin: 0;
+  box-shadow: 0 3px 10px rgba(199, 38, 87, 0.4);
+}
 
 /* El disco del ícono dentro de la píldora no lleva borde: alcanza con el de la
    píldora. También queda círculo perfecto (se estiraba en un óvalo). */
@@ -2861,18 +2974,13 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   aspect-ratio: 1 / 1;
 }
 
-/* Carta: la foto ocupa el mismo ancho que la fila de tiempo y precio (del borde
-   izquierdo de la píldora del tiempo al borde derecho de la del precio). Toma el
-   alto que sobra, así que es casi cuadrada en pantallas altas. */
-.carta__lista .lm-product__thumb {
-  width: 100%; max-width: none; align-self: stretch;
-  aspect-ratio: auto; flex: 1 1 0; min-height: 64px;
-}
-
 /* ---------- pantalla de espera: el mismo fondo claro que los juegos ---------- */
 lm-cliente-espera .turno,
 lm-cliente-espera .pasos,
-lm-cliente-espera .lm-actionbar .lm-btn {
+lm-cliente-espera .lm-actionbar .lm-btn,
+lm-estado-cuenta .espera,
+lm-registro-enviado .espera,
+.sk-grafico {
   background-image: var(--surface-card-degradado) !important;
   background-color: var(--surface-card) !important;
   border-radius: 22px;
@@ -2927,7 +3035,10 @@ lm-cliente-juegos .juego,
 lm-cliente-juegos .dto,
 lm-cliente-espera .turno,
 lm-cliente-espera .pasos,
-lm-cliente-espera .lm-actionbar .lm-btn {
+lm-cliente-espera .lm-actionbar .lm-btn,
+lm-estado-cuenta .espera,
+lm-registro-enviado .espera,
+.sk-grafico {
   background-clip: padding-box !important;
   border: 2.5px solid rgba(255, 255, 255, .55) !important;
   box-shadow:

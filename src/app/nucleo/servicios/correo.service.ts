@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
+import { FirestoreService } from './firestore.service';
 import { nuevoId } from '../datos/semilla';
 import { CorreoEnviado, Usuario } from '../modelos/modelos';
 import { ROTULO_PERFIL } from '../modelos/enums';
@@ -45,6 +46,7 @@ async function logoComoDatos(): Promise<string> {
 @Injectable({ providedIn: 'root' })
 export class CorreoService {
   private readonly almacen = inject(AlmacenService);
+  private readonly firestore = inject(FirestoreService);
 
   /**
    * Correo automático 1 · Confirmación de registro recibido en revisión (Punto 5).
@@ -163,6 +165,13 @@ export class CorreoService {
       await this.almacen.guardarCorreos([correo, ...this.almacen.correos()].slice(0, 50));
     } catch {
       // Si falla la persistencia local, el envío ya ocurrió
+    }
+
+    // Replica en la nube para que todos los dispositivos (web y APK) vean lo mismo.
+    try {
+      await this.firestore.guardarCorreo(correo);
+    } catch {
+      // La copia local ya quedó guardada; la escucha la completa al reconectar.
     }
 
     return correo;

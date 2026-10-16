@@ -609,7 +609,7 @@ export interface DatoFicha {
 })
 export class ModalComponent {
   readonly titulo = input.required<string>();
-  readonly mensaje = input.required<string>();
+  readonly mensaje = input<string | undefined>();
   readonly rotuloConfirmar = input.required<string>();
   readonly rotuloCancelar = input('Cancelar');
   readonly tono = input<'exito' | 'peligro' | 'primario'>('primario');

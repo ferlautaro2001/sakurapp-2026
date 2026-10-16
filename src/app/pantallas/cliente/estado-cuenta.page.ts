@@ -30,24 +30,22 @@ import { UI } from '../../ui';
             <lm-icono [nombre]="glifo()" tamano="clamp(46px, 17vw, 84px)" color="#FFFFFF" />
           </span>
 
-          <b>{{ detalle() }}</b>
-          <small>{{ siguiente() }}</small>
-
-          <span class="espera__correo">
-            <lm-icono nombre="outgoing_mail" [tamano]="18" color="var(--text-muted)" />
-            {{ correo() }}
-          </span>
+          <div class="espera__mensaje">
+            <b>{{ detalle() }}</b>
+            <span class="espera__correo">
+              <lm-icono nombre="outgoing_mail" [tamano]="18" color="var(--text-muted)" />
+              <span class="espera__subtexto">{{ siguiente() }}</span>
+            </span>
+          </div>
         </div>
       </div>
 
-      <div class="lm-actionbar">
-        @if (pendiente()) {
-          <lm-boton variante="secondary" icono="home" (presionar)="login()">Volver al inicio</lm-boton>
-        } @else {
+      @if (!pendiente()) {
+        <div class="lm-actionbar">
           <lm-boton variante="secondary" icono="person" (presionar)="invitado()">Ingresar como invitado</lm-boton>
           <lm-texto-boton (presionar)="login()">Volver al login</lm-texto-boton>
-        }
-      </div>
+        </div>
+      }
     </div>
   `,
   styles: [
@@ -67,15 +65,17 @@ import { UI } from '../../ui';
       .espera__reloj {
         width: clamp(96px, 36vw, 156px); height: clamp(96px, 36vw, 156px); border-radius: 50%; display: grid; place-items: center;
       }
+      .espera__mensaje {
+        display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;
+      }
       .espera b { font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
-      .espera small { font: var(--type-body); color: var(--text-muted); text-wrap: pretty; }
-      /* El aviso del correo era una tarjeta aparte; adentro de esta es un
-         renglón más, separado por un hairline para que no se mezcle. */
       .espera__correo {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        margin-top: 10px; padding-top: 12px; width: 100%;
+        padding-top: 12px; width: 100%;
         border-top: 1px solid var(--border-divider);
-        font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty;
+      }
+      .espera__subtexto {
+        font: var(--type-body); color: var(--text-muted); text-wrap: pretty;
       }
     `,
   ],
@@ -95,7 +95,7 @@ export class EstadoCuentaPage {
     return this.pendiente() ? 'hourglass_top' : 'block';
   }
   protected titulo(): string {
-    return this.pendiente() ? 'Revisión de cuenta en proceso' : 'Acceso denegado';
+    return this.pendiente() ? 'Revisión en proceso' : 'Acceso denegado';
   }
   protected detalle(): string {
     return this.pendiente()
@@ -104,13 +104,8 @@ export class EstadoCuentaPage {
   }
   protected siguiente(): string {
     return this.pendiente()
-      ? 'La revisión suele resolverse en el día. No hace falta volver a registrarse.'
+      ? 'Cuando seas aprobado te llegará un correo electrónico'
       : 'Podés entrar como invitado con foto y nombre.';
-  }
-  protected correo(): string {
-    return this.pendiente()
-      ? 'Cuando el dueño o el supervisor resuelvan, te llega un correo electrónico automático.'
-      : 'Te enviamos un correo electrónico con el motivo del rechazo.';
   }
 
   protected login(): void {

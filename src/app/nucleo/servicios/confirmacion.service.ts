@@ -3,7 +3,7 @@ import { DatoFicha } from '../../ui/basicos';
 
 export interface PedidoConfirmacion {
   titulo: string;
-  mensaje: string;
+  mensaje?: string;
   /** Rótulo del botón que confirma. Siempre dice qué va a pasar, nunca "Aceptar". */
   confirmar: string;
   cancelar?: string;

@@ -11,7 +11,15 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+        <lm-icono-boton
+          accion
+          icono="person_add"
+          rotulo="Dar de alta un empleado"
+          tono="primario"
+          (presionar)="ir(['/dueno/alta-empleado'])"
+        />
+      </lm-encabezado>
       <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo [contador]="cargandoLista() || errorCarga() ? null : empleados().length">Empleados</lm-titulo>
         <lm-buscador marcador="Buscar por nombre o puesto" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
@@ -42,6 +50,17 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
         } @else {
           <lm-vacio icono="groups" [titulo]="busqueda() ? 'No encontramos empleados' : 'Todavía no hay empleados'">
             {{ busqueda() ? 'Probá con otro nombre o puesto.' : 'Los empleados que registres aparecerán acá.' }}
+            @if (!busqueda()) {
+              <lm-boton
+                accion
+                variante="secondary"
+                icono="person_add"
+                [ancho]="false"
+                (presionar)="ir(['/dueno/alta-empleado'])"
+              >
+                Dar de alta un empleado
+              </lm-boton>
+            }
           </lm-vacio>
         }
       </div>

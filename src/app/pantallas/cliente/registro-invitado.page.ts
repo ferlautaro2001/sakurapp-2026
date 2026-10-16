@@ -54,9 +54,9 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
         -->
       </div>
 
-      <div class="lm-actionbar">
-        <lm-boton icono="how_to_reg" (presionar)="ingresar()">Ingresar como invitado</lm-boton>
-        <lm-texto-boton (presionar)="cuentaCompleta()">Quiero una cuenta completa</lm-texto-boton>
+      <div class="lm-actionbar lm-actionbar--split">
+        <lm-boton variante="danger" (presionar)="volver()">Volver</lm-boton>
+        <lm-boton variante="success" icono="how_to_reg" (presionar)="ingresar()">Ingresar</lm-boton>
       </div>
     </div>
   `,

@@ -79,11 +79,6 @@ export const routes: Routes = [
     redirectTo: 'dueno/registros',
     pathMatch: 'full',
   },
-  {
-    path: 'admin/alta-empleado',
-    redirectTo: 'dueno/alta-empleado',
-    pathMatch: 'full',
-  },
 
   // --- mesas: dueño, supervisor, metre y mozo ---
   {

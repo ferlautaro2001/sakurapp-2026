@@ -63,29 +63,16 @@ import { QrService } from '../../nucleo/servicios/qr.service';
             }
           </div>
 
-          @if (vinculado()) {
-            <div class="lm-vidrio pasos">
-              <span class="paso">
-                <lm-icono nombre="insights" [tamano]="19" color="#FFFFFF" />
-                Mientras esperás la atención, podés mirar los resultados de las encuestas anteriores.
-              </span>
-            </div>
-          }
         }
       </div>
 
       @if (estado() === 'ASIGNADO') {
         <div class="lm-actionbar">
-          <lm-boton icono="qr_code_scanner" (presionar)="escanearMesa()">Escanear el código de mi mesa</lm-boton>
+          <lm-boton icono="document_scanner" (presionar)="escanearMesa()">Escanear el código de mi mesa</lm-boton>
         </div>
       } @else if (esperando()) {
         <div class="lm-actionbar">
           <lm-boton icono="refresh" (presionar)="actualizar()">Actualizar mi lugar</lm-boton>
-        </div>
-      } @else if (vinculado() && entrada()?.mesaAsignadaId) {
-        <div class="lm-actionbar lm-actionbar--split">
-          <lm-boton icono="restaurant_menu" (presionar)="irCarta()">Explorar la carta</lm-boton>
-          <lm-boton icono="chat" (presionar)="abrirChatMozo()">Consulta al mozo</lm-boton>
         </div>
       }
 

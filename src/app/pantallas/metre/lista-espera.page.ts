@@ -163,7 +163,7 @@ export class MetreListaEsperaPage extends PaginaConSesion implements OnInit {
   protected async quitar(entrada: Espera): Promise<void> {
     const confirmado = await this.preguntar({
       titulo: '¿Quitar de la lista?',
-      mensaje: 'El turno quedará cancelado y desaparecerá de la lista de espera.',
+      mensaje: '',
       confirmar: 'Quitar de la lista',
       tono: 'peligro',
       icono: 'person_remove',

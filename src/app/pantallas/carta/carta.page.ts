@@ -259,7 +259,7 @@ export class CartaPage extends PaginaConSesion {
   }
 
   protected textoVacio(): string {
-    if (this.busqueda().trim()) return 'Probá con otro nombre o con una palabra de la descripción.';
+    if (this.busqueda().trim()) return '';
     return this.puedeCargar()
       ? 'Cargá nombre, descripción, precio, tiempo de elaboración y hasta tres fotos por producto.'
       : 'El cocinero y el cantinero van cargando la carta desde sus dispositivos.';

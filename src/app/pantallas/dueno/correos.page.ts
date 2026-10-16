@@ -27,9 +27,9 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
         @if (correos().length) {
           <div class="lm-lista-n">
             @for (correo of correos(); track correo.id) {
-              <div class="casilla" [class.casilla--abierta]="abierto() === correo.id">
+              <div #casilla class="casilla" [class.casilla--abierta]="abierto() === correo.id">
               <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
-                <button type="button" class="correo__fila" (click)="alternar(correo.id)">
+                <button type="button" class="correo__fila" (click)="alternar(correo.id, casilla)">
                   <span class="correo__icono" [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'">
                     <lm-icono
                       [nombre]="correo.plantilla === 'APROBACION' ? 'mark_email_read' : 'unsubscribe'"
@@ -96,21 +96,23 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
       /* El correo se muestra dentro de un marco aislado: su hoja de estilos
          está pensada para un cliente de correo y no puede tocar la aplicación. */
       .correo__vista {
-        /* 420px clavados tapaban la pantalla entera en un equipo bajo: el marco
-           nunca pasa de dos tercios del alto útil. */
         width: 100%; height: min(420px, 62dvh); display: block;
         border-radius: var(--radius-field); border: 1px solid var(--border-field);
         background: var(--surface-sunken);
       }
     
-      /* La tarjeta conserva su alto natural (con tope) y se centra en su casilla.
-         Cuando se abre la vista previa, la casilla ocupa toda la lista y el
-         marco del correo toma el alto que sobra, sin desbordar. */
+      /* Tandas exactas del sistema: cada casilla mide (alto - separaciones) / por,
+         así entran enteras por pantalla y ninguna queda cortada; la tarjeta
+         llena su casilla (con tope) y centra su contenido. */
+      /* La última tarjeta no puede anclarse al tope (no hay más scroll): se
+         ancla por debajo para que al llegar al final nunca quede cortada. */
+      .lm-lista-n > .casilla:last-child { scroll-snap-align: end; }
       .casilla { display: flex; flex-direction: column; justify-content: center; }
-      .casilla > .correo { flex: 0 0 auto; justify-content: center; }
-      .casilla--abierta { flex-basis: 100% !important; }
+      .casilla > .correo { flex: 1 1 auto; max-height: clamp(160px, 30dvh, 210px); justify-content: center; }
+      .casilla--abierta { flex-basis: 100% !important; min-height: 70dvh; }
       .casilla > .correo--abierto { flex: 1 1 auto; max-height: 100%; justify-content: flex-start; min-height: 0; }
-      .correo--abierto .correo__vista { flex: 1 1 0; height: auto; min-height: 0; }
+      .correo--abierto .correo__vista { flex: 1 1 0; height: auto; min-height: 250px; }
+
       @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
     `,
   ],
@@ -122,8 +124,17 @@ export class DuenoCorreosPage extends PaginaConSesion {
   protected readonly correos = computed(() => this.almacen.correos());
   protected readonly abierto = signal<string | null>(null);
 
-  protected alternar(id: string): void {
-    this.abierto.update((actual) => (actual === id ? null : id));
+  protected alternar(id: string, casilla?: HTMLElement): void {
+    const abrir = this.abierto() !== id;
+    this.abierto.set(abrir ? id : null);
+    if (abrir && casilla) {
+      // La tarjeta abierta ocupa toda la lista: se la lleva al tope para que
+      // la vista previa no quede cortada por la posición de scroll anterior.
+      // Doble cuadro para que Angular ya haya aplicado la clase abierta.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => casilla.scrollIntoView({ behavior: 'smooth', block: 'start' })),
+      );
+    }
   }
 
   /**

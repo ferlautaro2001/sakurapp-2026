@@ -159,18 +159,21 @@ export class ResumenPedidoComponent {
     `
       :host { display: block; flex: 0 0 auto; }
       .pastilla {
-        display: inline-flex; align-items: center; gap: 2px;
+        display: inline-flex; align-items: center; gap: 4px;
         padding: 3px; border-radius: var(--radius-pill);
         background: var(--surface-sunken);
+        border: 1.5px solid rgba(224, 115, 144, 0.45);
+        box-shadow: inset 0 1px 2px rgba(110, 18, 52, 0.08), 0 2px 6px rgba(110, 18, 52, 0.12);
       }
       .paso {
         position: relative;
-        width: 30px; height: 30px; border-radius: 50%; border: none; cursor: pointer;
+        width: 32px; height: 32px; border-radius: 50%; border: none; cursor: pointer;
         display: grid; place-items: center;
+        transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast);
       }
       /*
-       * El botón se ve de 30px porque la pastilla vive en una columna de menos
-       * de cien píxeles, pero lo que recibe el dedo llega a los 44px de alto.
+       * El botón se ve de 32px porque la pastilla vive en una columna compacta,
+       * pero lo que recibe el dedo llega a los 44px de alto.
        * Se estira sólo en vertical a propósito: si creciera a los costados, el
        * área de quitar pisaría la de agregar, y son justo los dos toques que no
        * se pueden confundir.
@@ -180,19 +183,36 @@ export class ResumenPedidoComponent {
         content: ""; position: absolute; left: 0; right: 0;
         top: calc((var(--touch-min) - 100%) / -2); bottom: calc((var(--touch-min) - 100%) / -2);
       }
-      .paso--menos { background: var(--surface-card); color: var(--text-title); box-shadow: var(--shadow-card); }
-      .paso--mas { background: var(--action-primary); color: #FFFFFF; }
-      .paso--mas:disabled { background: var(--surface-sunken); color: var(--text-muted); cursor: not-allowed; }
+      .paso--menos {
+        background: #FFFFFF;
+        color: var(--action-primary);
+        border: 1.5px solid rgba(199, 38, 87, 0.3);
+        box-shadow: 0 1px 3px rgba(110, 18, 52, 0.14);
+      }
+      .paso--mas {
+        background: var(--action-primary);
+        color: #FFFFFF;
+        border: 1.5px solid transparent;
+        box-shadow: 0 2px 6px rgba(199, 38, 87, 0.35);
+      }
+      .paso--mas:disabled {
+        background: var(--surface-sunken);
+        color: var(--text-muted);
+        border-color: transparent;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
       .paso:active:not(:disabled) { transform: scale(0.92); }
       .numero {
-        min-width: 20px; text-align: center;
-        font: 800 clamp(13.5px, 3.5vw, 15px)/1 var(--font-numeric); color: var(--text-title);
+        min-width: 22px; text-align: center;
+        font: 800 clamp(14px, 3.6vw, 16px)/1 var(--font-numeric); color: var(--text-title);
       }
       .agregar {
         position: relative;
         width: 36px; height: 36px; border-radius: 50%; border: none; cursor: pointer;
         display: grid; place-items: center;
         background: var(--action-primary); color: #FFFFFF;
+        border: 1.5px solid rgba(255, 255, 255, 0.6);
         box-shadow: 0 2px 8px rgba(199, 38, 87, .35);
       }
       .agregar:active { transform: scale(0.92); }

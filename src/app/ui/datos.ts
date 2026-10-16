@@ -404,9 +404,6 @@ export class PlacaQrComponent {
             (agregar)="agregar.emit()"
             (quitar)="quitar.emit()"
           />
-          <span class="lm-product__subtotal">
-            {{ cantidad() > 0 ? (producto().precio * cantidad() | pesos) : '' }}
-          </span>
         </div>
       }
     </div>
@@ -422,18 +419,10 @@ export class PlacaQrComponent {
       }
       .lm-product-fila--pedido { box-shadow: 0 0 0 2px var(--action-primary), var(--shadow-card); }
       .lm-product-fila--carrito .lm-product { flex: 1 1 auto; min-width: 0; box-shadow: none; }
-      /* La columna del carrito no se encoge nunca: si se queda en 98px fijos, en
-         un equipo de 320px le deja al nombre del producto menos de cien
-         píxeles. Baja con el ancho, igual que la miniatura de al lado. */
       .lm-product__carrito {
         flex: 0 0 auto; width: clamp(78px, 23vw, 98px); box-sizing: border-box;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        gap: 4px; padding: 8px 8px 8px 0;
-      }
-      .lm-product__subtotal {
-        min-height: 13px; max-width: 100%;
-        font: 800 clamp(12px, 3vw, 13px)/1 var(--font-numeric); color: var(--action-primary);
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        display: flex; align-items: center; justify-content: center;
+        padding: 8px 12px 8px 0;
       }
     `,
   ],

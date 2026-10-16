@@ -33,15 +33,7 @@ const FILTROS = [
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()">
-        <lm-icono-boton
-          accion
-          icono="person_add"
-          rotulo="Dar de alta un empleado"
-          tono="primario"
-          (presionar)="ir(['/dueno/alta-empleado'])"
-        />
-      </lm-encabezado>
+      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
 
       <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo [contador]="pendientes().length">
@@ -79,15 +71,6 @@ const FILTROS = [
         } @else {
           <lm-vacio icono="how_to_reg" [titulo]="tituloVacio()">
             {{ textoVacio() }}
-            <lm-boton
-              accion
-              variante="secondary"
-              icono="person_add"
-              [ancho]="false"
-              (presionar)="ir(['/dueno/alta-empleado'])"
-            >
-              Dar de alta un empleado
-            </lm-boton>
           </lm-vacio>
         }
       </div>
@@ -99,12 +82,13 @@ const FILTROS = [
     `
       :host { display: flex; flex: 1; min-height: 0; }
 
-      /* La tarjeta conserva su alto natural y se centra en su casilla: nunca se
-         estira para llenarla ni se sale. Las que llevan Aceptar/Rechazar ocupan
-         lo que necesitan; las filas simples, hasta un tope. */
+      /* Filas apiladas con la separación del sistema, como en correos:
+         cada fila mide lo que su tarjeta (con o sin Aceptar/Rechazar) y el
+         snap de la lista sigue anclando cada elemento al tope. */
+      .lm-lista-uno > lm-fila-pendiente,
+      .lm-lista-n > lm-fila-pendiente { flex: 0 0 auto; }
       lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending:has(.lm-pending__acciones) { flex: 0 1 auto; max-height: 100%; }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 0 0 auto; max-height: none; justify-content: center; }
       /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
       @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
       @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }

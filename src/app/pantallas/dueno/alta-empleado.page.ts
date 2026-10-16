@@ -32,114 +32,84 @@ import {
   imports: [ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado [titulo]="alta() ? 'Alta confirmada' : 'Alta de empleado'" conVolver (volver)="volver()" />
+      <lm-encabezado titulo="Alta de empleado" conVolver (volver)="volver()" />
 
-      @if (alta(); as nuevo) {
-        <div class="lm-body">
+      <div class="lm-body lm-body--gap12">
+        @if (alta(); as nuevo) {
           <lm-banner tono="success" titulo="Empleado dado de alta">
             {{ usuarios.nombreCompleto(nuevo) }} ya puede iniciar sesión como {{ rotuloPerfil(nuevo.perfil) }}.
           </lm-banner>
+        }
+        @if (resumenError()) {
+          <lm-banner tono="error" titulo="Faltan datos para dar el alta">{{ resumenError() }}</lm-banner>
+        }
+        @if (leidoDelDocumento()) {
+          <lm-banner tono="success" titulo="Datos leídos del documento">
+            Los campos quedan editables: confirmá que estén bien antes de guardar.
+          </lm-banner>
+        }
 
-          <div class="lm-card persona">
-            <span
-              class="lm-avatar"
-              [style.background-color]="usuarios.colorAvatar(nuevo)"
-              [style.background-image]="nuevo.fotoUrl ? 'url(' + nuevo.fotoUrl + ')' : null"
-            ></span>
-            <div>
-              <div class="persona__nombre">{{ usuarios.nombreCompleto(nuevo) }}</div>
-              <div class="persona__meta">Documento {{ nuevo.dni | documento }} · CUIL {{ nuevo.cuil }}</div>
-              <lm-chip estado="aprobado">{{ rotuloPerfil(nuevo.perfil) }}</lm-chip>
-            </div>
+        <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
+        <section class="lm-vidrio lm-doc">
+          <b>Cargá tu foto y escaneá tu DNI</b>
+          <div class="lm-fila-doc">
+            <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+            <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
           </div>
+        </section>
 
-          <lm-separador rotulo="Qué sigue" />
-          <p class="lm-parrafo">
-            Ya aparece en el ingreso rápido del login con su foto y su rol. Puede entrar con
-            {{ nuevo.email }} y la contraseña que le cargaste.
-          </p>
-        </div>
+        <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
+        <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
+        <lm-campo
+          [control]="formulario.controls.cuil"
+          icono="credit_card"
+          etiqueta="CUIL"
+          marcador="27-44225858-4"
+          modo="numeric"
+          [largoMaximo]="13"
+        />
+        <lm-campo
+          [control]="formulario.controls.email"
+          icono="mail"
+          tipo="email"
+          modo="email"
+          etiqueta="Correo electrónico"
+          marcador="sofia@sakurapp.com.ar"
+        />
+        <lm-campo
+          [control]="formulario.controls.clave"
+          icono="lock"
+          tipo="password"
+          etiqueta="Contraseña"
+          marcador="Mínimo ocho caracteres"
+        />
+        <lm-campo
+          [control]="formulario.controls.repeticion"
+          icono="lock_reset"
+          tipo="password"
+          etiqueta="Confirmar contraseña"
+          marcador="Repetí la contraseña"
+          tecla="done"
+        />
 
-        <div class="lm-actionbar">
-          <lm-boton icono="list" (presionar)="volver()">Volver a registros</lm-boton>
-          <lm-texto-boton (presionar)="otroMas()">Dar de alta a otra persona</lm-texto-boton>
-        </div>
-      } @else {
-        <div class="lm-body lm-body--gap12">
-          @if (resumenError()) {
-            <lm-banner tono="error" titulo="Faltan datos para dar el alta">{{ resumenError() }}</lm-banner>
-          }
-          @if (leidoDelDocumento()) {
-            <lm-banner tono="success" titulo="Datos leídos del documento">
-              Los campos quedan editables: confirmá que estén bien antes de guardar.
-            </lm-banner>
-          }
+        <lm-segmentado
+          etiqueta="Perfil"
+          [opciones]="perfiles"
+          [valor]="perfil()"
+          [columnas]="2"
+          (cambiar)="perfil.set($any($event))"
+        />
+      </div>
 
-          <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
-          <section class="lm-vidrio lm-doc">
-            <b>Cargá tu foto y escaneá tu DNI</b>
-            <div class="lm-fila-doc">
-              <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
-              <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-            </div>
-          </section>
-
-          <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
-          <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-          <lm-campo
-            [control]="formulario.controls.cuil"
-            icono="credit_card"
-            etiqueta="CUIL"
-            marcador="27-44225858-4"
-            modo="numeric"
-            [largoMaximo]="13"
-          />
-          <lm-campo
-            [control]="formulario.controls.email"
-            icono="mail"
-            tipo="email"
-            modo="email"
-            etiqueta="Correo electrónico"
-            marcador="sofia@sakurapp.com.ar"
-          />
-          <lm-campo
-            [control]="formulario.controls.clave"
-            icono="lock"
-            tipo="password"
-            etiqueta="Contraseña"
-            marcador="Mínimo ocho caracteres"
-          />
-          <lm-campo
-            [control]="formulario.controls.repeticion"
-            icono="lock_reset"
-            tipo="password"
-            etiqueta="Confirmar contraseña"
-            marcador="Repetí la contraseña"
-            tecla="done"
-          />
-
-          <lm-segmentado
-            etiqueta="Perfil"
-            [opciones]="perfiles"
-            [valor]="perfil()"
-            [columnas]="2"
-            (cambiar)="perfil.set($any($event))"
-          />
-        </div>
-
-        <div class="lm-actionbar">
-          <lm-decision rotuloAceptar="Dar de alta" (rechazar)="volver()" (aceptar)="guardar()" />
-        </div>
-      }
+      <div class="lm-actionbar">
+        <lm-decision rotuloAceptar="Dar de alta" (rechazar)="volver()" (aceptar)="guardar()" />
+      </div>
     </div>
   `,
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      .persona { display: flex; gap: var(--space-4); align-items: center; padding: var(--space-4); }
-      .persona__nombre { font: var(--type-card-title); color: var(--text-title); }
-      .persona__meta { font: var(--type-caption); color: var(--text-muted); margin-bottom: 6px; }
-    
+
       /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
       /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
       .lm-body { justify-content: space-between; }
@@ -215,6 +185,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
   }
 
   protected async guardar(): Promise<void> {
+    this.alta.set(null);
     this.resumenError.set(null);
     marcarEnviado(this.formulario);
 
@@ -239,7 +210,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: '¿Das de alta a esta persona?',
-      mensaje: 'Queda habilitada para entrar a la aplicación con su correo y su contraseña, y aparece en el ingreso rápido.',
+      mensaje: '',
       confirmar: 'Dar de alta',
       tono: 'exito',
       icono: 'person_add',
@@ -264,6 +235,7 @@ export class AltaEmpleadoPage extends PaginaConSesion {
       }),
     );
 
+    this.limpiarFormulario();
     this.alta.set(nuevo);
     this.avisos.exito('Empleado dado de alta', `${nuevo.nombre} ya aparece en el ingreso rápido.`);
   }
@@ -281,17 +253,16 @@ export class AltaEmpleadoPage extends PaginaConSesion {
     return total;
   }
 
-  protected otroMas(): void {
+  private limpiarFormulario(): void {
     this.formulario.reset();
     limpiarEnviado(this.formulario);
     this.foto.set(null);
     this.errorFoto.set(null);
     this.leidoDelDocumento.set(false);
     this.resumenError.set(null);
-    this.alta.set(null);
   }
 
   protected volver(): void {
-    this.ir(['/dueno/registros']);
+    this.ir(['/dueno/empleados']);
   }
 }

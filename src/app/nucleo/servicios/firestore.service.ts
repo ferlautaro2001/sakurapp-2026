@@ -16,7 +16,7 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario } from '../modelos/modelos';
+import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
 import {
   AlcanceRechazo,
   EstadoMesa,
@@ -464,6 +464,43 @@ export class FirestoreService {
       console.log(`✅ Producto ${productoId} actualizado en Firestore`);
     } catch (err) {
       console.warn('⚠️ Error actualizando producto en Firestore:', err);
+    }
+  }
+
+  /** Mantiene sincronizados en tiempo real los pedidos operativos del salón. */
+  escucharCorreos(callback: (correos: CorreoEnviado[]) => void): Unsubscribe {
+    const colRef = collection(this.obtenerDb(), 'correos');
+    return onSnapshot(
+      colRef,
+      (snapshot) => {
+        const correos = snapshot.docs
+          .map((docSnap) => {
+            const data = docSnap.data();
+            return {
+              id: String(data['id'] ?? docSnap.id),
+              para: String(data['para'] ?? ''),
+              asunto: String(data['asunto'] ?? ''),
+              plantilla: (data['plantilla'] as CorreoEnviado['plantilla']) || 'REGISTRO_RECIBIDO',
+              cuerpoHtml: String(data['cuerpoHtml'] ?? ''),
+              enviadoEn: String(data['enviadoEn'] ?? ''),
+              entregado: data['entregado'] === true,
+              detalle: String(data['detalle'] ?? ''),
+            } as CorreoEnviado;
+          })
+          .sort((a, b) => b.enviadoEn.localeCompare(a.enviadoEn));
+        callback(correos);
+      },
+      (error) => console.warn('⚠️ Error en listener de correos Firestore:', error),
+    );
+  }
+
+  /** Publica un correo enviado para que todos los dispositivos lo vean. */
+  async guardarCorreo(correo: CorreoEnviado): Promise<void> {
+    try {
+      const db = this.obtenerDb();
+      await setDoc(doc(db, 'correos', correo.id), { ...correo }, { merge: true });
+    } catch (err) {
+      console.warn('⚠️ Error al sincronizar correo en Firestore:', err);
     }
   }
 

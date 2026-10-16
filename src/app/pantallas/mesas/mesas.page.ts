@@ -129,7 +129,7 @@ export class MesasPage extends PaginaConSesion {
 
   protected textoVacio(): string {
     return this.mesas.todas().length
-      ? 'Probá con otro estado o con otro tipo de mesa.'
+      ? ''
       : 'Cargá el número, la cantidad de comensales, el tipo y la foto: el código QR se genera solo.';
   }
 }

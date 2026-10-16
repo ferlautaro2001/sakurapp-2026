@@ -3,6 +3,7 @@ import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Pedido, PedidoItem } from '../../nucleo/modelos/modelos';
 import { EstadoSector, ROTULO_SECTOR, Sector, sectorDelPerfil } from '../../nucleo/modelos/enums';
+import { demoraDelSector } from '../../nucleo/modelos/demora';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
@@ -36,7 +37,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 
               <div class="ticket__meta">
                 <lm-icono nombre="schedule" [tamano]="14" />
-                {{ minutosDe(pedido) }} min de preparación
+                {{ minutosDe(pedido) }}' de preparación
               </div>
 
               <div class="ticket__items">
@@ -44,7 +45,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
                   <div class="item">
                     <span class="item__cantidad">×{{ item.cantidad }}</span>
                     <span class="item__nombre">{{ item.productoNombre }}</span>
-                    <span class="item__tiempo">{{ tiempoItem(item) }} min</span>
+                    <span class="item__tiempo">{{ tiempoItem(item) }}'</span>
                   </div>
                 }
               </div>
@@ -190,7 +191,10 @@ export class SectorPedidosPage extends PaginaConSesion {
   }
 
   protected minutosDe(pedido: Pedido): number {
-    return this.itemsDe(pedido).reduce((suma, i) => suma + this.tiempoItem(i), 0);
+    return demoraDelSector(
+      this.itemsDe(pedido).map((i) => ({ tipo: i.tipo, tiempoElaboracion: this.tiempoItem(i), cantidad: i.cantidad })),
+      this.sector(),
+    );
   }
 
   protected estadoDe(pedido: Pedido): EstadoSector {

@@ -124,12 +124,12 @@ async function sembrar() {
 
   const total = items.reduce((suma, item) => suma + item.subtotal, 0);
 
-  // Mismo cálculo que CarritoService: adentro del sector los tiempos se suman
-  // —las unidades repetidas no multiplican—, y los sectores trabajan a la vez.
+  // Mismo cálculo que CarritoService (demora.ts): adentro del sector se prepara
+  // de a uno, así que cada unidad suma su tiempo; los sectores trabajan a la vez.
   const porSector = new Map();
   for (const item of items) {
     const producto = productos.find((p) => p.id === item.productoId);
-    porSector.set(item.sector, (porSector.get(item.sector) ?? 0) + producto.tiempoElaboracion);
+    porSector.set(item.sector, (porSector.get(item.sector) ?? 0) + producto.tiempoElaboracion * item.cantidad);
   }
   const tiempoEstimado = Math.max(...porSector.values());
 

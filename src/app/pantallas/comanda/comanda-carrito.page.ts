@@ -200,7 +200,7 @@ import { PaginaConSesion } from '../pagina-base';
             <small>TIEMPO ESTIMADO</small>
             <strong>
               <lm-icono nombre="schedule" [tamano]="19" />
-              {{ carrito.tiempoEstimado() }} minutos
+              {{ carrito.tiempoEstimado() }}'
             </strong>
           </span>
         </span>

@@ -152,7 +152,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-contenido">
                   <small>ELABORACIÓN</small>
                   <strong>
-                    {{ producto.tiempoElaboracion }} minutos
+                    {{ producto.tiempoElaboracion }}'
                   </strong>
                 </span>
               </article>
@@ -762,7 +762,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         filter: drop-shadow(0 2px 6px rgba(94, 12, 44, 0.45));
       }
       .producto-descripcion {
-        font: 500 clamp(15.5px, 4.3vw, 19px)/1.42 var(--font-text);
+        font: 550 clamp(15.5px, 4.3vw, 19px)/1.42 var(--font-text);
         color: rgba(255, 255, 255, 0.94);
         text-shadow: 0 1px 4px rgba(94, 12, 44, 0.35);
       }

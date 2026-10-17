@@ -53,10 +53,6 @@ import { PaginaConSesion } from '../pagina-base';
             </div>
           </div>
 
-          @if (resumenError()) {
-            <lm-banner tono="error" titulo="Falta información">{{ resumenError() }}</lm-banner>
-          }
-
           <lm-separador flor rotulo="Marcá los afectados" />
 
           <div class="lm-card leyenda">
@@ -450,7 +446,6 @@ export class MozoRechazoPage extends PaginaConSesion {
 
   readonly id = input.required<string>();
 
-  protected readonly resumenError = signal<string | null>(null);
   /** Qué marcó el mozo, por producto. Sin entrada, el renglón va como está. */
   protected readonly marcas = signal<Record<string, MarcaRechazo>>({});
   private latido = false;
@@ -545,13 +540,9 @@ export class MozoRechazoPage extends PaginaConSesion {
     const usuario = this.usuario();
     if (!p || !usuario) return;
 
-    this.resumenError.set(null);
     marcarEnviado(this.formulario);
 
     if (this.formulario.invalid) {
-      this.resumenError.set(
-        'No se puede devolver un pedido sin decirle al comensal qué tiene que cambiar.',
-      );
       void Haptics.notification({ type: NotificationType.Error }).catch(() => undefined);
       this.avisos.error('Falta el motivo', 'Escribí qué hay que modificar antes de devolverlo.');
       return;

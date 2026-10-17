@@ -71,7 +71,6 @@ Códigos QR funcionales requeridos por la cátedra para pruebas y corrección de
 | **Propina Bueno (10%)** | Registrar 10% de propina.<br>`SAKURAPP:PROPINA:10` | <img src="visuals/qr-propina-10.png" width="130" alt="QR Propina 10%"/> |
 | **Propina Regular (5%)** | Registrar 5% de propina.<br>`SAKURAPP:PROPINA:5` | <img src="visuals/qr-propina-5.png" width="130" alt="QR Propina 5%"/> |
 | **Propina Malo (0%)** | Registrar 0% de propina.<br>`SAKURAPP:PROPINA:0` | <img src="visuals/qr-propina-0.png" width="130" alt="QR Propina 0%"/> |
-| **Lector DNI (Prueba)** | Lector de código de barras DNI argentino (PDF417) para registro. | *A completar próximo sprint* |
 
 ---
 

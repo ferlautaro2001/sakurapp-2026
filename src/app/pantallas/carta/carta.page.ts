@@ -8,6 +8,7 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { CarritoService } from '../../nucleo/servicios/carrito.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { ChatService } from '../../nucleo/servicios/chat.service';
+import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { Unsubscribe } from 'firebase/firestore';
 
 type Categoria = 'TODOS' | TipoProducto;
@@ -86,12 +87,22 @@ type Categoria = 'TODOS' | TipoProducto;
 
       @if (esComensal()) {
         <div class="lm-actionbar carta__barra">
-          <!-- Sin botón: el pedido se abre desde la barra de abajo ("Mi pedido"). -->
           <lm-resumen-pedido
+            class="resumen--con-enviar"
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
-          />
+          >
+            <lm-boton
+              compacto
+              variante="success"
+              [ancho]="false"
+              [deshabilitado]="carrito.cantidadTotal() === 0"
+              (presionar)="pedir()"
+            >
+              Pedir
+            </lm-boton>
+          </lm-resumen-pedido>
         </div>
       }
 
@@ -121,6 +132,7 @@ export class CartaPage extends PaginaConSesion {
   protected readonly carrito = inject(CarritoService);
   private readonly espera = inject(EsperaService);
   private readonly chat = inject(ChatService);
+  private readonly mesas = inject(MesasService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly busqueda = signal('');
@@ -178,6 +190,54 @@ export class CartaPage extends PaginaConSesion {
         this.escuchaChat = null;
       }
     });
+  }
+
+  /** Manda el pedido al mozo: igual que el botón "Pedir" de Mi pedido. */
+  protected async pedir(): Promise<void> {
+    const cliente = this.usuario();
+    const mesaId = this.mesaId();
+    let mesa = mesaId ? this.mesas.porId(mesaId) : undefined;
+    if (!mesa && mesaId) {
+      mesa = {
+        id: mesaId,
+        numero: this.sesion.mesaActivaNumero() ?? 1,
+        cantidadComensales: 4,
+        tipo: 'ESTANDAR',
+        estado: 'OCUPADA',
+        fotoUrl: '',
+        qrCodeUrl: '',
+      };
+    }
+    if (!cliente || !mesa || !this.carrito.items().length) {
+      this.avisos.error('Error', 'Se necesita una mesa vinculada y productos en el pedido.');
+      return;
+    }
+
+    const seguro = await this.preguntar({
+      titulo: '¿Mandás el pedido al mozo?',
+      mensaje: 'El mozo lo revisa y te avisa. Mientras tanto no vas a poder modificarlo.',
+      confirmar: 'Enviar el pedido',
+      tono: 'primario',
+      icono: 'send',
+      detalle: [
+        { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
+        { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
+      ],
+    });
+    if (!seguro) return;
+
+    await this.cargando.conEsperaMinima('Mandando tu pedido…', async () => {
+      await this.pedidos.crearPendiente(
+        mesa!,
+        cliente,
+        this.carrito.items(),
+        this.carrito.tiempoEstimado(),
+        this.carrito.importeTotal(),
+      );
+      this.carrito.vaciar();
+    });
+    this.avisos.exito('Tu pedido salió', 'El mozo lo está revisando.');
   }
 
   protected puedeAgregar(producto: Producto): boolean {

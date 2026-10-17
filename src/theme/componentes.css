@@ -3511,3 +3511,32 @@ html[data-nav-dir='-1'] .sk-app > router-outlet + * {
 /* Abajo: algo más de aire horizontal entre editar, QR y el estado. */
 .lm-mesa__abajo { gap: calc(var(--mesa-aire) * 1.5); padding-inline: calc(var(--mesa-aire) * 3); }
 .lm-mesa__abajo .lm-mesa__pipe { margin-inline: calc(var(--mesa-aire) * 1.5); }
+
+/* ---------- fila de resumen con botón de pedir (carta y mi pedido) ---------- */
+  /* Resumen y "Enviar" en una misma fila: el resumen toma el ancho que
+     sobra y el botón queda a la derecha, sin apilar. */
+  .resumen--con-enviar {
+    flex-direction: row !important;
+    align-items: stretch;
+    gap: var(--space-2);
+  }
+  /* El resumen toma el ancho que sobra; el botón tiene el mismo alto. */
+  .resumen--con-enviar .lm-resumen {
+    flex: 1 1 auto; min-width: 0; padding: var(--space-3) var(--space-3); justify-content: center;
+  }
+  .resumen--con-enviar .lm-resumen__cifras { align-items: center; }
+  /* Total a la izquierda; tiempo y cantidad apilados a la derecha, sin
+     partirse en la mitad de un renglón. */
+  /* El ícono del reloj va siempre al lado del tiempo (sin cortarse de la
+     línea); la cantidad de productos, en su propio renglón debajo. */
+  .resumen--con-enviar .lm-resumen__tiempo {
+    display: block; text-align: right; white-space: nowrap;
+  }
+  .resumen--con-enviar .lm-resumen__tiempo small { white-space: normal; }
+  .resumen--con-enviar .lm-resumen__total { font-size: clamp(17px, 5.4vw, 22px); }
+  .resumen--con-enviar .lm-resumen__tiempo small { display: block; }
+  .resumen--con-enviar > lm-boton { flex: 0 0 auto; display: flex; }
+  .resumen--con-enviar > lm-boton .lm-btn {
+    height: 100%; min-height: 0; width: auto; margin: 0; padding: 0 4px; min-width: 0;
+    font-size: 14px; white-space: nowrap;
+  }

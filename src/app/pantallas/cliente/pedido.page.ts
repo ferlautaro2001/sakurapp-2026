@@ -160,6 +160,7 @@ import { Unsubscribe } from 'firebase/firestore';
             @if (editable()) {
               <lm-boton
                 compacto
+                variante="success"
                 [ancho]="false"
                 [deshabilitado]="!carrito.items().length || traba() !== null"
                 (presionar)="enviar()"
@@ -203,6 +204,7 @@ import { Unsubscribe } from 'firebase/firestore';
           >
             <lm-boton
               compacto
+              variante="success"
               [ancho]="false"
               [deshabilitado]="!carrito.items().length"
               (presionar)="enviarNuevo()"
@@ -229,33 +231,6 @@ import { Unsubscribe } from 'firebase/firestore';
   `,
   styles: [
     `
-      /* Resumen y "Enviar" en una misma fila: el resumen toma el ancho que
-         sobra y el botón queda a la derecha, sin apilar. */
-      .resumen--con-enviar {
-        flex-direction: row !important;
-        align-items: stretch;
-        gap: var(--space-2);
-      }
-      /* El resumen toma el ancho que sobra; el botón tiene el mismo alto. */
-      .resumen--con-enviar ::ng-deep .lm-resumen {
-        flex: 1 1 auto; min-width: 0; padding: var(--space-3) var(--space-3); justify-content: center;
-      }
-      .resumen--con-enviar ::ng-deep .lm-resumen__cifras { align-items: center; }
-      /* Total a la izquierda; tiempo y cantidad apilados a la derecha, sin
-         partirse en la mitad de un renglón. */
-      /* El ícono del reloj va siempre al lado del tiempo (sin cortarse de la
-         línea); la cantidad de productos, en su propio renglón debajo. */
-      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo {
-        display: block; text-align: right; white-space: nowrap;
-      }
-      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo small { white-space: normal; }
-      .resumen--con-enviar ::ng-deep .lm-resumen__total { font-size: clamp(17px, 5.4vw, 22px); }
-      .resumen--con-enviar ::ng-deep .lm-resumen__tiempo small { display: block; }
-      .resumen--con-enviar > lm-boton { flex: 0 0 auto; display: flex; }
-      .resumen--con-enviar > lm-boton ::ng-deep .lm-btn {
-        height: 100%; min-height: 0; width: auto; margin: 0; padding: 0 4px; min-width: 0;
-        font-size: 14px; white-space: nowrap;
-      }
     `,
     `
       :host { display: flex; flex: 1; min-height: 0; }

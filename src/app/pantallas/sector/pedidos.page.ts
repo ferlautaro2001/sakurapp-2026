@@ -220,24 +220,23 @@ export class SectorPedidosPage extends PaginaConSesion {
   }
 
   /**
-   * Con el ticket cerrado se ven hasta dos productos. Si trae más de dos, se ve
-   * sólo uno y el resto se abre con "Ver los N restantes": así el ticket cabe
-   * entero en su mitad de la lista.
+   * Con el ticket cerrado se ve sólo el primer producto cuando hay más de uno,
+   * y el resto se abre con "Ver los N restantes". Así el ticket cabe entero en
+   * su mitad de la lista, aunque algún nombre ocupe dos renglones.
    */
-  private readonly TOPE = 2;
   /** Sólo un ticket abierto a la vez, como el correo: ocupa toda la lista. */
   protected readonly abierto = signal<string | null>(null);
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected visiblesDe(pedido: Pedido): PedidoItem[] {
     const items = this.itemsDe(pedido);
-    if (this.abierto() === pedido.id || items.length <= this.TOPE) return items;
+    if (this.abierto() === pedido.id || items.length <= 1) return items;
     return items.slice(0, 1);
   }
 
   protected restantesDe(pedido: Pedido): number {
     const total = this.itemsDe(pedido).length;
-    return total > this.TOPE ? total - 1 : 0;
+    return total > 1 ? total - 1 : 0;
   }
 
   protected alternar(id: string): void {

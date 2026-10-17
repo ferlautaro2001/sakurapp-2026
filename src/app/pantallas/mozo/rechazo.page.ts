@@ -534,7 +534,8 @@ export class MozoRechazoPage extends PaginaConSesion {
       return {
         icono: observacion.marca === 'CANTIDAD' ? 'warning' : 'block',
         tono: observacion.marca === 'CANTIDAD' ? ('pendiente' as const) : ('peligro' as const),
-        texto: `${nombre} · ${ROTULO_MARCA_MOZO[observacion.marca].toLowerCase()}`,
+        // Sólo el ícono: el nombre y el motivo de la marca no se repiten acá.
+        texto: '',
       };
     });
   }
@@ -570,8 +571,6 @@ export class MozoRechazoPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: '¿Devolvés el pedido?',
-      mensaje:
-        'El comensal lo recibe en el momento, con tu motivo. Ve marcados los productos afectados, corrige lo que haga falta y te lo manda de nuevo. No llega a Cocina ni a Bar.',
       confirmar: 'Devolver',
       tono: 'peligro',
       icono: 'edit_note',

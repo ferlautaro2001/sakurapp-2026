@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
 import { GRUPO } from '../../nucleo/grupo';
@@ -14,6 +14,7 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
  * - Botón de acceso a la pantalla de ingreso
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-presentacion',
   imports: [...UI],
   template: `

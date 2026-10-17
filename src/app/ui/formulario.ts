@@ -145,14 +145,26 @@ export class AreaComponent {
       </button>
       }
       @if (error()) {
-        <span class="lm-field__error" style="margin-top:0">
-          <lm-icono nombre="error" [tamano]="16" />
-          {{ error() }}
+        <span class="lm-foto__aviso" aria-label="Falta la foto">
+          <lm-icono nombre="priority_high" [tamano]="20" [color]="'#FFFFFF'" />
         </span>
       }
     </div>
   `,
-  styles: [':host{display:block}'],
+  styles: [
+    ':host{display:block}',
+    `.lm-foto__aviso {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; border-radius: 50%;
+      background: var(--state-error); color: #FFFFFF;
+      background-clip: padding-box;
+      border: 2.5px solid rgba(255, 255, 255, .55);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .7),
+        0 0 0 1px rgba(232, 51, 111, .3),
+        0 4px 12px rgba(59, 8, 27, .2);
+    }`,
+  ],
 })
 export class FotoComponent {
   readonly fuente = input<string | null>(null);

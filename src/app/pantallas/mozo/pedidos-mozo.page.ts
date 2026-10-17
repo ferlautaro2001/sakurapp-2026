@@ -1,5 +1,5 @@
 import { CurrencyPipe, DatePipe } from '@angular/common';
-import { Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, inject } from '@angular/core';
 import { ROTULO_ESTADO_PEDIDO, sectorDe } from '../../nucleo/modelos/enums';
 import { Pedido } from '../../nucleo/modelos/modelos';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
@@ -9,6 +9,7 @@ import { PaginaConSesion } from '../pagina-base';
 
 /** Pedidos enviados por los comensales que el mozo debe confirmar. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-pedidos-mozo',
   imports: [CurrencyPipe, DatePipe, ...UI],
   template: `

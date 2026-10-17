@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
@@ -19,6 +19,7 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
  * le haya asignado esa mesa recibe la explicación y sigue en la fila.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-ingreso-local',
   imports: [...UI],
   template: `

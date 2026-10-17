@@ -185,8 +185,6 @@ import { UI } from '../../ui';
         border: 1.5px solid rgba(255, 79, 139, .45);
         border-radius: 14px;
         box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .14);
-        -webkit-backdrop-filter: blur(6px);
-        backdrop-filter: blur(6px);
         color: var(--action-primary, #b92e58);
       }
 

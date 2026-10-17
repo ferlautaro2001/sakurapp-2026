@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
@@ -28,64 +28,72 @@ import {
  * El registro queda en estado PENDIENTE de aprobación por Dueño o Supervisor.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-registro-cliente',
   imports: [ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
       <lm-encabezado [titulo]="desdePersonal() ? 'Registrar cliente' : 'Crear cuenta'" conVolver (volver)="volver()" />
 
-      <div class="lm-body lm-body--gap12">
-        @if (resumenError()) {
-          <lm-banner tono="error" titulo="Revisá los datos marcados">{{ resumenError() }}</lm-banner>
-        }
-        @if (leidoDelDocumento()) {
-          <lm-banner tono="success" titulo="Datos leídos del documento">
-            Confirmá que estén bien antes de enviar el registro.
-          </lm-banner>
-        }
+      <!-- Dos tandas que miden justo el alto visible: el snap frena siempre al
+           principio de una, así ningún campo queda cortado en ningún teléfono. -->
+      <div class="lm-body registro__tandas">
+        <div class="registro__tanda">
+          @if (resumenError()) {
+            <lm-banner tono="error" titulo="Revisá los datos marcados">{{ resumenError() }}</lm-banner>
+          }
+          @if (leidoDelDocumento()) {
+            <lm-banner tono="success" titulo="Datos leídos del documento">
+              Confirmá que estén bien antes de enviar el registro.
+            </lm-banner>
+          }
 
-        <!-- Igual que el alta de empleado: todo el mosaico de la foto dispara la cámara. -->
-        <section class="lm-vidrio lm-doc">
-          <b>{{ desdePersonal() ? 'Cargá su foto y escaneá su DNI' : 'Cargá tu foto y escaneá tu DNI' }}</b>
-          <div class="lm-fila-doc">
-            <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
-            <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-          </div>
-        </section>
+          <!-- Igual que el alta de empleado: todo el mosaico de la foto dispara la cámara. -->
+          <section class="lm-vidrio lm-doc">
+            <b>{{ desdePersonal() ? 'Cargá su foto y escaneá su DNI' : 'Cargá tu foto y escaneá tu DNI' }}</b>
+            <div class="lm-fila-doc">
+              <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+              <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+            </div>
+          </section>
 
-        <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
-        <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-        <lm-campo
-          [control]="formulario.controls.cuil"
-          icono="fingerprint"
-          etiqueta="CUIL"
-          marcador="20-44225858-9"
-          modo="numeric"
-          [largoMaximo]="13"
-        />
-        <lm-campo
-          [control]="formulario.controls.email"
-          icono="mail"
-          tipo="email"
-          modo="email"
-          etiqueta="Correo electrónico"
-          marcador="sofia@correo.com.ar"
-        />
-        <lm-campo
-          [control]="formulario.controls.clave"
-          icono="lock"
-          tipo="password"
-          etiqueta="Contraseña"
-          marcador="Mínimo ocho caracteres"
-        />
-        <lm-campo
-          [control]="formulario.controls.repeticion"
-          icono="lock_reset"
-          tipo="password"
-          etiqueta="Confirmar contraseña"
-          marcador="Repetí la contraseña"
-          tecla="done"
-        />
+          <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
+          <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
+          <lm-campo
+            [control]="formulario.controls.cuil"
+            icono="fingerprint"
+            etiqueta="CUIL"
+            marcador="20-44225858-9"
+            modo="numeric"
+            [largoMaximo]="13"
+          />
+        </div>
+
+        <div class="registro__tanda">
+          <lm-campo
+            [control]="formulario.controls.email"
+            icono="mail"
+            tipo="email"
+            modo="email"
+            etiqueta="Correo electrónico"
+            marcador="sofia@correo.com.ar"
+          />
+          <lm-campo
+            [control]="formulario.controls.clave"
+            icono="lock"
+            tipo="password"
+            etiqueta="Contraseña"
+            marcador="Mínimo ocho caracteres"
+          />
+          <lm-campo
+            [control]="formulario.controls.repeticion"
+            icono="lock_reset"
+            tipo="password"
+            etiqueta="Confirmar contraseña"
+            marcador="Repetí la contraseña"
+            tecla="done"
+          />
+        </div>
       </div>
 
       <div class="lm-actionbar">
@@ -99,7 +107,25 @@ import {
       </div>
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host { display: flex; flex: 1; min-height: 0; }
+
+      /* Cada tanda mide el alto visible de la lista y reparte sus campos en él;
+         si un cartel la estira de más, se puede recorrer en vez de cortarse. */
+      .registro__tandas {
+        container: registro / size; gap: 0; padding-block: 0;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0;
+      }
+      .registro__tanda {
+        min-height: 50cqh; box-sizing: border-box;
+        display: flex; flex-direction: column; justify-content: flex-start; gap: var(--space-3);
+        padding-block: var(--space-3);
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      .registro__tanda > * { flex-shrink: 0; }
+    `,
+  ],
 })
 export class RegistroClientePage {
   private readonly fb = inject(FormBuilder);

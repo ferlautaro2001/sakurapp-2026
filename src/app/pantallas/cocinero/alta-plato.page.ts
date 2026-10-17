@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed  } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, computed } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
@@ -22,6 +22,7 @@ import { TipoProducto } from '../../nucleo/modelos/enums';
  * Las tres fotos son independientes y pueden reemplazarse individualmente.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-alta-plato',
   imports: [ReactiveFormsModule, ...UI],
   template: `

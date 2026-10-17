@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../../ui';
 import { PaginaConSesion } from '../../pagina-base';
 import { EsperaService } from '../../../nucleo/servicios/espera.service';
@@ -24,6 +24,7 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
  * Minijuego · Emparejando sushis.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-emparejando-sushis',
   imports: [...UI],
   template: `

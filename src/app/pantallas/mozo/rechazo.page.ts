@@ -251,6 +251,8 @@ import { PaginaConSesion } from '../pagina-base';
         height: 34px;
         place-items: center;
         border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
 
       .leyenda__sello--cantidad {

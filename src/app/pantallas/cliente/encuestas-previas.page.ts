@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { EncuestasService } from '../../nucleo/servicios/encuestas.service';
@@ -16,6 +16,7 @@ import { EsperaService } from '../../nucleo/servicios/espera.service';
  * ven grandes y no hay que desplazarse.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-encuestas-previas',
   imports: [...UI],
   template: `

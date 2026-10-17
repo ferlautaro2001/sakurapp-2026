@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UI } from '../../ui';
@@ -11,6 +11,7 @@ import { enteroEntre, largoMinimo, marcarEnviado, precio, requerido } from '../.
 
 /** Alta y edición de bebidas del cantinero: tres fotos y sector BAR automático. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-alta-bebida',
   imports: [ReactiveFormsModule, ...UI],
   template: `

@@ -1,4 +1,4 @@
-import { Component, ElementRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Pedido, PedidoItem } from '../../nucleo/modelos/modelos';
@@ -8,10 +8,26 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
 
+/** Fila ya resuelta para el template: evita llamar métodos en cada ciclo. */
+interface TicketVM {
+  id: string;
+  pedido: Pedido;
+  mesa: number | string;
+  comensal: string;
+  estado: EstadoSector;
+  rotuloEstado: string;
+  chip: string;
+  minutos: number;
+  abierto: boolean;
+  items: { id: string; cantidad: number; nombre: string; tiempo: number }[];
+  restantes: number;
+}
+
 /**
  * Pantalla operativa de comandas por sector (Cocina y Barra).
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-sector-pedidos',
   imports: [...UI],
   template: `
@@ -23,47 +39,47 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
-        @if (comandas().length) {
+        @if (tickets().length) {
           <div class="sector__lista">
-          @for (pedido of comandas(); track pedido.id) {
-            <div class="ticket" [class.ticket--abierto]="abierto() === pedido.id" [id]="'ticket-' + pedido.id">
+          @for (t of tickets(); track t.id) {
+            <div class="ticket" [class.ticket--abierto]="t.abierto" [id]="'ticket-' + t.id">
               <div class="ticket__cabecera">
-                <span class="ticket__mesa">Mesa {{ numeroMesa(pedido) }}</span>
-                <span class="ticket__cliente">{{ comensal(pedido) }}</span>
+                <span class="ticket__mesa">Mesa {{ t.mesa }}</span>
+                <span class="ticket__cliente">{{ t.comensal }}</span>
                 @if (filtro() === 'TODOS') {
-                  <lm-chip [estado]="chip(pedido)">{{ rotuloEstado(pedido) }}</lm-chip>
+                  <lm-chip [estado]="t.chip">{{ t.rotuloEstado }}</lm-chip>
                 }
               </div>
 
               <div class="ticket__meta">
                 <lm-icono nombre="schedule" [tamano]="14" />
-                {{ minutosDe(pedido) }}' de preparación
+                {{ t.minutos }}' de preparación
               </div>
 
               <div class="ticket__items">
-                @for (item of visiblesDe(pedido); track item.id) {
+                @for (item of t.items; track item.id) {
                   <div class="item">
                     <span class="item__cantidad">×{{ item.cantidad }}</span>
-                    <span class="item__nombre">{{ item.productoNombre }}</span>
-                    <span class="item__tiempo">{{ tiempoItem(item) }}'</span>
+                    <span class="item__nombre">{{ item.nombre }}</span>
+                    <span class="item__tiempo">{{ item.tiempo }}'</span>
                   </div>
                 }
               </div>
 
-              @if (restantesDe(pedido) > 0) {
-                <button type="button" class="ticket__mas" [attr.aria-expanded]="abierto() === pedido.id" (click)="alternar(pedido.id)">
-                  <lm-icono [nombre]="abierto() === pedido.id ? 'expand_less' : 'expand_more'" [tamano]="18" />
-                  {{ abierto() === pedido.id ? 'Ver menos' : 'Ver los ' + restantesDe(pedido) + ' restantes' }}
+              @if (t.restantes > 0) {
+                <button type="button" class="ticket__mas" [attr.aria-expanded]="t.abierto" (click)="alternar(t.id)">
+                  <lm-icono [nombre]="t.abierto ? 'expand_less' : 'expand_more'" [tamano]="18" />
+                  {{ t.abierto ? 'Ver menos' : 'Ver los ' + t.restantes + ' restantes' }}
                 </button>
               }
 
               <div class="ticket__pie">
-                @if (estadoDe(pedido) === 'PENDIENTE') {
-                  <lm-boton compacto icono="skillet" (presionar)="avanzar(pedido, 'EN_PREPARACION')">
+                @if (t.estado === 'PENDIENTE') {
+                  <lm-boton compacto icono="skillet" (presionar)="avanzar(t.pedido, 'EN_PREPARACION')">
                     Empezar a preparar
                   </lm-boton>
-                } @else if (estadoDe(pedido) === 'EN_PREPARACION') {
-                  <lm-boton compacto variante="success" icono="room_service" (presionar)="avanzar(pedido, 'LISTO')">
+                } @else if (t.estado === 'EN_PREPARACION') {
+                  <lm-boton compacto variante="success" icono="room_service" (presionar)="avanzar(t.pedido, 'LISTO')">
                     Avisar que está listo
                   </lm-boton>
                 } @else {
@@ -188,6 +204,32 @@ export class SectorPedidosPage extends PaginaConSesion {
     const filtro = this.filtro();
     const lista = this.todos();
     return filtro === 'TODOS' ? lista : lista.filter((p) => this.estadoDe(p) === filtro);
+  });
+
+  /**
+   * View-model precomputado: el template sólo lee propiedades, sin llamar
+   * métodos en cada ciclo de detección (clave para sostener 120 FPS).
+   */
+  protected readonly tickets = computed<TicketVM[]>(() => {
+    const abierto = this.abierto();
+    return this.comandas().map((pedido) => ({
+      id: pedido.id,
+      pedido,
+      mesa: this.numeroMesa(pedido),
+      comensal: this.comensal(pedido),
+      estado: this.estadoDe(pedido),
+      rotuloEstado: this.rotuloEstado(pedido),
+      chip: this.chip(pedido),
+      minutos: this.minutosDe(pedido),
+      abierto: abierto === pedido.id,
+      items: this.visiblesDe(pedido).map((i) => ({
+        id: i.id,
+        cantidad: i.cantidad,
+        nombre: i.productoNombre,
+        tiempo: this.tiempoItem(i),
+      })),
+      restantes: this.restantesDe(pedido),
+    }));
   });
 
   private rotuloFiltro(): string {

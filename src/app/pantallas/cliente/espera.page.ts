@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelos/enums';
@@ -21,6 +21,7 @@ import { QrService } from '../../nucleo/servicios/qr.service';
  * único más a lo que la consigna le da acceso hasta acá.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-espera',
   imports: [...UI],
   template: `

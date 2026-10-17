@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { DocumentoPipe, UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -29,6 +29,7 @@ const FILTROS = [
  * última fila.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-registros',
   imports: [...UI],
   template: `

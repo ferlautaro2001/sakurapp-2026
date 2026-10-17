@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject } from '@angular/core';
 import { UI } from '../../../ui';
 import { PaginaConSesion } from '../../pagina-base';
 import { EsperaService } from '../../../nucleo/servicios/espera.service';
@@ -17,6 +17,7 @@ interface Minijuego {
  * Los juegos de la sala de espera o mesa, para entretenerse y ganar descuento en su pedido.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-juegos',
   imports: [...UI],
   template: `
@@ -229,8 +230,7 @@ interface Minijuego {
           inset 0 1px 0 rgba(255, 255, 255, 0.5),
           inset 0 -6px 12px rgba(94, 12, 44, 0.18),
           0 6px 14px rgba(94, 12, 44, 0.3);
-        -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
-      }
+        }
     `,
   ],
 })

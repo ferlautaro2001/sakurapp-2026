@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Haptics, NotificationType } from '@capacitor/haptics';
@@ -27,6 +27,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
  * - Erradicación de window.alert() con feedback háptico (@capacitor/haptics) y spinner Sakura.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-alta-mesa',
   imports: [ReactiveFormsModule, ...UI],
   template: `

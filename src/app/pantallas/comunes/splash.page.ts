@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { SonidoService } from '../../nucleo/servicios/sonido.service';
 import { GRUPO } from '../../nucleo/grupo';
@@ -25,6 +25,7 @@ const DURACION_POR_DEFECTO = 2400;
 import { SesionService } from '../../nucleo/servicios/sesion.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-splash',
   template: `
     <div class="splash">
@@ -124,6 +125,8 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
       .barra span {
         display: block;
         height: 100%;
+        width: 100%;
+        transform-origin: left center;
         background: #FFFFFF;
         animation: avance var(--ease-standard) both;
       }
@@ -153,7 +156,7 @@ import { SesionService } from '../../nucleo/servicios/sesion.service';
         font: var(--type-body-small);
         color: rgba(255, 255, 255, .82);
       }
-      @keyframes avance { from { width: 4%; } to { width: 100%; } }
+      @keyframes avance { from { transform: scaleX(0.04); } to { transform: scaleX(1); } }
     `,
   ],
 })
@@ -161,6 +164,8 @@ export class SplashPage implements OnInit {
   private readonly router = inject(Router);
   private readonly sonido = inject(SonidoService);
   private readonly sesion = inject(SesionService);
+  private readonly destroyRef = inject(DestroyRef);
+  private temporizador: ReturnType<typeof setTimeout> | null = null;
   protected readonly grupo = GRUPO;
 
   /**
@@ -187,13 +192,17 @@ export class SplashPage implements OnInit {
     const duracion = await this.sonido.duracion('inicio', DURACION_POR_DEFECTO);
     this.duracion.set(duracion);
 
-    setTimeout(() => {
+    this.temporizador = setTimeout(() => {
       if (this.sesion.autenticado()) {
         void this.router.navigate([this.sesion.rutaInicio()], { replaceUrl: true });
       } else {
         void this.router.navigate(['/presentacion'], { replaceUrl: true });
       }
     }, duracion);
+
+    this.destroyRef.onDestroy(() => {
+      if (this.temporizador) clearTimeout(this.temporizador);
+    });
   }
 }
 

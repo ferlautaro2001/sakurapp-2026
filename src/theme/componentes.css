@@ -190,6 +190,8 @@ body.camara-encendida .lm-header {
   gap: var(--space-4);
   /* el remate de abajo garantiza que la última tarjeta se vea entera */
   padding: var(--space-3) var(--gutter-screen) var(--space-6);
+  /* Performance: contain para limitar el scope de repaints en scroll. */
+  contain: layout style paint;
 }
 .lm-body::-webkit-scrollbar { display: none; }
 .lm-body > * { flex-shrink: 0; }
@@ -328,7 +330,7 @@ body.camara-encendida .lm-header {
   background: var(--state-success-surface); color: var(--state-success);
   /* La burbuja no envuelve, pero tampoco empuja la fila: si el estado viene
      más largo de lo previsto se corta con puntos suspensivos. */
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; box-sizing: border-box;
 }
 .lm-chip--vacia, .lm-chip--libre, .lm-chip--aprobado { background: var(--state-success-surface); color: var(--state-success); }
 .lm-chip--ocupada, .lm-chip--rechazado, .lm-chip--inactiva { background: var(--state-error-surface); color: var(--state-error); }
@@ -1113,10 +1115,10 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   text-align: left;
   cursor: pointer;
   overflow: hidden;
-  background: var(--surface-card);
-  border: 1px solid rgba(255, 255, 255, .72);
+  background: transparent;
+  border: none;
   border-radius: 22px;
-  box-shadow: 0 7px 18px rgba(88, 12, 43, .16);
+  box-shadow: none;
   transition: transform var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
 }
 
@@ -1155,7 +1157,8 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   display: grid;
   place-items: center;
   overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+  /* Contorno fino en fucsia: delicado, no se corta con el overflow. */
+  box-shadow: inset 0 0 0 1px rgba(232, 51, 111, .22), 0 2px 8px rgba(94, 12, 44, .12);
 }
 
 .lm-product__thumb--apagado { filter: saturate(.45); }
@@ -1236,7 +1239,10 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   gap: 6px;
   padding: 6px 7px;
   border-radius: 13px;
-  background: rgba(232, 97, 143, .10);
+  color: var(--text-sobre-fondo);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%);
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16);
 }
 
 .lm-product__dato-icono {
@@ -1248,6 +1254,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   border-radius: 50%;
   color: var(--action-primary);
   background: rgba(227, 85, 133, .13);
+  /* Contorno fucsia más definido (interactivo). */
+  border: 1.5px solid rgba(232, 51, 111, .45);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .18), 0 2px 6px rgba(94, 12, 44, .12);
 }
 
 .lm-product__precio {
@@ -1262,16 +1271,20 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Un poco más de presencia. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
 }
 
 .lm-product__tiempo {
   min-width: 0;
   color: var(--text-title);
   font: var(--type-caption);
-  font-weight: 800;
+  font-weight: 900;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* Un poco más de presencia. */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
 }
 
 .lm-product__ir {
@@ -1282,8 +1295,10 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   place-items: center;
   border-radius: 50%;
   color: var(--action-primary);
-  background: rgba(227, 85, 133, .12);
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .55);
+  background: transparent;
+  /* Contorno fucsia más definido (interactivo), inset para no cortarse. */
+  border: 1.5px solid rgba(232, 51, 111, .4);
+  box-shadow: inset 0 0 0 1px rgba(232, 51, 111, .18), 0 2px 6px rgba(94, 12, 44, .12);
 }
 
 /* En la carta con carrito mantenemos el control lateral existente y sólo
@@ -1324,7 +1339,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 /* Acabado de la carta: el espacio de la flecha se reserva sólo en el pie. */
 .lm-product-fila:not(.lm-product-fila--carrito) .lm-product {
   grid-template-columns: var(--size-thumb) minmax(0, 1fr);
-  background: linear-gradient(90deg, #ef9dbb 0%, #f9d6e2 34%, #fdf0f4 70%, #fffafb 100%);
+  background: transparent;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .28), 0 7px 18px rgba(88, 12, 43, .16);
 }
 
@@ -1350,7 +1365,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 }
 
 .lm-product-fila:not(.lm-product-fila--carrito) .lm-product__dato {
-  background: rgba(242, 143, 180, .18);
+  background: transparent;
 }
 
 .lm-product-fila:not(.lm-product-fila--carrito) .lm-product__ir {
@@ -1496,8 +1511,6 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   transition: transform 420ms cubic-bezier(.3, 1.35, .5, 1);
   border-radius: 20px;
   background: rgba(255, 255, 255, .42);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  backdrop-filter: blur(14px) saturate(180%);
   border: 1px solid rgba(255, 255, 255, .75);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .9), 0 0 0 1px rgba(232, 51, 111, .18), 0 4px 14px rgba(110, 18, 52, .16);
   pointer-events: none;
@@ -1622,8 +1635,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .lm-carousel__flecha {
   position: absolute; top: 50%; transform: translateY(-50%);
   width: var(--touch-min); height: var(--touch-min); border-radius: 50%; border: none;
-  background: var(--sk-velo); backdrop-filter: blur(6px);
-  display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-card);
+  background: var(--sk-velo); display: grid; place-items: center; cursor: pointer; box-shadow: var(--shadow-card);
 }
 .lm-carousel__puntos { display: flex; gap: 2px; justify-content: center; margin-top: 8px; }
 
@@ -1906,7 +1918,8 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .lm-body > .lm-snap,
 .lm-body > .lista,
 .lm-body > .items,
-.lm-body > .tablero { scroll-snap-align: none; }
+.lm-body > .tablero,
+.lm-body > lm-separador { scroll-snap-align: none; }
 /* Un campo enfocado nunca queda pegado al borde ni detrás del teclado. */
 .lm-field, lm-campo, lm-area { scroll-margin-block: var(--space-6); }
 
@@ -2052,8 +2065,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .lm-mesa__accion {
   width: clamp(36px, 10.5vw, 42px); height: clamp(36px, 10.5vw, 42px);
   color: #FFFFFF; background: rgba(255, 255, 255, .22);
-  backdrop-filter: blur(4px);
-}
+  }
 .lm-mesa__accion--editar { background: var(--action-primary); box-shadow: 0 2px 8px rgba(59, 8, 27, .4); }
 .lm-mesa__estado { width: 100%; justify-content: center; font-weight: 800; }
 .lm-mesa__estado--vacia { color: #0E6B45; background: #CFF3E1; }
@@ -2393,8 +2405,6 @@ img.lm-avatar { object-fit: cover; object-position: center; }
     inset 0 1px 0 rgba(255, 255, 255, .55),
     inset 0 -6px 12px rgba(255, 255, 255, .06),
     0 4px 10px rgba(94, 12, 44, .16);
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
   transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast) var(--ease-standard);
 }
 .lm-iconbtn .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
@@ -2407,8 +2417,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   border-color: rgba(255, 79, 139, .45);
   box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .14);
 }
-/* Los de significado (peligro, éxito) conservan su color, con la misma forma. */
-.lm-iconbtn--danger, .lm-iconbtn--success {
+/* Los de significado (peligro, éxito) y el primario conservan su color, con la
+   misma forma de vidrio (borde blanco translúcido + brillo superior). */
+.lm-iconbtn--primary, .lm-iconbtn--danger, .lm-iconbtn--success {
   border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .6);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
 }
@@ -2434,8 +2445,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   background: linear-gradient(180deg, rgba(255, 150, 190, .42), rgba(255, 100, 155, .34)) !important;
   border: 1.5px solid rgba(255, 255, 255, .55) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 3px 10px rgba(40, 4, 20, .22) !important;
-  -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
-}
+  }
 .lm-carousel__flecha .material-symbols-rounded {
   color: #FFFFFF !important;
   font-variation-settings: 'FILL' 1, 'wght' 700;
@@ -2468,9 +2478,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
     inset 0 1px 0 rgba(255, 255, 255, .55),
     inset 0 -6px 12px rgba(255, 255, 255, .06),
     0 4px 10px rgba(94, 12, 44, .16) !important;
-  -webkit-backdrop-filter: blur(6px);
-  backdrop-filter: blur(6px);
-}
+  }
 .lm-search input::placeholder { color: rgba(255, 255, 255, .85); }
 .juego__ir .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
 
@@ -2483,8 +2491,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%);
   border: 1.5px solid rgba(255, 255, 255, .5);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-}
+  }
 .sk-diapos__flecha .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
 .sk-diapos__flecha:not(:disabled):active { transform: scale(.94); }
 .sk-diapos__flores .sk-flor img {
@@ -2641,7 +2648,6 @@ img.lm-avatar { object-fit: cover; object-position: center; }
     inset 0 1px 0 rgba(255, 255, 255, .5),
     inset 0 -6px 12px rgba(94, 12, 44, .12),
     0 4px 10px rgba(40, 4, 20, .28) !important;
-  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
   text-shadow: 0 1px 3px rgba(60, 6, 30, .4);
 }
 .lm-mesa__accion--editar { background: linear-gradient(180deg, rgba(240, 70, 128, .75) 0%, rgba(184, 31, 85, .68) 100%) !important; }
@@ -2704,8 +2710,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
   border: 1.5px solid rgba(255, 255, 255, .5) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-}
+  }
 
 /* ---------- código QR: borde suave ----------
    La imagen del QR tenía las esquinas rectas y el borde seco. Ahora lleva
@@ -2775,15 +2780,20 @@ img.lm-avatar { object-fit: cover; object-position: center; }
     0 0 0 1px rgba(232, 51, 111, .3),
     0 6px 14px rgba(59, 8, 27, .22) !important;
 }
-.lm-product__thumb,
+.lm-product__thumb {
+  border: 1.5px solid rgba(232, 51, 111, .35) !important;
+  box-shadow: inset 0 0 0 1px rgba(232, 51, 111, .18), 0 4px 12px rgba(94, 12, 44, .16) !important;
+}
 .lm-product__dato {
-  border: 2px solid rgba(255, 255, 255, .6) !important;
-  box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .16) !important;
+  border: 1.5px solid rgba(255, 255, 255, .5) !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16) !important;
 }
 .lm-product__dato-icono {
   border: 1.5px solid rgba(255, 255, 255, .65);
   box-shadow: 0 0 0 1px rgba(232, 51, 111, .25);
 }
+
 
 /* ---------- ficha de producto: tarjetas de datos con borde de vidrio ----------
    Precio, elaboración, estado y cantidad: el aro blanco translúcido con halo
@@ -2938,6 +2948,10 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   min-height: clamp(46px, 12.5vw, 54px);
   border-radius: 999px;
   justify-content: flex-start;
+  color: var(--text-sobre-fondo);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .34) 0%, rgba(255, 255, 255, .18) 100%);
+  border: 1.5px solid rgba(255, 255, 255, .5);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), inset 0 -6px 12px rgba(255, 255, 255, .06), 0 4px 10px rgba(94, 12, 44, .16);
 }
 
 /* El texto ocupa el espacio que deja el ícono y va centrado ahí dentro. */
@@ -2948,6 +2962,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   width: clamp(28px, 7.6vw, 33px);
   height: clamp(28px, 7.6vw, 33px);
   flex: 0 0 clamp(28px, 7.6vw, 33px);
+  /* Contorno fucsia más definido (interactivo). */
+  border: 1.5px solid rgba(232, 51, 111, .45);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .18), 0 2px 6px rgba(94, 12, 44, .12);
 }
 
 .carta__lista .lm-product__dato-icono .material-symbols-rounded {
@@ -2955,14 +2972,16 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 }
 
 .carta__lista .lm-product__precio {
-  font-size: clamp(16.5px, 4.6vw, 20px);
+  font-size: clamp(1.125rem, 5.2vw, 1.4rem);
   font-weight: 900;
+  line-height: 1;
 }
 
 .carta__lista .lm-product__tiempo {
-  font-size: clamp(13.5px, 3.8vw, 15.5px);
-  font-weight: 700;
+  font-size: clamp(0.95rem, 4.2vw, 1.05rem);
+  font-weight: 900;
   white-space: nowrap;
+  line-height: 1;
 }
 
 /* La flecha a la ficha va en la columna derecha del pie, en el flujo de la
@@ -2975,6 +2994,9 @@ img.lm-avatar { object-fit: cover; object-position: center; }
   align-self: center;
   width: clamp(46px, 12.5vw, 54px);
   height: clamp(46px, 12.5vw, 54px);
+  /* Contorno fucsia más definido (interactivo). */
+  border: 1.5px solid rgba(232, 51, 111, .4);
+  box-shadow: 0 0 0 1px rgba(232, 51, 111, .18), 0 2px 6px rgba(94, 12, 44, .12);
 }
 .carta__lista .lm-product__ir .material-symbols-rounded { font-size: clamp(24px, 6.6vw, 28px) !important; }
 
@@ -3475,7 +3497,6 @@ html[data-nav-dir='-1'] .sk-app > router-outlet + * {
   border: 1.5px solid rgba(255, 255, 255, .55);
   border-width: 1.5px 0 0 1.5px;
   border-radius: var(--mesa-radio) 0 0 0;
-  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
   text-shadow: 0 1px 3px rgba(60, 6, 30, .4);
 }
 .lm-mesa__abajo .lm-mesa__pipe { margin-inline: 0; }

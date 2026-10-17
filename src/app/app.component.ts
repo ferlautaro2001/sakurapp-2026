@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
@@ -22,6 +22,7 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
  * y el manejo del botón físico Atrás (LIFO con protección en formularios).
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-root',
   imports: [RouterOutlet, BannerComponent, SpinnerComponent, ModalComponent, IconoComponent, TextoBotonComponent],
   template: `
@@ -124,7 +125,6 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
         inset: 0;
         z-index: 990;
         background: rgba(45, 10, 20, 0.45);
-        backdrop-filter: blur(4px);
         display: flex;
         align-items: center;
         justify-content: center;

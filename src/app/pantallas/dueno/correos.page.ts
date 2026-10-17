@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -13,6 +13,7 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
  * cliente.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-correos',
   imports: [...UI],
   template: `

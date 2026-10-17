@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
@@ -14,6 +14,7 @@ const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r,
  * Si el usuario es Dueño o Supervisor, permite dar de alta nuevas mesas.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mesas',
   imports: [...UI],
   template: `

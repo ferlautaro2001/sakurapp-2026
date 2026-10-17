@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, signal, untracked } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { PROPINAS, QrService } from '../../nucleo/servicios/qr.service';
@@ -17,6 +17,7 @@ interface CodigoPropina {
  * el de ingreso al local, los cinco de propina y el de cada mesa.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-codigos',
   imports: [...UI],
   template: `
@@ -39,7 +40,7 @@ interface CodigoPropina {
             <div class="lm-lista-uno">
               @for (codigo of propinas(); track codigo.porcentaje) {
                 <div class="lm-card propina" [attr.data-nivel]="codigo.porcentaje">
-                  <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" />
+                  <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" loading="lazy" decoding="async" />
                   <div class="propina__datos">
                     <span class="propina__valor">{{ codigo.porcentaje }}<small>%</small></span>
                     <span class="propina__rotulo">{{ codigo.rotulo }}</span>
@@ -54,7 +55,7 @@ interface CodigoPropina {
               <div class="lm-lista-uno">
                 @for (mesa of mesas.todas(); track mesa.id) {
                   <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="ir(['/mesas', mesa.id, 'qr'])">
-                    <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" />
+                    <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" loading="lazy" decoding="async" />
                     <!-- Igual que las propinas: número grande y una pastilla con el tipo, coloreada. -->
                     <div class="propina__datos" [attr.data-tipo]="mesa.tipo">
                       <span class="propina__valor">{{ mesa.numero }}</span>

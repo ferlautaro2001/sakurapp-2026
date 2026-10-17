@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Espera, Mesa } from '../../nucleo/modelos/modelos';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { UI } from '../../ui';
@@ -8,6 +8,7 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
 
 /** Lista de espera en tiempo real para el metre. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-metre-lista-espera',
   imports: [DatePipe, AsignarMesaModalComponent, ...UI],
   template: `

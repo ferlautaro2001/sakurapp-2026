@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -28,6 +28,7 @@ import {
  * propio. Se validan todos los campos: formato, vacíos, tipos y unicidad.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-alta-empleado',
   imports: [ReactiveFormsModule, ...UI],
   template: `

@@ -109,19 +109,18 @@ export class BotonComponent {
         min-height: clamp(56px, 8.5dvh, 68px); padding: 0; border-radius: 20px;
         display: flex; align-items: center; justify-content: center;
         color: #FFFFFF; cursor: pointer; -webkit-tap-highlight-color: transparent;
-        /* Aro de vidrio de la app: el relleno termina donde empieza el borde. */
+        /* Mismo contorno de vidrio que el resto de los botones de la app: todas
+           las cruces y tildes comparten borde y sombra; sólo cambia el tamaño. */
         background-clip: padding-box;
-        border: 2px solid rgba(255, 255, 255, .65);
+        border: 1.5px solid rgba(255, 255, 255, .6);
         box-shadow:
-          inset 0 2px 0 rgba(255, 255, 255, .35),
-          inset 0 -4px 10px rgba(0, 0, 0, .2),
-          0 0 0 1px rgba(232, 51, 111, .28),
-          0 3px 8px rgba(59, 8, 27, .16);
+          inset 0 1px 0 rgba(255, 255, 255, .7),
+          0 3px 8px rgba(94, 12, 44, .14);
         transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
       }
       :host(.lm-decision--compacto) .dec { min-height: var(--touch-min); border-radius: 16px; }
-      .dec--no { background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%); }
-      .dec--si { background: linear-gradient(180deg, #2FA56B 0%, #1B7A4C 55%, #11593A 100%); }
+      .dec--no { background: linear-gradient(180deg, #FF6B55 0%, #E83A28 50%, #C8241A 100%); }
+      .dec--si { background: linear-gradient(180deg, #4ADE80 0%, #22C55E 50%, #16A34A 100%); }
       .dec:not(:disabled):active { transform: scale(.97); filter: brightness(.88); }
       .dec:disabled { opacity: .46; cursor: default; }
       .dec:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; }
@@ -215,7 +214,7 @@ export class IconoBotonComponent {
   selector: 'lm-chip',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<span class="lm-chip lm-chip--{{ estado() }}"><ng-content /></span>`,
-  styles: [':host{display:inline-flex}'],
+  styles: [':host{display:inline-flex;flex-shrink:0;max-width:100%}'],
 })
 export class ChipComponent {
   /** vacia · libre · ocupada · inactiva · reservada · pendiente · aprobado · rechazado */

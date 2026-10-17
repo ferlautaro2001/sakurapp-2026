@@ -1,13 +1,11 @@
-import {
-  Component,
+import { ChangeDetectionStrategy, Component,
   DestroyRef,
   ElementRef,
   computed,
   effect,
   inject,
   signal,
-  viewChild,
-} from '@angular/core';
+  viewChild, } from '@angular/core';
 import { UI } from '../../../ui';
 import { PaginaConSesion } from '../../pagina-base';
 import { EsperaService } from '../../../nucleo/servicios/espera.service';
@@ -59,6 +57,7 @@ const IMAGENES = ['assets/img/flor-1.png', 'assets/img/flor-2.png', 'assets/img/
  * Se gana atrapando treinta en quince segundos.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-ninja-sakura',
   imports: [...UI],
   template: `

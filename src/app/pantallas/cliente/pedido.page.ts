@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ItemCarrito, CarritoService } from '../../nucleo/servicios/carrito.service';
@@ -15,6 +15,7 @@ import { Unsubscribe } from 'firebase/firestore';
  * Pantalla integral "Mi pedido" que unifica borrador, revisión, comanda devuelta y progreso.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-pedido',
   imports: [...UI],
   template: `
@@ -248,15 +249,18 @@ import { Unsubscribe } from 'firebase/firestore';
       .leyenda__sello {
         width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
         display: grid; place-items: center; color: #FFFFFF;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .leyenda__sello--cantidad { background: var(--state-pending); }
       .leyenda__sello--cambiar { background: var(--state-error); }
       .limpiar {
         display: flex; align-items: center; justify-content: center; gap: 8px;
         width: 100%; min-height: var(--touch-min); padding: var(--space-3) var(--space-4); margin-top: 2px;
-        border: none; border-radius: var(--radius-button); cursor: pointer;
+        border: 1.5px solid rgba(255, 255, 255, .6); border-radius: 17px; cursor: pointer;
         background: var(--state-error); color: #FFF6F5;
         font: var(--type-button); line-height: 1.25; text-align: center; text-wrap: balance;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .limpiar:active { background: #9E1D13; transform: scale(0.99); }
       .sector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-3) var(--space-2); text-align: center; }
@@ -268,6 +272,8 @@ import { Unsubscribe } from 'firebase/firestore';
       .espera__reloj {
         width: clamp(44px, 13.5vw, 54px); height: clamp(44px, 13.5vw, 54px); border-radius: 50%; display: grid; place-items: center;
         background: var(--surface-sunken);
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .espera b { font: var(--type-card-title); color: var(--text-title); }
       .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }

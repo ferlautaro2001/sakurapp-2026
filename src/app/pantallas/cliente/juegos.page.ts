@@ -1,10 +1,11 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
 /** Juego de un solo intento por pedido, con premio no acumulativo. */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-juegos',
   imports: [...UI],
   template: `

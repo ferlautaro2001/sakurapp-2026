@@ -102,6 +102,9 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       .lm-resumen__tiempo {
         display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;
         font: 800 clamp(13.5px, 3.5vw, 15px)/1.1 var(--font-numeric); color: var(--text-title);
+        padding: 4px 8px; border-radius: 10px;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: right; }
     `,
@@ -361,6 +364,8 @@ export class CantidadComponent {
         border-radius: 10px; display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
         background: var(--action-primary); color: #FFFFFF;
         font: 800 clamp(13.5px, 3.5vw, 15px)/1 var(--font-numeric);
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .renglon__cantidad small { font: 700 11px/1 var(--font-numeric); opacity: .8; }
       .renglon__subtotal {

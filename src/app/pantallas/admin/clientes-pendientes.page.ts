@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -30,6 +30,7 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
  * toque.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-clientes-pendientes',
   imports: [...UI],
   template: `

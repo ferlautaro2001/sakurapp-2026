@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Usuario } from '../../nucleo/modelos/modelos';
@@ -7,6 +7,7 @@ import { FirestoreService } from '../../nucleo/servicios/firestore.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-empleados',
   imports: [...UI],
   template: `
@@ -31,7 +32,7 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
           <div class="empleados__lista">
             @for (empleado of visibles(); track empleado.uid || empleado.id) {
               <article class="lm-pending empleado">
-                <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" />
+                <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" loading="lazy" decoding="async" />
                 <b class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</b>
                 <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="18" />{{ roles[empleado.perfil] }}</span>
                 @if (correo(empleado); as partes) {

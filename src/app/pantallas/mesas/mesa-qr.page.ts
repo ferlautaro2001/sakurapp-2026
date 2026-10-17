@@ -1,4 +1,4 @@
-import { Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnInit, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
@@ -16,6 +16,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
  * estado de disponibilidad y acceso a pantalla completa sin desbordar el viewport móvil.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mesa-qr',
   imports: [...UI],
   template: `
@@ -102,6 +103,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                   [src]="fuenteQr() || m.qrCodeUrl"
                   [alt]="'Código QR de la mesa ' + m.numero"
                   class="qr-imagen"
+                  decoding="async"
                 />
               } @else {
                 <div class="qr-placeholder">
@@ -138,6 +140,7 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
                 [src]="fuenteQr() || m.qrCodeUrl"
                 [alt]="'QR Mesa ' + m.numero"
                 class="modal-qr-img"
+                decoding="async"
               />
             </div>
           </div>
@@ -698,8 +701,6 @@ const TIPOS: TipoMesa[] = ['ESTANDAR', 'VIP', 'MOVILIDAD_REDUCIDA'];
         inset: 0;
         z-index: 9999;
         background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
         display: flex;
         align-items: center;
         justify-content: center;

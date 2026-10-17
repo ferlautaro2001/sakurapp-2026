@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ChatService, ConversacionMesa } from '../../nucleo/servicios/chat.service';
@@ -11,6 +11,7 @@ import { DatePipe } from '@angular/common';
  * Bandeja de consultas directas de las mesas para los mozos en servicio.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mozo-consultas',
   imports: [DatePipe, ...UI],
   template: `

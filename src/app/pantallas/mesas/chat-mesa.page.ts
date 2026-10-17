@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-  AfterViewInit,
+import { ChangeDetectionStrategy, AfterViewInit,
   Component,
   ElementRef,
   OnDestroy,
@@ -9,8 +8,7 @@ import {
   computed,
   inject,
   input,
-  signal,
-} from '@angular/core';
+  signal, } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { doc, getDoc, Unsubscribe } from 'firebase/firestore';
 import { ROTULO_ROL_MENSAJE, RolMensaje } from '../../nucleo/modelos/enums';
@@ -30,6 +28,7 @@ import { PaginaConSesion } from '../pagina-base';
  * y despacho de notificaciones push en ambos sentidos.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-chat-mesa',
   imports: [DatePipe, FormsModule, ...UI],
   template: `

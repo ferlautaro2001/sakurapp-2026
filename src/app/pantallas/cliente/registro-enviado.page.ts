@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
 
@@ -12,6 +12,7 @@ import { UI } from '../../ui';
  * "estado de tu cuenta", porque esta pantalla no tiene nada más que mirar.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-registro-enviado',
   imports: [...UI],
   template: `
@@ -55,6 +56,8 @@ import { UI } from '../../ui';
       .espera__reloj {
         width: clamp(96px, 36vw, 156px); height: clamp(96px, 36vw, 156px); border-radius: 50%; display: grid; place-items: center;
         background: var(--surface-sunken);
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .espera b { font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
     `,

@@ -1,5 +1,5 @@
 import { CurrencyPipe } from '@angular/common';
-import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import {
   MarcaRechazo,
   ROTULO_ALCANCE_RECHAZO,
@@ -23,6 +23,7 @@ import { PaginaConSesion } from '../pagina-base';
  *  - el resto → cómo viene el pedido, sector por sector.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-estado-pedido',
   imports: [CurrencyPipe, ...UI],
   template: `
@@ -226,7 +227,7 @@ import { PaginaConSesion } from '../pagina-base';
     .leyenda__item{display:flex;align-items:flex-start;gap:var(--space-3);font:var(--type-body-small);color:var(--text-body);text-wrap:pretty}
     .leyenda__item b{color:var(--text-title)}
     /* El mismo sello que llevan los renglones, para que se reconozca. */
-    .leyenda__sello{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center}
+    .leyenda__sello{flex:0 0 auto;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;border:1.5px solid rgba(255,255,255,.6);box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 3px 8px rgba(94,12,44,.14)}
     .leyenda__sello--cantidad{background:var(--state-pending)}
     .leyenda__sello--cambiar{background:var(--state-error)}
 
@@ -236,9 +237,10 @@ import { PaginaConSesion } from '../pagina-base';
     .limpiar{
       display:flex;align-items:center;justify-content:center;gap:8px;
       width:100%;min-height:var(--touch-min);padding:var(--space-3) var(--space-4);margin-top:2px;
-      border:none;border-radius:var(--radius-button);cursor:pointer;
+      border:1.5px solid rgba(255,255,255,.6);border-radius:17px;cursor:pointer;
       background:var(--state-error);color:#FFF6F5;
       font:var(--type-button);line-height:1.25;text-align:center;text-wrap:balance;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.7),0 3px 8px rgba(94,12,44,.14);
     }
     .limpiar:active{background:#9E1D13;transform:scale(0.99)}
 

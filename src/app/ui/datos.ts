@@ -19,7 +19,7 @@ import { DocumentoPipe, HoraPipe, PesosPipe } from './pesos.pipe';
   template: `
     <button type="button" class="lm-profile" (click)="presionar.emit()">
       <span class="lm-profile__avatar">
-        <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario().nombre" width="34" height="34" />
+        <img [src]="usuarios.avatarSushi(usuario())" [alt]="usuario().nombre" width="34" height="34" loading="lazy" decoding="async" />
       </span>
       <span class="lm-profile__texto">
         <b>{{ soloNombre() ? usuarios.nombrePropio(usuario().nombre) : usuarios.nombreCompleto(usuario()) }}</b>
@@ -569,7 +569,7 @@ export class FilaEsperaComponent {
               [attr.aria-label]="'Ver la foto ' + ($index + 1)"
               (click)="irA($index)"
             >
-              <img src="assets/img/flor-2.png" alt="" />
+              <img src="assets/img/flor-2.png" alt="" loading="lazy" decoding="async" />
             </button>
           }
         </div>

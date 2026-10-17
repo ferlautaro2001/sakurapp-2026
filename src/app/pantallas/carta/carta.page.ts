@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Producto } from '../../nucleo/modelos/modelos';
@@ -17,6 +17,7 @@ type Categoria = 'TODOS' | TipoProducto;
  * La carta completa del salón adaptada a la composición y UX de la-mesa.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-carta',
   imports: [...UI],
   template: `

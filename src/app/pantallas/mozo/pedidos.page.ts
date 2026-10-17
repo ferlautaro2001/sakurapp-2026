@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
 import { Pedido } from '../../nucleo/modelos/modelos';
@@ -9,6 +9,7 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
  * Listado de pedidos para el mozo, con pestañas "Para revisar" y "En curso".
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mozo-pedidos',
   imports: [...UI],
   template: `

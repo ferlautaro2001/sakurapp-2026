@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
@@ -19,6 +19,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
  * - Botones de acceso rápido para los perfiles requeridos
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-login',
   imports: [ReactiveFormsModule, ...UI],
   template: `

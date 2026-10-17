@@ -25,8 +25,8 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent, PesosPipe],
   template: `
-    <div class="lm-resumen">
-      @if (hayDescuento()) {
+    <div class="lm-resumen" [class.lm-resumen--tira]="tira()">
+      @if (hayDescuento() && !tira()) {
         <div class="lm-resumen__desglose">
           <span class="lm-resumen__linea">
             <small>Subtotal</small>
@@ -52,15 +52,19 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         <span class="lm-resumen__tiempo">
           <lm-icono nombre="schedule" [tamano]="16" color="var(--action-primary)" />
           {{ tiempo() }}'
-          <small>{{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }}</small>
+          <small>
+            @if (tira()) {
+              &middot;
+            }
+            {{ unidades() }} {{ unidades() === 1 ? 'producto' : (tira() ? 'prod.' : 'productos') }}
+          </small>
         </span>
       </div>
     </div>
-    <ng-content />
   `,
   styles: [
     `
-      :host { display: flex; flex-direction: column; gap: var(--space-4); }
+      :host { display: block; min-width: 0; }
       .lm-resumen {
         display: flex; flex-direction: column; gap: 10px;
         padding: var(--space-3) var(--space-4);
@@ -107,6 +111,33 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: right; }
+
+      /* Tira: el importe y el tiempo en una sola línea baja, sin tarjeta. Para
+         las barras de acción donde el alto es el recurso escaso y una tarjeta
+         entera se come un cuarto de la pantalla. Es variante del propio
+         componente —la pide cada pantalla con [tira]— y no un reestilizado
+         desde afuera. Va después de las reglas base porque comparte
+         especificidad con ellas. */
+      .lm-resumen--tira {
+        flex-direction: row; align-items: center; justify-content: space-between;
+        gap: var(--space-3); padding: 6px 14px; border-radius: var(--radius-pill);
+        background: rgba(110, 18, 52, .26);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+      }
+      .lm-resumen--tira .lm-resumen__cifras { display: contents; }
+      .lm-resumen--tira .lm-resumen__total {
+        display: flex; flex-direction: row; align-items: baseline; gap: 6px;
+        font-size: clamp(15px, 4.4vw, 19px);
+      }
+      .lm-resumen--tira .lm-resumen__total small {
+        margin-bottom: 0; font: var(--type-label); text-transform: uppercase;
+        letter-spacing: var(--tracking-label); color: var(--text-muted);
+      }
+      .lm-resumen--tira .lm-resumen__tiempo {
+        flex-wrap: nowrap; gap: 5px; padding: 0; border: none; background: none;
+        box-shadow: none; font: var(--type-body-small); color: var(--text-muted);
+      }
+      .lm-resumen--tira .lm-resumen__tiempo small { width: auto; text-align: right; }
     `,
   ],
 })
@@ -120,11 +151,131 @@ export class ResumenPedidoComponent {
   readonly descuento = input(0);
   /** Porcentaje del descuento, para rotular la línea. */
   readonly porcentaje = input(0);
+  /**
+   * Importe y tiempo en una sola tira baja, sin tarjeta. Lo piden las barras
+   * de acción con poco alto: el desglose del descuento se oculta porque no
+   * cabe en una línea.
+   */
+  readonly tira = input(false, { transform: booleanAttribute });
 
   /** El desglose aparece sólo cuando hay algo que desglosar. */
   protected hayDescuento(): boolean {
     return this.descuento() > 0 && this.subtotal() !== null;
   }
+}
+
+/**
+ * Barra de acción de un pedido: el resumen y la decisión, en una sola pieza.
+ *
+ * Antes cada pantalla armaba esto a mano con un `div.lm-actionbar` y le
+ * proyectaba los botones adentro del resumen, así que el componente del
+ * resumen terminaba siendo también el contenedor del layout. Acá la barra es
+ * una unidad: trae el resumen, trae la acción y decide cómo se acomodan
+ * (apilados o en la misma fila).
+ */
+@Component({
+  selector: 'lm-barra-pedido',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DecisionComponent, ResumenPedidoComponent],
+  template: `
+    <div class="barra" [class.barra--fila]="enFila()" [class.barra--compacta]="compacta()">
+      <lm-resumen-pedido
+        [total]="total()"
+        [tiempo]="tiempo()"
+        [unidades]="unidades()"
+        [subtotal]="subtotal()"
+        [descuento]="descuento()"
+        [porcentaje]="porcentaje()"
+        [tira]="tira()"
+      />
+
+      @if (decision()) {
+        <lm-decision
+          [rotuloRechazar]="rotuloDevolver()"
+          [rotuloAceptar]="rotuloConfirmar()"
+          (rechazar)="devolver.emit()"
+          (aceptar)="confirmar.emit()"
+        />
+      } @else {
+        <ng-content />
+      }
+    </div>
+  `,
+  styles: [
+    `
+      :host { display: block; }
+      /*
+       * La barra es la que manda el layout. Apilada por omisión (el resumen
+       * arriba, la decisión abajo, que es como se lee un total); en fila el
+       * resumen toma el ancho que sobra y la acción queda a la derecha, con el
+       * mismo alto. Todo lo que antes vivía en .resumen--con-enviar sobre el
+       * host del resumen, con su !important, ahora es de la barra.
+       */
+      .barra {
+        display: flex; flex-direction: column; gap: var(--space-2);
+        padding: var(--space-4) var(--gutter-screen) calc(var(--space-4) + var(--safe-bottom));
+        background: linear-gradient(to top, var(--bg-app) 62%, rgba(185, 46, 88, 0));
+      }
+      .barra--fila { flex-direction: row; align-items: stretch; gap: var(--space-2); }
+      /* Barra apretada: menos aire arriba y entre resumen y acción, y botones
+         algo más bajos. Para las pantallas donde la lista tiene que entrar
+         entera y cada píxel de la barra es un píxel de lista. La barra lo
+         resuelve por su cuenta; la pantalla no mete la mano adentro. */
+      .barra--compacta {
+        padding-top: var(--space-2);
+        gap: var(--space-2);
+      }
+      :host ::ng-deep .barra--compacta .dec {
+        min-height: 56px !important; border-radius: 16px !important;
+      }
+
+      /* El resumen toma el ancho que sobra; la acción, el que necesita. */
+      .barra--fila lm-resumen-pedido { flex: 1 1 auto; min-width: 0; }
+      .barra--fila lm-decision, .barra--fila > .accion { flex: 0 0 auto; display: flex; }
+
+      /* En fila el resumen se aplana un poco: la acción se lleva el ancho. */
+      :host ::ng-deep .barra--fila .lm-resumen {
+        flex: 1 1 auto; min-width: 0;
+        padding: var(--space-3); justify-content: center;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen__cifras { align-items: center; }
+      :host ::ng-deep .barra--fila .lm-resumen__total { font-size: clamp(17px, 5.4vw, 22px); }
+      /* El reloj y la cantidad no se parten nunca en un renglón. */
+      :host ::ng-deep .barra--fila .lm-resumen__tiempo {
+        display: block; text-align: right; white-space: nowrap;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen__tiempo small {
+        white-space: normal; display: block;
+      }
+    `,
+  ],
+})
+export class BarraPedidoComponent {
+  readonly total = input.required<number>();
+  readonly tiempo = input.required<number>();
+  readonly unidades = input.required<number>();
+  /** Importe antes de descuentos. En nulo, el resumen muestra sólo el total. */
+  readonly subtotal = input<number | null>(null);
+  /** Monto descontado, en pesos. */
+  readonly descuento = input(0);
+  /** Porcentaje del descuento, para rotular la línea. */
+  readonly porcentaje = input(0);
+  /** El total y el tiempo en una sola tira baja, sin tarjeta. */
+  readonly tira = input(false, { transform: booleanAttribute });
+  /** Resumen y acción en la misma fila, en vez de apilados. */
+  readonly enFila = input(false, { transform: booleanAttribute });
+  /** Menos aire en la barra: para cuando la lista de arriba tiene que entrar entera. */
+  readonly compacta = input(false, { transform: booleanAttribute });
+
+  /**
+   * Botones de confirmar y devolver, en lugar de una acción propia. Cuando es
+   * falso la barra usa lo que le proyecten.
+   */
+  readonly decision = input(false, { transform: booleanAttribute });
+  readonly rotuloDevolver = input('Devolver');
+  readonly rotuloConfirmar = input('Confirmar');
+  readonly confirmar = output<void>();
+  readonly devolver = output<void>();
 }
 
 /**

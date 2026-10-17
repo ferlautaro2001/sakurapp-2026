@@ -35,6 +35,7 @@ import {
   TarjetaPerfilComponent,
 } from './datos';
 import {
+  BarraPedidoComponent,
   BurbujaComponent,
   CantidadComponent,
   FilaPedidoComponent,
@@ -99,6 +100,7 @@ export const UI = [
   GraficoLineaComponent,
   DiapositivasComponent,
   ResumenPedidoComponent,
+  BarraPedidoComponent,
   RenglonPedidoComponent,
   FilaPedidoComponent,
   BurbujaComponent,

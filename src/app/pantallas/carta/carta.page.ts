@@ -87,9 +87,9 @@ type Categoria = 'TODOS' | TipoProducto;
       </div>
 
       @if (esComensal()) {
-        <div class="lm-actionbar carta__barra">
-          <lm-resumen-pedido
-            class="resumen--con-enviar"
+        <lm-barra-pedido
+            class="carta__barra"
+            enFila
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
@@ -103,8 +103,7 @@ type Categoria = 'TODOS' | TipoProducto;
             >
               Pedir
             </lm-boton>
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       }
 
       <lm-barra-inferior [items]="secciones()" activo="carta" />

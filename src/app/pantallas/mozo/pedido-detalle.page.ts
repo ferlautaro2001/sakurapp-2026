@@ -13,7 +13,7 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado titulo="Pedido" conVolver (volver)="volver()" />
+      <lm-encabezado [titulo]="pedido() ? 'Pedido · Mesa ' + mesa() : 'Pedido'" conVolver (volver)="volver()" />
 
       @if (pedido(); as p) {
         <div class="lm-body lm-body--gap12">
@@ -50,18 +50,17 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
           }
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido [total]="p.totalFinal" [tiempo]="p.tiempoEstimado" [unidades]="unidadesTotal()">
-            @if (p.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-              <lm-decision
-                rotuloRechazar="Devolver"
-                rotuloAceptar="Confirmar"
-                (rechazar)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
-                (aceptar)="confirmar()"
-              />
-            }
-          </lm-resumen-pedido>
-        </div>
+        <lm-barra-pedido
+          class="detalle__barra"
+          tira
+          compacta
+          [total]="p.totalFinal"
+          [tiempo]="p.tiempoEstimado"
+          [unidades]="unidadesTotal()"
+          [decision]="p.estadoGlobal === 'PENDIENTE_CONFIRMACION'"
+          (devolver)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
+          (confirmar)="confirmar()"
+        />
       } @else {
         <div class="lm-body">
           <lm-vacio icono="receipt_long" titulo="No encontramos ese pedido">
@@ -100,30 +99,28 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      /* Snap y desplazamiento: ningún renglón ni tarjeta queda cortado por la mitad sobre la barra de acción */
+      /* Ajuste de alto: la comanda tiene que entrar entera, con la última fila
+         completa y sin scroll. La barra se pide [compacta] y resuelve su propio
+         aire; acá sólo se aprietan las tarjetas de producto. El snap es suave y
+         ancla sólo tarjetas: con mandatory+always el navegador frenaba en cada
+         renglón y clavaba la vista arriba. */
       .lm-body {
-        scroll-snap-type: y mandatory;
+        scroll-snap-type: y proximity;
         scroll-padding-top: var(--space-3);
-        scroll-padding-bottom: calc(var(--space-6) + var(--safe-bottom));
+        scroll-padding-bottom: calc(var(--space-3) + var(--safe-bottom));
         overscroll-behavior-y: contain;
       }
-      .mesa, .devuelto {
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
+      lm-separador { scroll-snap-align: none; }
+      :host ::ng-deep .lm-list { scroll-snap-align: none; }
+      :host ::ng-deep .lm-list > lm-renglon-pedido { scroll-snap-align: start; }
+
+      :host ::ng-deep .renglon { padding: 5px 11px !important; }
+      :host ::ng-deep .renglon__fila { row-gap: 3px !important; }
+      :host ::ng-deep .renglon__fila .renglon__subtotal {
+        font-size: clamp(17px, 5vw, 20px) !important;
       }
-      lm-separador {
-        scroll-snap-align: none !important;
-      }
-      :host ::ng-deep .lm-list {
-        scroll-snap-align: none;
-      }
-      :host ::ng-deep .lm-list > lm-renglon-pedido {
-        scroll-snap-align: start;
-        scroll-snap-stop: always;
-      }
-      :host ::ng-deep .lm-list > lm-renglon-pedido:last-child:not(:only-child),
-      :host ::ng-deep .lm-list:last-of-type > lm-renglon-pedido:last-child {
-        scroll-snap-align: end;
+      :host ::ng-deep .renglon__cantidad {
+        min-height: 27px !important; padding: 5px !important;
       }
     `,
   ],

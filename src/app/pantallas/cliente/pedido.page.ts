@@ -148,9 +148,8 @@ import { Unsubscribe } from 'firebase/firestore';
           }
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido
-            [class.resumen--con-enviar]="editable()"
+        <lm-barra-pedido
+            [enFila]="editable()"
             [total]="editable() ? carrito.importeTotal() : p.totalFinal"
             [tiempo]="editable() ? carrito.tiempoEstimado() : p.tiempoEstimado"
             [unidades]="editable() ? carrito.cantidadTotal() : unidadesPedido(p)"
@@ -177,8 +176,7 @@ import { Unsubscribe } from 'firebase/firestore';
                 Pedir la cuenta al mozo
               </lm-boton>
             }
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       } @else if (carrito.items().length) {
         <!-- Borrador antes de enviar -->
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
@@ -196,9 +194,8 @@ import { Unsubscribe } from 'firebase/firestore';
           </div>
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido
-            class="resumen--con-enviar"
+        <lm-barra-pedido
+            enFila
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
@@ -212,8 +209,7 @@ import { Unsubscribe } from 'firebase/firestore';
             >
               Pedir
             </lm-boton>
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       } @else {
         <!-- Vacío -->
         <div class="lm-body">

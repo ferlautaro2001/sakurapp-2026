@@ -2,8 +2,9 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
-import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
+import { ROTULO_ESTADO_MESA, ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 
+const ESTADOS = ['Vacía', 'Ocupada'].map((r) => ({ valor: r, rotulo: r }));
 const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r, rotulo: r }));
 
 /**
@@ -32,6 +33,16 @@ const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r,
       <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo [contador]="visibles().length">Mesas del salón</lm-titulo>
 
+        <!--
+          Ocho chips seguidos con el mismo peso no dejan ver que son dos
+          preguntas distintas: el rótulo de arriba de cada tira dice cuál se
+          está respondiendo, y de paso recupera el dato de disponibilidad que
+          antes repetía el pill del encabezado.
+        -->
+        <div class="grupo">
+          <span class="grupo__rotulo">Disponibilidad</span>
+          <lm-segmentado desactivable vidrio [opciones]="estados" [valor]="estado()" (cambiar)="estado.set($event)" />
+        </div>
         <div class="grupo">
           <span class="grupo__rotulo">Tipo de mesa</span>
           <lm-segmentado desactivable vidrio [opciones]="tipos" [valor]="tipo()" (cambiar)="tipo.set($event)" />
@@ -43,6 +54,7 @@ const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r,
               <lm-tarjeta-mesa
                 [mesa]="mesa"
                 [conEdicion]="puedeEditar()"
+                [mostrarEstado]="!estado()"
                 [mostrarTipo]="!tipo()"
                 (presionar)="ir(['/mesas', mesa.id])"
                 (abrirQr)="ir(['/mesas', mesa.id, 'qr'])"
@@ -85,7 +97,9 @@ const TIPOS = ['Estándar', 'VIP', 'Movilidad reducida'].map((r) => ({ valor: r,
 export class MesasPage extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
 
+  protected readonly estados = ESTADOS;
   protected readonly tipos = TIPOS;
+  protected readonly estado = signal('');
   protected readonly tipo = signal('');
 
   protected readonly puedeAgregar = computed(() => this.sesion.esAdministrador());
@@ -104,6 +118,7 @@ export class MesasPage extends PaginaConSesion {
   protected readonly visibles = computed(() =>
     this.mesas
       .todas()
+      .filter((m) => !this.estado() || ROTULO_ESTADO_MESA[m.estado] === this.estado())
       .filter((m) => !this.tipo() || ROTULO_TIPO_MESA[m.tipo] === this.tipo()),
   );
 

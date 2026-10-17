@@ -534,8 +534,8 @@ export class MozoRechazoPage extends PaginaConSesion {
       return {
         icono: observacion.marca === 'CANTIDAD' ? 'warning' : 'block',
         tono: observacion.marca === 'CANTIDAD' ? ('pendiente' as const) : ('peligro' as const),
-        // Sólo el ícono: el nombre y el motivo de la marca no se repiten acá.
-        texto: '',
+        // Ícono y nombre del producto; el motivo de la marca no se repite acá.
+        texto: nombre,
       };
     });
   }

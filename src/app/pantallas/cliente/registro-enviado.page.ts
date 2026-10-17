@@ -6,7 +6,7 @@ import { UI } from '../../ui';
  * Confirmación del envío del registro para clientes.
  *
  * Es la misma tarjeta que ve el comensal cuando manda el pedido y espera al
- * mozo: título, reloj y las dos líneas que cuentan qué está pasando. Los dos
+ * mozo: título, reloj y una línea que cuenta qué está pasando. Los dos
  * momentos son el mismo —mandó algo y depende de que alguien lo revise—, así
  * que se leen igual. Acá el reloj va más grande, al tamaño de la ficha de
  * "estado de tu cuenta", porque esta pantalla no tiene nada más que mirar.
@@ -16,24 +16,24 @@ import { UI } from '../../ui';
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <div class="lm-body lm-body--centrado">
-        <lm-logo [conNombre]="false" [tamano]="82" />
+      <!-- Sólo la flecha: acá todavía no hay sesión, así que no va el nombre ni cerrar sesión. -->
+      <header class="lm-header">
+        <div class="lm-header__fila">
+          <lm-icono-boton icono="arrow_back" rotulo="Volver" pegadoIzquierda (presionar)="login()" />
+        </div>
+      </header>
 
+      <div class="lm-body lm-body--centrado">
         <div class="lm-card espera">
           <h1 class="espera__titulo">Registro enviado</h1>
           <span class="espera__reloj">
             <lm-icono nombre="hourglass_top" tamano="clamp(46px, 17vw, 84px)" color="var(--action-primary)" />
           </span>
-          <b>El dueño o el supervisor van a revisar tus datos</b>
-          <small>
-            Te avisamos por correo electrónico en cuanto esté resuelto. Mientras tanto podés
-            entrar como invitado.
-          </small>
+          <b>Te enviaremos un correo electrónico cuando verifiquemos los datos de tu registro</b>
         </div>
       </div>
 
       <div class="lm-actionbar">
-        <lm-boton variante="secondary" icono="person" (presionar)="invitado()">Ingresar como invitado</lm-boton>
         <lm-texto-boton (presionar)="login()">Volver al inicio</lm-texto-boton>
       </div>
     </div>
@@ -57,16 +57,12 @@ import { UI } from '../../ui';
         background: var(--surface-sunken);
       }
       .espera b { font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
-      .espera small { font: var(--type-body); color: var(--text-muted); text-wrap: pretty; }
     `,
   ],
 })
 export class RegistroEnviadoPage {
   private readonly router = inject(Router);
 
-  protected invitado(): void {
-    void this.router.navigate(['/registro-invitado']);
-  }
   protected login(): void {
     void this.router.navigate(['/login'], { replaceUrl: true });
   }

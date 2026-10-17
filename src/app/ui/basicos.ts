@@ -119,8 +119,12 @@ export class BotonComponent {
         transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
       }
       :host(.lm-decision--compacto) .dec { min-height: var(--touch-min); border-radius: 16px; }
-      .dec--no { background: linear-gradient(180deg, #FF6B55 0%, #E83A28 50%, #C8241A 100%); }
-      .dec--si { background: linear-gradient(180deg, #4ADE80 0%, #22C55E 50%, #16A34A 100%); }
+      /* Verde y rojo de la app, no otros: los mismos tokens que usa
+         lm-btn--success y lm-btn--danger. Antes esta pareja llevaba degradados
+         propios —un verde claro y un naranja— y se veía distinta de todos los
+         demás botones de aceptar y rechazar. Ahora hay una sola fuente. */
+      .dec--no { background: var(--state-error); color: #FFF6F5; }
+      .dec--si { background: var(--state-success); color: #F4FBF7; }
       .dec:not(:disabled):active { transform: scale(.97); filter: brightness(.88); }
       .dec:disabled { opacity: .46; cursor: default; }
       .dec:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; }

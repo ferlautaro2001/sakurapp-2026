@@ -34,71 +34,78 @@ import {
     <div class="lm-screen">
       <lm-encabezado titulo="Alta de empleado" conVolver (volver)="volver()" />
 
-      <div class="lm-body lm-body--gap12">
-        @if (alta(); as nuevo) {
-          <lm-banner tono="success" titulo="Empleado dado de alta">
-            {{ usuarios.nombreCompleto(nuevo) }} ya puede iniciar sesión como {{ rotuloPerfil(nuevo.perfil) }}.
-          </lm-banner>
-        }
-        @if (resumenError()) {
-          <lm-banner tono="error" titulo="Faltan datos para dar el alta">{{ resumenError() }}</lm-banner>
-        }
-        @if (leidoDelDocumento()) {
-          <lm-banner tono="success" titulo="Datos leídos del documento">
-            Los campos quedan editables: confirmá que estén bien antes de guardar.
-          </lm-banner>
-        }
+      <!-- Dos tandas que miden justo el alto visible: el snap frena siempre al
+           principio de una, así ningún campo queda cortado en ningún teléfono. -->
+      <div class="lm-body alta__tandas">
+        <div class="alta__tanda">
+          @if (alta(); as nuevo) {
+            <lm-banner tono="success" titulo="Empleado dado de alta">
+              {{ usuarios.nombreCompleto(nuevo) }} ya puede iniciar sesión como {{ rotuloPerfil(nuevo.perfil) }}.
+            </lm-banner>
+          }
+          @if (resumenError()) {
+            <lm-banner tono="error" titulo="Faltan datos para dar el alta">{{ resumenError() }}</lm-banner>
+          }
+          @if (leidoDelDocumento()) {
+            <lm-banner tono="success" titulo="Datos leídos del documento">
+              Los campos quedan editables: confirmá que estén bien antes de guardar.
+            </lm-banner>
+          }
 
-        <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
-        <section class="lm-vidrio lm-doc">
-          <b>Cargá tu foto y escaneá tu DNI</b>
-          <div class="lm-fila-doc">
-            <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
-            <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
-          </div>
-        </section>
+          <!-- Todo el mosaico de la foto dispara la cámara, no sólo el círculo y el pie. -->
+          <section class="lm-vidrio lm-doc">
+            <b>Cargá tu foto y escaneá tu DNI</b>
+            <div class="lm-fila-doc">
+              <lm-foto [fuente]="foto()" [tamano]="120" etiqueta="Tomar foto" [error]="errorFoto()" (click)="tomarFoto()" />
+              <lm-tarjeta-escaneo titulo="Escanear DNI" [escaneando]="escaneando()" (escanear)="escanearDocumento()" />
+            </div>
+          </section>
 
-        <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
-        <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
-        <lm-campo
-          [control]="formulario.controls.cuil"
-          icono="credit_card"
-          etiqueta="CUIL"
-          marcador="27-44225858-4"
-          modo="numeric"
-          [largoMaximo]="13"
-        />
-        <lm-campo
-          [control]="formulario.controls.email"
-          icono="mail"
-          tipo="email"
-          modo="email"
-          etiqueta="Correo electrónico"
-          marcador="sofia@sakurapp.com.ar"
-        />
-        <lm-campo
-          [control]="formulario.controls.clave"
-          icono="lock"
-          tipo="password"
-          etiqueta="Contraseña"
-          marcador="Mínimo ocho caracteres"
-        />
-        <lm-campo
-          [control]="formulario.controls.repeticion"
-          icono="lock_reset"
-          tipo="password"
-          etiqueta="Confirmar contraseña"
-          marcador="Repetí la contraseña"
-          tecla="done"
-        />
+          <lm-campo [control]="formulario.controls.nombre" icono="person" etiqueta="Nombres" marcador="Sofía Ayelén" />
+          <lm-campo [control]="formulario.controls.apellido" icono="person" etiqueta="Apellidos" marcador="Gómez" />
+          <lm-campo
+            [control]="formulario.controls.cuil"
+            icono="credit_card"
+            etiqueta="CUIL"
+            marcador="27-44225858-4"
+            modo="numeric"
+            [largoMaximo]="13"
+          />
+        </div>
 
-        <lm-segmentado
-          etiqueta="Perfil"
-          [opciones]="perfiles"
-          [valor]="perfil()"
-          [columnas]="2"
-          (cambiar)="perfil.set($any($event))"
-        />
+        <div class="alta__tanda">
+          <lm-campo
+            [control]="formulario.controls.email"
+            icono="mail"
+            tipo="email"
+            modo="email"
+            etiqueta="Correo electrónico"
+            marcador="sofia@sakurapp.com.ar"
+          />
+          <lm-campo
+            [control]="formulario.controls.clave"
+            icono="lock"
+            tipo="password"
+            etiqueta="Contraseña"
+            marcador="Mínimo ocho caracteres"
+          />
+          <lm-campo
+            [control]="formulario.controls.repeticion"
+            icono="lock_reset"
+            tipo="password"
+            etiqueta="Confirmar contraseña"
+            marcador="Repetí la contraseña"
+            tecla="done"
+          />
+
+          <lm-segmentado
+            etiqueta="Perfil"
+            [opciones]="perfiles"
+            [valor]="perfil()"
+            [columnas]="2"
+            (cambiar)="perfil.set($any($event))"
+          />
+        </div>
       </div>
 
       <div class="lm-actionbar">
@@ -110,9 +117,19 @@ import {
     `
       :host { display: flex; flex: 1; min-height: 0; }
 
-      /* Distribución: ocupar el alto disponible y no cortar tarjetas (pautas de la cátedra) */
-      /* Con poco contenido las partes se reparten el alto; con mucho, hay scroll. */
-      .lm-body { justify-content: space-between; }
+      /* Cada tanda mide el alto visible de la lista y reparte sus campos en él;
+         si un cartel la estira de más, se puede recorrer en vez de cortarse. */
+      .alta__tandas {
+        container: alta / size; gap: 0; padding-block: 0;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0;
+      }
+      .alta__tanda {
+        min-height: 100cqh; box-sizing: border-box;
+        display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-3);
+        padding-block: var(--space-3);
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      .alta__tanda > * { flex-shrink: 0; }
     `,
   ],
 })

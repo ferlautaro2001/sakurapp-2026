@@ -32,19 +32,29 @@ interface CodigoPropina {
         @switch (pestana()) {
           @case ('ingreso') {
             @if (ingreso()) {
-              <lm-placa-qr [fuente]="ingreso()!" rotulo="Ingreso al local" />
+              <div class="con-descarga con-descarga--placa">
+                <lm-placa-qr [fuente]="ingreso()!" rotulo="Ingreso al local" />
+                <button type="button" class="descarga" aria-label="Descargar el código de ingreso" title="Descargar" (click)="descargar(ingreso()!, 'qr-ingreso')">
+                  <lm-icono nombre="download" [tamano]="20" />
+                </button>
+              </div>
             }
           }
 
           @case ('propinas') {
             <div class="lm-lista-uno">
               @for (codigo of propinas(); track codigo.porcentaje) {
-                <div class="lm-card propina" [attr.data-nivel]="codigo.porcentaje">
-                  <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" loading="lazy" decoding="async" />
-                  <div class="propina__datos">
-                    <span class="propina__valor">{{ codigo.porcentaje }}<small>%</small></span>
-                    <span class="propina__rotulo">{{ codigo.rotulo }}</span>
+                <div class="con-descarga">
+                  <div class="lm-card propina" [attr.data-nivel]="codigo.porcentaje">
+                    <img [src]="codigo.imagen" [alt]="'Código QR de propina ' + codigo.rotulo" loading="lazy" decoding="async" />
+                    <div class="propina__datos">
+                      <span class="propina__valor">{{ codigo.porcentaje }}<small>%</small></span>
+                      <span class="propina__rotulo">{{ codigo.rotulo }}</span>
+                    </div>
                   </div>
+                  <button type="button" class="descarga" [attr.aria-label]="'Descargar el código de propina ' + codigo.porcentaje + '%'" title="Descargar" (click)="descargar(codigo.imagen, 'qr-propina-' + codigo.porcentaje)">
+                    <lm-icono nombre="download" [tamano]="20" />
+                  </button>
                 </div>
               }
             </div>
@@ -54,14 +64,20 @@ interface CodigoPropina {
             @if (mesas.todas().length) {
               <div class="lm-lista-uno">
                 @for (mesa of mesas.todas(); track mesa.id) {
-                  <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="ir(['/mesas', mesa.id, 'qr'])">
-                    <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" loading="lazy" decoding="async" />
-                    <!-- Igual que las propinas: número grande y una pastilla con el tipo, coloreada. -->
-                    <div class="propina__datos" [attr.data-tipo]="mesa.tipo">
-                      <span class="propina__valor">{{ mesa.numero }}</span>
-                      <span class="propina__rotulo">{{ rotuloTipo[mesa.tipo] }}</span>
-                    </div>
-                  </button>
+                  <!-- El de descarga va al lado y no adentro: un botón no puede contener otro. -->
+                  <div class="con-descarga">
+                    <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="ir(['/mesas', mesa.id, 'qr'])">
+                      <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" loading="lazy" decoding="async" />
+                      <!-- Igual que las propinas: número grande y una pastilla con el tipo, coloreada. -->
+                      <div class="propina__datos" [attr.data-tipo]="mesa.tipo">
+                        <span class="propina__valor">{{ mesa.numero }}</span>
+                        <span class="propina__rotulo">{{ rotuloTipo[mesa.tipo] }}</span>
+                      </div>
+                    </button>
+                    <button type="button" class="descarga" [attr.aria-label]="'Descargar el código de la mesa ' + mesa.numero" title="Descargar" (click)="descargar(miniatura(mesa), 'qr-mesa-' + mesa.numero)">
+                      <lm-icono nombre="download" [tamano]="20" />
+                    </button>
+                  </div>
                 }
               </div>
             } @else {
@@ -127,9 +143,25 @@ interface CodigoPropina {
       /* Distribución: llenar el alto disponible sin recortar tarjetas */
 
       /* El código de ingreso es una sola pieza: ocupa todo el alto libre. */
-      .lm-body > lm-placa-qr { flex: 1 1 auto; display: flex; }
-      .lm-body > lm-placa-qr ::ng-deep .lm-qrplate { flex: 1; width: 100%; justify-content: center; }
-      .lm-body > lm-placa-qr ::ng-deep .lm-qrplate img { max-width: min(100%, 44dvh, 340px); }
+      .con-descarga--placa { flex: 1 1 auto; display: flex; }
+      .con-descarga--placa > lm-placa-qr { flex: 1 1 auto; display: flex; }
+      .con-descarga--placa > lm-placa-qr ::ng-deep .lm-qrplate { flex: 1; width: 100%; justify-content: center; }
+      .con-descarga--placa > lm-placa-qr ::ng-deep .lm-qrplate img { max-width: min(100%, 44dvh, 340px); }
+
+      /* Cada tarjeta lleva su botón de descarga flotando arriba a la derecha.
+         El contenedor ocupa la casilla de la lista en lugar de la tarjeta. */
+      .con-descarga { position: relative; display: flex; min-height: 0; }
+      .con-descarga > .lm-card { flex: 1 1 auto; }
+      .descarga {
+        position: absolute; top: 10px; right: 10px; z-index: 1;
+        width: 38px; height: 38px; border-radius: 50%; padding: 0; cursor: pointer;
+        display: grid; place-items: center;
+        background: var(--surface-card); color: var(--action-primary);
+        border: 1.5px solid rgba(255, 255, 255, .85);
+        box-shadow: 0 0 0 1px rgba(232, 51, 111, .28), 0 3px 8px rgba(59, 8, 27, .18);
+        transition: transform var(--dur-fast) var(--ease-standard);
+      }
+      .descarga:active { transform: scale(.9); }
     `,
   ],
 })
@@ -186,6 +218,13 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
       dibujados[mesa.id] = await this.qr.generarDeMesa(mesa.id, mesa.numero);
     }
     this.codigosDeMesa.update((actual) => ({ ...actual, ...dibujados }));
+  }
+
+  /** Baja el PNG del código y avisa dónde quedó. */
+  protected async descargar(imagen: string, nombre: string): Promise<void> {
+    const resultado = await this.qr.descargar(imagen, nombre);
+    if (resultado === 'documentos') this.avisos.exito('Código guardado', `Quedó en Documentos como ${nombre}.png.`);
+    else if (resultado === null) this.avisos.error('No pudimos descargar el código', 'Probá de nuevo en unos segundos.');
   }
 
   protected miniatura(mesa: { id: string; qrCodeUrl: string }): string {

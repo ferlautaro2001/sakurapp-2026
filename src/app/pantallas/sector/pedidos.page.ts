@@ -42,7 +42,8 @@ interface TicketVM {
         @if (tickets().length) {
           <div class="sector__lista">
           @for (t of tickets(); track t.id) {
-            <div class="ticket" [class.ticket--abierto]="t.abierto" [id]="'ticket-' + t.id">
+            <div class="casilla" [class.casilla--abierta]="t.abierto" [id]="'ticket-' + t.id">
+            <div class="ticket" [class.ticket--abierto]="t.abierto">
               <div class="ticket__cabecera">
                 <span class="ticket__mesa">Mesa {{ t.mesa }}</span>
                 <span class="ticket__cliente">{{ t.comensal }}</span>
@@ -73,6 +74,8 @@ interface TicketVM {
                 </button>
               }
 
+              <!-- Los listos no llevan pie: el chip ya dice el estado. -->
+              @if (t.estado !== 'LISTO') {
               <div class="ticket__pie">
                 @if (t.estado === 'PENDIENTE') {
                   <lm-boton compacto icono="skillet" (presionar)="avanzar(t.pedido, 'EN_PREPARACION')">
@@ -82,13 +85,10 @@ interface TicketVM {
                   <lm-boton compacto variante="success" icono="room_service" (presionar)="avanzar(t.pedido, 'LISTO')">
                     Avisar que está listo
                   </lm-boton>
-                } @else {
-                  <p class="ticket__listo">
-                    <lm-icono nombre="check_circle" [tamano]="18" color="var(--state-success)" />
-                    Listo para que el mozo lo lleve
-                  </p>
                 }
               </div>
+              }
+            </div>
             </div>
           }
           </div>
@@ -114,16 +114,21 @@ interface TicketVM {
         overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
       }
       .sector__lista::-webkit-scrollbar { display: none; }
-      .sector__lista > .ticket {
+      .sector__lista > .casilla {
         --por: 1;
         flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
-        min-height: min-content;
+        min-height: min-content; display: flex; flex-direction: column;
         scroll-snap-align: start; scroll-snap-stop: always;
       }
+      .casilla > .ticket { flex: 1 1 auto; }
       /* De a dos sólo si la lista alcanza: cada ticket mide hasta ~217px. */
-      @container sector (min-height: 444px) { .sector__lista > .ticket { --por: 2; } }
-      /* El ticket abierto ocupa toda la lista, como el correo abierto. */
-      .sector__lista > .ticket.ticket--abierto { flex: 0 0 100cqh !important; }
+      @container sector (min-height: 444px) { .sector__lista > .casilla { --por: 2; } }
+      /* El ticket abierto se queda solo en la pantalla, como el correo abierto,
+         pero mide sólo lo que necesita y queda centrado: la casilla ocupa toda la
+         lista (así no asoma ningún otro ticket cortado) y el ticket va al medio. */
+      .sector__lista > .casilla.casilla--abierta { flex: 0 0 100cqh !important; justify-content: center; }
+      .casilla--abierta > .ticket { flex: 0 0 auto; }
+      .casilla--abierta .ticket__pie { margin-top: 0; }
       .ticket__mas {
         display: flex; align-items: center; justify-content: center; gap: 6px;
         width: 100%; min-height: 36px; padding: 6px var(--space-4);
@@ -170,10 +175,6 @@ interface TicketVM {
       .item__nombre { flex: 1 1 auto; min-width: 0; font: var(--type-section); color: var(--text-title); text-wrap: pretty; }
       .item__tiempo { flex: 0 0 auto; font: var(--type-caption); color: var(--text-muted); }
       .ticket__pie { padding: 8px var(--space-4); }
-      .ticket__listo {
-        margin: 0; display: flex; align-items: center; justify-content: center; gap: 6px;
-        font: var(--type-body-small); color: var(--state-success);
-      }
     `,
   ],
 })
@@ -333,9 +334,7 @@ export class SectorPedidosPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: listo ? '¿Está listo?' : '¿Empezás a prepararlo?',
-      mensaje: listo
-        ? 'El cliente ve el cambio en el momento, y cuando terminan todos los sectores el mozo recibe el aviso para llevarlo.'
-        : 'La mesa va a ver que su pedido ya está en preparación.',
+      mensaje: '',
       confirmar: listo ? 'Marcar listo' : 'Empezar',
       tono: listo ? 'exito' : 'primario',
       icono: listo ? 'room_service' : 'skillet',

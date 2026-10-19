@@ -171,7 +171,7 @@ export class TarjetaPerfilComponent {
       /* La foto cede con el ancho del equipo: con 96px fijos, en un celular
          angosto a los datos les quedaban ~125px y el DNI y el correo se
          partían en dos renglones cada uno, lo que estiraba la tarjeta. */
-      .fila .lm-avatar { width: clamp(48px, 13.5vw, 64px); border-radius: 16px; }
+      .fila .lm-avatar { width: clamp(64px, 20vw, 88px); border-radius: 18px; }
       .lm-pending__datos { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; max-width: 100%; }
       .lm-pending__meta { justify-content: center; max-width: 100%; }
       .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }

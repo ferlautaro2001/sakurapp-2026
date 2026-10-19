@@ -117,6 +117,11 @@ const FILTROS = [
         scroll-snap-stop: always;
       }
       lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; justify-content: center; }
+      /* La foto es lo que crece: ocupa lo que le deja la casilla después de los
+         datos (unos 130px), entre 56 y 120px y sin pasarse de un tercio del ancho. */
+      .registros__lista > lm-fila-pendiente ::ng-deep .fila .lm-avatar {
+        width: clamp(56px, min(30vw, calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por) - var(--resto, 130px))), 120px);
+      }
       /* De a dos por pantalla. La tarjeta mide hasta ~177px, así que de a dos
          necesita al menos 326px de lista. Si la lista es más baja, la tarjeta se
          achica (foto, espacios y relleno) para que entren dos igual. */
@@ -124,7 +129,6 @@ const FILTROS = [
       @container registros (max-height: 365px) {
         .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending { padding: 7px 10px; gap: 6px; }
         .registros__lista > lm-fila-pendiente ::ng-deep .fila { gap: 4px; }
-        .registros__lista > lm-fila-pendiente ::ng-deep .fila .lm-avatar { width: 44px; }
         .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending__datos { gap: 2px; }
       }
     `,

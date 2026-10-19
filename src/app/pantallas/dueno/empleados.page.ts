@@ -74,7 +74,14 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
         min-width: 0; display: flex; flex-direction: column; align-items: center;
         justify-content: center; text-align: center; gap: 6px;
       }
-      .lm-avatar { object-fit: cover; flex-shrink: 0; width: clamp(56px, 16vw, 72px); border-radius: 18px; }
+      /* La foto es lo que crece: ocupa lo que le deja la casilla después de los
+         datos, entre 44 y 120px y sin pasarse de un tercio del ancho. Los datos
+         miden entre 138px (280 de ancho) y 154px (412): crecen con la letra. */
+      .lm-avatar {
+        --resto: calc(105px + 12vw);
+        object-fit: cover; flex-shrink: 0; border-radius: 18px;
+        width: clamp(44px, min(30vw, calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por) - var(--resto))), 120px);
+      }
       .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
       .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); justify-content: center; max-width: 100%; }
       .lm-pending__meta--correo { align-items: flex-start; }
@@ -96,12 +103,9 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
         flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
         min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
       }
-      @container empleados (min-height: 342px) { .empleados__lista > .empleado { --por: 2; } }
-      @container empleados (min-height: 519px) { .empleados__lista > .empleado { --por: 3; } }
-      @container empleados (min-height: 696px) { .empleados__lista > .empleado { --por: 4; } }
-      @container empleados (max-width: 286px) and (max-height: 367px) { .empleados__lista > .empleado { --por: 1; } }
-      @container empleados (max-width: 286px) and (min-height: 519px) and (max-height: 557px) { .empleados__lista > .empleado { --por: 2; } }
-      @container empleados (max-width: 286px) and (min-height: 696px) and (max-height: 747px) { .empleados__lista > .empleado { --por: 3; } }
+      /* De a dos, como Registros: en las pantallas altas sobra lugar y lo toma la
+         foto. Cada casilla necesita la foto mínima (44px) más los datos (hasta 154px). */
+      @container empleados (min-height: 405px) { .empleados__lista > .empleado { --por: 2; } }
     `,
   ],
 })

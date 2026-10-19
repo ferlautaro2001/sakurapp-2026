@@ -3536,3 +3536,31 @@ html[data-nav-dir='-1'] .sk-app > router-outlet + * {
 /* La fila de resumen con botón (carta y mi pedido) la resuelve ahora el
    componente lm-barra-pedido con [enFila]: antes vivía acá sobre el host del
    resumen, con un !important para darle la vuelta al flex. */
+
+/* Falta la foto: el marco se pone rojo. Va al final y con más peso que los
+   aros de vidrio de arriba, que también usan !important. */
+.lm-photo__marco.lm-photo__marco--error,
+.lm-doc .lm-photo__marco.lm-photo__marco--error {
+  border: 2.5px solid var(--state-error) !important;
+  box-shadow: 0 0 0 3px rgba(192, 38, 26, .22), 0 3px 8px rgba(59, 8, 27, .16) !important;
+}
+
+/* Confirmaciones con mucho detalle (por ejemplo, muchos productos afectados):
+   el detalle se recorre adentro, con su barra visible, y el título y los
+   botones quedan siempre a la vista. */
+.lm-modal { overflow: hidden; }
+.lm-modal > * { flex-shrink: 0; }
+.lm-modal > .lm-modal__detalle {
+  flex: 0 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain;
+  scrollbar-width: thin; scrollbar-color: rgba(199, 38, 87, .55) transparent;
+}
+.lm-modal > .lm-modal__detalle::-webkit-scrollbar { display: block; width: 5px; }
+.lm-modal > .lm-modal__detalle::-webkit-scrollbar-thumb { background: rgba(199, 38, 87, .55); border-radius: 999px; }
+
+/* Fila de la ficha sin rótulo: el contenido ocupa todo el ancho. */
+.lm-modal__detalle > div.lm-modal__fila--sola { justify-content: flex-start; }
+.lm-modal__fila--sola .lm-modal__marcas { width: 100%; }
+
+/* Fila con dato largo: el rótulo arriba y el contenido debajo, a todo el ancho. */
+.lm-modal__detalle > div.lm-modal__fila--apilada { flex-direction: column; align-items: flex-start; gap: 6px; }
+.lm-modal__fila--apilada dd { width: 100%; text-align: left; }

@@ -522,14 +522,21 @@ export interface DatoFicha {
 
         @if (detalle().length) {
           <dl class="lm-modal__detalle">
-            @for (dato of detalle(); track dato.rotulo) {
-              <div>
-                <dt>
-                  @if (dato.icono) {
-                    <lm-icono [nombre]="dato.icono" [tamano]="16" color="var(--action-primary)" />
-                  }
-                  {{ dato.rotulo }}
-                </dt>
+            @for (dato of detalle(); track $index) {
+              <!-- Los datos largos (una lista de productos, un motivo) van debajo del rótulo y a todo el ancho: en una columna angosta se partían en muchos renglones. -->
+              <div
+                [class.lm-modal__fila--sola]="!dato.rotulo"
+                [class.lm-modal__fila--apilada]="!!dato.rotulo && (!!dato.marcas?.length || dato.valor.length > 24)"
+              >
+                <!-- Sin rótulo, la fila es sólo el contenido: no se gasta el ancho en una etiqueta. -->
+                @if (dato.rotulo) {
+                  <dt>
+                    @if (dato.icono) {
+                      <lm-icono [nombre]="dato.icono" [tamano]="16" color="var(--action-primary)" />
+                    }
+                    {{ dato.rotulo }}
+                  </dt>
+                }
                 @if (dato.marcas?.length) {
                   <dd class="lm-modal__marcas">
                     @for (marca of dato.marcas; track marca.texto) {

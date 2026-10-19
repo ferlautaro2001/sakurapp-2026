@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -40,18 +40,15 @@ import { PaginaConSesion } from '../pagina-base';
   imports: [CurrencyPipe, ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado titulo="Devolver el pedido" conVolver (volver)="volver()" />
+      <lm-encabezado titulo="Devolver el pedido" conVolver (volver)="volver()">
+        <!-- La mesa va arriba a la derecha y no en un renglón propio: el lugar es para el detalle. -->
+        @if (pedido(); as p) {
+          <span accion class="mesa">Mesa {{ p.mesaNumero }}</span>
+        }
+      </lm-encabezado>
 
       @if (pedido(); as p) {
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
-          <div class="lm-card mesa">
-            <span class="mesa__icono">
-              <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
-            </span>
-            <div class="mesa__datos">
-              <b>Mesa {{ p.mesaNumero }} - {{ p.clienteNombre }}</b>
-            </div>
-          </div>
 
           <lm-separador flor rotulo="Marcá los afectados" />
 
@@ -113,32 +110,44 @@ import { PaginaConSesion } from '../pagina-base';
             }
           </div>
 
-          <lm-separador flor rotulo="Motivo" />
-
-          <label class="lm-field motivo" [class.lm-field--error]="error() !== null">
-            <span class="lm-field__box motivo__box">
-              <lm-icono
-                nombre="notes"
-                [tamano]="20"
-                [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'"
-              />
-              <textarea
-                rows="2"
-                maxlength="240"
-                enterkeyhint="done"
-                [formControl]="formulario.controls.motivo"
-                placeholder="Sólo me quedan tres gyozas…"
-                (input)="latir()"
-              ></textarea>
-            </span>
-            @if (error()) {
-              <span class="lm-field__error">
-                <lm-icono nombre="error" [tamano]="16" />
-                {{ error() }}
+          <!-- El motivo ocupa un solo renglón para dejarle el lugar al detalle; al
+               tocarlo se abre una ventana para escribirlo y leerlo entero. -->
+          <div class="motivo" [class.lm-field--error]="error() !== null">
+            <button type="button" class="lm-field__box motivo__boton" (click)="abrirMotivo()">
+              <lm-icono nombre="notes" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+              <span class="motivo__texto" [class.motivo__texto--vacio]="!formulario.controls.motivo.value">
+                {{ formulario.controls.motivo.value || 'Motivo de la devolución' }}
               </span>
-            }
-          </label>
+              <lm-icono nombre="edit" [tamano]="18" color="var(--action-primary)" />
+            </button>
+            <!-- El lugar del error está siempre reservado: si apareciera de golpe,
+                 achicaría la lista y le cambiaría la tanda al detalle. -->
+            <span class="lm-field__error motivo__error" [class.motivo__error--oculto]="error() === null" [attr.aria-hidden]="error() === null">
+              <lm-icono nombre="error" [tamano]="16" />
+              {{ error() ?? 'Escribí por qué devolvés el pedido' }}
+            </span>
+          </div>
         </div>
+
+        @if (editandoMotivo()) {
+          <div class="lm-modal__fondo" (click)="cerrarMotivo()">
+            <div class="lm-modal motivo-modal" role="dialog" aria-modal="true" aria-label="Motivo de la devolución" (click)="$event.stopPropagation()">
+              <h2 class="lm-modal__titulo">Motivo de la devolución</h2>
+              <textarea
+                #areaMotivo
+                class="motivo-modal__area"
+                rows="6"
+                maxlength="240"
+                placeholder="Sólo me quedan tres gyozas…"
+                [value]="borradorMotivo()"
+                (input)="borradorMotivo.set($any($event.target).value)"
+              ></textarea>
+              <span class="motivo-modal__cuenta">{{ borradorMotivo().length }}/240</span>
+              <lm-decision class="lm-modal__acciones" rotuloRechazar="Cancelar" rotuloAceptar="Guardar el motivo"
+                (rechazar)="cerrarMotivo()" (aceptar)="guardarMotivo()" />
+            </div>
+          </div>
+        }
 
         <div class="lm-actionbar acciones">
           <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
@@ -188,40 +197,13 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .mesa {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-2) var(--space-3);
+        flex: 0 0 auto; padding: 6px 12px; border-radius: var(--radius-pill);
+        background: var(--surface-card); color: var(--action-primary);
+        font: var(--type-label); font-size: 13px; letter-spacing: var(--tracking-label);
+        text-transform: uppercase; white-space: nowrap;
+        box-shadow: 0 0 0 1px rgba(232, 51, 111, .25), 0 3px 8px rgba(59, 8, 27, .16);
       }
 
-      .mesa__icono {
-        display: grid;
-        flex: 0 0 auto;
-        width: 40px;
-        min-height: 40px;
-        place-items: center;
-        border-radius: 12px;
-        background: var(--surface-sunken);
-      }
-
-      /* El título ocupa todo el ancho que deja el ícono y va centrado; el ícono
-         se equilibra con un hueco del mismo ancho a la derecha. */
-      .mesa { align-items: center; justify-content: center; }
-      .mesa::after { content: ''; flex: 0 0 40px; }
-      .mesa__datos { flex: 1 1 auto; min-width: 0; text-align: center; }
-      .mesa__datos b { text-wrap: balance; overflow-wrap: anywhere; }
-
-      .mesa__datos b {
-        display: block;
-        color: var(--text-title);
-        font: var(--type-card-title);
-      }
-
-      .mesa__datos small {
-        display: block;
-        color: var(--text-muted);
-        font: var(--type-body-small);
-      }
 
       .leyenda {
         display: flex;
@@ -417,24 +399,30 @@ import { PaginaConSesion } from '../pagina-base';
         transform: scale(0.94);
       }
 
-      .motivo__box {
-        align-items: flex-start;
-        padding-top: 10px;
+      .motivo__boton {
+        width: 100%; cursor: pointer; text-align: left; font: inherit;
+        min-height: 46px; gap: 10px;
       }
+      /* Los íconos no ceden ancho: el texto largo se recorta con "…" entre ellos. */
+      .motivo__boton lm-icono { flex: 0 0 auto; display: grid; place-items: center; }
+      .motivo__texto {
+        flex: 1 1 auto; min-width: 0; color: var(--text-title); font: var(--type-body-medium);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .motivo__texto--vacio { color: var(--text-muted); }
+      .motivo.lm-field--error .motivo__boton { border-color: var(--state-error); }
+      .motivo__error--oculto { visibility: hidden; }
 
-      /* El motivo viaja tal cual al teléfono del comensal y se revisa antes de
-         mandarlo: se escribe y se relee con el mismo cuerpo del texto de
-         lectura, no con el del pie de una tarjeta. */
-      .motivo textarea {
-        width: 100%;
-        min-height: 76px;
-        border: 0;
-        background: transparent;
-        color: var(--text-title);
-        font: var(--type-body-medium);
-        resize: none;
-        outline: none;
+      /* La ventana del motivo: el texto se escribe y se relee completo. */
+      .motivo-modal { gap: var(--space-3); }
+      .motivo-modal__area {
+        width: 100%; box-sizing: border-box; min-height: 140px; padding: var(--space-3);
+        border-radius: var(--radius-field); border: 2px solid rgba(255, 79, 139, .35);
+        background: #FFFFFF; color: var(--text-title); font: var(--type-body-medium);
+        resize: none; outline: none;
       }
+      .motivo-modal__area:focus { border-color: var(--action-primary); }
+      .motivo-modal__cuenta { align-self: flex-end; font: var(--type-caption); color: var(--text-muted); }
 
       .motivo .lm-field__hint {
         font: var(--type-body-small);
@@ -452,12 +440,17 @@ export class MozoRechazoPage extends PaginaConSesion {
   protected readonly marcas = signal<Record<string, MarcaRechazo>>({});
   private latido = false;
 
+  /** La ventana para escribir el motivo y lo que se lleva escrito en ella. */
+  protected readonly editandoMotivo = signal(false);
+  protected readonly borradorMotivo = signal('');
+  private readonly areaMotivo = viewChild<ElementRef<HTMLTextAreaElement>>('areaMotivo');
+
   protected readonly formulario = this.fb.nonNullable.group({
     motivo: [
       '',
       [
         requerido('Escribí por qué devolvés el pedido'),
-        largoMinimo(6, 'Contale un poco más para que sepa qué cambiar'),
+        largoMinimo(6, 'Contá un poco más qué cambiar'),
       ],
     ],
   });
@@ -493,6 +486,24 @@ export class MozoRechazoPage extends PaginaConSesion {
 
   private hayMotivo(): boolean {
     return this.formulario.controls.motivo.value.trim().length >= 6;
+  }
+
+  protected abrirMotivo(): void {
+    this.borradorMotivo.set(this.formulario.controls.motivo.value);
+    this.editandoMotivo.set(true);
+    setTimeout(() => this.areaMotivo()?.nativeElement.focus(), 60);
+  }
+
+  protected cerrarMotivo(): void {
+    this.editandoMotivo.set(false);
+  }
+
+  protected guardarMotivo(): void {
+    const control = this.formulario.controls.motivo;
+    control.setValue(this.borradorMotivo().trim());
+    control.markAsDirty();
+    this.editandoMotivo.set(false);
+    this.latir();
   }
 
   /** Un solo golpecito, cuando el motivo pasa a ser suficiente. */

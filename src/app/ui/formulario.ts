@@ -110,6 +110,8 @@ export class AreaComponent {
   imports: [IconoComponent],
   template: `
     <div class="lm-photo">
+      <!-- El aviso de foto faltante se ancla al marco, así queda a su altura. -->
+      <div class="lm-photo__cuadro" [class.lm-photo__cuadro--rect]="forma() === 'rectangulo'">
       <button
         type="button"
         class="lm-photo__marco"
@@ -117,6 +119,7 @@ export class AreaComponent {
         [class.lm-photo__marco--ovalo]="forma() === 'ovalo'"
         [class.lm-photo__marco--rect]="forma() === 'rectangulo'"
         [class.lm-photo__marco--cargada]="!!fuente()"
+        [class.lm-photo__marco--error]="!!error()"
         [style.width]="forma() === 'ovalo' ? medida(0.88) : forma() === 'circulo' ? medida(1) : null"
         [style.height]="medida(1)"
         [style.background-image]="fuente() ? 'url(' + fuente() + ')' : null"
@@ -128,6 +131,12 @@ export class AreaComponent {
           <lm-icono nombre="photo_camera" [tamano]="medida(0.4)" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
         }
       </button>
+      @if (error()) {
+        <span class="lm-foto__aviso" [class.lm-foto__aviso--dentro]="forma() === 'rectangulo'" aria-label="Falta la foto">
+          <lm-icono nombre="priority_high" [tamano]="20" [color]="'#FFFFFF'" />
+        </span>
+      }
+      </div>
       @if (fuente() || !sinRotulo()) {
       <button
         type="button"
@@ -144,16 +153,19 @@ export class AreaComponent {
         }
       </button>
       }
-      @if (error()) {
-        <span class="lm-foto__aviso" aria-label="Falta la foto">
-          <lm-icono nombre="priority_high" [tamano]="20" [color]="'#FFFFFF'" />
-        </span>
-      }
     </div>
   `,
   styles: [
     ':host{display:block}',
-    `.lm-foto__aviso {
+    /* El aviso flota a la izquierda del marco, centrado con él: debajo empujaba
+       la cámara para arriba. En el marco rectangular, que ocupa todo el ancho,
+       va en la esquina de adentro. */
+    `.lm-photo { position: relative; }
+    .lm-photo__cuadro { position: relative; display: flex; }
+    .lm-photo__cuadro--rect { display: contents; }
+    .lm-foto__aviso {
+      position: absolute; z-index: 1;
+      top: 50%; right: calc(100% + 6px); transform: translateY(-50%);
       display: inline-flex; align-items: center; justify-content: center;
       width: 32px; height: 32px; border-radius: 50%;
       background: var(--state-error); color: #FFFFFF;
@@ -163,6 +175,13 @@ export class AreaComponent {
         inset 0 1px 0 rgba(255, 255, 255, .7),
         0 0 0 1px rgba(232, 51, 111, .3),
         0 4px 12px rgba(59, 8, 27, .2);
+    }
+    .lm-foto__aviso--dentro { top: 10px; right: auto; left: 10px; transform: none; }
+    /* En pantallas angostas hay poco lugar al costado: el aviso se achica para
+       seguir al lado del marco sin tocarlo. */
+    @media (max-width: 340px) {
+      .lm-foto__aviso:not(.lm-foto__aviso--dentro) { width: 24px; height: 24px; right: calc(100% + 3px); }
+      .lm-foto__aviso lm-icono { transform: scale(.8); }
     }`,
   ],
 })

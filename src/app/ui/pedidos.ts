@@ -45,10 +45,6 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         </div>
       }
       <div class="lm-resumen__cifras">
-        <span class="lm-resumen__total">
-          <small>Total</small>
-          {{ total() | pesos }}
-        </span>
         <span class="lm-resumen__tiempo">
           <lm-icono nombre="schedule" [tamano]="16" color="var(--action-primary)" />
           {{ tiempo() }}'
@@ -58,6 +54,10 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
             }
             {{ unidades() }} {{ unidades() === 1 ? 'producto' : (tira() ? 'prod.' : 'productos') }}
           </small>
+        </span>
+        <span class="lm-resumen__total">
+          <small>Total</small>
+          {{ total() | pesos }}
         </span>
       </div>
     </div>
@@ -96,7 +96,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       }
       .lm-resumen__cifras { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
       .lm-resumen__total {
-        display: flex; flex-direction: column;
+        display: flex; flex-direction: column; align-items: flex-end; text-align: right;
         font: 900 clamp(19px, 6vw, 26px)/1 var(--font-numeric); color: var(--action-primary);
       }
       .lm-resumen__total small {
@@ -104,13 +104,11 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px;
       }
       .lm-resumen__tiempo {
-        display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;
+        display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-start;
         font: 800 clamp(13.5px, 3.5vw, 15px)/1.1 var(--font-numeric); color: var(--text-title);
-        padding: 4px 8px; border-radius: 10px;
-        border: 1.5px solid rgba(255, 255, 255, .6);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
+        padding: 0; /* liso: sin aro de vidrio, el tiempo y la cantidad se leen como texto */
       }
-      .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: right; }
+      .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: left; }
 
       /* Tira: el importe y el tiempo en una sola línea baja, sin tarjeta. Para
          las barras de acción donde el alto es el recurso escaso y una tarjeta
@@ -137,7 +135,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         flex-wrap: nowrap; gap: 5px; padding: 0; border: none; background: none;
         box-shadow: none; font: var(--type-body-small); color: var(--text-muted);
       }
-      .lm-resumen--tira .lm-resumen__tiempo small { width: auto; text-align: right; }
+      .lm-resumen--tira .lm-resumen__tiempo small { width: auto; text-align: left; }
     `,
   ],
 })
@@ -229,6 +227,15 @@ export class ResumenPedidoComponent {
         min-height: 56px !important; border-radius: 16px !important;
       }
 
+      /* El botón proyectado (Pedir, Reenviar) mide lo mismo que el total y lleva
+         la flecha de enviar debajo del rótulo. */
+      :host ::ng-deep .barra--fila > lm-boton { display: flex; flex: 0 0 auto; }
+      :host ::ng-deep .barra--fila > lm-boton .lm-btn {
+        height: 100%; min-width: 0; flex-direction: column; gap: 2px;
+        padding-inline: 8px !important; font-size: 13.5px;
+      }
+      :host ::ng-deep .barra--fila > lm-boton .lm-btn lm-icono { order: 1; }
+
       /* El resumen toma el ancho que sobra; la acción, el que necesita. */
       .barra--fila lm-resumen-pedido { flex: 1 1 auto; min-width: 0; }
       .barra--fila lm-decision, .barra--fila > .accion { flex: 0 0 auto; display: flex; }
@@ -238,15 +245,25 @@ export class ResumenPedidoComponent {
         flex: 1 1 auto; min-width: 0;
         padding: var(--space-3); justify-content: center;
       }
-      :host ::ng-deep .barra--fila .lm-resumen__cifras { align-items: center; }
-      :host ::ng-deep .barra--fila .lm-resumen__total { font-size: clamp(17px, 5.4vw, 22px); }
-      /* El reloj y la cantidad no se parten nunca en un renglón. */
-      :host ::ng-deep .barra--fila .lm-resumen__tiempo {
-        display: block; text-align: right; white-space: nowrap;
+      /* Con el botón al lado, el resumen va en dos filas y no en dos columnas: arriba el
+         tiempo y la cantidad, abajo el total. Así ninguna cifra se parte en dos renglones
+         aunque el teléfono sea angosto. */
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__cifras {
+        flex-direction: column; align-items: stretch; justify-content: center; gap: 5px;
       }
-      :host ::ng-deep .barra--fila .lm-resumen__tiempo small {
-        white-space: normal; display: block;
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__tiempo {
+        display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start;
+        gap: 6px; text-align: left; white-space: nowrap; align-self: stretch;
       }
+      /* Con un nivel más de selector: gana a los estilos propios del resumen. El reloj con el tiempo, pegado a la izquierda; la cantidad de productos, a la derecha. */
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__tiempo small {
+        display: inline; width: auto; white-space: nowrap; margin-left: auto;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__total {
+        flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px;
+        font-size: clamp(17px, 5.4vw, 22px); white-space: nowrap;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__total small { margin-bottom: 0; }
     `,
   ],
 })

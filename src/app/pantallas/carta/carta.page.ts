@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
-import { Producto } from '../../nucleo/modelos/modelos';
+import { Pedido, Producto } from '../../nucleo/modelos/modelos';
 import { TipoProducto } from '../../nucleo/modelos/enums';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
@@ -50,11 +50,8 @@ type Categoria = 'TODOS' | TipoProducto;
 
         <lm-buscador marcador="Buscar en la carta" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
 
-        @if (rechazado()) {
-          <lm-banner tono="error" titulo="El mozo te pidió que modifiques el pedido">
-            {{ pedido()?.motivoRechazo }}
-          </lm-banner>
-        } @else if (sinStock() > 0) {
+        <!-- El aviso del pedido devuelto vive en Mi pedido, junto al detalle: acá no se repite. -->
+        @if (sinStock() > 0) {
           <lm-banner tono="info" titulo="Hay productos sin stock">
             {{ avisoSinStock() }}
           </lm-banner>
@@ -97,11 +94,12 @@ type Categoria = 'TODOS' | TipoProducto;
             <lm-boton
               compacto
               variante="success"
+              icono="send"
               [ancho]="false"
               [deshabilitado]="carrito.cantidadTotal() === 0"
               (presionar)="pedir()"
             >
-              Pedir
+              {{ rechazado() ? 'Reenviar' : 'Pedir' }}
             </lm-boton>
           </lm-barra-pedido>
       }
@@ -194,6 +192,11 @@ export class CartaPage extends PaginaConSesion {
 
   /** Manda el pedido al mozo: igual que el botón "Pedir" de Mi pedido. */
   protected async pedir(): Promise<void> {
+    const devuelto = this.pedido();
+    if (devuelto?.estadoGlobal === 'RECHAZADO') {
+      await this.reenviar(devuelto);
+      return;
+    }
     const cliente = this.usuario();
     const mesaId = this.mesaId();
     let mesa = mesaId ? this.mesas.porId(mesaId) : undefined;
@@ -238,6 +241,37 @@ export class CartaPage extends PaginaConSesion {
       this.carrito.vaciar();
     });
     this.avisos.exito('Tu pedido salió', 'El mozo lo está revisando.');
+  }
+
+  /** Reenvía el pedido que el mozo devolvió: igual que el botón "Reenviar" de Mi pedido. */
+  private async reenviar(p: Pedido): Promise<void> {
+    if (!this.carrito.items().length) return;
+
+    // Todavía quedan productos marcados: se avisa arriba, sin crear un pedido nuevo.
+    const motivo = this.pedidos.trabaParaReenviar(p, this.carrito.items());
+    if (motivo) {
+      this.avisos.error('Todavía no lo podés mandar', motivo);
+      return;
+    }
+
+    const seguro = await this.preguntar({
+      titulo: '¿Reenviás el pedido corregido?',
+      confirmar: 'Reenviar',
+      tono: 'primario',
+      icono: 'send',
+      detalle: [
+        { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
+        { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
+      ],
+    });
+    if (!seguro) return;
+
+    await this.cargando.conEsperaMinima('Reenviando tu pedido…', async () => {
+      await this.pedidos.reenviar(p, this.carrito.items(), this.carrito.tiempoEstimado(), this.carrito.importeTotal());
+      this.carrito.vaciar();
+    });
+    this.avisos.exito('Reenviado', 'El mozo está revisando tus cambios.');
   }
 
   protected puedeAgregar(producto: Producto): boolean {

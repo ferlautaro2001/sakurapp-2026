@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
 import { ROTULO_ESTADO_PEDIDO, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
+
+/** Alto de un renglón con nombre de hasta dos líneas, del separador y del espacio entre piezas. */
+const ALTO_RENGLON = 95;
+const ALTO_SEPARADOR = 22;
+const ESPACIO = 8;
 
 /**
  * Detalle completo de la comanda para revisión y auditoría del mozo.
@@ -40,14 +45,21 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
             </div>
           }
 
-          @for (sector of sectoresConItems(); track sector.valor) {
-            <lm-separador flor [rotulo]="sector.rotulo" />
-            <div class="lm-list">
-              @for (item of sector.items; track item.id) {
-                <lm-renglon-pedido [item]="item" />
-              }
-            </div>
-          }
+          <!-- Cada pantalla de la lista es una página exacta: el separador del
+               sector y los renglones que entran enteros. Si un sector no entra en
+               una pantalla, sigue en la siguiente con su separador. -->
+          <div #lista class="detalle__lista" [style.--k]="porPagina()">
+            @for (pagina of paginas(); track pagina.clave) {
+              <section class="pagina">
+                <lm-separador flor [rotulo]="pagina.rotulo" />
+                <div class="pagina__items">
+                  @for (item of pagina.items; track item.id) {
+                    <lm-renglon-pedido class="casilla" [item]="item" />
+                  }
+                </div>
+              </section>
+            }
+          </div>
         </div>
 
         <lm-barra-pedido
@@ -99,20 +111,32 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      /* Ajuste de alto: la comanda tiene que entrar entera, con la última fila
-         completa y sin scroll. La barra se pide [compacta] y resuelve su propio
-         aire; acá sólo se aprietan las tarjetas de producto. El snap es suave y
-         ancla sólo tarjetas: con mandatory+always el navegador frenaba en cada
-         renglón y clavaba la vista arriba. */
-      .lm-body {
-        scroll-snap-type: y proximity;
-        scroll-padding-top: var(--space-3);
-        scroll-padding-bottom: calc(var(--space-3) + var(--safe-bottom));
-        overscroll-behavior-y: contain;
+      /* La mesa y el aviso quedan fijos arriba; la lista se lleva el resto del
+         alto y va en tandas exactas: cada renglón mide justo una parte de la
+         lista y el snap frena en tandas enteras, sin nada cortado. */
+      .lm-body { overflow: hidden; }
+      .detalle__lista {
+        flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: detalle / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
       }
-      lm-separador { scroll-snap-align: none; }
-      :host ::ng-deep .lm-list { scroll-snap-align: none; }
-      :host ::ng-deep .lm-list > lm-renglon-pedido { scroll-snap-align: start; }
+      .detalle__lista::-webkit-scrollbar { display: none; }
+      .pagina {
+        flex: 0 0 100cqh; min-height: 0; display: flex; flex-direction: column; gap: 8px;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      .pagina > lm-separador { flex: 0 0 auto; }
+      .pagina__items { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+      /* Cada renglón mide una parte exacta de lo que deja el separador. */
+      .pagina__items > .casilla {
+        flex: 0 0 calc((100cqh - 22px - 8px - (var(--k, 1) - 1) * 8px) / var(--k, 1));
+        min-height: 0; display: flex; flex-direction: column;
+      }
+      .pagina__items > .casilla ::ng-deep .renglon { flex: 1 1 auto; justify-content: center; }
+      /* Lugar para un nombre de hasta dos renglones; si es más largo, "…". */
+      .pagina__items > .casilla ::ng-deep .renglon__datos b {
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      }
 
       :host ::ng-deep .renglon { padding: 5px 11px !important; }
       :host ::ng-deep .renglon__fila { row-gap: 3px !important; }
@@ -167,6 +191,38 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
   });
 
   /** Sectores ya resueltos con sus items: el template no vuelve a filtrar. */
+  /** Alto de la lista, para saber cuántos renglones entran enteros por pantalla. */
+  private readonly lista = viewChild<ElementRef<HTMLElement>>('lista');
+  private readonly altoLista = signal(0);
+
+  protected readonly porPagina = computed(() => {
+    const libre = this.altoLista() - ALTO_SEPARADOR - ESPACIO;
+    return Math.max(1, Math.floor((libre + ESPACIO) / (ALTO_RENGLON + ESPACIO)));
+  });
+
+  /** Los sectores partidos en páginas de `porPagina` renglones, cada una con su separador. */
+  protected readonly paginas = computed(() => {
+    const k = this.porPagina();
+    return this.sectoresConItems().flatMap((sector) => {
+      const paginas = [];
+      for (let i = 0; i < sector.items.length; i += k) {
+        paginas.push({ clave: `${sector.valor}-${i}`, rotulo: sector.rotulo, items: sector.items.slice(i, i + k) });
+      }
+      return paginas;
+    });
+  });
+
+  constructor() {
+    super();
+    effect((alLimpiar) => {
+      const el = this.lista()?.nativeElement;
+      if (!el) return;
+      const observador = new ResizeObserver(([entrada]) => this.altoLista.set(entrada.contentRect.height));
+      observador.observe(el);
+      alLimpiar(() => observador.disconnect());
+    });
+  }
+
   protected readonly sectoresConItems = computed(() =>
     this.sectores
       .map((s) => ({ valor: s.valor, rotulo: s.rotulo, items: this.itemsDe(s.valor) }))

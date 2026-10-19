@@ -105,7 +105,10 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
         min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
         /* Turno y foto apilados a la izquierda; nombre y llegada a la derecha,
            con todo el ancho que deja la columna. */
-        display: grid; grid-template-columns: 66px minmax(0, 1fr) auto; grid-template-rows: auto auto;
+        /* La foto crece con la casilla: lo que queda después del turno (34px),
+           el espacio entre ambos y el relleno (unos 70px), entre 60 y 104px. */
+        --foto: clamp(60px, min(26vw, calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por) - 70px)), 104px);
+        display: grid; grid-template-columns: max(66px, var(--foto)) minmax(0, 1fr) auto; grid-template-rows: auto auto;
         align-content: center; align-items: center; column-gap: 12px; row-gap: 6px;
       }
       @container espera (min-height: 260px) { .espera__lista > .lm-wait { --por: 2; } }
@@ -125,7 +128,7 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
         border: 1.5px solid rgba(255, 79, 139, .45) !important;
         box-shadow: inset 0 1px 0 #FFFFFF, 0 3px 8px rgba(94, 12, 44, .14) !important;
       }
-      .lm-wait .lm-avatar { grid-column: 1; grid-row: 2; justify-self: center; width: 60px; height: 60px; position: relative; }
+      .lm-wait .lm-avatar { grid-column: 1; grid-row: 2; justify-self: center; width: var(--foto); height: var(--foto); position: relative; }
       .lm-wait__pos {
         /* Turno arriba de la foto, en la columna izquierda. */
         grid-column: 1; grid-row: 1; justify-self: center;
@@ -138,7 +141,7 @@ import { AsignarMesaModalComponent } from './asignar-mesa-modal.component';
       /* El nombre entero: si no entra en un renglón, baja a dos. */
       .lm-wait__datos b { white-space: normal; overflow: visible; text-overflow: clip; text-wrap: balance; }
       /* El reloj abarca los dos renglones (rótulo y fecha), que quedan a su derecha. */
-      .lm-wait__llegada { display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
+      .lm-wait__llegada { display: flex; align-items: center; gap: 6px; margin-top: 8px; color: var(--text-muted); }
       .lm-wait__llegada > span { display: flex; flex-direction: column; gap: 6px; }
       .lm-wait__llegada small { font-size: 14px; white-space: nowrap; }
       .lm-wait__llegada small:first-child { justify-content: center; }

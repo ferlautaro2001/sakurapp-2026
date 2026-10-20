@@ -16,7 +16,7 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
+import { Mesa, ObservacionItem, PagoSimulado, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
 import {
   AlcanceRechazo,
   EstadoMesa,
@@ -615,6 +615,24 @@ export class FirestoreService {
     );
   }
 
+  /**
+   * Punto 22 · la mesa vuelve a estar libre: vacía y sin el comensal ni la
+   * reserva de la visita que terminó.
+   */
+  async liberarMesa(mesaId: string): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'mesas', mesaId),
+      {
+        estado: 'VACIA',
+        clienteActualId: null,
+        clienteActualUid: null,
+        reservaEsperaId: null,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
   /** Actualiza el estado global de un pedido en Firestore. */
   async actualizarEstadoPedido(pedidoId: string, nuevoEstado: EstadoPedido): Promise<void> {
     await setDoc(
@@ -712,6 +730,7 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
         ? null
         : Number(datos['porcentajePropina']),
     montoPropina: Number(datos['montoPropina']) || 0,
+    pago: datos['pago'] && typeof datos['pago'] === 'object' ? (datos['pago'] as PagoSimulado) : null,
   };
 }
 

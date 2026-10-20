@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, untracked } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
@@ -214,6 +214,9 @@ export class AppComponent implements OnInit {
   /** Pedido del comensal visto en la pasada anterior, para notar cuándo se confirma. */
   private pedidoVisto: { id: string; juegos: boolean } | null = null;
 
+  /** La visita que ya se dio por terminada, para no hacerlo dos veces. */
+  private visitaCerrada: string | null = null;
+
   constructor() {
     // Cuando el mozo confirma el pedido con la app abierta, el comensal se
     // entera en el momento: desde ahí aparece Juegos en la barra de abajo.
@@ -228,6 +231,32 @@ export class AppComponent implements OnInit {
       if (antes && ahora && antes.id === ahora.id && !antes.juegos && ahora.juegos) {
         this.avisos.exito('¡Tu pedido fue confirmado!', 'Ya podés jugar por un descuento: tocá Juegos en la barra de abajo.');
       }
+    });
+
+    // Punto 22 · cuando el mozo confirma el pago, la visita termina: el
+    // comensal se suelta de la mesa y vuelve a la puerta, donde para sentarse
+    // de nuevo tiene que escanear el código de ingreso. Vale también si abre
+    // la aplicación después de que el mozo confirmó.
+    effect(() => {
+      if (!this.sesion.esCliente()) return;
+      const mesa = this.sesion.mesaActivaId();
+      const ultimo = this.pedidos.ultimoDe(this.sesion.usuario());
+      if (!mesa || !ultimo || ultimo.estadoGlobal !== 'CERRADO' || ultimo.mesaId !== mesa) return;
+      if (this.visitaCerrada === ultimo.id) return;
+      this.visitaCerrada = ultimo.id;
+      untracked(() => void this.terminarVisita());
+    });
+  }
+
+  private async terminarVisita(): Promise<void> {
+    await this.sesion.limpiarMesaActiva();
+    await this.router.navigate(['/cliente/ingreso'], { replaceUrl: true });
+    await this.confirmacion.mostrar({
+      titulo: '¡Gracias por tu visita!',
+      mensaje: 'El mozo confirmó tu pago y la mesa quedó libre. Para volver a sentarte, escaneá el código de la puerta.',
+      confirmar: 'Cerrar',
+      tono: 'exito',
+      icono: 'favorite',
     });
   }
 

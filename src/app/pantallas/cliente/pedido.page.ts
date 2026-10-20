@@ -499,9 +499,9 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     });
   }
 
-  /** Con la cuenta habilitada, la pantalla es el cobro. */
+  /** Con la cuenta habilitada, o con el pago enviado, la pantalla es el cobro. */
   protected enCuenta(p: Pedido): boolean {
-    return p.estadoGlobal === 'CUENTA_SOLICITADA' && !!p.cuentaHabilitada;
+    return (p.estadoGlobal === 'CUENTA_SOLICITADA' && !!p.cuentaHabilitada) || p.estadoGlobal === 'PAGO_PENDIENTE';
   }
 
   protected titulo(): string {

@@ -9,6 +9,23 @@ import { FirestoreService } from './firestore.service';
 import { signal } from '@angular/core';
 import { Mesa } from '../modelos/modelos';
 
+/** Lo que devuelve Cloud SQL al listar las mesas: se simula en el paquete de Data Connect. */
+const sql = vi.hoisted(() => ({ mesas: [] as unknown[] }));
+vi.mock('firebase/app', () => ({
+  getApps: () => [{ name: '[DEFAULT]' }],
+  getApp: () => ({ name: '[DEFAULT]' }),
+  initializeApp: () => ({ name: '[DEFAULT]' }),
+}));
+vi.mock('firebase/data-connect', () => ({
+  getDataConnect: () => ({ _useGeneratedSdk: () => undefined }),
+  validateArgs: (_cfg: unknown, dc: unknown, vars: unknown) => ({ dc, vars }),
+  validateArgsWithOptions: (_cfg: unknown, dc: unknown) => ({ dc, vars: undefined, options: undefined }),
+  queryRef: (_dc: unknown, nombre: string) => ({ nombre }),
+  mutationRef: (_dc: unknown, nombre: string, vars: unknown) => ({ nombre, vars }),
+  executeQuery: async () => ({ data: { mesas: sql.mesas } }),
+  executeMutation: async () => ({ data: {} }),
+}));
+
 vi.mock('@capacitor/haptics', () => ({
   Haptics: {
     notification: vi.fn().mockResolvedValue(undefined),
@@ -89,5 +106,55 @@ describe('MesasService - TC-022: Validación estricta de QR de mesa', () => {
 
     expect(esValido).toBe(false);
     expect(Haptics.notification).toHaveBeenCalledWith({ type: NotificationType.Error });
+  });
+});
+
+describe('MesasService · sincronizar con Cloud SQL no pisa el estado en vivo', () => {
+  const guardarMesas = vi.fn().mockResolvedValue(undefined);
+  let service: MesasService;
+  const ocupada: Mesa = {
+    id: 'mesa-9-uuid',
+    numero: 9,
+    cantidadComensales: 4,
+    tipo: 'ESTANDAR',
+    estado: 'OCUPADA',
+    fotoUrl: 'foto-firestore',
+    qrCodeUrl: '',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        MesasService,
+        { provide: AlmacenService, useValue: { mesas: signal<Mesa[]>([ocupada]), guardarMesas } },
+        { provide: QrService, useValue: {} },
+        { provide: AlmacenamientoService, useValue: {} },
+        { provide: FirestoreService, useValue: { guardarMesa: vi.fn(), actualizarEstadoMesa: vi.fn() } },
+      ],
+    });
+    service = TestBed.inject(MesasService);
+  });
+
+  it('una mesa ocupada sigue ocupada aunque Cloud SQL la tenga vacía', async () => {
+    sql.mesas = [{ ...ocupada, estado: 'VACIA', fotoUrl: 'foto-vieja' }];
+
+    await service.sincronizar();
+
+    const guardadas = guardarMesas.mock.calls[0][0] as Mesa[];
+    expect(guardadas.find((m) => m.numero === 9)).toMatchObject({ estado: 'OCUPADA', fotoUrl: 'foto-firestore' });
+  });
+
+  it('las mesas que sólo están en Cloud SQL se suman', async () => {
+    sql.mesas = [{ ...ocupada, estado: 'VACIA' }, { ...ocupada, id: 'mesa-20-uuid', numero: 20, estado: 'VACIA' }];
+
+    await service.sincronizar();
+
+    const guardadas = guardarMesas.mock.calls[0][0] as Mesa[];
+    expect(guardadas.map((m) => [m.numero, m.estado])).toEqual([
+      [9, 'OCUPADA'],
+      [20, 'VACIA'],
+    ]);
   });
 });

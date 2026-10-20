@@ -42,6 +42,7 @@
     "@ionic/angular": "^9.0.0",
     "firebase": "^12.18.0",
     "ionicons": "^8.1.0",
+    "jspdf": "^3.0.4",
     "qrcode": "^1.5.4",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0"

@@ -9,6 +9,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ChatService } from '../../nucleo/servicios/chat.service';
+import { EncuestasService } from '../../nucleo/servicios/encuestas.service';
 import { Unsubscribe } from 'firebase/firestore';
 
 /**
@@ -62,6 +63,19 @@ import { Unsubscribe } from 'firebase/firestore';
             </lm-boton>
           } @else if (p.estadoGlobal === 'RECIBIDO') {
             <lm-boton class="momento" icono="receipt_long" (presionar)="pedirCuenta(p)">Pedir la cuenta</lm-boton>
+          } @else if (p.estadoGlobal === 'CUENTA_SOLICITADA' || p.estadoGlobal === 'PAGO_PENDIENTE') {
+            @if (encuestas.respondida(p.id)) {
+              <div class="lm-card espera">
+                <span class="espera__reloj">
+                  <lm-icono nombre="receipt_long" [tamano]="18" color="var(--action-primary)" />
+                </span>
+                <b>El mozo está preparando tu cuenta</b>
+              </div>
+            } @else {
+              <lm-boton class="momento" icono="rate_review" (presionar)="ir(['/cliente/encuestas'])">
+                Responder la encuesta
+              </lm-boton>
+            }
           } @else if (confirmado()) {
             <div class="lm-grid2">
               @if (p.estadoCocina !== 'NO_APLICA') {
@@ -380,6 +394,7 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
   private readonly espera = inject(EsperaService);
   private readonly mesas = inject(MesasService);
   private readonly chat = inject(ChatService);
+  protected readonly encuestas = inject(EncuestasService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly respuestasSinLeer = signal(0);
@@ -437,6 +452,14 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
 
   constructor() {
     super();
+
+    // Con la cuenta pedida, la zona de arriba depende de si ya respondió la encuesta.
+    effect(() => {
+      const p = this.pedido();
+      if (p && (p.estadoGlobal === 'CUENTA_SOLICITADA' || p.estadoGlobal === 'PAGO_PENDIENTE')) {
+        void this.encuestas.consultar(p.id);
+      }
+    });
 
     effect(() => {
       const p = this.pedido();
@@ -651,16 +674,27 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
   protected async pedirCuenta(p: Pedido): Promise<void> {
     const seguro = await this.preguntar({
       titulo: '¿Pedís la cuenta?',
-      mensaje: 'Le avisamos al mozo para que acerque la cuenta a la mesa.',
+      mensaje:
+        'Le avisamos al mozo para que te la acerque. Mientras tanto, te vamos a pedir que respondas una encuesta corta de satisfacción.',
       confirmar: 'Pedir la cuenta',
       tono: 'primario',
-      icono: 'receipt',
+      icono: 'receipt_long',
     });
     if (!seguro) return;
 
     await this.cargando.conEsperaMinima('Avisando al mozo…', async () => {
       await this.pedidos.actualizarEstadoGlobal(p.id, 'CUENTA_SOLICITADA');
     });
-    this.avisos.exito('Cuenta solicitada', 'El mozo ya está notificado.');
+
+    // Un solo modal, y al cerrarlo la barra lo lleva a Encuestas: la encuesta
+    // nueva lo está esperando ahí.
+    await this.confirmacion.mostrar({
+      titulo: 'Cuenta solicitada',
+      mensaje: 'El mozo ya está avisado. Mientras te la acerca, contanos cómo te fue: son cinco pasos.',
+      confirmar: 'Ir a la encuesta',
+      tono: 'exito',
+      icono: 'receipt_long',
+    });
+    this.ir(['/cliente/encuestas']);
   }
 }

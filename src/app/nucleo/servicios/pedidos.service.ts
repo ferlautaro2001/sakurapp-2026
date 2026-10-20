@@ -75,9 +75,15 @@ export class PedidosService {
     this.todos().filter((pedido) => pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION' && pedido.items.length > 0),
   );
 
+  /** Ya llegó la primera lectura de Firestore: antes de eso, "sin pedidos" no quiere decir nada. */
+  readonly cargado = signal(false);
+
   iniciar(): void {
     if (this.dejarDeEscuchar) return;
-    this.dejarDeEscuchar = this.firestore.escucharPedidos((pedidos) => this.pedidosFirestore.set(pedidos));
+    this.dejarDeEscuchar = this.firestore.escucharPedidos((pedidos) => {
+      this.pedidosFirestore.set(pedidos);
+      this.cargado.set(true);
+    });
     void this.cargarDesdeSql();
   }
 

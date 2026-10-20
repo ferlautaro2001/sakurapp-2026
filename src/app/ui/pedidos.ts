@@ -85,7 +85,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       }
       .lm-resumen__linea small {
         display: inline-flex; align-items: center; gap: 5px;
-        font: var(--type-caption); color: var(--text-muted);
+        font: var(--type-caption); font-weight: 650; color: var(--text-muted);
       }
       .lm-resumen__linea--descuento,
       .lm-resumen__linea--descuento small { color: var(--state-success); }

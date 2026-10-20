@@ -812,7 +812,9 @@ export class FilaPedidoComponent {
   }
 
   protected rotuloEstado(): string {
-    return ROTULO_ESTADO_PEDIDO[this.pedido().estadoGlobal] || this.pedido().estadoGlobal;
+    const p = this.pedido();
+    if (p.estadoGlobal === 'CUENTA_SOLICITADA' && p.cuentaHabilitada) return 'Cuenta habilitada';
+    return ROTULO_ESTADO_PEDIDO[p.estadoGlobal] || p.estadoGlobal;
   }
 
   protected chip(): string {

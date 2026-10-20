@@ -10,6 +10,7 @@ import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ChatService } from '../../nucleo/servicios/chat.service';
 import { EncuestasService } from '../../nucleo/servicios/encuestas.service';
+import { ClienteCuentaComponent } from './cuenta';
 import { Unsubscribe } from 'firebase/firestore';
 
 /**
@@ -18,7 +19,7 @@ import { Unsubscribe } from 'firebase/firestore';
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-pedido',
-  imports: [...UI],
+  imports: [...UI, ClienteCuentaComponent],
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()">
@@ -32,6 +33,12 @@ import { Unsubscribe } from 'firebase/firestore';
       </lm-encabezado>
 
       @if (pedido(); as p) {
+        @if (enCuenta(p)) {
+          <!-- Punto 21 · con la cuenta habilitada, Mi pedido es el cobro, paso a paso. -->
+          <div class="lm-body lm-body--gap12 lm-body--pantalla">
+            <lm-cliente-cuenta [pedido]="p" />
+          </div>
+        } @else {
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
           @if (!esperando()) {
             <lm-titulo>{{ titulo() }}</lm-titulo>
@@ -202,6 +209,7 @@ import { Unsubscribe } from 'firebase/firestore';
               </lm-boton>
             }
           </lm-barra-pedido>
+        }
       } @else if (carrito.items().length) {
         <!-- Borrador antes de enviar -->
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
@@ -489,6 +497,11 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
         this.escuchaChat = null;
       }
     });
+  }
+
+  /** Con la cuenta habilitada, la pantalla es el cobro. */
+  protected enCuenta(p: Pedido): boolean {
+    return p.estadoGlobal === 'CUENTA_SOLICITADA' && !!p.cuentaHabilitada;
   }
 
   protected titulo(): string {

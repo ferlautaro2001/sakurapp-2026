@@ -19,12 +19,16 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   /** El paso que le toca al mozo con el pedido, o ninguno si está en manos de otro. */
   protected accionDe(pedido: Pedido): AccionPedido | null {
     if (pedido.estadoGlobal === 'LISTO') return { rotulo: 'Entregar', icono: 'room_service' };
+    if (pedido.estadoGlobal === 'CUENTA_SOLICITADA' && !pedido.cuentaHabilitada) {
+      return { rotulo: 'Habilitar cuenta', icono: 'receipt_long' };
+    }
     return null;
   }
 
   /** Hace el paso que le toca; devuelve si se hizo. */
   protected accionar(pedido: Pedido): Promise<boolean> {
     if (pedido.estadoGlobal === 'LISTO') return this.entregarPedido(pedido);
+    if (pedido.estadoGlobal === 'CUENTA_SOLICITADA') return this.habilitarCuentaPedido(pedido);
     return Promise.resolve(false);
   }
 
@@ -106,6 +110,27 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
     );
 
     this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} entregada`, 'Falta que el comensal confirme la recepción.');
+    return true;
+  }
+
+  /** Punto 21 · el mozo le habilita la cuenta al comensal que la pidió. */
+  protected async habilitarCuentaPedido(pedido: Pedido): Promise<boolean> {
+    const seguro = await this.preguntar({
+      titulo: '¿Habilitás la cuenta?',
+      mensaje: '',
+      confirmar: 'Habilitar cuenta',
+      tono: 'exito',
+      icono: 'receipt_long',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${this.numeroMesa(pedido)}` },
+        { rotulo: 'Cliente', valor: this.comensal(pedido) },
+        { rotulo: 'Consumo', valor: `$ ${pedido.totalFinal.toLocaleString('es-AR')}` },
+      ],
+    });
+    if (!seguro) return false;
+
+    await this.cargando.conEsperaMinima('Habilitando la cuenta…', () => this.pedidos.habilitarCuenta(pedido.id));
+    this.avisos.exito(`Cuenta de la mesa ${this.numeroMesa(pedido)} habilitada`, 'El comensal ya puede pagar.');
     return true;
   }
 }

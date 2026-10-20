@@ -21,6 +21,7 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
     guardarUsuario: ReturnType<typeof vi.fn>;
     actualizarSectorPedido: ReturnType<typeof vi.fn>;
     actualizarEstadoPedido: ReturnType<typeof vi.fn>;
+    actualizarPedido: ReturnType<typeof vi.fn>;
   };
   let mockNotificaciones: {
     enviar: ReturnType<typeof vi.fn>;
@@ -103,6 +104,7 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       guardarUsuario: vi.fn().mockResolvedValue(undefined),
       actualizarSectorPedido: vi.fn().mockResolvedValue(undefined),
       actualizarEstadoPedido: vi.fn().mockResolvedValue(undefined),
+      actualizarPedido: vi.fn().mockResolvedValue(undefined),
     };
 
     mockNotificaciones = {
@@ -628,5 +630,86 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       expect(mockNotificaciones.enviarPorRol).not.toHaveBeenCalled();
     });
   });
-});
 
+  describe('La cuenta, la propina y el pago (puntos 21 y 22)', () => {
+    /** Un pedido de la mesa 3 por $ 20.000, ya con el 10 % de descuento del juego. */
+    function cargar(cambios: Partial<Pedido>): void {
+      const pedidoMock: Pedido = {
+        id: 'ped-cuenta',
+        mesaId: mesaMock.id,
+        mesaNumero: 3,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal: 'CUENTA_SOLICITADA',
+        estadoCocina: 'LISTO',
+        estadoBar: 'LISTO',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 10,
+        montoDescuentoJuego: 2000,
+        totalFinal: 18000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: true,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+        cuentaHabilitada: false,
+        porcentajePropina: null,
+        montoPropina: 0,
+        ...cambios,
+      };
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoMock]);
+    }
+
+    it('el mozo habilita la cuenta y le avisa al comensal', async () => {
+      cargar({});
+      await service.habilitarCuenta('ped-cuenta');
+
+      expect(service.porId('ped-cuenta')?.cuentaHabilitada).toBe(true);
+      expect(mockFirestore.actualizarPedido).toHaveBeenCalledWith('ped-cuenta', { cuentaHabilitada: true });
+      expect(mockNotificaciones.enviar).toHaveBeenCalledWith(
+        ['uid-cliente-reg'],
+        '🌸 Tu cuenta está lista',
+        expect.stringContaining('código de propina'),
+        ['/cliente/pedido'],
+      );
+    });
+
+    it('no se habilita una cuenta que el comensal no pidió', async () => {
+      cargar({ estadoGlobal: 'RECIBIDO' });
+      await expect(service.habilitarCuenta('ped-cuenta')).rejects.toThrow('todavía no pidió la cuenta');
+    });
+
+    it('la propina se calcula sobre lo pedido ya con el descuento del juego', async () => {
+      cargar({ cuentaHabilitada: true });
+      await service.elegirPropina('ped-cuenta', 15);
+
+      const p = service.porId('ped-cuenta')!;
+      expect(p.porcentajePropina).toBe(15);
+      expect(p.montoPropina).toBe(2700);
+      expect(service.totalAPagar(p)).toBe(20700);
+    });
+
+    it('la propina del cero por ciento también vale', async () => {
+      cargar({ cuentaHabilitada: true });
+      await service.elegirPropina('ped-cuenta', 0);
+      expect(service.porId('ped-cuenta')).toMatchObject({ porcentajePropina: 0, montoPropina: 0 });
+    });
+
+    it('sin la cuenta habilitada no se puede dejar propina', async () => {
+      cargar({ cuentaHabilitada: false });
+      await expect(service.elegirPropina('ped-cuenta', 10)).rejects.toThrow('no habilitó la cuenta');
+    });
+
+  });
+});

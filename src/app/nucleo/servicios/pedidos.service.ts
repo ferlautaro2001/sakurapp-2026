@@ -627,6 +627,58 @@ export class PedidosService {
   }
 
 
+  /** Lo que se paga: lo pedido, con el descuento del juego, más la propina. */
+  totalAPagar(pedido: Pedido): number {
+    return pedido.totalFinal + (pedido.montoPropina ?? 0);
+  }
+
+  /**
+   * Punto 21 · el mozo habilita la cuenta que pidió el comensal. Desde ahí el
+   * comensal escanea el código de propina y paga.
+   */
+  async habilitarCuenta(pedidoId: string): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA') throw new Error('El comensal todavía no pidió la cuenta.');
+    if (pedido.cuentaHabilitada) return;
+
+    await this.aplicar(pedidoId, { cuentaHabilitada: true });
+    await this.notificaciones.enviar(
+      [pedido.clienteUid || pedido.clienteId],
+      '🌸 Tu cuenta está lista',
+      'Escaneá el código de propina de tu mesa para ver el detalle y pagar.',
+      ['/cliente/pedido'],
+    );
+  }
+
+  /**
+   * Punto 21 · el código QR de propina fija el porcentaje. Sin propina no hay
+   * cuenta: el monto se calcula sobre lo pedido, ya con el descuento del juego.
+   */
+  async elegirPropina(pedidoId: string, porcentaje: number): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA' || !pedido.cuentaHabilitada) {
+      throw new Error('El mozo todavía no habilitó la cuenta.');
+    }
+    if (!Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+      throw new Error('Ese porcentaje de propina no es válido.');
+    }
+
+    await this.aplicar(pedidoId, {
+      porcentajePropina: porcentaje,
+      montoPropina: Math.round((pedido.totalFinal * porcentaje) / 100),
+    });
+  }
+
+  /** Guarda los cambios del pedido en Firestore y en lo que ya tiene cargado la aplicación. */
+  private async aplicar(pedidoId: string, cambios: Partial<Pedido>): Promise<void> {
+    await this.firestore.actualizarPedido(pedidoId, cambios);
+    const actualizar = (lista: Pedido[]) => lista.map((p) => (p.id === pedidoId ? { ...p, ...cambios } : p));
+    this.pedidosSql.update(actualizar);
+    this.pedidosFirestore.update(actualizar);
+  }
+
   private destinatarios(perfil: 'COCINERO' | 'CANTINERO'): string[] {
     return this.usuarios
       .todos()

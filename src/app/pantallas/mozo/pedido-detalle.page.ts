@@ -4,9 +4,8 @@ import { PaginaDeComandas } from './comandas-base';
 import { ROTULO_ESTADO_PEDIDO, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
 
-/** Alto de un renglón con nombre de hasta dos líneas, del separador y del espacio entre piezas. */
+/** Alto de un renglón con nombre de hasta dos líneas y del espacio entre piezas. */
 const ALTO_RENGLON = 95;
-const ALTO_SEPARADOR = 22;
 const ESPACIO = 8;
 
 /**
@@ -38,6 +37,18 @@ const ESPACIO = 8;
             </lm-chip>
           </div>
 
+          <!-- Sólo cuando el pedido tiene las dos partes: cada botón lleva a la
+               página de su sector y queda marcado el que está a la vista. -->
+          @if (ambosSectores()) {
+            <lm-segmentado
+              class="detalle__sectores"
+              vidrio
+              [opciones]="botonesSector"
+              [valor]="sectorActual()"
+              (cambiar)="irASector($any($event))"
+            />
+          }
+
           @if (p.estadoGlobal === 'RECHAZADO' && p.motivoRechazo) {
             <div class="lm-card devuelto">
               <b>Se lo devolviste para modificar</b>
@@ -45,13 +56,16 @@ const ESPACIO = 8;
             </div>
           }
 
-          <!-- Cada pantalla de la lista es una página exacta: el separador del
-               sector y los renglones que entran enteros. Si un sector no entra en
-               una pantalla, sigue en la siguiente con su separador. -->
-          <div #lista class="detalle__lista" [style.--k]="porPagina()">
+          <!-- El separador queda fijo arriba de la lista y nombra el sector de la
+               página que está a la vista: cambia cuando asoman los de la cantina. -->
+          <lm-separador class="detalle__sector" flor [rotulo]="rotuloVisible()" />
+
+          <!-- Cada pantalla de la lista es una página exacta con los renglones
+               que entran enteros. Si un sector no entra en una pantalla, sigue
+               en la siguiente. -->
+          <div #lista class="detalle__lista" [style.--k]="porPagina()" (scroll)="alDesplazar()">
             @for (pagina of paginas(); track pagina.clave) {
-              <section class="pagina">
-                <lm-separador flor [rotulo]="pagina.rotulo" />
+              <section class="pagina" [attr.data-sector]="pagina.sector">
                 <div class="pagina__items">
                   @for (item of pagina.items; track item.id) {
                     <lm-renglon-pedido class="casilla" [item]="item" />
@@ -125,11 +139,12 @@ const ESPACIO = 8;
         flex: 0 0 100cqh; min-height: 0; display: flex; flex-direction: column; gap: 8px;
         scroll-snap-align: start; scroll-snap-stop: always;
       }
-      .pagina > lm-separador { flex: 0 0 auto; }
+      .detalle__sector { flex: 0 0 auto; }
+      .detalle__sectores { flex: 0 0 auto; }
       .pagina__items { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
       /* Cada renglón mide una parte exacta de lo que deja el separador. */
       .pagina__items > .casilla {
-        flex: 0 0 calc((100cqh - 22px - 8px - (var(--k, 1) - 1) * 8px) / var(--k, 1));
+        flex: 0 0 calc((100cqh - (var(--k, 1) - 1) * 8px) / var(--k, 1));
         min-height: 0; display: flex; flex-direction: column;
       }
       .pagina__items > .casilla ::ng-deep .renglon { flex: 1 1 auto; justify-content: center; }
@@ -154,8 +169,16 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
 
   protected readonly sectores: { valor: Sector; rotulo: string }[] = [
     { valor: 'COCINA', rotulo: 'Para sector cocina' },
-    { valor: 'BAR', rotulo: 'Para sector barra' },
+    { valor: 'BAR', rotulo: 'Para sector cantina' },
   ];
+
+  protected readonly botonesSector: { valor: Sector; rotulo: string }[] = [
+    { valor: 'COCINA', rotulo: 'Cocina' },
+    { valor: 'BAR', rotulo: 'Cantina' },
+  ];
+
+  /** Sector de la página que está a la vista: el botón marcado. */
+  protected readonly sectorVisible = signal<Sector>('COCINA');
 
   protected readonly pedido = computed(() => this.pedidos.porId(this.id()));
 
@@ -196,17 +219,20 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
   private readonly altoLista = signal(0);
 
   protected readonly porPagina = computed(() => {
-    const libre = this.altoLista() - ALTO_SEPARADOR - ESPACIO;
-    return Math.max(1, Math.floor((libre + ESPACIO) / (ALTO_RENGLON + ESPACIO)));
+    return Math.max(1, Math.floor((this.altoLista() + ESPACIO) / (ALTO_RENGLON + ESPACIO)));
   });
 
-  /** Los sectores partidos en páginas de `porPagina` renglones, cada una con su separador. */
+  /** Los sectores partidos en páginas de `porPagina` renglones, cada una marcada con su sector. */
   protected readonly paginas = computed(() => {
     const k = this.porPagina();
     return this.sectoresConItems().flatMap((sector) => {
       const paginas = [];
       for (let i = 0; i < sector.items.length; i += k) {
-        paginas.push({ clave: `${sector.valor}-${i}`, rotulo: sector.rotulo, items: sector.items.slice(i, i + k) });
+        paginas.push({
+          clave: `${sector.valor}-${i}`,
+          sector: sector.valor,
+          items: sector.items.slice(i, i + k),
+        });
       }
       return paginas;
     });
@@ -228,6 +254,62 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
       .map((s) => ({ valor: s.valor, rotulo: s.rotulo, items: this.itemsDe(s.valor) }))
       .filter((s) => s.items.length > 0),
   );
+
+  /** Sector a la vista: con una sola parte, es ésa, sin importar el desplazamiento. */
+  protected readonly sectorActual = computed<Sector>(() => {
+    const con = this.sectoresConItems();
+    return con.length === 1 ? con[0].valor : this.sectorVisible();
+  });
+
+  protected readonly rotuloVisible = computed(
+    () => this.sectores.find((s) => s.valor === this.sectorActual())?.rotulo ?? '',
+  );
+
+  /** Con las dos partes, la lista se pagina por sector y aparecen los botones. */
+  protected readonly ambosSectores = computed(() => this.sectoresConItems().length === 2);
+
+  /** Mientras la lista viaja hasta un sector, el desplazamiento no cambia el botón marcado. */
+  private saltando = false;
+
+  /**
+   * Lleva la lista hasta la primera página del sector elegido. El snap se apaga
+   * durante el viaje: con `scroll-snap-stop: always` el navegador frenaría en
+   * cada página intermedia y nunca llegaría a la cantina si la cocina tiene dos.
+   */
+  protected irASector(sector: Sector): void {
+    const el = this.lista()?.nativeElement;
+    const pagina = el?.querySelector<HTMLElement>(`[data-sector="${sector}"]`);
+    if (!el || !pagina) return;
+    this.sectorVisible.set(sector);
+    const destino = el.scrollTop + pagina.getBoundingClientRect().top - el.getBoundingClientRect().top;
+    this.saltando = true;
+    el.style.scrollSnapType = 'none';
+    const llegar = () => {
+      clearTimeout(reserva);
+      el.removeEventListener('scrollend', llegar);
+      el.style.scrollSnapType = '';
+      this.saltando = false;
+    };
+    // `scrollend` avisa la llegada; el tiempo de reserva cubre los navegadores
+    // que no lo emiten y el caso en que la lista ya estaba en ese lugar.
+    const reserva = setTimeout(llegar, 900);
+    el.addEventListener('scrollend', llegar);
+    el.scrollTo({ top: destino, behavior: 'smooth' });
+  }
+
+  /** Marca el sector de la página que quedó más cerca del borde de arriba. */
+  protected alDesplazar(): void {
+    const el = this.lista()?.nativeElement;
+    if (!el || this.saltando) return;
+    const arriba = el.getBoundingClientRect().top;
+    let cercana: HTMLElement | null = null;
+    for (const pagina of Array.from(el.querySelectorAll<HTMLElement>('[data-sector]'))) {
+      const distancia = Math.abs(pagina.getBoundingClientRect().top - arriba);
+      if (!cercana || distancia < Math.abs(cercana.getBoundingClientRect().top - arriba)) cercana = pagina;
+    }
+    const sector = cercana?.dataset['sector'] as Sector | undefined;
+    if (sector && sector !== this.sectorVisible()) this.sectorVisible.set(sector);
+  }
 
   protected readonly iconoSector = computed(() =>
     this.sectoresConItems().some((s) => s.valor === 'COCINA') ? 'skillet' : 'local_bar',

@@ -1689,8 +1689,12 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .sk-diapos__pista::-webkit-scrollbar { display: none; }
 /* Cada hija proyectada es una diapositiva entera, sin asomar la vecina. */
 .sk-diapos__pista > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; }
-.sk-diapos__pie { display: flex; align-items: center; justify-content: center; gap: 4px; flex: 0 0 auto; }
-.sk-diapos__flores { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 2px; min-width: 0; }
+/* Las flechas, contra los bordes; los pétalos se reparten el ancho del medio. */
+.sk-diapos__pie { display: flex; align-items: center; justify-content: space-between; gap: 4px; flex: 0 0 auto; }
+/* Los pétalos van siempre en un solo renglón: con muchas diapositivas cada
+   botón cede ancho (el alto táctil se queda en 44px) antes que saltar abajo. */
+.sk-diapos__flores { display: flex; flex-wrap: nowrap; justify-content: space-evenly; align-items: center; gap: 0; min-width: 0; flex: 1 1 auto; }
+.sk-diapos__flores .sk-flor { width: auto; flex: 0 1 var(--touch-min); min-width: 0; }
 .sk-diapos__flecha {
   width: var(--touch-min); height: var(--touch-min); flex: 0 0 auto; border: none; cursor: pointer;
   border-radius: 50%; display: grid; place-items: center;
@@ -2495,12 +2499,12 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .sk-diapos__flecha .material-symbols-rounded { font-variation-settings: 'FILL' 1, 'wght' 700; }
 .sk-diapos__flecha:not(:disabled):active { transform: scale(.94); }
 .sk-diapos__flores .sk-flor img {
-  width: clamp(24px, 6.6vw, 30px); height: clamp(24px, 6.6vw, 30px);
+  width: clamp(20px, 5.6vw, 28px); height: clamp(20px, 5.6vw, 28px);
   opacity: .85;
   filter: drop-shadow(0 0 3px rgba(255, 255, 255, .85)) drop-shadow(0 2px 4px rgba(94, 12, 44, .45));
 }
 .sk-diapos__flores .sk-flor.on img {
-  width: clamp(34px, 9.4vw, 42px); height: clamp(34px, 9.4vw, 42px);
+  width: clamp(30px, 8.4vw, 38px); height: clamp(30px, 8.4vw, 38px);
   opacity: 1;
   filter: drop-shadow(0 0 7px rgba(255, 255, 255, 1)) drop-shadow(0 2px 5px rgba(94, 12, 44, .5));
 }
@@ -2513,32 +2517,48 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 .sk-torta { max-width: min(100%, 270px); }
 .sk-torta svg { max-height: 270px; filter: drop-shadow(0 6px 10px rgba(94, 12, 44, .25)); }
 .sk-torta svg circle { stroke-linecap: butt; }
-.sk-torta__centro b { font: 900 clamp(30px, 9.4vw, 44px)/1 var(--font-numeric); }
-.sk-torta__centro small { font: 750 clamp(13px, 3.6vw, 16px)/1.1 var(--font-text); }
+/* El anillo se achica lo que haga falta para que la leyenda entre entera, y el
+   texto del centro se achica con él: se mide contra el anillo (cqmin), así el
+   total y la palabra "respuestas" caben siempre en el hueco, sea cual sea el
+   alto que le quede al gráfico. */
+.sk-torta { container-type: size; }
+.sk-torta__centro b { font: 900 min(44px, 24cqmin)/1 var(--font-numeric); }
+.sk-torta__centro small { font: 750 min(16px, 8.6cqmin)/1.1 var(--font-text); }
 
 /* Leyenda: una fila por porción, con la muestra de color grande y el
    porcentaje destacado. */
 .sk-leyenda { grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .sk-leyenda li {
-  gap: var(--space-3); padding: 9px var(--space-3);
+  gap: var(--space-3); padding: 7px var(--space-3);
   border-radius: 14px; background: rgba(255, 255, 255, .6);
   box-shadow: inset 0 1px 0 #FFFFFF, 0 2px 6px rgba(94, 12, 44, .1);
   font: 650 clamp(15px, 4.2vw, 18px)/1.2 var(--font-text);
 }
 .sk-leyenda i { width: 18px; height: 18px; border-radius: 6px; box-shadow: 0 0 0 2px rgba(255, 255, 255, .85); }
+/* En una tarjeta baja (teléfonos chicos, títulos de dos renglones) la leyenda
+   se compacta para que entre entera: con cinco opciones ocupaba más alto que el
+   que le quedaba y la última fila se salía de la tarjeta. */
+.sk-diapos--alto .sk-grafico { container: grafico / size; }
+@container grafico (max-height: 420px) {
+  .sk-leyenda { gap: 5px; }
+  .sk-leyenda li { padding-block: 4px; font-size: clamp(14px, 4vw, 16px); }
+  .sk-leyenda i { width: 15px; height: 15px; }
+}
 .sk-leyenda b { font: 900 clamp(16px, 4.6vw, 20px)/1 var(--font-numeric); }
 
 /* Barras: más anchas, con brillo, número grande arriba y rótulo legible. */
 .sk-barras { gap: 12px; }
 .sk-barras__columna { gap: 6px; }
-.sk-barras__valor { font: 900 clamp(15px, 4.4vw, 20px)/1 var(--font-numeric); color: var(--action-primary); }
+.sk-barras__valor { font: 900 clamp(17px, 5vw, 22px)/1 var(--font-numeric); color: var(--action-primary); white-space: nowrap; }
 .sk-barras__pista { background: linear-gradient(180deg, rgba(255, 215, 223, .45), rgba(255, 215, 223, .15)); border-radius: 12px; }
 .sk-barras__barra {
   border-radius: 12px 12px 6px 6px;
   background: linear-gradient(180deg, #FF7AA8 0%, #E8336F 55%, #B81F55 100%);
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, .45), 0 3px 8px rgba(184, 31, 85, .3);
 }
-.sk-barras__rotulo { font: 750 clamp(13px, 3.6vw, 16px)/1.15 var(--font-text); color: var(--text-title); }
+.sk-barras__rotulo { font: 750 clamp(13px, 3.6vw, 16px)/1.15 var(--font-text); color: var(--text-title); white-space: nowrap; }
+.sk-barras__rotulo--icono { display: grid; place-items: center; line-height: 1; }
+.sk-barras__rotulo--icono .material-symbols-rounded { font-size: clamp(24px, 7vw, 30px); color: var(--action-primary); }
 
 /* Línea: más gruesa, con relleno degradado debajo y datos grandes. */
 .sk-linea { min-height: 120px; filter: drop-shadow(0 3px 5px rgba(184, 31, 85, .25)); }

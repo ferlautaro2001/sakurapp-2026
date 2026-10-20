@@ -1,9 +1,16 @@
-import { Injectable, computed, signal } from '@angular/core';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getDataConnect } from 'firebase/data-connect';
-import { listEncuestas, connectorConfig } from '../../../dataconnect-generated';
-import { environment } from '../../../environments/environment';
-import { RespuestaEncuesta } from '../modelos/modelos';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { Pedido } from '../modelos/modelos';
+import { FirestoreService } from './firestore.service';
+import {
+  CARITAS,
+  DefinicionEncuesta,
+  PreguntaEncuesta,
+  RespuestasEncuesta,
+  encuestaPorId,
+  sortearEncuesta,
+  tieneValor,
+} from '../datos/encuestas';
 
 export interface Porcion {
   rotulo: string;
@@ -14,156 +21,275 @@ export interface Porcion {
 export interface PuntoSerie {
   rotulo: string;
   valor: number;
+  /** Se dibuja el ícono en lugar del rótulo, que queda como nombre accesible. */
+  icono?: string;
 }
+
+/**
+ * La encuesta de una estadía, guardada en `encuestas/{idDelPedido}`: usar el
+ * pedido como clave es lo que garantiza una sola por visita. Se crea al abrirla
+ * por primera vez, con la variante ya sorteada, y pasa a `ENVIADA` al mandarla.
+ */
+export interface EncuestaDeVisita {
+  pedidoId: string;
+  variante: string;
+  estado: 'EN_CURSO' | 'ENVIADA';
+  respuestas: RespuestasEncuesta;
+  enviadaEn?: string;
+}
+
+/** Una encuesta mandada, con sus cinco respuestas: la base de los gráficos. */
+export interface EncuestaRespondida {
+  id: string;
+  variante: string;
+  respuestas: RespuestasEncuesta;
+  fecha: string;
+}
+
+/** El gráfico de una pregunta, ya con los totales de todos los que respondieron. */
+export type GraficoEncuesta =
+  | { tipo: 'torta'; id: string; titulo: string; porciones: Porcion[] }
+  | { tipo: 'barras' | 'linea' | 'ranking'; id: string; titulo: string; puntos: PuntoSerie[] };
 
 /** Colores de los gráficos: distinguibles entre sí y legibles sobre nieve. */
 const COLORES = ['#C72657', '#FF7665', '#8F4B00', '#1B7A4C', '#7A2E86'];
 
+const SEMANA = 7 * 24 * 3600 * 1000;
+
 /**
- * Resultados de las encuestas anteriores (US-5.1 · TASK-5.1.1.2).
+ * Encuestas de satisfacción (punto 20).
  *
- * Sólo lectura: cargar encuestas nuevas es materia de una entrega posterior.
- * Acá se agregan las respuestas que ya están en Cloud SQL, que es lo único a
- * lo que el comensal puede acceder mientras espera su mesa.
+ * Guarda la encuesta de cada estadía —una sola por visita, con la variante
+ * sorteada entre las tres— y lee las mandadas para los gráficos de resultados,
+ * que se arman pregunta por pregunta para cada una de las tres encuestas.
  *
- * Mientras la base no tenga encuestas cargadas —los pedidos, de los que cuelga
- * cada encuesta, son de una entrega posterior— la pantalla muestra un juego de
- * respuestas de muestra, siempre anunciado como tal en pantalla: nunca se
- * hacen pasar por datos reales del salón.
+ * Todo vive en la colección `encuestas` de Firestore: las respuestas reales
+ * tienen el id del pedido y las simuladas de cuatro semanas, el prefijo
+ * `historica-` (las siembra `scripts/sembrar-encuestas.mjs`).
  */
 @Injectable({ providedIn: 'root' })
 export class EncuestasService {
-  readonly respuestas = signal<RespuestaEncuesta[]>([]);
+  private readonly firestore = inject(FirestoreService);
 
-  /** Verdadero cuando lo que se está mostrando son respuestas de muestra. */
-  readonly muestra = signal(false);
+  /** Las encuestas mandadas con todas sus respuestas, de las tres variantes. */
+  readonly completas = signal<EncuestaRespondida[]>([]);
 
-  private cargado = false;
+  readonly total = computed(() => this.completas().length);
 
-  readonly total = computed(() => this.respuestas().length);
+  /** La lectura en curso, para que dos pantallas a la vez no lean dos veces. */
+  private cargando: Promise<void> | null = null;
 
-  /** Desde cuándo hay datos, para poder decirlo en pantalla sin mentir. */
-  readonly desde = computed(() => this.ordenadas()[0]?.fecha ?? null);
+  /** La encuesta de cada estadía que ya se consultó, por pedido. */
+  private readonly visitas = signal<Record<string, EncuestaDeVisita | null>>({});
 
-  readonly promedioMozo = computed(() => this.promedio((r) => r.calificacionMozo));
-  readonly promedioLimpieza = computed(() => this.promedio((r) => r.nivelLimpieza));
-
-  /** Porcentaje de comensales que recomendarían el salón. */
-  readonly recomendarian = computed(() => {
-    const lista = this.respuestas();
-    if (!lista.length) return 0;
-    return Math.round((lista.filter((r) => r.recomendaria).length / lista.length) * 100);
-  });
-
-  /** Torta: qué se llevó cada comensal como lo mejor de la visita. */
-  readonly aspectosFavoritos = computed<Porcion[]>(() => {
-    const conteo = new Map<string, number>();
-    for (const respuesta of this.respuestas()) {
-      const aspecto = respuesta.aspectoFavorito.trim() || 'Sin responder';
-      conteo.set(aspecto, (conteo.get(aspecto) ?? 0) + 1);
-    }
-    return [...conteo.entries()]
-      .sort(([, a], [, b]) => b - a)
-      .map(([rotulo, valor], i) => ({ rotulo, valor, color: COLORES[i % COLORES.length] }));
-  });
-
-  /** Barras: cuánta gente le puso cada puntaje a la atención del mozo. */
-  readonly puntajesDelMozo = computed<PuntoSerie[]>(() => {
-    const lista = this.respuestas();
-    return [1, 2, 3, 4, 5].map((puntaje) => ({
-      rotulo: `${puntaje}`,
-      valor: lista.filter((r) => r.calificacionMozo === puntaje).length,
-    }));
-  });
-
-  /** Línea: cómo evolucionó la limpieza semana a semana. */
-  readonly limpiezaPorSemana = computed<PuntoSerie[]>(() => {
-    const lista = this.ordenadas();
-    if (!lista.length) return [];
-
-    const primera = new Date(lista[0].fecha).getTime();
-    const semanas = new Map<number, number[]>();
-
-    for (const respuesta of lista) {
-      const semana = Math.floor((new Date(respuesta.fecha).getTime() - primera) / (7 * 24 * 3600 * 1000));
-      const acumulado = semanas.get(semana) ?? [];
-      acumulado.push(respuesta.nivelLimpieza);
-      semanas.set(semana, acumulado);
-    }
-
-    return [...semanas.entries()]
-      .sort(([a], [b]) => a - b)
-      .map(([semana, puntajes]) => ({
-        rotulo: `Semana ${semana + 1}`,
-        valor: Number((puntajes.reduce((t, p) => t + p, 0) / puntajes.length).toFixed(2)),
-      }));
-  });
-
-  /** Trae las encuestas históricas de Cloud SQL. Se lee una vez por sesión. */
-  async cargar(): Promise<void> {
-    if (this.cargado) return;
-    this.cargado = true;
-
-    try {
-      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
-      const res = await listEncuestas(getDataConnect(app, connectorConfig));
-      const encuestas = res?.data?.encuestas ?? [];
-      if (encuestas.length) {
-        this.muestra.set(false);
-        this.respuestas.set(
-          encuestas.map((e) => ({
-            id: e.id,
-            calificacionMozo: e.calificacionMozo,
-            nivelLimpieza: e.nivelLimpieza,
-            recomendaria: e.recomendaria,
-            aspectoFavorito: e.aspectoFavorito,
-            fecha: e.timestamp,
-          })),
-        );
-        return;
-      }
-    } catch (err) {
-      console.warn('⚠️ No se pudieron leer las encuestas de Data Connect:', err);
-    }
-
-    this.muestra.set(true);
-    this.respuestas.set(respuestasDeMuestra());
+  /**
+   * Lee las encuestas mandadas. Se vuelve a leer cada vez que se entra a
+   * Encuestas: los porcentajes tienen que incluir lo que mandaron los demás
+   * comensales mientras tanto.
+   */
+  cargar(): Promise<void> {
+    this.cargando ??= this.leer().finally(() => (this.cargando = null));
+    return this.cargando;
   }
 
-  private readonly ordenadas = computed(() =>
-    [...this.respuestas()].sort((a, b) => a.fecha.localeCompare(b.fecha)),
-  );
+  private async leer(): Promise<void> {
+    try {
+      const snap = await getDocs(
+        query(collection(this.firestore.obtenerDb(), 'encuestas'), where('estado', '==', 'ENVIADA')),
+      );
+      const leidas: EncuestaRespondida[] = snap.docs
+        .map((d) => d.data())
+        .filter((d) => encuestaPorId(d['variante']) && d['respuestas'])
+        .map((d) => ({ id: d['pedidoId'], variante: d['variante'], respuestas: d['respuestas'], fecha: d['enviadaEn'] }));
+      // Lo que se haya mandado mientras se leía no se pierde.
+      const yaSumadas = this.completas().filter((c) => !leidas.some((x) => x.id === c.id));
+      this.completas.set([...leidas, ...yaSumadas]);
+    } catch (err) {
+      console.warn('⚠️ No se pudieron leer las encuestas:', err);
+    }
+  }
 
-  private promedio(de: (r: RespuestaEncuesta) => number): number {
-    const lista = this.respuestas();
-    if (!lista.length) return 0;
-    return Number((lista.reduce((total, r) => total + de(r), 0) / lista.length).toFixed(1));
+  /** Si el comensal ya mandó la encuesta de esta estadía. */
+  respondida(pedidoId: string | null | undefined): boolean {
+    return !!pedidoId && this.visitas()[pedidoId]?.estado === 'ENVIADA';
+  }
+
+  /** La encuesta de la estadía, si ya se abrió alguna vez. */
+  deLaVisita(pedidoId: string | null | undefined): EncuestaDeVisita | null {
+    return pedidoId ? (this.visitas()[pedidoId] ?? null) : null;
+  }
+
+  definicionDe(visita: EncuestaDeVisita | null): DefinicionEncuesta | undefined {
+    return encuestaPorId(visita?.variante);
+  }
+
+  /** Los gráficos de una encuesta, con lo de todos los que la respondieron. */
+  graficosDe(definicion: DefinicionEncuesta): GraficoEncuesta[] {
+    return graficosDeEncuesta(definicion, this.completas());
+  }
+
+  /** Lee si la estadía ya tiene encuesta, sin crear nada. */
+  async consultar(pedidoId: string): Promise<EncuestaDeVisita | null> {
+    if (pedidoId in this.visitas()) return this.visitas()[pedidoId];
+    try {
+      const snap = await getDoc(doc(this.firestore.obtenerDb(), 'encuestas', pedidoId));
+      const visita = snap.exists() ? (snap.data() as EncuestaDeVisita) : null;
+      this.visitas.update((v) => ({ ...v, [pedidoId]: visita }));
+      return visita;
+    } catch (err) {
+      console.warn('⚠️ No se pudo consultar la encuesta de la visita:', err);
+      return null;
+    }
+  }
+
+  /**
+   * Abre la encuesta de la estadía. La primera vez sortea cuál de las tres le
+   * toca y la deja guardada: aunque cierre la aplicación, vuelve a la misma.
+   */
+  async abrir(pedido: Pedido): Promise<EncuestaDeVisita> {
+    const existente = await this.consultar(pedido.id);
+    if (existente) return existente;
+
+    const visita: EncuestaDeVisita = {
+      pedidoId: pedido.id,
+      variante: sortearEncuesta().id,
+      estado: 'EN_CURSO',
+      respuestas: {},
+    };
+    this.visitas.update((v) => ({ ...v, [pedido.id]: visita }));
+    try {
+      await setDoc(doc(this.firestore.obtenerDb(), 'encuestas', pedido.id), {
+        ...visita,
+        clienteId: pedido.clienteUid || pedido.clienteId,
+        mesaId: pedido.mesaId,
+        mesaNumero: pedido.mesaNumero,
+        creadaEn: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.warn('⚠️ No se pudo guardar el sorteo de la encuesta:', err);
+    }
+    return visita;
+  }
+
+  /** Manda la encuesta con todo lo que respondió; su respuesta se suma enseguida a los gráficos. */
+  async enviar(pedido: Pedido, definicion: DefinicionEncuesta, respuestas: RespuestasEncuesta): Promise<void> {
+    if (this.respondida(pedido.id)) throw new Error('Ya respondiste la encuesta de esta visita.');
+
+    const enviadaEn = new Date().toISOString();
+    const visita: EncuestaDeVisita = {
+      pedidoId: pedido.id,
+      variante: definicion.id,
+      estado: 'ENVIADA',
+      respuestas,
+      enviadaEn,
+    };
+    await setDoc(
+      doc(this.firestore.obtenerDb(), 'encuestas', pedido.id),
+      {
+        ...visita,
+        clienteId: pedido.clienteUid || pedido.clienteId,
+        mesaId: pedido.mesaId,
+        mesaNumero: pedido.mesaNumero,
+      },
+      { merge: true },
+    );
+
+    this.visitas.update((v) => ({ ...v, [pedido.id]: visita }));
+    this.completas.update((lista) => [
+      ...lista.filter((c) => c.id !== pedido.id),
+      { id: pedido.id, variante: definicion.id, respuestas, fecha: enviadaEn },
+    ]);
   }
 }
 
 /**
- * Cuatro semanas de respuestas de muestra, para poder recorrer y mostrar los
- * gráficos antes de que la base tenga encuestas propias. La pantalla avisa que
- * son de muestra cada vez que las usa.
+ * Un gráfico por pregunta, con las respuestas de todos los que respondieron
+ * esa misma encuesta. El tipo de gráfico lo dice cada pregunta.
  */
-function respuestasDeMuestra(): RespuestaEncuesta[] {
-  const aspectos = ['La comida', 'La atención', 'El ambiente', 'Los precios', 'La rapidez'];
-  const mozo = [5, 4, 5, 3, 4, 5, 5, 4, 2, 4, 5, 3, 5, 4, 4, 5, 5, 4, 3, 5, 4, 5, 5, 4];
-  const limpieza = [4, 5, 4, 4, 3, 5, 5, 4, 4, 5, 5, 4, 5, 5, 4, 5, 4, 5, 5, 4, 5, 5, 4, 5];
-  const arranque = new Date();
-  arranque.setDate(arranque.getDate() - 28);
+export function graficosDeEncuesta(definicion: DefinicionEncuesta, todas: EncuestaRespondida[]): GraficoEncuesta[] {
+  const deEsta = todas.filter((e) => e.variante === definicion.id);
+  return definicion.pasos.flatMap((p) => p.preguntas).map((pregunta) => graficoDePregunta(pregunta, deEsta));
+}
 
-  return mozo.map((puntaje, i) => {
-    const fecha = new Date(arranque);
-    // Seis respuestas por semana, repartidas de a un día.
-    fecha.setDate(arranque.getDate() + Math.floor(i / 6) * 7 + (i % 6));
-    return {
-      id: `muestra-${i + 1}`,
-      calificacionMozo: puntaje,
-      nivelLimpieza: limpieza[i],
-      recomendaria: puntaje >= 4,
-      aspectoFavorito: aspectos[i % aspectos.length],
-      fecha: fecha.toISOString(),
-    };
-  });
+function graficoDePregunta(pregunta: PreguntaEncuesta, encuestas: EncuestaRespondida[]): GraficoEncuesta {
+  // Sólo cuentan los que respondieron: la pregunta opcional sin responder no suma.
+  const respondidas = encuestas.filter((e) => tieneValor(e.respuestas[pregunta.id]));
+  const valores = respondidas.map((e) => e.respuestas[pregunta.id]);
+  const pct = (cuantos: number) => (valores.length ? Math.round((cuantos / valores.length) * 100) : 0);
+  const base = { id: pregunta.id, titulo: pregunta.titulo };
+
+  switch (pregunta.grafico) {
+    case 'barras': {
+      // Las caritas se rotulan con la misma carita del control: los nombres no
+      // entran en cinco columnas de un teléfono angosto.
+      const caritas = pregunta.tipo === 'caritas';
+      return {
+        tipo: 'barras',
+        ...base,
+        puntos: [1, 2, 3, 4, 5].map((n) => ({
+          rotulo: caritas ? CARITAS[n - 1].rotulo : `${n}`,
+          ...(caritas ? { icono: CARITAS[n - 1].icono } : {}),
+          valor: pct(valores.filter((v) => Number(v) === n).length),
+        })),
+      };
+    }
+    case 'linea':
+      return { tipo: 'linea', ...base, puntos: promedioPorSemana(respondidas, pregunta.id) };
+    case 'ranking':
+      return {
+        tipo: 'ranking',
+        ...base,
+        puntos: (pregunta.opciones ?? [])
+          .map((rotulo) => ({ rotulo, valor: pct(valores.filter((v) => Array.isArray(v) && v.includes(rotulo)).length) }))
+          .sort((a, b) => b.valor - a.valor),
+      };
+    case 'torta': {
+      const [rotulos, cuenta] = porcionesDe(pregunta, valores);
+      return {
+        tipo: 'torta',
+        ...base,
+        porciones: rotulos.map((rotulo, i) => ({ rotulo, valor: cuenta(rotulo, i), color: COLORES[i % COLORES.length] })),
+      };
+    }
+  }
+}
+
+/** Las porciones de una torta según lo que se haya elegido en la pregunta. */
+function porcionesDe(
+  pregunta: PreguntaEncuesta,
+  valores: unknown[],
+): [string[], (rotulo: string, i: number) => number] {
+  switch (pregunta.tipo) {
+    case 'nps': {
+      // Las tres franjas de la escala: del 9 al 10, del 7 al 8 y del 0 al 6.
+      const franjas = [(n: number) => n >= 9, (n: number) => n >= 7 && n <= 8, (n: number) => n <= 6];
+      return [
+        ['Lo recomiendan (9 y 10)', 'Neutrales (7 y 8)', 'No lo recomiendan (0 a 6)'],
+        (_r, i) => valores.filter((v) => franjas[i](Number(v))).length,
+      ];
+    }
+    case 'sino':
+    case 'interruptor':
+      return [['Sí', 'No'], (_r, i) => valores.filter((v) => v === (i === 0)).length];
+    default:
+      return [pregunta.opciones ?? [], (r) => valores.filter((v) => v === r).length];
+  }
+}
+
+/** El promedio de un puntaje, semana a semana desde la primera respuesta. */
+function promedioPorSemana(encuestas: EncuestaRespondida[], preguntaId: string): PuntoSerie[] {
+  if (!encuestas.length) return [];
+  const ordenadas = [...encuestas].sort((a, b) => a.fecha.localeCompare(b.fecha));
+  const primera = new Date(ordenadas[0].fecha).getTime();
+  const semanas = new Map<number, number[]>();
+  for (const e of ordenadas) {
+    const semana = Math.floor((new Date(e.fecha).getTime() - primera) / SEMANA);
+    semanas.set(semana, [...(semanas.get(semana) ?? []), Number(e.respuestas[preguntaId])]);
+  }
+  return [...semanas.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([semana, puntajes]) => ({
+      rotulo: `Semana ${semana + 1}`,
+      valor: Number((puntajes.reduce((t, p) => t + p, 0) / puntajes.length).toFixed(1)),
+    }));
 }

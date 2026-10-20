@@ -46,9 +46,11 @@ import {
   DiapositivasComponent,
   GraficoBarrasComponent,
   GraficoLineaComponent,
+  GraficoRankingComponent,
   GraficoTortaComponent,
 } from './graficos';
 import { DocumentoPipe, FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
+import { EncuestaComponent } from './encuesta';
 
 export * from './basicos';
 export * from './formulario';
@@ -57,12 +59,14 @@ export * from './datos';
 export * from './pedidos';
 export * from './graficos';
 export * from './pesos.pipe';
+export * from './encuesta';
 
 /**
  * Todos los componentes del sistema de diseño, listos para importar de una vez
  * en cualquier pantalla: `imports: [...UI]`.
  */
 export const UI = [
+  EncuestaComponent,
   IconoComponent,
   BotonComponent,
   DecisionComponent,
@@ -95,6 +99,7 @@ export const UI = [
   FilaEsperaComponent,
   CarruselComponent,
   PlacaQrComponent,
+  GraficoRankingComponent,
   GraficoTortaComponent,
   GraficoBarrasComponent,
   GraficoLineaComponent,

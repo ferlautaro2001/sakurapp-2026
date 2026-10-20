@@ -60,15 +60,19 @@ import { Unsubscribe } from 'firebase/firestore';
             <div class="lm-grid2">
               @if (p.estadoCocina !== 'NO_APLICA') {
                 <div class="lm-card sector">
-                  <lm-icono nombre="skillet" [tamano]="24" color="var(--action-primary)" />
-                  <span class="lm-label">Cocina</span>
+                  <span class="sector__titulo">
+                    <lm-icono nombre="skillet" [tamano]="18" color="var(--action-primary)" />
+                    <span class="lm-label">Cocina</span>
+                  </span>
                   <lm-chip [estado]="chipSector(p.estadoCocina)">{{ rotuloSector(p.estadoCocina) }}</lm-chip>
                 </div>
               }
               @if (p.estadoBar !== 'NO_APLICA') {
                 <div class="lm-card sector">
-                  <lm-icono nombre="local_bar" [tamano]="24" color="var(--action-primary)" />
-                  <span class="lm-label">Barra</span>
+                  <span class="sector__titulo">
+                    <lm-icono nombre="local_bar" [tamano]="18" color="var(--action-primary)" />
+                    <span class="lm-label">Barra</span>
+                  </span>
                   <lm-chip [estado]="chipSector(p.estadoBar)">{{ rotuloSector(p.estadoBar) }}</lm-chip>
                 </div>
               }
@@ -309,7 +313,10 @@ import { Unsubscribe } from 'firebase/firestore';
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .limpiar:active { background: #9E1D13; transform: scale(0.99); }
-      .sector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-3) var(--space-2); text-align: center; }
+      /* Dos pisos y no tres: el ícono va al lado del nombre del sector, así la
+         lista de abajo se queda con el alto para mostrar tres renglones. */
+      .sector { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px var(--space-2); text-align: center; }
+      .sector__titulo { display: inline-flex; align-items: center; gap: 5px; }
       .espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-5) var(--space-4); text-align: center; }
       .espera__reloj {
         width: clamp(44px, 13.5vw, 54px); height: clamp(44px, 13.5vw, 54px); border-radius: 50%; display: grid; place-items: center;
@@ -356,17 +363,13 @@ import { Unsubscribe } from 'firebase/firestore';
          como en el carrito, se muestran hasta dos renglones por tanda. */
       /* Detalle del pedido enviado: renglones más bajos que los del carrito. */
       .pedido__lista--compacta { container: pedidodetalle / size; }
-      /* Acá el renglón más alto (nombre de dos líneas) mide unos 110px. */
-      @container pedidodetalle (min-height: 232px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 2; } }
-      @container pedidodetalle (min-height: 354px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 3; } }
-      @container pedidodetalle (min-height: 476px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 4; } }
-      @container pedidodetalle (min-height: 598px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 5; } }
-      /* Con el ancho de un teléfono normal (desde unos 330px de lista) los nombres entran en
-         uno o dos renglones sin pasarse de unos 95px: caben más renglones por tanda. */
-      @container pedidodetalle (min-width: 330px) and (min-height: 202px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 2; } }
-      @container pedidodetalle (min-width: 330px) and (min-height: 312px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 3; } }
-      @container pedidodetalle (min-width: 330px) and (min-height: 416px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 4; } }
-      @container pedidodetalle (min-width: 330px) and (min-height: 523px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 5; } }
+      .pedido__lista--compacta > lm-renglon-pedido ::ng-deep .renglon { padding-top: 5px !important; padding-bottom: 5px !important; }
+      /* Acá el renglón más alto (nombre de dos líneas) mide 93px y el espacio
+         entre renglones llega a 10px: cada tanda de n necesita n × 93 + (n − 1) × 10. */
+      @container pedidodetalle (min-height: 196px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 2; } }
+      @container pedidodetalle (min-height: 299px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 3; } }
+      @container pedidodetalle (min-height: 402px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 4; } }
+      @container pedidodetalle (min-height: 505px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 5; } }
 
     `,
   ],

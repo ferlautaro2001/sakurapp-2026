@@ -339,7 +339,6 @@ export class EmparejandoSushisPage extends PaginaConSesion {
     this.estado.set(estado);
     if (estado === 'GANADO') {
       this.sonido.reproducir('exito');
-      this.avisos.exito('¡Memoria de chef!', `Encontraste las ${PAREJAS} parejas antes de que se acabara el tiempo.`);
     } else {
       this.avisos.error(
         'Se acabó el tiempo',

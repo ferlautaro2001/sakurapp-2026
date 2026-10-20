@@ -354,7 +354,6 @@ export class TatetiSushisPage extends PaginaConSesion {
     this.estado.set(estado);
     if (estado === 'GANASTE') {
       this.sonido.reproducir('exito');
-      this.avisos.exito('¡Tres en línea!', 'Le ganaste el tateti a la máquina.');
       this.consumirIntentoSiAplica(true);
     } else if (estado === 'PERDISTE') {
       this.avisos.error('Ganó la máquina', 'Alineó tres antes que vos. Probá de nuevo.');

@@ -498,7 +498,6 @@ export class NinjaSakuraPage extends PaginaConSesion {
     this.flores.set([]);
     if (estado === 'GANADO') {
       this.sonido.reproducir('exito');
-      this.avisos.exito('¡Ninja de sakura!', `Atrapaste ${OBJETIVO} flores en menos de ${SEGUNDOS} segundos.`);
     } else {
       this.avisos.error('Se acabó el tiempo', `Te faltaron ${OBJETIVO - this.atrapadas()} flores. Probá de nuevo.`);
     }

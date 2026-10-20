@@ -208,6 +208,19 @@ export interface Pedido {
   /** El porcentaje que fijó el QR de propina; nulo mientras no se escaneó. */
   porcentajePropina?: number | null;
   montoPropina?: number;
+  /** El pago simulado, desde que el comensal paga hasta que el mozo lo confirma. */
+  pago?: PagoSimulado | null;
+}
+
+/** Cómo pagó el comensal, a la manera de Mercado Pago. */
+export type MedioPago = 'DINERO_EN_CUENTA' | 'DEBITO' | 'CREDITO';
+
+/** El comprobante del pago simulado. */
+export interface PagoSimulado {
+  medio: MedioPago;
+  operacion: string;
+  total: number;
+  pagadoEn: string;
 }
 
 /** Mensaje de consulta o respuesta en la sala de chat de la mesa (US-6.2). */

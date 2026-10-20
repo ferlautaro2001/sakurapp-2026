@@ -660,6 +660,7 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
         cuentaHabilitada: false,
         porcentajePropina: null,
         montoPropina: 0,
+        pago: null,
         ...cambios,
       };
       let callbackPedidos!: (pedidos: Pedido[]) => void;
@@ -706,10 +707,52 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       expect(service.porId('ped-cuenta')).toMatchObject({ porcentajePropina: 0, montoPropina: 0 });
     });
 
-    it('sin la cuenta habilitada no se puede dejar propina', async () => {
+    it('sin la cuenta habilitada no se puede dejar propina ni pagar', async () => {
       cargar({ cuentaHabilitada: false });
       await expect(service.elegirPropina('ped-cuenta', 10)).rejects.toThrow('no habilitó la cuenta');
+      await expect(service.pagar('ped-cuenta', 'DEBITO')).rejects.toThrow('no habilitó la cuenta');
     });
 
+    it('sin propina no se puede pagar', async () => {
+      cargar({ cuentaHabilitada: true, porcentajePropina: null });
+      await expect(service.pagar('ped-cuenta', 'DEBITO')).rejects.toThrow('código de propina');
+      expect(mockFirestore.actualizarEstadoPedido).not.toHaveBeenCalled();
+    });
+
+    it('al pagar queda esperando al mozo y se enteran el mozo, el dueño y el supervisor', async () => {
+      cargar({ cuentaHabilitada: true, porcentajePropina: 20, montoPropina: 3600 });
+      await service.pagar('ped-cuenta', 'CREDITO');
+
+      const p = service.porId('ped-cuenta')!;
+      expect(p.estadoGlobal).toBe('PAGO_PENDIENTE');
+      expect(p.pago).toMatchObject({ medio: 'CREDITO', total: 21600 });
+      expect(p.pago!.operacion).toMatch(/^\d{10}$/);
+      const roles = mockNotificaciones.enviarPorRol.mock.calls.map((c) => c[0]);
+      expect(roles).toEqual(['MOZO', 'DUENO', 'SUPERVISOR']);
+      expect(mockNotificaciones.enviarPorRol.mock.calls[0][1]).toBe('💳 Mesa 3 pagó $ 21.600');
+    });
+
+    it('el mozo confirma el pago: el pedido se cierra y se enteran el dueño, el supervisor y el comensal', async () => {
+      cargar({
+        estadoGlobal: 'PAGO_PENDIENTE',
+        cuentaHabilitada: true,
+        porcentajePropina: 20,
+        montoPropina: 3600,
+        pago: { medio: 'DEBITO', operacion: '1234567890', total: 21600, pagadoEn: new Date().toISOString() },
+      });
+      await service.confirmarPago('ped-cuenta');
+
+      expect(service.porId('ped-cuenta')?.estadoGlobal).toBe('CERRADO');
+      expect(service.activoDe(facundoAranaConUuid)).toBeUndefined();
+      expect(service.ultimoDe(facundoAranaConUuid)?.estadoGlobal).toBe('CERRADO');
+      expect(mockNotificaciones.enviarPorRol.mock.calls.map((c) => c[0])).toEqual(['DUENO', 'SUPERVISOR']);
+      expect(mockNotificaciones.enviarPorRol.mock.calls[0][2]).toContain('$ 21.600');
+      expect(mockNotificaciones.enviar).toHaveBeenCalledWith(['uid-cliente-reg'], '🌸 ¡Gracias por tu visita!', expect.any(String));
+    });
+
+    it('no se confirma un pago que no se hizo', async () => {
+      cargar({ estadoGlobal: 'CUENTA_SOLICITADA', cuentaHabilitada: true });
+      await expect(service.confirmarPago('ped-cuenta')).rejects.toThrow('no tiene un pago');
+    });
   });
 });

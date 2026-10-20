@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { UI } from '../../ui';
-import { Pedido } from '../../nucleo/modelos/modelos';
+import { MedioPago, Pedido } from '../../nucleo/modelos/modelos';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { PROPINAS, QrService } from '../../nucleo/servicios/qr.service';
@@ -8,17 +8,27 @@ import { AvisosService } from '../../nucleo/servicios/avisos.service';
 import { CargandoService } from '../../nucleo/servicios/cargando.service';
 import { ConfirmacionService } from '../../nucleo/servicios/confirmacion.service';
 
-type Paso = 'PROPINA' | 'DETALLE';
+/** Los medios de pago simulados, a la manera de Mercado Pago. */
+const MEDIOS: { valor: MedioPago; titulo: string; detalle: string; icono: string }[] = [
+  { valor: 'DINERO_EN_CUENTA', titulo: 'Dinero en cuenta', detalle: 'Se descuenta al instante', icono: 'account_balance_wallet' },
+  { valor: 'DEBITO', titulo: 'Tarjeta de débito', detalle: 'Visa •••• 4821', icono: 'credit_card' },
+  { valor: 'CREDITO', titulo: 'Tarjeta de crédito', detalle: 'Mastercard •••• 1903 · 1 cuota sin interés', icono: 'credit_score' },
+];
+
+type Paso = 'PROPINA' | 'DETALLE' | 'MEDIO';
 
 /**
- * Punto 21 · la cuenta, de la propina al detalle, como el cobro de Mercado Pago.
+ * Punto 21 · la cuenta, de la propina al comprobante, como el cobro de Mercado Pago.
  *
  *  1. Propina: se escanea el código de la mesa. Sin propina no hay cuenta.
  *  2. Detalle: lo pedido con sus precios, el descuento del juego, la propina y
  *     el total, grande y claro.
+ *  3. Medio de pago: dinero en cuenta, débito o crédito (simulados).
+ *  4. Comprobante: el pago hecho, a la espera de que el mozo lo confirme.
  *
- * El paso sale del pedido —si ya tiene propina— más lo que el comensal elija
- * adelante o atrás, así al reabrir la aplicación vuelve donde estaba.
+ * El paso sale del pedido —si ya tiene propina, si ya pagó— más lo que el
+ * comensal elija adelante o atrás, así al reabrir la aplicación vuelve donde
+ * estaba.
  */
 @Component({
   selector: 'lm-cliente-cuenta',
@@ -26,82 +36,134 @@ type Paso = 'PROPINA' | 'DETALLE';
   imports: [...UI],
   template: `
     <lm-titulo class="cta__titulo">
-      Tu cuenta
+      {{ pedido().estadoGlobal === 'PAGO_PENDIENTE' ? 'Pago enviado' : 'Tu cuenta' }}
     </lm-titulo>
 
-    <div class="cta">
-      @switch (paso()) {
-        @case ('PROPINA') {
-          <!-- 1 · Propina -->
-          <div class="lm-card propina">
-            <b class="propina__titulo">Dejá tu propina</b>
-            <ul class="propina__niveles">
-              @for (nivel of propinas; track nivel.porcentaje; let i = $index) {
-                <li [attr.data-nivel]="nivel.porcentaje" [class.on]="nivel.porcentaje === pedido().porcentajePropina">
-                  <lm-icono [nombre]="caritas[i]" [tamano]="22" />
-                  <span>{{ nivel.rotulo }}</span><b>{{ nivel.porcentaje }} %</b>
-                </li>
-              }
-            </ul>
+    @if (pedido().estadoGlobal === 'PAGO_PENDIENTE' && pedido().pago; as pago) {
+      <!-- 4 · Comprobante -->
+      <div class="cta">
+        <div class="lm-card comprobante">
+          <span class="comprobante__sello"><lm-icono nombre="check" [tamano]="44" color="#FFFFFF" /></span>
+          <span class="comprobante__titulo">¡Listo! Pagaste</span>
+          <b class="comprobante__monto">{{ pago.total | pesos }}</b>
+          <span class="comprobante__a">a SakurApp · Mesa {{ pedido().mesaNumero }}</span>
 
-            <!-- El botón es el código: debajo de los niveles, el ícono del QR y qué hacer. -->
-            <button type="button" class="propina__escanear" (click)="escanear()">
-              <span class="propina__icono"><lm-icono nombre="qr_code_scanner" [tamano]="38" color="#FFFFFF" /></span>
-              <span class="propina__leyenda">Escaneá el QR</span>
-            </button>
-          </div>
-          <!-- Seguir a la cuenta: recién con la propina fijada por el código. -->
-          <div class="cta__pie">
-            <lm-boton variante="success" icono="arrow_forward" [deshabilitado]="!tienePropina()" (presionar)="ir('DETALLE')">
-              Siguiente
-            </lm-boton>
-          </div>
-        }
+          <dl class="comprobante__datos">
+            <div><dt>Medio de pago</dt><dd>{{ rotuloMedio(pago.medio) }}</dd></div>
+            <div><dt>Operación</dt><dd>#{{ pago.operacion }}</dd></div>
+            <div><dt>Fecha</dt><dd>{{ pago.pagadoEn | fechaHora }}</dd></div>
+          </dl>
+        </div>
 
-        @case ('DETALLE') {
-          <!-- 2 · Detalle de la cuenta -->
-          <div class="lm-card total">
-            <span>Total a pagar</span>
-            <b>{{ total() | pesos }}</b>
-          </div>
+        <div class="lm-card esperando">
+          <lm-icono nombre="hourglass_top" [tamano]="22" color="var(--action-primary)" />
+          <span>Esperando que el mozo confirme el pago</span>
+        </div>
+      </div>
+    } @else {
+      <div class="cta">
+        @switch (paso()) {
+          @case ('PROPINA') {
+            <!-- 1 · Propina -->
+            <div class="lm-card propina">
+              <b class="propina__titulo">Dejá tu propina</b>
+              <ul class="propina__niveles">
+                @for (nivel of propinas; track nivel.porcentaje; let i = $index) {
+                  <li [attr.data-nivel]="nivel.porcentaje" [class.on]="nivel.porcentaje === pedido().porcentajePropina">
+                    <lm-icono [nombre]="caritas[i]" [tamano]="22" />
+                    <span>{{ nivel.rotulo }}</span><b>{{ nivel.porcentaje }} %</b>
+                  </li>
+                }
+              </ul>
 
-          <div class="lm-card detalle">
-            <ul class="detalle__items">
-              @for (item of pedido().items; track item.id) {
-                <li>
-                  <b class="detalle__nombre">{{ item.cantidad }} × {{ item.productoNombre }}</b>
-                  <span class="detalle__linea">
-                    <small>{{ item.precioUnitario | pesos }} c/u</small>
-                    <span class="detalle__importe">{{ item.subtotal | pesos }}</span>
-                  </span>
-                </li>
-              }
-            </ul>
-
-            <div class="detalle__resumen">
-              <div><span>Subtotal</span><span>{{ pedido().totalBruto | pesos }}</span></div>
-              @if (pedido().montoDescuentoJuego > 0) {
-                <div class="detalle__descuento">
-                  <span>Descuento ({{ pedido().descuentoJuego }} %)</span>
-                  <span>− {{ pedido().montoDescuentoJuego | pesos }}</span>
-                </div>
-              }
-              <div>
-                <span>Propina ({{ pedido().porcentajePropina }} %)</span>
-                <span>+ {{ pedido().montoPropina ?? 0 | pesos }}</span>
-              </div>
-              <div class="detalle__total"><span>TOTAL</span><span>{{ total() | pesos }}</span></div>
+              <!-- El botón es el código: debajo de los niveles, el ícono del QR y qué hacer. -->
+              <button type="button" class="propina__escanear" (click)="escanear()">
+                <span class="propina__icono"><lm-icono nombre="qr_code_scanner" [tamano]="38" color="#FFFFFF" /></span>
+                <span class="propina__leyenda">Escaneá el QR</span>
+              </button>
             </div>
-          </div>
+            <!-- Seguir a la cuenta: recién con la propina fijada por el código. -->
+            <div class="cta__pie">
+              <lm-boton variante="success" icono="arrow_forward" [deshabilitado]="!tienePropina()" (presionar)="ir('DETALLE')">
+                Siguiente
+              </lm-boton>
+            </div>
+          }
 
-          <div class="cta__pie">
-            <button type="button" class="cta__atras" (click)="ir('PROPINA')">
-              <lm-icono nombre="arrow_back" [tamano]="18" /> Anterior
-            </button>
-          </div>
+          @case ('DETALLE') {
+            <!-- 2 · Detalle de la cuenta -->
+            <div class="lm-card total">
+              <span>Total a pagar</span>
+              <b>{{ total() | pesos }}</b>
+            </div>
+
+            <div class="lm-card detalle">
+              <ul class="detalle__items">
+                @for (item of pedido().items; track item.id) {
+                  <li>
+                    <b class="detalle__nombre">{{ item.cantidad }} × {{ item.productoNombre }}</b>
+                    <span class="detalle__linea">
+                      <small>{{ item.precioUnitario | pesos }} c/u</small>
+                      <span class="detalle__importe">{{ item.subtotal | pesos }}</span>
+                    </span>
+                  </li>
+                }
+              </ul>
+
+              <div class="detalle__resumen">
+                <div><span>Subtotal</span><span>{{ pedido().totalBruto | pesos }}</span></div>
+                @if (pedido().montoDescuentoJuego > 0) {
+                  <div class="detalle__descuento">
+                    <span>Descuento ({{ pedido().descuentoJuego }} %)</span>
+                    <span>− {{ pedido().montoDescuentoJuego | pesos }}</span>
+                  </div>
+                }
+                <div>
+                  <span>Propina ({{ pedido().porcentajePropina }} %)</span>
+                  <span>+ {{ pedido().montoPropina ?? 0 | pesos }}</span>
+                </div>
+                <div class="detalle__total"><span>TOTAL</span><span>{{ total() | pesos }}</span></div>
+              </div>
+            </div>
+
+            <div class="cta__pie">
+              <button type="button" class="cta__atras" (click)="ir('PROPINA')">
+                <lm-icono nombre="arrow_back" [tamano]="18" /> Anterior
+              </button>
+              <lm-boton variante="success" icono="arrow_forward" (presionar)="ir('MEDIO')">Siguiente</lm-boton>
+            </div>
+          }
+
+          @case ('MEDIO') {
+            <!-- 3 · Medio de pago -->
+            <!-- La pregunta y los medios en una tarjeta clara, como la propina. -->
+            <div class="lm-card medios" role="radiogroup" aria-label="Medio de pago">
+              <b class="medios__pregunta">¿Cómo querés pagar?</b>
+              @for (m of medios; track m.valor) {
+                <button type="button" class="medio" role="radio" [class.on]="medio() === m.valor"
+                  [attr.aria-checked]="medio() === m.valor" (click)="medio.set(m.valor)">
+                  <span class="medio__icono"><lm-icono [nombre]="m.icono" [tamano]="26" /></span>
+                  <span class="medio__texto"><b>{{ m.titulo }}</b><small>{{ m.detalle }}</small></span>
+                  <span class="medio__punto"></span>
+                </button>
+              }
+            </div>
+            <div class="lm-card total total--chico">
+              <span>Vas a pagar</span>
+              <b>{{ total() | pesos }}</b>
+            </div>
+            <div class="cta__pie">
+              <button type="button" class="cta__atras" (click)="ir('DETALLE')">
+                <lm-icono nombre="arrow_back" [tamano]="18" /> Anterior
+              </button>
+              <lm-boton variante="success" icono="lock" [deshabilitado]="!medio()" (presionar)="pagar()">
+                Pagar
+              </lm-boton>
+            </div>
+          }
         }
-      }
-    </div>
+      </div>
+    }
   `,
   styles: [
     `
@@ -162,11 +224,13 @@ type Paso = 'PROPINA' | 'DETALLE';
       .total { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-4); }
       .total span { font: var(--type-body-small); font-weight: 700; color: var(--text-muted); }
       .total b { font: 900 clamp(34px, 11vw, 44px)/1.05 var(--font-numeric); color: var(--action-primary); }
+      .total--chico { flex-direction: row; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); }
+      .total--chico b { font-size: clamp(24px, 7vw, 28px); }
       /* En pantallas bajas el total grande pasa a un renglón: la lista de
          productos nunca baja de un renglón entero (70px, con el nombre en dos). */
       @media (max-height: 660px) {
-        .total { flex-direction: row; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); }
-        .total b { font-size: clamp(24px, 7vw, 28px); }
+        .total:not(.total--chico) { flex-direction: row; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); }
+        .total:not(.total--chico) b { font-size: clamp(24px, 7vw, 28px); }
       }
 
       /* 2 · Detalle: los productos se desplazan adentro; el resumen queda fijo abajo. */
@@ -207,6 +271,39 @@ type Paso = 'PROPINA' | 'DETALLE';
       .detalle__descuento span:first-child { display: inline-flex; align-items: center; gap: 4px; }
       .detalle__total { padding-top: 8px; border-top: 1.5px solid var(--border-divider); }
       .detalle__total span { font: 900 clamp(20px, 6vw, 24px)/1.1 var(--font-numeric) !important; color: var(--action-primary); }
+
+      /* 3 · Medios de pago */
+      .medios {
+        flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; justify-content: center;
+        gap: var(--space-3); padding: var(--space-5) var(--space-4);
+      }
+      .medios__pregunta { font: var(--type-section); color: var(--text-title); text-align: center; margin-bottom: var(--space-2); }
+      /* Cada medio, en el fucsia del código de la propina; el elegido se anilla
+         en blanco con el contorno fucsia y lleva el punto lleno. */
+      .medio {
+        display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); text-align: left;
+        border: none; border-radius: var(--radius-card, 18px); cursor: pointer; width: 100%;
+        background: var(--action-primary); color: #FFFFFF; box-shadow: 0 4px 12px rgba(199, 38, 87, .3);
+      }
+      .medio__icono { flex: 0 0 auto; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(255, 255, 255, .18); color: #FFFFFF; }
+      .medio__texto { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+      .medio__texto b { font: var(--type-card-title); color: #FFFFFF; }
+      .medio__texto small { font: var(--type-caption); color: #FFFFFF; }
+      .medio__punto { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #FFFFFF; }
+      .medio.on { box-shadow: inset 0 0 0 3px #FFFFFF, 0 0 0 2.5px var(--action-primary), 0 4px 12px rgba(199, 38, 87, .3); }
+      .medio.on .medio__punto { background: radial-gradient(#FFFFFF 45%, transparent 50%); }
+
+      /* 4 · Comprobante */
+      .comprobante { flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: var(--space-5) var(--space-4); text-align: center; }
+      .comprobante__sello { width: 84px; height: 84px; border-radius: 50%; display: grid; place-items: center; background: var(--state-success); box-shadow: 0 6px 16px rgba(27, 122, 76, .35); margin-bottom: var(--space-2); }
+      .comprobante__titulo { font: var(--type-section); color: var(--text-title); }
+      .comprobante__monto { font: 900 clamp(36px, 11vw, 46px)/1.05 var(--font-numeric); color: var(--text-title); }
+      .comprobante__a { font: var(--type-body-small); color: var(--text-muted); }
+      .comprobante__datos { width: 100%; margin: var(--space-4) 0 0; display: grid; gap: 8px; }
+      .comprobante__datos div { display: flex; justify-content: space-between; gap: var(--space-3); padding: 10px 14px; border-radius: 14px; background: var(--surface-sunken); }
+      .comprobante__datos dt { font: var(--type-body-small); color: var(--text-muted); }
+      .comprobante__datos dd { margin: 0; font: var(--type-body-small); font-weight: 800; color: var(--text-title); text-align: right; }
+      .esperando { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; gap: 8px; padding: var(--space-4); font: var(--type-body); font-weight: 700; color: var(--text-title); text-align: center; }
     `,
   ],
 })
@@ -229,9 +326,11 @@ export class ClienteCuentaComponent {
     'sentiment_dissatisfied',
     'sentiment_very_dissatisfied',
   ];
+  protected readonly medios = MEDIOS;
 
   /** A dónde fue el comensal con los botones de adelante y atrás. */
   private readonly elegido = signal<Paso | null>(null);
+  protected readonly medio = signal<MedioPago | null>(null);
 
   protected readonly tienePropina = computed(() => {
     const pct = this.pedido().porcentajePropina;
@@ -244,6 +343,10 @@ export class ClienteCuentaComponent {
   protected readonly total = computed(() => this.pedidos.totalAPagar(this.pedido()));
   protected ir(paso: Paso): void {
     this.elegido.set(paso);
+  }
+
+  protected rotuloMedio(medio: MedioPago): string {
+    return MEDIOS.find((m) => m.valor === medio)?.titulo ?? medio;
   }
 
   /** Lee el código de propina de la mesa: es lo único que fija el porcentaje. */
@@ -289,5 +392,31 @@ export class ClienteCuentaComponent {
       return;
     }
     this.elegido.set('DETALLE');
+  }
+
+  /** El pago simulado: pasa por el modal y queda esperando al mozo. */
+  protected async pagar(): Promise<void> {
+    const medio = this.medio();
+    const p = this.pedido();
+    if (!medio) return;
+
+    const seguro = await this.confirmacion.pedir({
+      titulo: `¿Pagás ${'$ ' + this.total().toLocaleString('es-AR')}?`,
+      mensaje: '',
+      confirmar: 'Pagar',
+      tono: 'exito',
+      icono: 'lock',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${p.mesaNumero}` },
+        { rotulo: 'Medio de pago', valor: this.rotuloMedio(medio) },
+      ],
+    });
+    if (!seguro) return;
+
+    try {
+      await this.cargando.conEsperaMinima('Procesando el pago…', () => this.pedidos.pagar(p.id, medio));
+    } catch (err) {
+      this.avisos.error('No se pudo hacer el pago', err instanceof Error ? err.message : 'Probá de nuevo.');
+    }
   }
 }

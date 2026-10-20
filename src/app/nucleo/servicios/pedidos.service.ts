@@ -28,7 +28,7 @@ import {
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { EstadoPedido, EstadoSector, MarcaRechazo, Sector, sectorDe } from '../modelos/enums';
-import { Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
+import { MedioPago, Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
 import {
   alcanceDe,
   itemsACambiar,
@@ -627,6 +627,18 @@ export class PedidosService {
   }
 
 
+  /**
+   * El último pedido del comensal, también si ya está cerrado: es lo que dice
+   * que la visita terminó y que hay que soltarlo de la mesa.
+   */
+  ultimoDe(cliente: Usuario | null | undefined): Pedido | undefined {
+    if (!cliente) return undefined;
+    const ids = new Set([cliente.id, cliente.uid].filter(Boolean));
+    return this.todos()
+      .filter((p) => ids.has(p.clienteId) || ids.has(p.clienteUid))
+      .sort((a, b) => b.timestampCreacion.localeCompare(a.timestampCreacion))[0];
+  }
+
   /** Lo que se paga: lo pedido, con el descuento del juego, más la propina. */
   totalAPagar(pedido: Pedido): number {
     return pedido.totalFinal + (pedido.montoPropina ?? 0);
@@ -669,6 +681,69 @@ export class PedidosService {
       porcentajePropina: porcentaje,
       montoPropina: Math.round((pedido.totalFinal * porcentaje) / 100),
     });
+  }
+
+  /**
+   * Punto 21 · el pago simulado. El pedido queda esperando que el mozo lo
+   * confirme, y se enteran el mozo, el dueño y el supervisor.
+   */
+  async pagar(pedidoId: string, medio: MedioPago): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA' || !pedido.cuentaHabilitada) {
+      throw new Error('El mozo todavía no habilitó la cuenta.');
+    }
+    if (pedido.porcentajePropina === null || pedido.porcentajePropina === undefined) {
+      throw new Error('Primero escaneá el código de propina.');
+    }
+
+    const total = this.totalAPagar(pedido);
+    await this.aplicar(pedidoId, {
+      pago: {
+        medio,
+        operacion: String(Math.floor(1e9 + Math.random() * 9e9)),
+        total,
+        pagadoEn: new Date().toISOString(),
+      },
+    });
+    await this.actualizarEstadoGlobal(pedidoId, 'PAGO_PENDIENTE');
+
+    const importe = `$ ${total.toLocaleString('es-AR')}`;
+    for (const rol of ['MOZO', 'DUENO', 'SUPERVISOR'] as const) {
+      await this.notificaciones.enviarPorRol(
+        rol,
+        `💳 Mesa ${pedido.mesaNumero} pagó ${importe}`,
+        rol === 'MOZO' ? 'Confirmá el pago para liberar la mesa.' : 'Falta que el mozo confirme el pago.',
+        rol === 'MOZO' ? ['/mozo/pedidos'] : undefined,
+      );
+    }
+  }
+
+  /**
+   * Punto 22 · el mozo confirma el pago y el pedido se cierra. Se enteran el
+   * dueño, el supervisor y el comensal. Liberar la mesa y cerrar la visita en
+   * la fila lo hace la pantalla del mozo, que tiene a mano esos servicios.
+   */
+  async confirmarPago(pedidoId: string): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'PAGO_PENDIENTE') throw new Error('Ese pedido no tiene un pago para confirmar.');
+
+    await this.actualizarEstadoGlobal(pedidoId, 'CERRADO');
+
+    const importe = `$ ${(pedido.pago?.total ?? this.totalAPagar(pedido)).toLocaleString('es-AR')}`;
+    for (const rol of ['DUENO', 'SUPERVISOR'] as const) {
+      await this.notificaciones.enviarPorRol(
+        rol,
+        `✅ Pago confirmado · Mesa ${pedido.mesaNumero}`,
+        `Se cobraron ${importe} y la mesa ${pedido.mesaNumero} quedó libre.`,
+      );
+    }
+    await this.notificaciones.enviar(
+      [pedido.clienteUid || pedido.clienteId],
+      '🌸 ¡Gracias por tu visita!',
+      'El mozo confirmó tu pago. Te esperamos pronto.',
+    );
   }
 
   /** Guarda los cambios del pedido en Firestore y en lo que ya tiene cargado la aplicación. */

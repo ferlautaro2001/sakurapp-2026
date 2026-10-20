@@ -5,6 +5,7 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
+import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { AccionPedido } from '../../ui';
 
 /**
@@ -15,6 +16,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
   protected readonly usuarios = inject(UsuariosService);
   protected readonly notificaciones = inject(NotificacionesService);
+  private readonly espera = inject(EsperaService);
 
   /** El paso que le toca al mozo con el pedido, o ninguno si está en manos de otro. */
   protected accionDe(pedido: Pedido): AccionPedido | null {
@@ -22,6 +24,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
     if (pedido.estadoGlobal === 'CUENTA_SOLICITADA' && !pedido.cuentaHabilitada) {
       return { rotulo: 'Habilitar cuenta', icono: 'receipt_long' };
     }
+    if (pedido.estadoGlobal === 'PAGO_PENDIENTE') return { rotulo: 'Confirmar pago', icono: 'price_check' };
     return null;
   }
 
@@ -29,6 +32,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   protected accionar(pedido: Pedido): Promise<boolean> {
     if (pedido.estadoGlobal === 'LISTO') return this.entregarPedido(pedido);
     if (pedido.estadoGlobal === 'CUENTA_SOLICITADA') return this.habilitarCuentaPedido(pedido);
+    if (pedido.estadoGlobal === 'PAGO_PENDIENTE') return this.confirmarPagoPedido(pedido);
     return Promise.resolve(false);
   }
 
@@ -131,6 +135,40 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
 
     await this.cargando.conEsperaMinima('Habilitando la cuenta…', () => this.pedidos.habilitarCuenta(pedido.id));
     this.avisos.exito(`Cuenta de la mesa ${this.numeroMesa(pedido)} habilitada`, 'El comensal ya puede pagar.');
+    return true;
+  }
+
+  /**
+   * Punto 22 · el mozo confirma el pago: el pedido se cierra, la mesa queda
+   * libre y la visita del comensal termina, así para volver a sentarse tiene
+   * que anotarse de nuevo en la puerta.
+   */
+  protected async confirmarPagoPedido(pedido: Pedido): Promise<boolean> {
+    const pago = pedido.pago;
+    const seguro = await this.preguntar({
+      titulo: '¿Confirmás el pago?',
+      mensaje: 'Se cierra la cuenta y la mesa queda libre.',
+      confirmar: 'Confirmar pago',
+      tono: 'exito',
+      icono: 'price_check',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${this.numeroMesa(pedido)}` },
+        { rotulo: 'Cliente', valor: this.comensal(pedido) },
+        { rotulo: 'Pagó', valor: `$ ${(pago?.total ?? this.pedidos.totalAPagar(pedido)).toLocaleString('es-AR')}` },
+        ...(pago ? [{ rotulo: 'Operación', valor: `#${pago.operacion}` }] : []),
+      ],
+    });
+    if (!seguro) return false;
+
+    // El pedido se cierra al final: cuando el teléfono del comensal se entera
+    // del cierre, la fila ya lo soltó y la mesa ya está libre.
+    await this.cargando.conEsperaMinima('Confirmando el pago…', async () => {
+      await this.espera.iniciar();
+      await this.espera.cerrarVisita(pedido.clienteId, pedido.clienteUid);
+      await this.mesas.liberar(pedido.mesaId);
+      await this.pedidos.confirmarPago(pedido.id);
+    });
+    this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} libre`, 'El pago quedó confirmado.');
     return true;
   }
 }

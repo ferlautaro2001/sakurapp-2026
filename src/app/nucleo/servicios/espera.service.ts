@@ -262,6 +262,19 @@ export class EsperaService {
     );
   }
 
+  /**
+   * Punto 22 · la visita terminó (pagó y el mozo lo confirmó): su turno en la
+   * fila se cierra. Mientras siguiera finalizado contaría como activo y el
+   * comensal no podría volver a anotarse en la puerta.
+   */
+  async cerrarVisita(clienteId: string, clienteUid?: string): Promise<void> {
+    const ids = new Set([clienteId, clienteUid].filter(Boolean));
+    const abiertas = this.lista().filter(
+      (e) => (ids.has(e.clienteId) || ids.has(e.clienteUid)) && e.estado !== 'CANCELADO',
+    );
+    for (const entrada of abiertas) await this.quitar(entrada.id);
+  }
+
   /** El metre remueve al comensal y conserva el turno con estado CANCELADO. */
   async quitar(esperaId: string): Promise<void> {
     if (esUuid(esperaId)) {

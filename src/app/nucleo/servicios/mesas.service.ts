@@ -243,6 +243,15 @@ export class MesasService {
     }
   }
 
+  /**
+   * Punto 22 · al confirmarse el pago la mesa queda libre: vacía, sin el
+   * comensal y sin la reserva de la visita que terminó.
+   */
+  async liberar(id: string): Promise<void> {
+    await this.cambiarEstado(id, 'VACIA');
+    await this.firestore.liberarMesa(id);
+  }
+
   async desactivar(id: string): Promise<void> {
     await this.editar(id, { estado: 'INACTIVA' });
   }

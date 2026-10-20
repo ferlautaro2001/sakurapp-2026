@@ -222,15 +222,18 @@ export class MesasService {
         qrCodeUrl: mesa.qrCodeUrl,
       }));
 
-      // Fusión no destructiva: combinamos por número de mesa para preservar
-      // mesas recién creadas o sincronizadas por Firestore en tiempo real.
+      // Cloud SQL sólo completa: suma las mesas que no se conocían y los datos
+      // que falten, pero nunca pisa lo que ya llegó de Firestore, que es el
+      // estado en vivo. Si pisara, una mesa ocupada cuyo estado no llegó a
+      // Cloud SQL volvía a figurar vacía (la bolita en verde), y al editarla
+      // después ese estado viejo se guardaba en Firestore.
       const mapaPorNumero = new Map<number, Mesa>();
       for (const m of this.almacen.mesas()) {
         mapaPorNumero.set(m.numero, m);
       }
       for (const m of mesasDc) {
         const previo = mapaPorNumero.get(m.numero);
-        mapaPorNumero.set(m.numero, { ...previo, ...m });
+        mapaPorNumero.set(m.numero, previo ? { ...m, ...previo } : m);
       }
 
       const combinadas = Array.from(mapaPorNumero.values()).sort((a, b) => a.numero - b.numero);

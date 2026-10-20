@@ -599,6 +599,15 @@ export class PedidosService {
       ...actuales.filter((p) => p.id !== pedidoId),
     ]);
 
+    if (nuevoEstado === 'ENTREGADO') {
+      await this.notificaciones.enviar(
+        [pedido.clienteUid || pedido.clienteId],
+        `🌸 Tu pedido llegó a la mesa ${pedido.mesaNumero}`,
+        'Cuando lo tengas, confirmá la recepción desde Mi pedido.',
+        ['/cliente/pedido'],
+      );
+    }
+
     if (nuevoEstado === 'CUENTA_SOLICITADA') {
       await this.notificaciones.enviarPorRol(
         'MOZO',

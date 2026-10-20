@@ -5,6 +5,7 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
+import { AccionPedido } from '../../ui';
 
 /**
  * Base de las pantallas del mozo que operan sobre comandas (listado y detalle).
@@ -14,6 +15,18 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
   protected readonly usuarios = inject(UsuariosService);
   protected readonly notificaciones = inject(NotificacionesService);
+
+  /** El paso que le toca al mozo con el pedido, o ninguno si está en manos de otro. */
+  protected accionDe(pedido: Pedido): AccionPedido | null {
+    if (pedido.estadoGlobal === 'LISTO') return { rotulo: 'Entregar', icono: 'room_service' };
+    return null;
+  }
+
+  /** Hace el paso que le toca; devuelve si se hizo. */
+  protected accionar(pedido: Pedido): Promise<boolean> {
+    if (pedido.estadoGlobal === 'LISTO') return this.entregarPedido(pedido);
+    return Promise.resolve(false);
+  }
 
   private cuantos(cantidad: number): string {
     if (!cantidad) return 'nada';
@@ -64,6 +77,35 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
     );
 
     this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} confirmada`);
+    return true;
+  }
+
+  /**
+   * Punto 19 · el mozo lleva el pedido completo a la mesa. Sólo se puede con
+   * todos los sectores listos; después, el comensal confirma que lo recibió.
+   */
+  protected async entregarPedido(pedido: Pedido): Promise<boolean> {
+    if (pedido.estadoGlobal !== 'LISTO') return false;
+
+    const seguro = await this.preguntar({
+      titulo: '¿Entregaste el pedido?',
+      mensaje: '',
+      confirmar: 'Entregar',
+      tono: 'exito',
+      icono: 'room_service',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${this.numeroMesa(pedido)}` },
+        { rotulo: 'Cliente', valor: this.comensal(pedido) },
+        { rotulo: 'Productos', valor: this.cuantos(this.unidades(pedido)) },
+      ],
+    });
+    if (!seguro) return false;
+
+    await this.cargando.conEsperaMinima('Marcando la entrega…', () =>
+      this.pedidos.actualizarEstadoGlobal(pedido.id, 'ENTREGADO'),
+    );
+
+    this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} entregada`, 'Falta que el comensal confirme la recepción.');
     return true;
   }
 }

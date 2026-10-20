@@ -56,7 +56,13 @@ import { Unsubscribe } from 'firebase/firestore';
             </div>
           }
 
-          @if (confirmado()) {
+          @if (p.estadoGlobal === 'ENTREGADO') {
+            <lm-boton class="momento" variante="success" icono="check_circle" (presionar)="recibir(p)">
+              Confirmar recepción
+            </lm-boton>
+          } @else if (p.estadoGlobal === 'RECIBIDO') {
+            <lm-boton class="momento" icono="receipt_long" (presionar)="pedirCuenta(p)">Pedir la cuenta</lm-boton>
+          } @else if (confirmado()) {
             <div class="lm-grid2">
               @if (p.estadoCocina !== 'NO_APLICA') {
                 <div class="lm-card sector">
@@ -179,14 +185,6 @@ import { Unsubscribe } from 'firebase/firestore';
                 (presionar)="enviar()"
               >
                 {{ p.estadoGlobal === 'RECHAZADO' ? 'Reenviar' : 'Pedir' }}
-              </lm-boton>
-            } @else if (p.estadoGlobal === 'LISTO') {
-              <lm-boton icono="check_circle" (presionar)="recibir(p)">
-                Confirmar recepción del pedido
-              </lm-boton>
-            } @else if (p.estadoGlobal === 'RECIBIDO') {
-              <lm-boton icono="receipt" (presionar)="pedirCuenta(p)">
-                Pedir la cuenta al mozo
               </lm-boton>
             }
           </lm-barra-pedido>
@@ -317,6 +315,7 @@ import { Unsubscribe } from 'firebase/firestore';
          lista de abajo se queda con el alto para mostrar tres renglones. */
       .sector { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px var(--space-2); text-align: center; }
       .sector__titulo { display: inline-flex; align-items: center; gap: 5px; }
+      .momento { flex: 0 0 auto; }
       .espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-5) var(--space-4); text-align: center; }
       .espera__reloj {
         width: clamp(44px, 13.5vw, 54px); height: clamp(44px, 13.5vw, 54px); border-radius: 50%; display: grid; place-items: center;
@@ -476,7 +475,8 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     if (estado === 'LISTO') return 'Tu pedido está listo';
     if (estado === 'EN_PREPARACION') return 'Lo están preparando';
     if (estado === 'CONFIRMADO') return 'Pedido confirmado';
-    if (estado === 'RECIBIDO' || estado === 'ENTREGADO') return 'Pedido entregado';
+    if (estado === 'ENTREGADO') return 'Pedido entregado';
+    if (estado === 'RECIBIDO') return 'Recepción confirmada';
     if (estado === 'CUENTA_SOLICITADA') return 'Cuenta solicitada';
     if (estado === 'PAGO_PENDIENTE') return 'Pago pendiente';
     if (estado === 'CERRADO') return 'Pedido cerrado';
@@ -630,11 +630,15 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
 
   protected async recibir(p: Pedido): Promise<void> {
     const seguro = await this.preguntar({
-      titulo: '¿Confirmás la entrega?',
-      mensaje: '¿El mozo ya te acercó el pedido completo a la mesa?',
+      titulo: '¿Recibiste tu pedido?',
+      mensaje: 'Confirmalo cuando tengas en la mesa todo lo que pediste.',
       confirmar: 'Confirmar recepción',
-      tono: 'primario',
+      tono: 'exito',
       icono: 'check_circle',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${p.mesaNumero}` },
+        { rotulo: 'Productos', valor: `${this.unidadesPedido(p)}` },
+      ],
     });
     if (!seguro) return;
 

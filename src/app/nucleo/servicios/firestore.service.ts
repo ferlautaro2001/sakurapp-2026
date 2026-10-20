@@ -606,6 +606,15 @@ export class FirestoreService {
     );
   }
 
+  /** Escribe sólo los campos indicados del pedido: la cuenta, la propina, el pago. */
+  async actualizarPedido(pedidoId: string, cambios: Partial<Pedido>): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedidoId),
+      { ...cambios, actualizadoEn: new Date().toISOString() },
+      { merge: true },
+    );
+  }
+
   /** Actualiza el estado global de un pedido en Firestore. */
   async actualizarEstadoPedido(pedidoId: string, nuevoEstado: EstadoPedido): Promise<void> {
     await setDoc(
@@ -697,6 +706,12 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
     juegoIntentado: datos['juegoIntentado'] === true,
     timestampCreacion: String(datos['timestampCreacion'] ?? new Date(0).toISOString()),
     items,
+    cuentaHabilitada: datos['cuentaHabilitada'] === true,
+    porcentajePropina:
+      datos['porcentajePropina'] === null || datos['porcentajePropina'] === undefined
+        ? null
+        : Number(datos['porcentajePropina']),
+    montoPropina: Number(datos['montoPropina']) || 0,
   };
 }
 

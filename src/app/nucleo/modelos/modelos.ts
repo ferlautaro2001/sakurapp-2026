@@ -203,6 +203,11 @@ export interface Pedido {
   juegoIntentado: boolean;
   timestampCreacion: string;
   items: PedidoItem[];
+  /** Punto 21 · el mozo habilitó la cuenta: recién ahí se deja propina y se paga. */
+  cuentaHabilitada?: boolean;
+  /** El porcentaje que fijó el QR de propina; nulo mientras no se escaneó. */
+  porcentajePropina?: number | null;
+  montoPropina?: number;
 }
 
 /** Mensaje de consulta o respuesta en la sala de chat de la mesa (US-6.2). */

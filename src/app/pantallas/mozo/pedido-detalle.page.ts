@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
-import { ROTULO_ESTADO_PEDIDO, Sector } from '../../nucleo/modelos/enums';
+import { EstadoSector, ROTULO_ESTADO_PEDIDO, ROTULO_ESTADO_SECTOR, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
 
 /** Alto de un renglón con nombre de hasta dos líneas y del espacio entre piezas. */
@@ -29,12 +29,21 @@ const ESPACIO = 8;
               <b>Mesa {{ mesa() }}</b>
               <small>Pedido de {{ comensalNombre() }}</small>
             </div>
-            <lm-chip class="mesa__estado" [estado]="chip()">
-              @if (confirmado()) {
-                <lm-icono [nombre]="iconoSector()" [tamano]="18" />
-              }
-              {{ rotuloEstado() }}
-            </lm-chip>
+            <!-- Ya derivado, el mozo sigue cada parte por separado: un badge por
+                 sector que interviene, con su ícono, uno abajo del otro. Antes de
+                 eso, el estado del pedido entero. -->
+            @if (estadosSector().length) {
+              <div class="mesa__estados">
+                @for (s of estadosSector(); track s.sector) {
+                  <lm-chip class="mesa__estado" [estado]="s.chip">
+                    <lm-icono [nombre]="s.icono" [tamano]="16" />
+                    {{ s.rotulo }}
+                  </lm-chip>
+                }
+              </div>
+            } @else {
+              <lm-chip class="mesa__estado" [estado]="chip()">{{ rotuloEstado() }}</lm-chip>
+            }
           </div>
 
           <!-- Sólo cuando el pedido tiene las dos partes: cada botón lleva a la
@@ -102,6 +111,9 @@ const ESPACIO = 8;
       :host { display: flex; flex: 1; min-height: 0; }
       /* El estado del pedido, más grande y con el ícono del sector. */
       .mesa__estado { flex: 0 0 auto; }
+      .mesa__estados { flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+      /* Apilados, los dos miden lo mismo y el ícono de cada sector queda alineado. */
+      .mesa__estados .mesa__estado ::ng-deep .lm-chip { width: 100%; justify-content: flex-start; }
       .mesa__estado ::ng-deep .lm-chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: clamp(12px, 3.2vw, 13.5px); padding: 5px clamp(8px, 2.2vw, 12px); box-sizing: border-box; white-space: nowrap; max-width: 100%; }
       /* Tarjetas y resumen con el aro de vidrio del botón de volver. Los botones
          de decisión (✕/✓) ya traen su propio borde estandarizado en el componente. */
@@ -115,13 +127,12 @@ const ESPACIO = 8;
           0 4px 10px rgba(94, 12, 44, .16) !important;
       }
       .mesa { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
-      .mesa__icono {
-        flex: 0 0 auto; width: var(--touch-min); min-height: var(--touch-min); border-radius: 14px;
-        display: grid; place-items: center; background: var(--surface-sunken);
-      }
+      /* Sólo la mesita, sin recuadro: el lugar queda para el nombre y los badges. */
+      .mesa__icono { flex: 0 0 auto; display: grid; place-items: center; }
       .mesa__datos { flex: 1 1 auto; min-width: 0; }
       .mesa__datos b { display: block; font: var(--type-section); color: var(--text-title); }
-      .mesa__datos small { display: block; font: var(--type-body-small); color: var(--text-muted); white-space: nowrap; }
+      /* El nombre se parte en dos renglones antes que meterse debajo del badge. */
+      .mesa__datos small { display: block; font: var(--type-body-small); color: var(--text-muted); overflow-wrap: anywhere; }
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
@@ -182,15 +193,23 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
 
   protected readonly pedido = computed(() => this.pedidos.porId(this.id()));
 
-  protected readonly confirmado = computed(() => {
-    const estado = this.pedido()?.estadoGlobal;
-    return (
-      estado === 'CONFIRMADO' ||
-      estado === 'EN_PREPARACION' ||
-      estado === 'LISTO' ||
-      estado === 'ENTREGADO' ||
-      estado === 'RECIBIDO'
-    );
+  /** Un badge por sector que interviene, mientras la comanda está en los sectores. */
+  protected readonly estadosSector = computed(() => {
+    const p = this.pedido();
+    if (!p || !['CONFIRMADO', 'EN_PREPARACION', 'LISTO'].includes(p.estadoGlobal)) return [];
+    const partes: { sector: Sector; icono: string; estado: EstadoSector }[] = [
+      { sector: 'COCINA', icono: 'skillet', estado: p.estadoCocina },
+      { sector: 'BAR', icono: 'local_bar', estado: p.estadoBar },
+    ];
+    return partes
+      .filter((x) => x.estado !== 'NO_APLICA')
+      .map((x) => ({
+        sector: x.sector,
+        icono: x.icono,
+        // En el badge, "Preparando": más corto que "En preparación" y deja lugar al nombre.
+        rotulo: x.estado === 'EN_PREPARACION' ? 'Preparando' : ROTULO_ESTADO_SECTOR[x.estado],
+        chip: x.estado === 'LISTO' ? 'aprobado' : x.estado === 'EN_PREPARACION' ? 'reservada' : 'pendiente',
+      }));
   });
 
   private itemsDe(sector: Sector): PedidoItem[] {
@@ -310,10 +329,6 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
     const sector = cercana?.dataset['sector'] as Sector | undefined;
     if (sector && sector !== this.sectorVisible()) this.sectorVisible.set(sector);
   }
-
-  protected readonly iconoSector = computed(() =>
-    this.sectoresConItems().some((s) => s.valor === 'COCINA') ? 'skillet' : 'local_bar',
-  );
 
   protected readonly rotuloEstado = computed(() => {
     const p = this.pedido();

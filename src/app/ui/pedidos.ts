@@ -9,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { IconoComponent, ChipComponent, DecisionComponent } from './basicos';
+import { IconoComponent, ChipComponent, DecisionComponent, BotonComponent } from './basicos';
 import { FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 import { Pedido, PedidoItem } from '../nucleo/modelos/modelos';
 import { MarcaRechazo, ROTULO_ESTADO_PEDIDO, ROTULO_MARCA_RECHAZO } from '../nucleo/modelos/enums';
@@ -598,6 +598,12 @@ export class RenglonPedidoComponent {
   }
 }
 
+/** El botón de la fila del pedido: lo que dice y su ícono. */
+export interface AccionPedido {
+  rotulo: string;
+  icono: string;
+}
+
 /**
  * Fila de comanda del mozo.
  */
@@ -605,7 +611,7 @@ export class RenglonPedidoComponent {
   selector: 'lm-fila-pedido',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '[class.fila-pedido--abierto]': 'abierto()' },
-  imports: [IconoComponent, ChipComponent, DecisionComponent, PesosPipe, HoraPipe],
+  imports: [IconoComponent, ChipComponent, DecisionComponent, BotonComponent, PesosPipe, HoraPipe],
   template: `
     <div class="pedido">
       <button type="button" class="pedido__cuerpo" (click)="presionar.emit()">
@@ -663,6 +669,12 @@ export class RenglonPedidoComponent {
           (rechazar)="rechazar.emit()"
           (aceptar)="aceptar.emit()"
         />
+      }
+
+      @if (accion(); as a) {
+        <lm-boton class="pedido__acciones" variante="success" [icono]="a.icono" (presionar)="accionar.emit()">
+          {{ a.rotulo }}
+        </lm-boton>
       }
     </div>
   `,
@@ -745,9 +757,15 @@ export class FilaPedidoComponent {
   readonly pedido = input.required<Pedido>();
   readonly numeroMesa = input.required<number | string>();
   readonly conAcciones = input(false, { transform: booleanAttribute });
+  /**
+   * El paso que le toca al mozo con este pedido, adentro de la tarjeta para no
+   * salir de la lista: entregarlo, habilitar la cuenta o confirmar el pago.
+   */
+  readonly accion = input<AccionPedido | null>(null);
   readonly presionar = output<void>();
   readonly aceptar = output<void>();
   readonly rechazar = output<void>();
+  readonly accionar = output<void>();
 
   protected cliente(): string {
     const p = this.pedido();
@@ -800,7 +818,7 @@ export class FilaPedidoComponent {
   protected chip(): string {
     const estado = this.pedido().estadoGlobal;
     if (estado === 'RECHAZADO') return 'rechazado';
-    if (estado === 'LISTO') return 'aprobado';
+    if (['LISTO', 'ENTREGADO', 'RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'].includes(estado)) return 'aprobado';
     return 'reservada';
   }
 }

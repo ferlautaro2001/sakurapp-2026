@@ -566,6 +566,67 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
         ['/mozo/pedidos'],
       );
     });
+
+    /** Un pedido de la mesa 3 en el estado que se pida, ya cargado en el servicio. */
+    function cargarPedido(estadoGlobal: Pedido['estadoGlobal']): void {
+      const pedidoMock: Pedido = {
+        id: 'ped-entrega',
+        mesaId: mesaMock.id,
+        mesaNumero: 3,
+        clienteId: facundoAranaConUuid.id,
+        clienteUid: facundoAranaConUuid.uid,
+        clienteNombre: 'Facundo Arana',
+        estadoGlobal,
+        estadoCocina: 'LISTO',
+        estadoBar: 'LISTO',
+        motivoRechazo: null,
+        rechazadoPorNombre: null,
+        alcanceRechazo: null,
+        observaciones: [],
+        tiempoEstimado: 25,
+        totalBruto: 20000,
+        descuentoJuego: 0,
+        montoDescuentoJuego: 0,
+        totalFinal: 20000,
+        confirmadoPorId: 'usr-mozo-1',
+        juegoIntentado: false,
+        timestampCreacion: new Date().toISOString(),
+        items: [],
+      };
+      let callbackPedidos!: (pedidos: Pedido[]) => void;
+      mockFirestore.escucharPedidos.mockImplementation((cb) => {
+        callbackPedidos = cb;
+        return () => undefined;
+      });
+      service.iniciar();
+      callbackPedidos([pedidoMock]);
+    }
+
+    it('al entregar, avisa al comensal de esa mesa y no a los mozos', async () => {
+      cargarPedido('LISTO');
+
+      await service.actualizarEstadoGlobal('ped-entrega', 'ENTREGADO');
+
+      expect(mockFirestore.actualizarEstadoPedido).toHaveBeenCalledWith('ped-entrega', 'ENTREGADO');
+      expect(service.porId('ped-entrega')?.estadoGlobal).toBe('ENTREGADO');
+      expect(mockNotificaciones.enviar).toHaveBeenCalledWith(
+        ['uid-cliente-reg'],
+        '🌸 Tu pedido llegó a la mesa 3',
+        expect.stringContaining('confirmá la recepción'),
+        ['/cliente/pedido'],
+      );
+      expect(mockNotificaciones.enviarPorRol).not.toHaveBeenCalled();
+    });
+
+    it('al confirmar la recepción, cambia el estado sin mandar avisos', async () => {
+      cargarPedido('ENTREGADO');
+
+      await service.actualizarEstadoGlobal('ped-entrega', 'RECIBIDO');
+
+      expect(service.porId('ped-entrega')?.estadoGlobal).toBe('RECIBIDO');
+      expect(mockNotificaciones.enviar).not.toHaveBeenCalled();
+      expect(mockNotificaciones.enviarPorRol).not.toHaveBeenCalled();
+    });
   });
 });
 

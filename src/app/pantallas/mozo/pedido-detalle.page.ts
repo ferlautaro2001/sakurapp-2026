@@ -95,7 +95,11 @@ const ESPACIO = 8;
           [decision]="p.estadoGlobal === 'PENDIENTE_CONFIRMACION'"
           (devolver)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
           (confirmar)="confirmar()"
-        />
+        >
+          @if (accionDe(p); as a) {
+            <lm-boton variante="success" [icono]="a.icono" (presionar)="hacer()">{{ a.rotulo }}</lm-boton>
+          }
+        </lm-barra-pedido>
       } @else {
         <div class="lm-body">
           <lm-vacio icono="receipt_long" titulo="No encontramos ese pedido">
@@ -338,7 +342,9 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
   protected readonly chip = computed(() => {
     const estado = this.pedido()?.estadoGlobal;
     if (estado === 'RECHAZADO') return 'rechazado';
-    if (estado === 'LISTO') return 'aprobado';
+    if (estado && ['LISTO', 'ENTREGADO', 'RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'].includes(estado)) {
+      return 'aprobado';
+    }
     return 'reservada';
   });
 
@@ -347,6 +353,11 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
     if (!p) return;
     const listo = await this.confirmarPedido(p);
     if (listo) this.volver();
+  }
+
+  protected async hacer(): Promise<void> {
+    const p = this.pedido();
+    if (p && (await this.accionar(p))) this.volver();
   }
 
   protected volver(): void {

@@ -3,10 +3,15 @@ import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
 import { Pedido } from '../../nucleo/modelos/modelos';
 
-type Bandeja = 'REVISAR' | 'EN_CURSO';
+type Bandeja = 'REVISAR' | 'EN_CURSO' | 'ENTREGADOS';
+
+/** En curso: confirmados y en camino a la mesa, hasta que el comensal confirme que los recibió. */
+const EN_CURSO = ['CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'];
+/** Entregados: sólo los que el comensal ya confirmó haber recibido. */
+const ENTREGADOS = ['RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'];
 
 /**
- * Listado de pedidos para el mozo, con pestañas "Para revisar" y "En curso".
+ * Listado de pedidos para el mozo, con pestañas "Para revisar", "En curso" y "Entregados".
  */
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -22,14 +27,16 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
         <lm-pestanas [opciones]="pestanas" [valor]="bandeja()" (cambiar)="bandeja.set($any($event))" />
 
         @if (visibles().length) {
-          <div class="pedidos__lista" [class.pedidos__lista--revisar]="bandeja() === 'REVISAR'">
+          <div class="pedidos__lista" [class.pedidos__lista--revisar]="conBotones()">
             @for (pedido of visibles(); track pedido.id) {
               <lm-fila-pedido
                 [pedido]="pedido"
                 [numeroMesa]="$any(numeroMesa(pedido))"
                 [conAcciones]="bandeja() === 'REVISAR'"
+                [accion]="accionDe(pedido)"
                 (presionar)="ir(['/mozo/pedidos', pedido.id])"
                 (aceptar)="confirmar(pedido)"
+                (accionar)="accionar(pedido)"
                 (rechazar)="ir(['/mozo/pedidos', pedido.id, 'rechazar'])"
               />
             }
@@ -84,6 +91,7 @@ export class MozoPedidosPage extends PaginaDeComandas {
   protected readonly pestanas = [
     { valor: 'REVISAR', rotulo: 'Para revisar' },
     { valor: 'EN_CURSO', rotulo: 'En curso' },
+    { valor: 'ENTREGADOS', rotulo: 'Entregados' },
   ];
 
   protected readonly visibles = computed<Pedido[]>(() => {
@@ -91,23 +99,30 @@ export class MozoPedidosPage extends PaginaDeComandas {
     if (this.bandeja() === 'REVISAR') {
       return todos.filter((p) => p.estadoGlobal === 'PENDIENTE_CONFIRMACION');
     }
-    return todos.filter((p) =>
-      ['CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO', 'RECIBIDO'].includes(p.estadoGlobal),
-    );
+    const estados = this.bandeja() === 'EN_CURSO' ? EN_CURSO : ENTREGADOS;
+    return todos.filter((p) => estados.includes(p.estadoGlobal));
   });
+
+  /** Las tarjetas con botones miden más: la lista las muestra de a menos. */
+  protected readonly conBotones = computed(
+    () => this.bandeja() === 'REVISAR' || this.visibles().some((p) => this.accionDe(p)),
+  );
 
 
   protected tituloVacio(): string {
-    return this.bandeja() === 'REVISAR' ? 'No hay pedidos para revisar' : 'No hay pedidos en curso';
+    if (this.bandeja() === 'REVISAR') return 'No hay pedidos para revisar';
+    return this.bandeja() === 'EN_CURSO' ? 'No hay pedidos en curso' : 'No hay pedidos entregados';
   }
 
   protected textoVacio(): string {
-    return this.bandeja() === 'REVISAR'
-      ? ''
-      : 'Los pedidos que confirmes van a quedar acá mientras la cocina y la barra los preparan.';
+    if (this.bandeja() === 'REVISAR') return '';
+    return this.bandeja() === 'EN_CURSO'
+      ? 'Los pedidos que confirmes van a quedar acá mientras la cocina y la barra los preparan.'
+      : 'Acá aparecen los pedidos cuando el comensal confirma que los recibió.';
   }
 
   protected async confirmar(pedido: Pedido): Promise<void> {
     await this.confirmarPedido(pedido);
   }
+
 }

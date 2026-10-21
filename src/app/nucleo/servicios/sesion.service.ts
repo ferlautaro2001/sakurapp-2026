@@ -50,6 +50,8 @@ export class SesionService {
   readonly autenticado = computed(() => this.usuario() !== null);
   readonly mesaActivaId = signal<string | null>(null);
   readonly mesaActivaNumero = signal<number | null>(null);
+  /** Desde cuándo está sentado: separa los pedidos de esta visita de los de visitas anteriores. */
+  readonly mesaActivaDesde = signal<string | null>(null);
   readonly esAdministrador = computed(() => {
     const u = this.usuario();
     return u !== null && PERFILES_ADMIN.includes(u.perfil);
@@ -142,11 +144,14 @@ export class SesionService {
 
   /** Almacena la sesión de mesa activa en el estado local del cliente (TASK-5.3.2.2). */
   async establecerMesaActiva(mesaId: string, mesaNumero: number): Promise<void> {
+    const desde = new Date().toISOString();
     this.mesaActivaId.set(mesaId);
     this.mesaActivaNumero.set(mesaNumero);
+    this.mesaActivaDesde.set(desde);
     try {
       await Preferences.set({ key: 'sk.mesa_activa_id', value: mesaId });
       await Preferences.set({ key: 'sk.mesa_activa_numero', value: String(mesaNumero) });
+      await Preferences.set({ key: 'sk.mesa_activa_desde', value: desde });
     } catch {
       // Entorno no nativo: almacenamiento reactivo en memoria
     }
@@ -156,9 +161,11 @@ export class SesionService {
   async limpiarMesaActiva(): Promise<void> {
     this.mesaActivaId.set(null);
     this.mesaActivaNumero.set(null);
+    this.mesaActivaDesde.set(null);
     try {
       await Preferences.remove({ key: 'sk.mesa_activa_id' });
       await Preferences.remove({ key: 'sk.mesa_activa_numero' });
+      await Preferences.remove({ key: 'sk.mesa_activa_desde' });
     } catch {
       //
     }
@@ -191,9 +198,13 @@ export class SesionService {
     try {
       const mesaId = (await Preferences.get({ key: 'sk.mesa_activa_id' })).value;
       const mesaNum = (await Preferences.get({ key: 'sk.mesa_activa_numero' })).value;
+      const desde = (await Preferences.get({ key: 'sk.mesa_activa_desde' })).value;
       if (mesaId && mesaNum) {
         this.mesaActivaId.set(mesaId);
         this.mesaActivaNumero.set(Number(mesaNum));
+        // Una sesión guardada antes de este cambio no trae la hora: vale
+        // cualquier pedido, como antes. Cada vinculación nueva ya la guarda.
+        this.mesaActivaDesde.set(desde ?? '');
       }
     } catch {
       //

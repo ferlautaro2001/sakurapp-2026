@@ -16,6 +16,7 @@ import { TransicionService } from './nucleo/servicios/transicion.service';
 import { PedidosService } from './nucleo/servicios/pedidos.service';
 import { FacturaService } from './nucleo/factura/factura.service';
 import { Pedido } from './nucleo/modelos/modelos';
+import { visitaCobrada } from './nucleo/modelos/visita';
 
 /**
  * Cáscara de la aplicación para v0 (MVP).
@@ -239,12 +240,13 @@ export class AppComponent implements OnInit {
     // Punto 22 · cuando el mozo confirma el pago, la visita termina: el
     // comensal se suelta de la mesa y vuelve a la puerta, donde para sentarse
     // de nuevo tiene que escanear el código de ingreso. Vale también si abre
-    // la aplicación después de que el mozo confirmó.
+    // la aplicación después de que el mozo confirmó. Un pedido cerrado de una
+    // visita anterior en la misma mesa no cuenta.
     effect(() => {
       if (!this.sesion.esCliente()) return;
       const mesa = this.sesion.mesaActivaId();
       const ultimo = this.pedidos.ultimoDe(this.sesion.usuario());
-      if (!mesa || !ultimo || ultimo.estadoGlobal !== 'CERRADO' || ultimo.mesaId !== mesa) return;
+      if (!ultimo || !visitaCobrada(ultimo, mesa, this.sesion.mesaActivaDesde())) return;
       if (this.visitaCerrada === ultimo.id) return;
       this.visitaCerrada = ultimo.id;
       untracked(() => void this.terminarVisita(ultimo));

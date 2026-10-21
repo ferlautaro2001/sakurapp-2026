@@ -1,4 +1,7 @@
 import { jsPDF } from 'jspdf';
+import { fechaFactura as fecha, numeroDeFactura, numeroDePedido, pesos, rotuloPropina } from './datos-factura';
+
+export { numeroDeFactura, numeroDePedido };
 
 /**
  * Punto 22 · la factura en PDF.
@@ -26,7 +29,8 @@ export interface DatosFactura {
   renglones: RenglonFactura[];
   subtotal: number;
   descuento: { porcentaje: number; monto: number } | null;
-  propina: { porcentaje: number; monto: number };
+  /** El porcentaje del QR de propina y el grado de satisfacción que representa. */
+  propina: { porcentaje: number; monto: number; satisfaccion?: string };
   total: number;
   pago?: { medio: string; operacion: string } | null;
 }
@@ -48,25 +52,6 @@ const VERDE: [number, number, number] = [27, 122, 76];
 const MARGEN = 16;
 const ANCHO = 210;
 const ALTO = 297;
-
-export function numeroDeFactura(puntoDeVenta: number, numero: number): string {
-  return `${String(puntoDeVenta).padStart(4, '0')}-${String(numero).padStart(8, '0')}`;
-}
-
-/** El número de pedido, corto y legible: las primeras ocho letras del identificador. */
-export function numeroDePedido(id: string): string {
-  return id.replace(/[^a-zA-Z0-9]/g, '').slice(0, 8).toUpperCase();
-}
-
-function pesos(monto: number): string {
-  return `$ ${Math.round(monto).toLocaleString('es-AR')}`;
-}
-
-function fecha(iso: string): string {
-  const d = new Date(iso);
-  const dos = (n: number) => String(n).padStart(2, '0');
-  return `${dos(d.getDate())}/${dos(d.getMonth() + 1)}/${d.getFullYear()} ${dos(d.getHours())}:${dos(d.getMinutes())}`;
-}
 
 export function armarFactura(datos: DatosFactura, imagenes: ImagenesFactura): jsPDF {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -201,7 +186,7 @@ export function armarFactura(datos: DatosFactura, imagenes: ImagenesFactura): js
   if (datos.descuento && datos.descuento.monto > 0) {
     fila(`Descuento (${datos.descuento.porcentaje} %)`, `- ${pesos(datos.descuento.monto)}`, VERDE);
   }
-  fila(`Propina (${datos.propina.porcentaje} %)`, `+ ${pesos(datos.propina.monto)}`, CIRUELA);
+  fila(rotuloPropina(datos.propina), `+ ${pesos(datos.propina.monto)}`, CIRUELA);
   y += 1;
   doc.setFillColor(...FUCSIA);
   doc.roundedRect(rx - 4, y - 2, ANCHO - MARGEN - rx + 4, 14, 3, 3, 'F');

@@ -16,7 +16,17 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, ObservacionItem, PagoSimulado, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
+import {
+  Mesa,
+  ObservacionItem,
+  PagoSimulado,
+  Pedido,
+  PedidoItem,
+  Producto,
+  Usuario,
+  CorreoEnviado,
+  FacturaEmitida,
+} from '../modelos/modelos';
 import {
   AlcanceRechazo,
   EstadoMesa,
@@ -616,6 +626,21 @@ export class FirestoreService {
   }
 
   /**
+   * Punto 22 · el número de la próxima factura. Es correlativo: la transacción
+   * evita que dos mozos que confirman a la vez se lleven el mismo.
+   */
+  async siguienteNumeroFactura(): Promise<number> {
+    const db = this.obtenerDb();
+    const contador = doc(db, 'contadores', 'facturas');
+    return runTransaction(db, async (transaccion) => {
+      const actual = await transaccion.get(contador);
+      const numero = (Number(actual.exists() ? actual.data()['ultimo'] : 0) || 0) + 1;
+      transaccion.set(contador, { ultimo: numero, actualizadoEn: new Date().toISOString() }, { merge: true });
+      return numero;
+    });
+  }
+
+  /**
    * Punto 22 · la mesa vuelve a estar libre: vacía y sin el comensal ni la
    * reserva de la visita que terminó.
    */
@@ -731,6 +756,7 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
         : Number(datos['porcentajePropina']),
     montoPropina: Number(datos['montoPropina']) || 0,
     pago: datos['pago'] && typeof datos['pago'] === 'object' ? (datos['pago'] as PagoSimulado) : null,
+    factura: datos['factura'] && typeof datos['factura'] === 'object' ? (datos['factura'] as FacturaEmitida) : null,
   };
 }
 

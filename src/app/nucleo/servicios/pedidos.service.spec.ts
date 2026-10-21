@@ -750,6 +750,55 @@ describe('PedidosService - Envío de pedidos y sincronización Cloud SQL / Fires
       expect(mockNotificaciones.enviar).toHaveBeenCalledWith(['uid-cliente-reg'], '🌸 ¡Gracias por tu visita!', expect.any(String));
     });
 
+    const pagado: Partial<Pedido> = {
+      estadoGlobal: 'PAGO_PENDIENTE',
+      cuentaHabilitada: true,
+      porcentajePropina: 20,
+      montoPropina: 3600,
+      pago: { medio: 'DEBITO', operacion: '1234567890', total: 21600, pagadoEn: new Date().toISOString() },
+    };
+    const factura = {
+      numero: '0001-00000042',
+      url: 'https://firebasestorage.googleapis.com/factura.pdf',
+      emitidaEn: new Date().toISOString(),
+    };
+
+    it('la factura queda guardada en el pedido antes de que se cierre', async () => {
+      cargar(pagado);
+      await service.confirmarPago('ped-cuenta', factura);
+
+      expect(mockFirestore.actualizarPedido).toHaveBeenCalledWith('ped-cuenta', { factura });
+      expect(mockFirestore.actualizarPedido.mock.invocationCallOrder[0]).toBeLessThan(
+        mockFirestore.actualizarEstadoPedido.mock.invocationCallOrder[0],
+      );
+      expect(service.porId('ped-cuenta')?.factura).toEqual(factura);
+    });
+
+    it('al registrado se le avisa que la factura le llegó al correo', async () => {
+      cargar(pagado);
+      await service.confirmarPago('ped-cuenta', factura);
+
+      const [destino, titulo, cuerpo, ruta] = mockNotificaciones.enviar.mock.calls[0];
+      expect(destino).toEqual(['uid-cliente-reg']);
+      expect(titulo).toBe('🌸 ¡Gracias por tu visita!');
+      expect(cuerpo).toContain('0001-00000042 a tu correo');
+      expect(ruta).toBeUndefined();
+    });
+
+    it('al anónimo le llega una push con el enlace para descargar la factura', async () => {
+      const anonimo: Usuario = { ...facundoAranaConUuid, id: 'anon-1', uid: 'uid-anon', perfil: 'CLIENTE_ANONIMO', email: null };
+      (TestBed.inject(UsuariosService).todos as ReturnType<typeof signal<Usuario[]>>).set([facundoAranaConUuid, anonimo]);
+      cargar({ ...pagado, clienteId: 'anon-1', clienteUid: 'uid-anon' });
+      await service.confirmarPago('ped-cuenta', factura);
+
+      expect(mockNotificaciones.enviar).toHaveBeenCalledWith(
+        ['uid-anon'],
+        '🧾 Tu factura está lista',
+        expect.stringContaining('descargar la factura N° 0001-00000042'),
+        [factura.url],
+      );
+    });
+
     it('no se confirma un pago que no se hizo', async () => {
       cargar({ estadoGlobal: 'CUENTA_SOLICITADA', cuentaHabilitada: true });
       await expect(service.confirmarPago('ped-cuenta')).rejects.toThrow('no tiene un pago');

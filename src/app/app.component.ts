@@ -14,6 +14,8 @@ import { EscanerService } from './nucleo/servicios/escaner.service';
 import { SesionService } from './nucleo/servicios/sesion.service';
 import { TransicionService } from './nucleo/servicios/transicion.service';
 import { PedidosService } from './nucleo/servicios/pedidos.service';
+import { FacturaService } from './nucleo/factura/factura.service';
+import { Pedido } from './nucleo/modelos/modelos';
 
 /**
  * Cáscara de la aplicación para v0 (MVP).
@@ -210,6 +212,7 @@ export class AppComponent implements OnInit {
   private readonly sesion = inject(SesionService);
   private readonly transicion = inject(TransicionService);
   private readonly pedidos = inject(PedidosService);
+  private readonly facturas = inject(FacturaService);
 
   /** Pedido del comensal visto en la pasada anterior, para notar cuándo se confirma. */
   private pedidoVisto: { id: string; juegos: boolean } | null = null;
@@ -244,16 +247,36 @@ export class AppComponent implements OnInit {
       if (!mesa || !ultimo || ultimo.estadoGlobal !== 'CERRADO' || ultimo.mesaId !== mesa) return;
       if (this.visitaCerrada === ultimo.id) return;
       this.visitaCerrada = ultimo.id;
-      untracked(() => void this.terminarVisita());
+      untracked(() => void this.terminarVisita(ultimo));
     });
   }
 
-  private async terminarVisita(): Promise<void> {
+  /**
+   * La visita terminó. Si hay factura, el anónimo la puede bajar desde acá
+   * (además de la push); al registrado se le recuerda que le llegó al correo.
+   */
+  private async terminarVisita(pedido: Pedido): Promise<void> {
     await this.sesion.limpiarMesaActiva();
     await this.router.navigate(['/cliente/ingreso'], { replaceUrl: true });
+    const volver = 'Para volver a sentarte, escaneá el código de la puerta.';
+    const factura = pedido.factura;
+    if (factura && this.sesion.usuario()?.perfil === 'CLIENTE_ANONIMO') {
+      const bajar = await this.confirmacion.pedir({
+        titulo: '¡Gracias por tu visita!',
+        mensaje: `El mozo confirmó tu pago y la mesa quedó libre. Tu factura N° ${factura.numero} está lista. ${volver}`,
+        confirmar: 'Descargar factura',
+        cancelar: 'Cerrar',
+        tono: 'exito',
+        icono: 'receipt_long',
+      });
+      if (bajar) this.facturas.descargar(factura);
+      return;
+    }
     await this.confirmacion.mostrar({
       titulo: '¡Gracias por tu visita!',
-      mensaje: 'El mozo confirmó tu pago y la mesa quedó libre. Para volver a sentarte, escaneá el código de la puerta.',
+      mensaje: factura
+        ? `El mozo confirmó tu pago y la mesa quedó libre. Te mandamos la factura N° ${factura.numero} a tu correo. ${volver}`
+        : `El mozo confirmó tu pago y la mesa quedó libre. ${volver}`,
       confirmar: 'Cerrar',
       tono: 'exito',
       icono: 'favorite',

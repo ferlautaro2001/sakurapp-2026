@@ -28,7 +28,7 @@ import {
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { EstadoPedido, EstadoSector, MarcaRechazo, Sector, sectorDe } from '../modelos/enums';
-import { MedioPago, Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
+import { FacturaEmitida, MedioPago, Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
 import {
   alcanceDe,
   itemsACambiar,
@@ -721,14 +721,17 @@ export class PedidosService {
 
   /**
    * Punto 22 · el mozo confirma el pago y el pedido se cierra. Se enteran el
-   * dueño, el supervisor y el comensal. Liberar la mesa y cerrar la visita en
-   * la fila lo hace la pantalla del mozo, que tiene a mano esos servicios.
+   * dueño, el supervisor y el comensal. Liberar la mesa, cerrar la visita en
+   * la fila y emitir la factura lo hace la pantalla del mozo, que tiene a mano
+   * esos servicios. La factura se guarda antes del cierre: cuando el teléfono
+   * del comensal ve el pedido cerrado, ya tiene con qué descargarla.
    */
-  async confirmarPago(pedidoId: string): Promise<void> {
+  async confirmarPago(pedidoId: string, factura: FacturaEmitida | null = null): Promise<void> {
     const pedido = this.porId(pedidoId);
     if (!pedido) throw new Error('El pedido no existe.');
     if (pedido.estadoGlobal !== 'PAGO_PENDIENTE') throw new Error('Ese pedido no tiene un pago para confirmar.');
 
+    if (factura) await this.aplicar(pedidoId, { factura });
     await this.actualizarEstadoGlobal(pedidoId, 'CERRADO');
 
     const importe = `$ ${(pedido.pago?.total ?? this.totalAPagar(pedido)).toLocaleString('es-AR')}`;
@@ -739,11 +742,28 @@ export class PedidosService {
         `Se cobraron ${importe} y la mesa ${pedido.mesaNumero} quedó libre.`,
       );
     }
-    await this.notificaciones.enviar(
-      [pedido.clienteUid || pedido.clienteId],
-      '🌸 ¡Gracias por tu visita!',
-      'El mozo confirmó tu pago. Te esperamos pronto.',
-    );
+    // El registrado recibe la factura por correo; el anónimo, que no dejó
+    // correo, la baja tocando la notificación.
+    const comensal = [pedido.clienteUid || pedido.clienteId];
+    const anonimo =
+      this.usuarios.todos().find((u) => u.id === pedido.clienteId || (!!u.uid && u.uid === pedido.clienteUid))
+        ?.perfil === 'CLIENTE_ANONIMO';
+    if (factura && anonimo) {
+      await this.notificaciones.enviar(
+        comensal,
+        '🧾 Tu factura está lista',
+        `El mozo confirmó tu pago. Tocá acá para descargar la factura N° ${factura.numero}.`,
+        [factura.url],
+      );
+    } else {
+      await this.notificaciones.enviar(
+        comensal,
+        '🌸 ¡Gracias por tu visita!',
+        factura
+          ? `El mozo confirmó tu pago. Te mandamos la factura N° ${factura.numero} a tu correo.`
+          : 'El mozo confirmó tu pago. Te esperamos pronto.',
+      );
+    }
   }
 
   /** Guarda los cambios del pedido en Firestore y en lo que ya tiene cargado la aplicación. */

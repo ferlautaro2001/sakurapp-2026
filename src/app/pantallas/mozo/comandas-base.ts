@@ -6,6 +6,7 @@ import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
+import { FacturaService } from '../../nucleo/factura/factura.service';
 import { AccionPedido } from '../../ui';
 
 /**
@@ -17,6 +18,7 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   protected readonly usuarios = inject(UsuariosService);
   protected readonly notificaciones = inject(NotificacionesService);
   private readonly espera = inject(EsperaService);
+  private readonly facturas = inject(FacturaService);
 
   /** El paso que le toca al mozo con el pedido, o ninguno si está en manos de otro. */
   protected accionDe(pedido: Pedido): AccionPedido | null {
@@ -161,14 +163,31 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
     if (!seguro) return false;
 
     // El pedido se cierra al final: cuando el teléfono del comensal se entera
-    // del cierre, la fila ya lo soltó y la mesa ya está libre.
-    await this.cargando.conEsperaMinima('Confirmando el pago…', async () => {
+    // del cierre, la fila ya lo soltó, la mesa ya está libre y la factura ya
+    // está emitida. Si la factura falla, el cobro igual se confirma: el mozo
+    // se entera y la mesa no queda trabada.
+    const factura = await this.cargando.conEsperaMinima('Confirmando el pago y emitiendo la factura…', async () => {
       await this.espera.iniciar();
       await this.espera.cerrarVisita(pedido.clienteId, pedido.clienteUid);
       await this.mesas.liberar(pedido.mesaId);
-      await this.pedidos.confirmarPago(pedido.id);
+      const emitida = await this.facturas.emitir(pedido).catch((error) => {
+        console.warn('⚠️ No se pudo emitir la factura:', error);
+        return null;
+      });
+      await this.pedidos.confirmarPago(pedido.id, emitida);
+      return emitida;
     });
-    this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} libre`, 'El pago quedó confirmado.');
+    if (factura) {
+      this.avisos.exito(
+        `Mesa ${this.numeroMesa(pedido)} libre`,
+        `El pago quedó confirmado y se emitió la factura N° ${factura.numero}.`,
+      );
+    } else {
+      this.avisos.error(
+        `Mesa ${this.numeroMesa(pedido)} libre, sin factura`,
+        'El pago quedó confirmado, pero no se pudo emitir la factura. Revisá la conexión.',
+      );
+    }
     return true;
   }
 }

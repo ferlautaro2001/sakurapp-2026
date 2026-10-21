@@ -226,6 +226,13 @@ export class NotificacionesService {
           const ruta =
             action.notification.data?.ruta;
 
+          // Punto 22 · la push de la factura trae el enlace del PDF: se abre
+          // en el navegador del sistema, que lo descarga.
+          if (typeof ruta === 'string' && /^https?:\/\//.test(ruta)) {
+            window.open(ruta, '_system');
+            return;
+          }
+
           if (ruta) {
             void this.router.navigate(
               Array.isArray(ruta)

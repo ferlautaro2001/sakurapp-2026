@@ -184,6 +184,8 @@ export class DuenoCorreosPage extends PaginaConSesion {
         return { icono: 'mark_email_read', chip: 'aprobado', rotulo: 'Aprobado' };
       case 'RECHAZO':
         return { icono: 'unsubscribe', chip: 'rechazado', rotulo: 'Rechazado' };
+      case 'FACTURA':
+        return { icono: 'receipt_long', chip: 'aprobado', rotulo: 'Factura' };
       default:
         return { icono: 'forward_to_inbox', chip: 'pendiente', rotulo: 'En revisión' };
     }

@@ -87,7 +87,7 @@ export interface CorreoEnviado {
   id: string;
   para: string;
   asunto: string;
-  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO';
+  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO' | 'FACTURA';
   cuerpoHtml: string;
   enviadoEn: string;
   entregado: boolean;
@@ -210,6 +210,16 @@ export interface Pedido {
   montoPropina?: number;
   /** El pago simulado, desde que el comensal paga hasta que el mozo lo confirma. */
   pago?: PagoSimulado | null;
+  /** Punto 22 · la factura que se emitió al confirmarse el pago. */
+  factura?: FacturaEmitida | null;
+}
+
+/** La factura en PDF, ya guardada en Storage. */
+export interface FacturaEmitida {
+  /** Como se imprime: 0001-00000042. */
+  numero: string;
+  url: string;
+  emitidaEn: string;
 }
 
 /** Cómo pagó el comensal, a la manera de Mercado Pago. */

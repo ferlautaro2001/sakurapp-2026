@@ -63,9 +63,8 @@ describe('CarritoService', () => {
 
     expect(servicio.cantidadTotal()).toBe(3);
     expect(servicio.importeTotal()).toBe(44800);
-    // Los dos son de cocina, que los hace uno después del otro: 20 + 25. Las
-    // dos unidades del roll no multiplican, salen juntas de la misma olla.
-    expect(servicio.tiempoEstimado()).toBe(45);
+    // Cocina, de a uno: dos rolls de 20 (40) más un ramen de 25 = 65.
+    expect(servicio.tiempoEstimado()).toBe(65);
   });
 
   it('la cocina y la barra trabajan a la vez: manda el sector más cargado', () => {

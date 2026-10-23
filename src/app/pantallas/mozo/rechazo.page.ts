@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
 import { CurrencyPipe } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
@@ -40,35 +40,28 @@ import { PaginaConSesion } from '../pagina-base';
   imports: [CurrencyPipe, ReactiveFormsModule, ...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado titulo="Devolver el pedido" conVolver (volver)="volver()" />
+      <lm-encabezado titulo="Devolver el pedido" conVolver (volver)="volver()">
+        <!-- La mesa va arriba a la derecha y no en un renglón propio: el lugar es para el detalle. -->
+        @if (pedido(); as p) {
+          <span accion class="mesa">Mesa {{ p.mesaNumero }}</span>
+        }
+      </lm-encabezado>
 
       @if (pedido(); as p) {
-        <div class="lm-body lm-body--gap12">
-          <div class="lm-card mesa">
-            <span class="mesa__icono">
-              <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
-            </span>
-            <div class="mesa__datos">
-              <b>Mesa {{ p.mesaNumero }} - {{ p.clienteNombre }}</b>
-            </div>
-          </div>
+        <div class="lm-body lm-body--gap12 lm-body--pantalla">
 
-          @if (resumenError()) {
-            <lm-banner tono="error" titulo="Falta información">{{ resumenError() }}</lm-banner>
-          }
-
-          <lm-separador flor rotulo="Marcá los productos afectados" />
+          <lm-separador flor rotulo="Marcá los afectados" />
 
           <div class="lm-card leyenda">
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cantidad">
-                <lm-icono nombre="warning" [tamano]="30" color="#FFFFFF" />
+                <lm-icono nombre="warning" [tamano]="20" color="#FFFFFF" />
               </i>
               Bajo stock
             </span>
             <span class="leyenda__item">
               <i class="leyenda__sello leyenda__sello--cambiar">
-                <lm-icono nombre="block" [tamano]="30" color="#FFFFFF" />
+                <lm-icono nombre="block" [tamano]="20" color="#FFFFFF" />
               </i>
               Agotado
             </span>
@@ -76,7 +69,7 @@ import { PaginaConSesion } from '../pagina-base';
 
           <lm-separador flor rotulo="Detalle" />
 
-          <div class="lm-list">
+          <div class="devolver__lista">
             @for (item of p.items; track item.id) {
               <div
                 class="marcar"
@@ -89,9 +82,6 @@ import { PaginaConSesion } from '../pagina-base';
                     {{ item.cantidad }} ×
                     {{ item.precioUnitario | currency: 'ARS' : 'symbol-narrow' : '1.0-0' }}
                   </small>
-                  @if (marcaDe(item.productoId); as marca) {
-                    <span class="marcar__rotulo">{{ rotuloMarca(marca) }}</span>
-                  }
                 </div>
 
                 <div class="marcar__botones">
@@ -120,34 +110,44 @@ import { PaginaConSesion } from '../pagina-base';
             }
           </div>
 
-          <lm-separador flor rotulo="Motivo" />
-
-          <label class="lm-field motivo" [class.lm-field--error]="error() !== null">
-            <span class="lm-field__box motivo__box">
-              <lm-icono
-                nombre="notes"
-                [tamano]="20"
-                [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'"
-              />
-              <textarea
-                rows="3"
-                maxlength="240"
-                enterkeyhint="done"
-                [formControl]="formulario.controls.motivo"
-                placeholder="Sólo me quedan tres gyozas…"
-                (input)="latir()"
-              ></textarea>
-            </span>
-            @if (error()) {
-              <span class="lm-field__error">
-                <lm-icono nombre="error" [tamano]="16" />
-                {{ error() }}
+          <!-- El motivo ocupa un solo renglón para dejarle el lugar al detalle; al
+               tocarlo se abre una ventana para escribirlo y leerlo entero. -->
+          <div class="motivo" [class.lm-field--error]="error() !== null">
+            <button type="button" class="lm-field__box motivo__boton" (click)="abrirMotivo()">
+              <lm-icono nombre="notes" [tamano]="20" [color]="error() ? 'var(--state-error)' : 'var(--action-primary)'" />
+              <span class="motivo__texto" [class.motivo__texto--vacio]="!formulario.controls.motivo.value">
+                {{ formulario.controls.motivo.value || 'Motivo de la devolución' }}
               </span>
-            } @else {
-              <span class="lm-field__hint">El comensal lee este texto tal como lo escribís.</span>
-            }
-          </label>
+              <lm-icono nombre="edit" [tamano]="18" color="var(--action-primary)" />
+            </button>
+            <!-- El lugar del error está siempre reservado: si apareciera de golpe,
+                 achicaría la lista y le cambiaría la tanda al detalle. -->
+            <span class="lm-field__error motivo__error" [class.motivo__error--oculto]="error() === null" [attr.aria-hidden]="error() === null">
+              <lm-icono nombre="error" [tamano]="16" />
+              {{ error() ?? 'Escribí por qué devolvés el pedido' }}
+            </span>
+          </div>
         </div>
+
+        @if (editandoMotivo()) {
+          <div class="lm-modal__fondo" (click)="cerrarMotivo()">
+            <div class="lm-modal motivo-modal" role="dialog" aria-modal="true" aria-label="Motivo de la devolución" (click)="$event.stopPropagation()">
+              <h2 class="lm-modal__titulo">Motivo de la devolución</h2>
+              <textarea
+                #areaMotivo
+                class="motivo-modal__area"
+                rows="6"
+                maxlength="240"
+                placeholder="Sólo me quedan tres gyozas…"
+                [value]="borradorMotivo()"
+                (input)="borradorMotivo.set($any($event.target).value)"
+              ></textarea>
+              <span class="motivo-modal__cuenta">{{ borradorMotivo().length }}/240</span>
+              <lm-decision class="lm-modal__acciones" rotuloRechazar="Cancelar" rotuloAceptar="Guardar el motivo"
+                (rechazar)="cerrarMotivo()" (aceptar)="guardarMotivo()" />
+            </div>
+          </div>
+        }
 
         <div class="lm-actionbar acciones">
           <lm-boton variante="danger" icono="close" (presionar)="volver()">Cancelar</lm-boton>
@@ -197,51 +197,25 @@ import { PaginaConSesion } from '../pagina-base';
       }
 
       .mesa {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-4);
+        flex: 0 0 auto; padding: 6px 12px; border-radius: var(--radius-pill);
+        background: var(--surface-card); color: var(--action-primary);
+        font: var(--type-label); font-size: 13px; letter-spacing: var(--tracking-label);
+        text-transform: uppercase; white-space: nowrap;
+        box-shadow: 0 0 0 1px rgba(232, 51, 111, .25), 0 3px 8px rgba(59, 8, 27, .16);
       }
 
-      .mesa__icono {
-        display: grid;
-        flex: 0 0 auto;
-        width: var(--touch-min);
-        min-height: var(--touch-min);
-        place-items: center;
-        border-radius: 14px;
-        background: var(--surface-sunken);
-      }
-
-      /* El título ocupa todo el ancho que deja el ícono y va centrado; el ícono
-         se equilibra con un hueco del mismo ancho a la derecha. */
-      .mesa { align-items: center; justify-content: center; }
-      .mesa::after { content: ''; flex: 0 0 var(--touch-min); }
-      .mesa__datos { flex: 1 1 auto; min-width: 0; text-align: center; }
-      .mesa__datos b { text-wrap: balance; overflow-wrap: anywhere; }
-
-      .mesa__datos b {
-        display: block;
-        color: var(--text-title);
-        font: var(--type-section);
-      }
-
-      .mesa__datos small {
-        display: block;
-        color: var(--text-muted);
-        font: var(--type-body-small);
-      }
 
       .leyenda {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
         gap: 10px;
-        padding: var(--space-4);
+        padding: var(--space-2) var(--space-3);
       }
 
       .leyenda__item {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
         align-items: center;
         gap: 8px;
         text-align: center;
@@ -255,10 +229,12 @@ import { PaginaConSesion } from '../pagina-base';
       .leyenda__sello {
         display: grid;
         flex: 0 0 auto;
-        width: 56px;
-        height: 56px;
+        width: 34px;
+        height: 34px;
         place-items: center;
         border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
 
       .leyenda__sello--cantidad {
@@ -269,13 +245,35 @@ import { PaginaConSesion } from '../pagina-base';
         background: var(--state-error);
       }
 
+      /* Sólo el detalle se desplaza, en tandas exactas: cada producto mide justo
+         una parte de la lista y se ancla entero. El resto de la pantalla queda fijo. */
+      .devolver__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: devolver / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .devolver__lista::-webkit-scrollbar { display: none; }
+      .devolver__lista > .marcar {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      @container devolver (min-height: 210px) { .devolver__lista > .marcar { --por: 2; } }
+      @container devolver (min-height: 318px) { .devolver__lista > .marcar { --por: 3; } }
+      @container devolver (min-height: 426px) { .devolver__lista > .marcar { --por: 4; } }
+
+      /* Tarjeta en grilla: el nombre ocupa la fila de arriba a todo el ancho;
+         abajo, a la izquierda la cantidad con el precio y a la derecha los
+         botones de stock. */
       .marcar {
         position: relative;
-        display: flex;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
-        gap: 10px;
+        column-gap: 10px;
+        row-gap: 6px;
         overflow: hidden;
-        padding: 10px var(--space-3);
+        padding: 8px var(--space-3);
         border-radius: var(--radius-card);
         background: var(--surface-card);
         box-shadow: var(--shadow-card);
@@ -321,10 +319,12 @@ import { PaginaConSesion } from '../pagina-base';
         box-shadow: 0 0 0 2px var(--state-error), var(--shadow-card);
       }
 
-      .marcar__datos {
-        min-width: 0;
-        flex: 1 1 auto;
-      }
+      .marcar__datos { display: contents; }
+      /* Con prioridad alta: el nombre siempre ocupa la fila de arriba entera. */
+      .devolver__lista > .marcar > .marcar__datos > b { grid-column: 1 / -1 !important; grid-row: 1 !important; min-width: 0; text-align: center; }
+      .devolver__lista > .marcar > .marcar__datos > small { grid-column: 1 !important; grid-row: 2 !important; min-width: 0; }
+      .devolver__lista > .marcar > .marcar__datos > .marcar__rotulo { grid-column: 1 / -1 !important; grid-row: 3 !important; }
+      .devolver__lista > .marcar > .marcar__botones { grid-column: 2 !important; grid-row: 2 !important; }
 
       /* Un escalón por encima del resto de las tarjetas de la aplicación: esta
          lista se lee de parado, con el teléfono a la altura de la cintura. */
@@ -338,7 +338,7 @@ import { PaginaConSesion } from '../pagina-base';
       .marcar__datos small {
         display: block;
         color: var(--text-muted);
-        font: var(--type-body-small);
+        font: 600 clamp(15px, 4.2vw, 17px)/1.3 var(--font-text);
       }
 
       .marcar__rotulo {
@@ -357,7 +357,6 @@ import { PaginaConSesion } from '../pagina-base';
 
       .marcar__botones {
         display: flex;
-        flex: 0 0 auto;
         gap: 6px;
       }
 
@@ -400,24 +399,30 @@ import { PaginaConSesion } from '../pagina-base';
         transform: scale(0.94);
       }
 
-      .motivo__box {
-        align-items: flex-start;
-        padding-top: 10px;
+      .motivo__boton {
+        width: 100%; cursor: pointer; text-align: left; font: inherit;
+        min-height: 46px; gap: 10px;
       }
+      /* Los íconos no ceden ancho: el texto largo se recorta con "…" entre ellos. */
+      .motivo__boton lm-icono { flex: 0 0 auto; display: grid; place-items: center; }
+      .motivo__texto {
+        flex: 1 1 auto; min-width: 0; color: var(--text-title); font: var(--type-body-medium);
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      }
+      .motivo__texto--vacio { color: var(--text-muted); }
+      .motivo.lm-field--error .motivo__boton { border-color: var(--state-error); }
+      .motivo__error--oculto { visibility: hidden; }
 
-      /* El motivo viaja tal cual al teléfono del comensal y se revisa antes de
-         mandarlo: se escribe y se relee con el mismo cuerpo del texto de
-         lectura, no con el del pie de una tarjeta. */
-      .motivo textarea {
-        width: 100%;
-        min-height: 76px;
-        border: 0;
-        background: transparent;
-        color: var(--text-title);
-        font: var(--type-body-medium);
-        resize: none;
-        outline: none;
+      /* La ventana del motivo: el texto se escribe y se relee completo. */
+      .motivo-modal { gap: var(--space-3); }
+      .motivo-modal__area {
+        width: 100%; box-sizing: border-box; min-height: 140px; padding: var(--space-3);
+        border-radius: var(--radius-field); border: 2px solid rgba(255, 79, 139, .35);
+        background: #FFFFFF; color: var(--text-title); font: var(--type-body-medium);
+        resize: none; outline: none;
       }
+      .motivo-modal__area:focus { border-color: var(--action-primary); }
+      .motivo-modal__cuenta { align-self: flex-end; font: var(--type-caption); color: var(--text-muted); }
 
       .motivo .lm-field__hint {
         font: var(--type-body-small);
@@ -431,17 +436,21 @@ export class MozoRechazoPage extends PaginaConSesion {
 
   readonly id = input.required<string>();
 
-  protected readonly resumenError = signal<string | null>(null);
   /** Qué marcó el mozo, por producto. Sin entrada, el renglón va como está. */
   protected readonly marcas = signal<Record<string, MarcaRechazo>>({});
   private latido = false;
+
+  /** La ventana para escribir el motivo y lo que se lleva escrito en ella. */
+  protected readonly editandoMotivo = signal(false);
+  protected readonly borradorMotivo = signal('');
+  private readonly areaMotivo = viewChild<ElementRef<HTMLTextAreaElement>>('areaMotivo');
 
   protected readonly formulario = this.fb.nonNullable.group({
     motivo: [
       '',
       [
         requerido('Escribí por qué devolvés el pedido'),
-        largoMinimo(6, 'Contale un poco más para que sepa qué cambiar'),
+        largoMinimo(6, 'Contá un poco más qué cambiar'),
       ],
     ],
   });
@@ -477,6 +486,24 @@ export class MozoRechazoPage extends PaginaConSesion {
 
   private hayMotivo(): boolean {
     return this.formulario.controls.motivo.value.trim().length >= 6;
+  }
+
+  protected abrirMotivo(): void {
+    this.borradorMotivo.set(this.formulario.controls.motivo.value);
+    this.editandoMotivo.set(true);
+    setTimeout(() => this.areaMotivo()?.nativeElement.focus(), 60);
+  }
+
+  protected cerrarMotivo(): void {
+    this.editandoMotivo.set(false);
+  }
+
+  protected guardarMotivo(): void {
+    const control = this.formulario.controls.motivo;
+    control.setValue(this.borradorMotivo().trim());
+    control.markAsDirty();
+    this.editandoMotivo.set(false);
+    this.latir();
   }
 
   /** Un solo golpecito, cuando el motivo pasa a ser suficiente. */
@@ -515,7 +542,8 @@ export class MozoRechazoPage extends PaginaConSesion {
       return {
         icono: observacion.marca === 'CANTIDAD' ? 'warning' : 'block',
         tono: observacion.marca === 'CANTIDAD' ? ('pendiente' as const) : ('peligro' as const),
-        texto: `${nombre} · ${ROTULO_MARCA_MOZO[observacion.marca].toLowerCase()}`,
+        // Ícono y nombre del producto; el motivo de la marca no se repite acá.
+        texto: nombre,
       };
     });
   }
@@ -525,13 +553,9 @@ export class MozoRechazoPage extends PaginaConSesion {
     const usuario = this.usuario();
     if (!p || !usuario) return;
 
-    this.resumenError.set(null);
     marcarEnviado(this.formulario);
 
     if (this.formulario.invalid) {
-      this.resumenError.set(
-        'No se puede devolver un pedido sin decirle al comensal qué tiene que cambiar.',
-      );
       void Haptics.notification({ type: NotificationType.Error }).catch(() => undefined);
       this.avisos.error('Falta el motivo', 'Escribí qué hay que modificar antes de devolverlo.');
       return;
@@ -551,8 +575,6 @@ export class MozoRechazoPage extends PaginaConSesion {
 
     const seguro = await this.preguntar({
       titulo: '¿Devolvés el pedido?',
-      mensaje:
-        'El comensal lo recibe en el momento, con tu motivo. Ve marcados los productos afectados, corrige lo que haga falta y te lo manda de nuevo. No llega a Cocina ni a Bar.',
       confirmar: 'Devolver',
       tono: 'peligro',
       icono: 'edit_note',

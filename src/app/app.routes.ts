@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
+import { guardiaJuegos, guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
 import { SesionService } from './nucleo/servicios/sesion.service';
 
 /**
@@ -103,14 +103,6 @@ export const routes: Routes = [
         path: ':id/chat',
         canActivate: [guardiaPerfil('MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO', 'DUENO', 'SUPERVISOR')],
         loadComponent: () => import('./pantallas/mesas/chat-mesa.page').then((m) => m.ChatMesaPage),
-      },
-      {
-        path: ':id/qr',
-        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
-      },
-      {
-        path: ':id',
-        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
       },
     ],
   },
@@ -262,6 +254,7 @@ export const routes: Routes = [
       },
       {
         path: 'juegos',
+        canActivate: [guardiaJuegos],
         children: [
           {
             path: '',

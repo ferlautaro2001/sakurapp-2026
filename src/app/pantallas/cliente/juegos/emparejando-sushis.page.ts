@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../../ui';
 import { PaginaConSesion } from '../../pagina-base';
 import { EsperaService } from '../../../nucleo/servicios/espera.service';
@@ -24,6 +24,7 @@ type Estado = 'LISTO' | 'JUGANDO' | 'GANADO' | 'PERDIDO';
  * Minijuego · Emparejando sushis.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-emparejando-sushis',
   imports: [...UI],
   template: `
@@ -338,7 +339,6 @@ export class EmparejandoSushisPage extends PaginaConSesion {
     this.estado.set(estado);
     if (estado === 'GANADO') {
       this.sonido.reproducir('exito');
-      this.avisos.exito('¡Memoria de chef!', `Encontraste las ${PAREJAS} parejas antes de que se acabara el tiempo.`);
     } else {
       this.avisos.error(
         'Se acabó el tiempo',

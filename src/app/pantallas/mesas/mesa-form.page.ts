@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -18,6 +18,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
  * Punto 4 · Edición de mesa y cambio de disponibilidad.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mesa-form',
   imports: [ReactiveFormsModule, ...UI],
   template: `
@@ -298,8 +299,11 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
     if (!alta) return;
 
     const nueva: Mesa = await this.cargando.conEsperaMinima('Agregando la mesa…', () => this.mesas.crear(datos));
-    this.avisos.exito(`Mesa ${nueva.numero} agregada`, 'Su código QR ya está generado y listo para imprimir.');
-    this.ir(['/mesas', nueva.id, 'qr']);
+    this.avisos.exito(
+      `Mesa ${nueva.numero} agregada`,
+      'Su código QR ya está generado: lo vas a ver en el botón de QR de la tarjeta.',
+    );
+    this.ir(['/mesas']);
   }
 
   protected async darDeBaja(): Promise<void> {

@@ -1,4 +1,4 @@
-import { Component, computed, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
 
@@ -16,6 +16,7 @@ import { UI } from '../../ui';
  * ícono: el reloj en ámbar mientras se revisa, el bloqueo en rojo si no entró.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-estado-cuenta',
   imports: [...UI],
   template: `
@@ -64,6 +65,8 @@ import { UI } from '../../ui';
          El ícono va en blanco, que contra los dos se lee. */
       .espera__reloj {
         width: clamp(96px, 36vw, 156px); height: clamp(96px, 36vw, 156px); border-radius: 50%; display: grid; place-items: center;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .espera__mensaje {
         display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%;

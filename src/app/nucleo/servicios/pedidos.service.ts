@@ -75,9 +75,15 @@ export class PedidosService {
     this.todos().filter((pedido) => pedido.estadoGlobal === 'PENDIENTE_CONFIRMACION' && pedido.items.length > 0),
   );
 
+  /** Ya llegó la primera lectura de Firestore: antes de eso, "sin pedidos" no quiere decir nada. */
+  readonly cargado = signal(false);
+
   iniciar(): void {
     if (this.dejarDeEscuchar) return;
-    this.dejarDeEscuchar = this.firestore.escucharPedidos((pedidos) => this.pedidosFirestore.set(pedidos));
+    this.dejarDeEscuchar = this.firestore.escucharPedidos((pedidos) => {
+      this.pedidosFirestore.set(pedidos);
+      this.cargado.set(true);
+    });
     void this.cargarDesdeSql();
   }
 
@@ -268,6 +274,17 @@ export class PedidosService {
       confirmadoPorId: confirmador.id,
       items: itemsSectorizados,
     });
+
+    // Al comensal: la confirmación le abre los juegos, que hasta acá no veía.
+    const comensal = [pedido.clienteUid, pedido.clienteId].filter(Boolean) as string[];
+    if (comensal.length) {
+      await this.notificaciones.enviar(
+        comensal,
+        '¡Tu pedido fue confirmado!',
+        'Ya podés jugar por un descuento: buscá Juegos en la barra de abajo.',
+        ['/cliente/juegos'],
+      );
+    }
 
     const mensaje = `Mesa ${pedido.mesaNumero}: ${pedido.items.length} producto${pedido.items.length === 1 ? '' : 's'} para preparar.`;
     if (hayCocina) {
@@ -587,6 +604,15 @@ export class PedidosService {
       actualizado,
       ...actuales.filter((p) => p.id !== pedidoId),
     ]);
+
+    if (nuevoEstado === 'ENTREGADO') {
+      await this.notificaciones.enviar(
+        [pedido.clienteUid || pedido.clienteId],
+        `🌸 Tu pedido llegó a la mesa ${pedido.mesaNumero}`,
+        'Cuando lo tengas, confirmá la recepción desde Mi pedido.',
+        ['/cliente/pedido'],
+      );
+    }
 
     if (nuevoEstado === 'CUENTA_SOLICITADA') {
       await this.notificaciones.enviarPorRol(

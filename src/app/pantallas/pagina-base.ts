@@ -6,6 +6,7 @@ import { CargandoService } from '../nucleo/servicios/cargando.service';
 import { ConfirmacionService, PedidoConfirmacion } from '../nucleo/servicios/confirmacion.service';
 import { PedidosService } from '../nucleo/servicios/pedidos.service';
 import { EsperaService } from '../nucleo/servicios/espera.service';
+import { TransicionService } from '../nucleo/servicios/transicion.service';
 import { navegacionDe } from './navegacion';
 
 /**
@@ -22,6 +23,7 @@ export abstract class PaginaConSesion {
   protected readonly confirmacion = inject(ConfirmacionService);
   protected readonly pedidosNavegacion = inject(PedidosService);
   protected readonly esperaNavegacion = inject(EsperaService);
+  protected readonly transicion = inject(TransicionService);
 
   protected readonly usuario = this.sesion.usuario;
   protected readonly secciones = computed(() => {
@@ -66,6 +68,7 @@ export abstract class PaginaConSesion {
   }
 
   protected ir(ruta: unknown[]): void {
+    this.transicion.adelante();
     void this.router.navigate(ruta);
   }
 }

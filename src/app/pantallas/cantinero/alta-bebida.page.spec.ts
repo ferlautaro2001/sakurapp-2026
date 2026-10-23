@@ -90,7 +90,7 @@ describe('Alta de bebida', () => {
     expect(pedir).toHaveBeenCalledWith(expect.objectContaining({ confirmar: 'Guardar cambios' }));
     expect(editar).toHaveBeenCalledWith('bebida', expect.objectContaining({ nombre: 'Sake Junmai', precio: 13200, tipo: 'BEBIDA', fotos: ['foto1', 'foto2', 'foto3'] }));
     expect(crear).not.toHaveBeenCalled();
-    expect(navegar).toHaveBeenCalledWith(['/carta'], { replaceUrl: true });
+    expect(navegar).toHaveBeenCalledWith(['/carta', 'bebida'], { replaceUrl: true });
   });
 
   it('conserva los datos y permite reintentar si la edición falla', async () => {

@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { sectorDe } from '../modelos/enums';
+import { demoraDelPedido } from '../modelos/demora';
 import { Pedido, Producto } from '../modelos/modelos';
 
 export interface ItemCarrito {
@@ -41,28 +41,20 @@ export class CarritoService {
   /**
    * Minutos que va a tardar el pedido completo.
    *
-   * Adentro de cada sector los productos se hacen uno después del otro, así
-   * que sus tiempos se **suman**; las unidades repetidas de un mismo producto
-   * no multiplican, porque dos ramen salen juntos de la misma olla. La cocina
-   * y la barra trabajan a la vez, así que el pedido tarda lo que tarde el
-   * sector más cargado.
-   *
-   * Antes era el máximo de todos los productos, y eso subestimaba: cinco
-   * platos de veinte minutos no salen en veinte.
+   * Adentro de cada sector se prepara de a uno: cada unidad suma su tiempo de
+   * elaboración, así que tres productos de dos minutos son seis. La cocina y
+   * la barra trabajan a la vez, así que el pedido tarda lo que tarde el sector
+   * más cargado.
    */
-  readonly tiempoEstimado = computed(() => {
-    const porSector = new Map<string, number>();
-
-    for (const item of this.items()) {
-      const sector = sectorDe(item.producto.tipo);
-      porSector.set(
-        sector,
-        (porSector.get(sector) ?? 0) + item.producto.tiempoElaboracion,
-      );
-    }
-
-    return porSector.size ? Math.max(...porSector.values()) : 0;
-  });
+  readonly tiempoEstimado = computed(() =>
+    demoraDelPedido(
+      this.items().map((item) => ({
+        tipo: item.producto.tipo,
+        tiempoElaboracion: item.producto.tiempoElaboracion,
+        cantidad: item.cantidad,
+      })),
+    ),
+  );
 
   iniciarMesa(mesaId: string): void {
     if (

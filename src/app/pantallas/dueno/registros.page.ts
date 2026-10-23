@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { DocumentoPipe, UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -29,6 +29,7 @@ const FILTROS = [
  * última fila.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-registros',
   imports: [...UI],
   template: `
@@ -57,7 +58,7 @@ const FILTROS = [
         <lm-pestanas [opciones]="filtros" [valor]="filtro()" (cambiar)="filtro.set($event)" />
 
         @if (visibles().length) {
-          <div [class.lm-lista-uno]="filtro() === 'Todos' || filtro() === 'Pendiente'" [class.lm-lista-n]="filtro() !== 'Todos' && filtro() !== 'Pendiente'">
+          <div class="registros__lista">
             @for (cliente of visibles(); track cliente.id) {
               <lm-fila-pendiente
                 [cliente]="cliente"
@@ -82,16 +83,51 @@ const FILTROS = [
     `
       :host { display: flex; flex: 1; min-height: 0; }
 
-      /* Filas apiladas con la separación del sistema, como en correos:
-         cada fila mide lo que su tarjeta (con o sin Aceptar/Rechazar) y el
-         snap de la lista sigue anclando cada elemento al tope. */
-      .lm-lista-uno > lm-fila-pendiente,
-      .lm-lista-n > lm-fila-pendiente { flex: 0 0 auto; }
-      lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending { flex: 0 0 auto; max-height: none; justify-content: center; }
-      /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
-      @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
-      @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }
+      /* Tandas exactas: cada tarjeta mide justo el alto de la lista y el snap la
+         ancla al tope, así la parada muestra la tarjeta entera y el final de la
+         lista coincide con la última parada. Una por pantalla: con el nombre de
+         título, la foto grande y las dos decisiones en renglones propios, dos
+         no entran sin cortarse —y la cara se mira mejor así—.
+         Si aun así no entrara, la casilla crece: nunca se corta. */
+      .registros__lista {
+        flex: 1 1 0;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        container: registros / size;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        overflow-anchor: none;
+        scroll-snap-type: y mandatory;
+        scroll-padding: 0;
+        scrollbar-width: none;
+      }
+      .registros__lista::-webkit-scrollbar { display: none; }
+      .registros__lista > lm-fila-pendiente {
+        flex: 0 0 100cqh;
+        min-height: min-content;
+        display: flex;
+        flex-direction: column;
+        scroll-snap-align: start;
+        scroll-snap-stop: always;
+      }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; }
+      /* La foto se queda con el alto que sobra: del alto de la tarjeta se
+         descuentan el título, los datos, la fila de decisiones, los huecos y el
+         relleno (unos 210px), y lo que resta es la cara. Nunca baja de 104px y
+         el único techo real es el ancho de la tarjeta: 300px.
+         Cada caso suma su propio renglón —el chip de estado cuando el filtro es
+         "Todos" y las decisiones cuando está pendiente— para que el contenido
+         nunca crezca más que la casilla: si no, la tarjeta se estira y el snap
+         la deja cortada. */
+      .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending__foto {
+        width: min(100%, clamp(104px, calc(100cqh - 210px), 300px));
+      }
+      .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending:not(:has(.lm-pending__acciones)) .lm-pending__foto {
+        width: min(100%, clamp(104px, calc(100cqh - 150px), 300px));
+      }
+
     `,
   ],
 })

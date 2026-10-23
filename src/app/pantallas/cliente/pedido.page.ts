@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ItemCarrito, CarritoService } from '../../nucleo/servicios/carrito.service';
@@ -9,12 +9,14 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { ChatService } from '../../nucleo/servicios/chat.service';
+import { EncuestasService } from '../../nucleo/servicios/encuestas.service';
 import { Unsubscribe } from 'firebase/firestore';
 
 /**
  * Pantalla integral "Mi pedido" que unifica borrador, revisión, comanda devuelta y progreso.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-pedido',
   imports: [...UI],
   template: `
@@ -36,81 +38,112 @@ import { Unsubscribe } from 'firebase/firestore';
           }
 
           @if (p.estadoGlobal === 'RECHAZADO') {
-            <div class="lm-card devuelto">
-              <div class="devuelto__encabezado">
-                <lm-icono nombre="edit_note" [tamano]="24" color="var(--state-error)" />
-                <div>
-                  <b>{{ alcance() }}</b>
-                  <small>Lo devolvió {{ p.rechazadoPorNombre ?? 'el mozo del salón' }}</small>
-                </div>
-              </div>
-              <p class="devuelto__motivo">{{ p.motivoRechazo }}</p>
-            </div>
+            <!-- El aviso y las marcas viven en una ventana: acá sólo queda un renglón. -->
+            <button type="button" class="info-devolucion" (click)="infoDevolucion.set(true)">
+              <span class="info-devolucion__signo">
+                <lm-icono nombre="priority_high" [tamano]="16" color="#FFFFFF" />
+              </span>
+              Información de la devolución
+            </button>
           }
 
           @if (esperando()) {
+            <!-- Una franja de un renglón: todo el alto que sobra es para el detalle. -->
             <div class="lm-card espera">
-              <h1 class="espera__titulo">Pedido enviado</h1>
               <span class="espera__reloj">
-                <lm-icono nombre="hourglass_top" [tamano]="30" color="var(--action-primary)" />
+                <lm-icono nombre="hourglass_top" [tamano]="18" color="var(--action-primary)" />
               </span>
               <b>El mozo está revisando tu pedido</b>
-              <div style="margin-top: 12px; width: 100%;">
-                <lm-boton icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">Jugar mientras esperás</lm-boton>
-              </div>
             </div>
           }
 
-          @if (confirmado()) {
+          @if (p.estadoGlobal === 'ENTREGADO') {
+            <lm-boton class="momento" variante="success" icono="check_circle" (presionar)="recibir(p)">
+              Confirmar recepción
+            </lm-boton>
+          } @else if (p.estadoGlobal === 'RECIBIDO') {
+            <lm-boton class="momento" icono="receipt_long" (presionar)="pedirCuenta(p)">Pedir la cuenta</lm-boton>
+          } @else if (p.estadoGlobal === 'CUENTA_SOLICITADA' || p.estadoGlobal === 'PAGO_PENDIENTE') {
+            @if (encuestas.respondida(p.id)) {
+              <div class="lm-card espera">
+                <span class="espera__reloj">
+                  <lm-icono nombre="receipt_long" [tamano]="18" color="var(--action-primary)" />
+                </span>
+                <b>El mozo está preparando tu cuenta</b>
+              </div>
+            } @else {
+              <lm-boton class="momento" icono="rate_review" (presionar)="ir(['/cliente/encuestas'])">
+                Responder la encuesta
+              </lm-boton>
+            }
+          } @else if (confirmado()) {
             <div class="lm-grid2">
               @if (p.estadoCocina !== 'NO_APLICA') {
                 <div class="lm-card sector">
-                  <lm-icono nombre="skillet" [tamano]="24" color="var(--action-primary)" />
-                  <span class="lm-label">Cocina</span>
+                  <span class="sector__titulo">
+                    <lm-icono nombre="skillet" [tamano]="18" color="var(--action-primary)" />
+                    <span class="lm-label">Cocina</span>
+                  </span>
                   <lm-chip [estado]="chipSector(p.estadoCocina)">{{ rotuloSector(p.estadoCocina) }}</lm-chip>
                 </div>
               }
               @if (p.estadoBar !== 'NO_APLICA') {
                 <div class="lm-card sector">
-                  <lm-icono nombre="local_bar" [tamano]="24" color="var(--action-primary)" />
-                  <span class="lm-label">Barra</span>
+                  <span class="sector__titulo">
+                    <lm-icono nombre="local_bar" [tamano]="18" color="var(--action-primary)" />
+                    <span class="lm-label">Barra</span>
+                  </span>
                   <lm-chip [estado]="chipSector(p.estadoBar)">{{ rotuloSector(p.estadoBar) }}</lm-chip>
                 </div>
               }
             </div>
           }
 
-          <lm-separador flor rotulo="Detalle" />
 
-          @if (editable() && p.observaciones.length) {
-            <div class="lm-card leyenda">
-              @if (hayAmarillos()) {
-                <span class="leyenda__item">
-                  <i class="leyenda__sello leyenda__sello--cantidad">
-                    <lm-icono nombre="warning" [tamano]="16" color="#FFFFFF" />
-                  </i>
-                  <span><b>Hay menos de lo que pediste.</b> Bajale la cantidad: no vas a poder sumar más.</span>
-                </span>
-              }
-              @if (aCambiar().length) {
-                <span class="leyenda__item">
-                  <i class="leyenda__sello leyenda__sello--cambiar">
-                    <lm-icono nombre="block" [tamano]="16" color="#FFFFFF" />
-                  </i>
-                  <span><b>No lo pueden preparar.</b> Sacalo del pedido o cambialo por otra cosa.</span>
-                </span>
-
-                <button type="button" class="limpiar" (click)="sacarLosQueNoVan()">
-                  <lm-icono nombre="delete_sweep" [tamano]="20" />
-                  Eliminar los productos que no se pueden preparar
+          @if (infoDevolucion()) {
+            <div class="lm-modal__fondo" (click)="infoDevolucion.set(false)">
+              <div class="lm-modal info-modal" role="dialog" aria-modal="true" aria-label="Información de la devolución" (click)="$event.stopPropagation()">
+                <button type="button" class="info-modal__cerrar" aria-label="Cerrar" (click)="infoDevolucion.set(false)">
+                  <lm-icono nombre="close" [tamano]="20" />
                 </button>
-              }
+                <span class="lm-modal__icono lm-modal__icono--peligro">
+                  <lm-icono nombre="edit_note" color="#FFFFFF" />
+                </span>
+                <div class="info-modal__cuerpo">
+                  <p class="info-modal__alcance">Motivo de la devolución</p>
+                  <p class="info-modal__motivo">{{ p.motivoRechazo }}</p>
+                  @if (editable() && p.observaciones.length) {
+                    <div class="info-modal__marcas">
+                      @if (hayAmarillos()) {
+                        <span class="leyenda__item">
+                          <i class="leyenda__sello leyenda__sello--cantidad">
+                            <lm-icono nombre="warning" [tamano]="16" color="#FFFFFF" />
+                          </i>
+                          <span><b>Hay menos:</b> bajá la cantidad</span>
+                        </span>
+                      }
+                      @if (aCambiar().length) {
+                        <span class="leyenda__item">
+                          <i class="leyenda__sello leyenda__sello--cambiar">
+                            <lm-icono nombre="block" [tamano]="16" color="#FFFFFF" />
+                          </i>
+                          <span><b>No hay:</b> sacalo o cambialo</span>
+                        </span>
+                        <button type="button" class="limpiar" (click)="sacarDesdeInfo()">
+                          <lm-icono nombre="delete_sweep" [tamano]="20" />
+                          Sacar los que no hay
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
             </div>
           }
 
           <!-- Renglones en modo editable (desde carrito) -->
           @if (editable()) {
-            <div class="lm-lista-n pedido__detalle">
+            <div class="pedido__lista">
               @for (item of carrito.items(); track item.producto.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -122,12 +155,9 @@ import { Unsubscribe } from 'firebase/firestore';
               }
             </div>
 
-            @if (traba(); as motivo) {
-              <lm-banner tono="error" titulo="Todavía no lo podés mandar">{{ motivo }}</lm-banner>
-            }
           } @else {
             <!-- Renglones de pedido enviado o confirmado -->
-            <div class="lm-lista-n pedido__detalle">
+            <div class="pedido__lista pedido__lista--compacta">
               @for (item of p.items; track item.id) {
                 <lm-renglon-pedido
                   [item]="item"
@@ -150,8 +180,8 @@ import { Unsubscribe } from 'firebase/firestore';
           }
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido
+        <lm-barra-pedido
+            [enFila]="editable()"
             [total]="editable() ? carrito.importeTotal() : p.totalFinal"
             [tiempo]="editable() ? carrito.tiempoEstimado() : p.tiempoEstimado"
             [unidades]="editable() ? carrito.cantidadTotal() : unidadesPedido(p)"
@@ -161,38 +191,23 @@ import { Unsubscribe } from 'firebase/firestore';
           >
             @if (editable()) {
               <lm-boton
+                compacto
+                variante="success"
                 icono="send"
-                [deshabilitado]="!carrito.items().length || traba() !== null"
+                [ancho]="false"
+                [deshabilitado]="!carrito.items().length"
                 (presionar)="enviar()"
               >
-                {{ p.estadoGlobal === 'RECHAZADO' ? 'Reenviar el pedido corregido' : 'Enviar el pedido al mozo' }}
-              </lm-boton>
-              <lm-texto-boton (presionar)="ir(['/carta'])">Volver a la carta</lm-texto-boton>
-            } @else if (p.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-              <lm-boton variante="secondary" icono="hourglass_top" [deshabilitado]="true">
-                Esperando al mozo
-              </lm-boton>
-            } @else if (p.estadoGlobal === 'LISTO') {
-              <lm-boton icono="check_circle" (presionar)="recibir(p)">
-                Confirmar recepción del pedido
-              </lm-boton>
-            } @else if (p.estadoGlobal === 'RECIBIDO') {
-              <lm-boton icono="receipt" (presionar)="pedirCuenta(p)">
-                Pedir la cuenta al mozo
-              </lm-boton>
-            } @else {
-              <lm-boton variante="secondary" icono="sports_esports" (presionar)="ir(['/cliente/juegos'])">
-                Jugar mientras esperás
+                {{ p.estadoGlobal === 'RECHAZADO' ? 'Reenviar' : 'Pedir' }}
               </lm-boton>
             }
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       } @else if (carrito.items().length) {
         <!-- Borrador antes de enviar -->
         <div class="lm-body lm-body--gap12 lm-body--pantalla">
           <lm-titulo>Mi pedido</lm-titulo>
 
-          <div class="lm-lista-n">
+          <div class="pedido__lista">
             @for (item of carrito.items(); track item.producto.id) {
               <lm-renglon-pedido
                 [item]="item"
@@ -204,22 +219,23 @@ import { Unsubscribe } from 'firebase/firestore';
           </div>
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido
+        <lm-barra-pedido
+            enFila
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
           >
             <lm-boton
+              compacto
+              variante="success"
               icono="send"
+              [ancho]="false"
               [deshabilitado]="!carrito.items().length"
               (presionar)="enviarNuevo()"
             >
-              Enviar el pedido al mozo
+              Pedir
             </lm-boton>
-            <lm-texto-boton (presionar)="ir(['/carta'])">Volver a la carta</lm-texto-boton>
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       } @else {
         <!-- Vacío -->
         <div class="lm-body">
@@ -238,61 +254,135 @@ import { Unsubscribe } from 'firebase/firestore';
   `,
   styles: [
     `
+    `,
+    `
       :host { display: flex; flex: 1; min-height: 0; }
-      .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
-      .devuelto__encabezado { display: flex; align-items: center; gap: var(--space-3); }
-      .devuelto__encabezado b { display: block; font: var(--type-card-title); color: var(--state-error); }
-      .devuelto__encabezado small { display: block; font: var(--type-caption); color: var(--text-muted); }
-      .devuelto__motivo { margin: var(--space-3) 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
-      .leyenda { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+      /* Todo lo de arriba del detalle va apretado: el lugar es para la lista. */
+      /* El título va siempre en un solo renglón: la letra se achica con el ancho (el título
+         más largo mide unos 14,3 em) en vez de bajar de línea y robarle alto al detalle. */
+      :host ::ng-deep lm-titulo h1 {
+        white-space: nowrap; font-size: min(20.8px, calc((100vw - 28px) / 14.8));
+      }
+      /* El aviso de devolución: un solo renglón; el detalle está en la ventana. */
+      .info-devolucion {
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%; min-height: 38px; padding: 6px 12px; cursor: pointer;
+        border-radius: var(--radius-pill); border: 1.5px solid var(--state-error);
+        background: var(--state-error-surface); color: var(--state-error);
+        font: var(--type-body-small); font-weight: 800;
+      }
+      .info-devolucion__signo {
+        flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+        display: grid; place-items: center; background: var(--state-error);
+      }
+      .info-modal { gap: var(--space-3); position: relative; }
+      .info-modal__cerrar {
+        position: absolute; top: 10px; right: 10px; z-index: 1;
+        width: 36px; height: 36px; padding: 0; cursor: pointer; border-radius: 50%;
+        display: grid; place-items: center;
+        background: var(--surface-sunken); color: var(--action-primary);
+        border: 1.5px solid rgba(255, 255, 255, .85);
+        box-shadow: 0 0 0 1px rgba(232, 51, 111, .25), 0 3px 8px rgba(59, 8, 27, .16);
+      }
+      .info-modal__cerrar:active { transform: scale(.92); }
+      /* El cuerpo se recorre adentro si el motivo es largo; el título y el botón quedan a la vista. */
+      .lm-modal > .info-modal__cuerpo {
+        flex: 0 1 auto; min-height: 0; width: 100%; overflow-y: auto; overscroll-behavior: contain;
+        display: flex; flex-direction: column; gap: var(--space-3);
+        scrollbar-width: thin; scrollbar-color: rgba(199, 38, 87, .55) transparent;
+      }
+      .info-modal__alcance { margin: 0; text-align: center; font: var(--type-card-title); color: var(--state-error); }
+      .info-modal__motivo {
+        margin: 0; text-align: center; font: var(--type-body); color: var(--text-title);
+        text-wrap: pretty; overflow-wrap: anywhere;
+      }
+      /* Las marcas y la acción van enmarcadas: se leen como un grupo aparte del motivo. */
+      .info-modal__marcas {
+        display: flex; flex-direction: column; gap: var(--space-2); text-align: left;
+        padding: var(--space-3); border-radius: var(--radius-field);
+        background: var(--surface-sunken); border: 1.5px solid rgba(255, 255, 255, .85);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .1);
+      }
       .leyenda__item {
-        display: flex; align-items: flex-start; gap: var(--space-3);
+        display: flex; align-items: center; gap: 8px;
         font: var(--type-body-small); color: var(--text-body); text-wrap: pretty;
       }
       .leyenda__item b { color: var(--text-title); }
       .leyenda__sello {
-        width: 26px; height: 26px; border-radius: 50%; flex: 0 0 auto;
+        width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
         display: grid; place-items: center; color: #FFFFFF;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .leyenda__sello--cantidad { background: var(--state-pending); }
       .leyenda__sello--cambiar { background: var(--state-error); }
       .limpiar {
         display: flex; align-items: center; justify-content: center; gap: 8px;
-        width: 100%; min-height: var(--touch-min); padding: var(--space-3) var(--space-4); margin-top: 2px;
-        border: none; border-radius: var(--radius-button); cursor: pointer;
+        width: 100%; min-height: 38px; padding: 6px var(--space-4); margin-top: 2px;
+        border: 1.5px solid rgba(255, 255, 255, .6); border-radius: 17px; cursor: pointer;
         background: var(--state-error); color: #FFF6F5;
         font: var(--type-button); line-height: 1.25; text-align: center; text-wrap: balance;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .limpiar:active { background: #9E1D13; transform: scale(0.99); }
-      .sector { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-3) var(--space-2); text-align: center; }
+      /* Dos pisos y no tres: el ícono va al lado del nombre del sector, así la
+         lista de abajo se queda con el alto para mostrar tres renglones. */
+      .sector { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 4px var(--space-2); text-align: center; }
+      .sector__titulo { display: inline-flex; align-items: center; gap: 5px; }
+      .momento { flex: 0 0 auto; }
       .espera { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: var(--space-5) var(--space-4); text-align: center; }
-      .espera__titulo {
-        margin: 0 0 6px; font: var(--type-title); letter-spacing: var(--tracking-tight);
-        color: var(--text-title); text-wrap: balance;
-      }
       .espera__reloj {
         width: clamp(44px, 13.5vw, 54px); height: clamp(44px, 13.5vw, 54px); border-radius: 50%; display: grid; place-items: center;
         background: var(--surface-sunken);
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .espera b { font: var(--type-card-title); color: var(--text-title); }
-      .espera small { font: var(--type-body-small); color: var(--text-muted); text-wrap: pretty; }
       /* El estado vacío llena el alto que sobra: sin hueco debajo. */
       lm-vacio { display: flex; flex-direction: column; flex: 1 1 auto; }
       lm-vacio ::ng-deep .lm-empty { flex: 1 1 auto; justify-content: center; }
 
-      /* Esperando al mozo: la tarjeta ocupa el alto disponible y el reloj
-         y el título crecen con él, en lugar de quedar chicos arriba. */
-      .espera { flex: 1 1 auto; justify-content: center; gap: var(--space-3); }
-      .espera__reloj { width: clamp(64px, 22vw, 96px); height: clamp(64px, 22vw, 96px); }
-      .espera__titulo { font: var(--type-title-xl); }
-      .espera b { font: var(--type-section); }
-      .espera small { font: var(--type-body); }
+      /* Esperando al mozo: una franja de un renglón, con el reloj al costado. */
+      .espera { flex: 0 0 auto; flex-direction: row; justify-content: center; gap: 8px; padding: 8px 12px; }
+      .espera__reloj { width: 30px; height: 30px; }
+      .espera b { font: var(--type-body-medium); font-weight: 800; white-space: nowrap; font-size: clamp(12px, 3.9vw, 15px); }
+      /* "Mi pedido" en tandas exactas: cada renglón mide justo una parte del
+         alto de la lista (unos 110px de contenido), así entran enteros, sin
+         hueco de más, y el snap ancla de a uno, de a dos, de a tres o de a cuatro. */
+      .pedido__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: pedidolista / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .pedido__lista::-webkit-scrollbar { display: none; }
+      .pedido__lista > lm-renglon-pedido {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; display: flex; flex-direction: column; justify-content: center;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      /* Tandas ajustadas al contenido: se muestran tantos renglones como entran enteros.
+         El más alto (nombre de dos líneas) mide unos 135px, así que cada tanda
+         necesita n × 135 + los espacios. Los nombres se cortan en dos líneas con "…":
+         un tercer renglón estiraría la tarjeta y rompería el snap. Así no sobra
+         aire entre tarjetas ni hace falta estirarlas. */
+      .pedido__lista > lm-renglon-pedido ::ng-deep .renglon__datos b {
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      }
+      @container pedidolista (min-height: 282px) { .pedido__lista > lm-renglon-pedido { --por: 2; } }
+      @container pedidolista (min-height: 417px) { .pedido__lista > lm-renglon-pedido { --por: 3; } }
+      @container pedidolista (min-height: 552px) { .pedido__lista > lm-renglon-pedido { --por: 4; } }
       /* El estado y el resumen dejan menos alto que en el borrador:
          como en el carrito, se muestran hasta dos renglones por tanda. */
-      .pedido__detalle:has(> :nth-child(5)) { --por: 2; }
-      @media (max-height: 640px) {
-        .pedido__detalle:has(> :nth-child(3)) { --por: 1; }
-      }
+      /* Detalle del pedido enviado: renglones más bajos que los del carrito. */
+      .pedido__lista--compacta { container: pedidodetalle / size; }
+      .pedido__lista--compacta > lm-renglon-pedido ::ng-deep .renglon { padding-top: 5px !important; padding-bottom: 5px !important; }
+      /* Acá el renglón más alto (nombre de dos líneas) mide 93px y el espacio
+         entre renglones llega a 10px: cada tanda de n necesita n × 93 + (n − 1) × 10. */
+      @container pedidodetalle (min-height: 196px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 2; } }
+      @container pedidodetalle (min-height: 299px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 3; } }
+      @container pedidodetalle (min-height: 402px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 4; } }
+      @container pedidodetalle (min-height: 505px) { .pedido__lista--compacta > lm-renglon-pedido { --por: 5; } }
 
     `,
   ],
@@ -304,6 +394,7 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
   private readonly espera = inject(EsperaService);
   private readonly mesas = inject(MesasService);
   private readonly chat = inject(ChatService);
+  protected readonly encuestas = inject(EncuestasService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly respuestasSinLeer = signal(0);
@@ -345,6 +436,9 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     (this.pedido()?.observaciones ?? []).some((o) => o.marca === 'CANTIDAD'),
   );
 
+  /** La ventana con el motivo de la devolución y las marcas. */
+  protected readonly infoDevolucion = signal(false);
+
   protected readonly traba = computed(() =>
     this.editable() ? this.pedidos.trabaParaReenviar(this.pedido(), this.carrito.items()) : null,
   );
@@ -358,6 +452,14 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
 
   constructor() {
     super();
+
+    // Con la cuenta pedida, la zona de arriba depende de si ya respondió la encuesta.
+    effect(() => {
+      const p = this.pedido();
+      if (p && (p.estadoGlobal === 'CUENTA_SOLICITADA' || p.estadoGlobal === 'PAGO_PENDIENTE')) {
+        void this.encuestas.consultar(p.id);
+      }
+    });
 
     effect(() => {
       const p = this.pedido();
@@ -396,7 +498,8 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     if (estado === 'LISTO') return 'Tu pedido está listo';
     if (estado === 'EN_PREPARACION') return 'Lo están preparando';
     if (estado === 'CONFIRMADO') return 'Pedido confirmado';
-    if (estado === 'RECIBIDO' || estado === 'ENTREGADO') return 'Pedido entregado';
+    if (estado === 'ENTREGADO') return 'Pedido entregado';
+    if (estado === 'RECIBIDO') return 'Recepción confirmada';
     if (estado === 'CUENTA_SOLICITADA') return 'Cuenta solicitada';
     if (estado === 'PAGO_PENDIENTE') return 'Pago pendiente';
     if (estado === 'CERRADO') return 'Pedido cerrado';
@@ -425,16 +528,33 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     return (p.items ?? []).reduce((s, i) => s + i.cantidad, 0);
   }
 
+  /** Cierra la ventana y saca los productos sin stock (que pide su propia confirmación). */
+  protected sacarDesdeInfo(): void {
+    this.infoDevolucion.set(false);
+    void this.sacarLosQueNoVan();
+  }
+
   protected async sacarLosQueNoVan(): Promise<void> {
     const cuantos = this.aCambiar().length;
     if (!cuantos) return;
 
     const seguro = await this.preguntar({
       titulo: cuantos === 1 ? '¿Sacás el producto en rojo?' : `¿Sacás los ${cuantos} productos en rojo?`,
-      mensaje: 'Son los que el mozo marcó como imposibles de preparar. Salen de tu pedido y podés elegir otra cosa desde la carta.',
       confirmar: 'Sacarlos del pedido',
       tono: 'peligro',
       icono: 'delete_sweep',
+      // Cuáles son: uno por línea, con el mismo sello rojo que llevan en la lista.
+      detalle: [
+        {
+          rotulo: '',
+          valor: '',
+          marcas: this.aCambiar().map((item) => ({
+            icono: 'block',
+            tono: 'peligro' as const,
+            texto: item.producto.nombre,
+          })),
+        },
+      ],
     });
     if (!seguro) return;
 
@@ -450,16 +570,21 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
     if (!cliente || !this.carrito.items().length) return;
 
     if (p?.estadoGlobal === 'RECHAZADO') {
+      // Todavía quedan productos marcados: se avisa arriba, sin ocupar lugar en la pantalla.
+      const motivo = this.traba();
+      if (motivo) {
+        this.avisos.error('Todavía no lo podés mandar', motivo);
+        return;
+      }
       const seguro = await this.preguntar({
         titulo: '¿Reenviás el pedido corregido?',
-        mensaje: 'El mozo lo vuelve a revisar con los cambios que hiciste.',
         confirmar: 'Reenviar',
         tono: 'primario',
         icono: 'send',
         detalle: [
           { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
           { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
-          { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()} min` },
+          { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
         ],
       });
       if (!seguro) return;
@@ -508,7 +633,7 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
       detalle: [
         { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
         { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
-        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()} min` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
       ],
     });
     if (!seguro) return;
@@ -528,11 +653,15 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
 
   protected async recibir(p: Pedido): Promise<void> {
     const seguro = await this.preguntar({
-      titulo: '¿Confirmás la entrega?',
-      mensaje: '¿El mozo ya te acercó el pedido completo a la mesa?',
+      titulo: '¿Recibiste tu pedido?',
+      mensaje: 'Confirmalo cuando tengas en la mesa todo lo que pediste.',
       confirmar: 'Confirmar recepción',
-      tono: 'primario',
+      tono: 'exito',
       icono: 'check_circle',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${p.mesaNumero}` },
+        { rotulo: 'Productos', valor: `${this.unidadesPedido(p)}` },
+      ],
     });
     if (!seguro) return;
 
@@ -545,16 +674,27 @@ export class ClientePedidoPage extends PaginaConSesion implements OnInit {
   protected async pedirCuenta(p: Pedido): Promise<void> {
     const seguro = await this.preguntar({
       titulo: '¿Pedís la cuenta?',
-      mensaje: 'Le avisamos al mozo para que acerque la cuenta a la mesa.',
+      mensaje:
+        'Le avisamos al mozo para que te la acerque. Mientras tanto, te vamos a pedir que respondas una encuesta corta de satisfacción.',
       confirmar: 'Pedir la cuenta',
       tono: 'primario',
-      icono: 'receipt',
+      icono: 'receipt_long',
     });
     if (!seguro) return;
 
     await this.cargando.conEsperaMinima('Avisando al mozo…', async () => {
       await this.pedidos.actualizarEstadoGlobal(p.id, 'CUENTA_SOLICITADA');
     });
-    this.avisos.exito('Cuenta solicitada', 'El mozo ya está notificado.');
+
+    // Un solo modal, y al cerrarlo la barra lo lleva a Encuestas: la encuesta
+    // nueva lo está esperando ahí.
+    await this.confirmacion.mostrar({
+      titulo: 'Cuenta solicitada',
+      mensaje: 'El mozo ya está avisado. Mientras te la acerca, contanos cómo te fue: son cinco pasos.',
+      confirmar: 'Ir a la encuesta',
+      tono: 'exito',
+      icono: 'receipt_long',
+    });
+    this.ir(['/cliente/encuestas']);
   }
 }

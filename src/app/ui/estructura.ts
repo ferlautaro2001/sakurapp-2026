@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, booleanAttribute, computed, inject, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, booleanAttribute, computed, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IconoComponent, IconoBotonComponent } from './basicos';
 import { SesionService } from '../nucleo/servicios/sesion.service';
+import { TransicionService } from '../nucleo/servicios/transicion.service';
 import { UsuariosService } from '../nucleo/servicios/usuarios.service';
 import { ROTULO_PERFIL } from '../nucleo/modelos/enums';
 
@@ -40,7 +41,7 @@ export interface ItemNavegacion {
         </div>
         <ng-content select="[accion]" />
         @if (!titulo()) {
-          <lm-icono-boton icono="logout" rotulo="Cerrar sesión" (presionar)="cerrarSesion.emit()" />
+          <lm-icono-boton icono="logout" rotulo="Cerrar sesión" tono="peligro" (presionar)="cerrarSesion.emit()" />
         }
       </div>
     </header>
@@ -92,22 +93,42 @@ export class EncabezadoComponent {
   `,
   styles: [':host{display:block;flex:0 0 auto}'],
 })
-export class BarraInferiorComponent {
+export class BarraInferiorComponent implements OnInit {
   private readonly router = inject(Router);
+  private readonly transicion = inject(TransicionService);
   readonly items = input.required<ItemNavegacion[]>();
   readonly activo = input.required<string>();
 
-  /** Pestaña tocada: el vidrio se desliza hasta ella antes de cambiar de pantalla. */
+  /** Pestaña tocada: el vidrio se desliza hasta ella sin frenar la navegación. */
   private readonly tocado = signal<number | null>(null);
   protected readonly indice = computed(
     () => this.tocado() ?? this.items().findIndex((item) => item.id === this.activo()),
   );
 
+  ngOnInit(): void {
+    // La barra se vuelve a montar en cada pantalla: arranca el vidrio en la
+    // pestaña de origen para que deslice hasta la nueva en vez de saltar.
+    const desde = this.transicion.consumirOrigen();
+    const hasta = this.items().findIndex((item) => item.id === this.activo());
+    if (desde !== null && hasta >= 0 && desde !== hasta && desde >= 0 && desde < this.items().length) {
+      this.tocado.set(desde);
+      const asentar = (): void => this.tocado.set(null);
+      if (typeof requestAnimationFrame !== 'undefined') {
+        requestAnimationFrame(() => requestAnimationFrame(asentar));
+      } else {
+        setTimeout(asentar, 0);
+      }
+    }
+  }
+
   protected ir(item: ItemNavegacion, i: number): void {
-    if (i === this.indice()) return;
+    const origen = this.indice();
+    if (i === origen) return;
+    // El sentido del barrido sale de la posición del botón respecto del activo.
+    this.transicion.segunIndices(origen, i);
     this.tocado.set(i);
-    // Cada pantalla trae su propia barra: se espera al deslizamiento para que se vea.
-    setTimeout(() => void this.router.navigate([item.ruta]), 260);
+    // Navegación inmediata: el vidrio anima en paralelo, no antes.
+    void this.router.navigate([item.ruta]);
   }
 }
 

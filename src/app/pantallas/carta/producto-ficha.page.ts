@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Producto } from '../../nucleo/modelos/modelos';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
@@ -10,6 +10,7 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MarcaRechazo } from '../../nucleo/modelos/enums';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-producto-ficha',
   imports: [...UI],
   template: `
@@ -43,6 +44,14 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
               (pointerup)="terminarSwipe($event)"
               (pointercancel)="cancelarSwipe()"
             >
+              <!-- La foto anterior se queda como base mientras entra la nueva, así no
+                   se ve el fondo blanco durante el barrido. -->
+              @if (fotoAnterior() && fotoAnterior() !== fotoActual()) {
+                <div
+                  class="sk-foto sk-foto--base"
+                  [style.background-image]="'url(' + fotoAnterior() + ')'"
+                ></div>
+              }
               <!-- Cada foto es un elemento nuevo: el track hace que entre con barrido. -->
               @for (foto of [fotoActual()]; track foto) {
                 @if (foto) {
@@ -112,6 +121,8 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                     <img
                       src="assets/img/flor-2.png"
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                     />
                   </button>
                 }
@@ -152,7 +163,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
                 <span class="dato-contenido">
                   <small>ELABORACIÓN</small>
                   <strong>
-                    {{ producto.tiempoElaboracion }} minutos
+                    {{ producto.tiempoElaboracion }}'
                   </strong>
                 </span>
               </article>
@@ -319,6 +330,15 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         background-size: cover;
         background-repeat: no-repeat;
         animation: sk-barrido-entrada 380ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+        z-index: 1;
+        will-change: transform;
+      }
+
+      /* La foto anterior queda quieta debajo, para que no se vea el fondo
+         blanco mientras la nueva entra con barrido. */
+      .sk-foto--base {
+        animation: none;
+        z-index: 0;
       }
 
       .sk-foto--atras {
@@ -722,7 +742,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger {
         color: #FFFFFF;
-        background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%);
+        background: linear-gradient(180deg, #F0452F 0%, #FF0000 55%, #8E160F 100%);
         border: 2px solid rgba(255, 190, 180, 0.7);
         box-shadow:
           inset 0 2px 0 rgba(255, 255, 255, 0.35),
@@ -731,7 +751,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
           0 8px 18px rgba(142, 22, 15, 0.45);
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger:not(:disabled):active {
-        background: linear-gradient(180deg, #C0261A 0%, #8E160F 100%);
+        background: linear-gradient(180deg, #FF0000 0%, #8E160F 100%);
       }
 
       /* Las flechas van en las esquinas de abajo de la foto: la de la izquierda
@@ -762,7 +782,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
         filter: drop-shadow(0 2px 6px rgba(94, 12, 44, 0.45));
       }
       .producto-descripcion {
-        font: 500 clamp(15.5px, 4.3vw, 19px)/1.42 var(--font-text);
+        font: 550 clamp(15.5px, 4.3vw, 19px)/1.42 var(--font-text);
         color: rgba(255, 255, 255, 0.94);
         text-shadow: 0 1px 4px rgba(94, 12, 44, 0.35);
       }
@@ -814,6 +834,15 @@ export class ProductoFichaPage extends PaginaConSesion {
   private readonly mesas = inject(MesasService);
   private readonly pedidos = inject(PedidosService);
   protected readonly carrito = inject(CarritoService);
+  private readonly destroyRef = inject(DestroyRef);
+
+  constructor() {
+    super();
+    // Al salir de la ficha se cancela el temporizador del fundido entre fotos.
+    this.destroyRef.onDestroy(() => {
+      if (this.temporizadorFotoAnterior) clearTimeout(this.temporizadorFotoAnterior);
+    });
+  }
 
   private readonly posicionFoto = signal(0);
   /* Hacia dónde barre la foto nueva: 1 entra desde la derecha, -1 desde la izquierda. */
@@ -905,10 +934,15 @@ export class ProductoFichaPage extends PaginaConSesion {
     return this.fotos()[this.indiceActual()] ?? null;
   }
 
+  protected fotoAnterior = signal<string | null>(null);
+  private temporizadorFotoAnterior: ReturnType<typeof setTimeout> | null = null;
+
   protected moverFoto(paso: number): void {
     const cantidad = this.cantidadFotos();
     if (!cantidad) return;
 
+    this.fotoAnterior.set(this.fotoActual());
+    this.limpiarFotoAnteriorDespues();
     this.direccionFoto.set(paso < 0 ? -1 : 1);
     this.posicionFoto.set(
       (this.indiceActual() + paso + cantidad) % cantidad,
@@ -916,8 +950,21 @@ export class ProductoFichaPage extends PaginaConSesion {
   }
 
   protected irAFoto(indice: number): void {
+    if (indice === this.indiceActual()) return;
+    this.fotoAnterior.set(this.fotoActual());
+    this.limpiarFotoAnteriorDespues();
     this.direccionFoto.set(indice < this.indiceActual() ? -1 : 1);
     this.posicionFoto.set(indice);
+  }
+
+  private limpiarFotoAnteriorDespues(): void {
+    if (this.temporizadorFotoAnterior) {
+      clearTimeout(this.temporizadorFotoAnterior);
+    }
+    this.temporizadorFotoAnterior = setTimeout(() => {
+      this.fotoAnterior.set(null);
+      this.temporizadorFotoAnterior = null;
+    }, 420);
   }
 
   /* =========================================================

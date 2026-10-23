@@ -109,19 +109,22 @@ export class BotonComponent {
         min-height: clamp(56px, 8.5dvh, 68px); padding: 0; border-radius: 20px;
         display: flex; align-items: center; justify-content: center;
         color: #FFFFFF; cursor: pointer; -webkit-tap-highlight-color: transparent;
-        /* Aro de vidrio de la app: el relleno termina donde empieza el borde. */
+        /* Mismo contorno de vidrio que el resto de los botones de la app: todas
+           las cruces y tildes comparten borde y sombra; sólo cambia el tamaño. */
         background-clip: padding-box;
-        border: 2px solid rgba(255, 255, 255, .65);
+        border: 1.5px solid rgba(255, 255, 255, .6);
         box-shadow:
-          inset 0 2px 0 rgba(255, 255, 255, .35),
-          inset 0 -4px 10px rgba(0, 0, 0, .2),
-          0 0 0 1px rgba(232, 51, 111, .28),
-          0 3px 8px rgba(59, 8, 27, .16);
+          inset 0 1px 0 rgba(255, 255, 255, .7),
+          0 3px 8px rgba(94, 12, 44, .14);
         transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
       }
       :host(.lm-decision--compacto) .dec { min-height: var(--touch-min); border-radius: 16px; }
-      .dec--no { background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%); }
-      .dec--si { background: linear-gradient(180deg, #2FA56B 0%, #1B7A4C 55%, #11593A 100%); }
+      /* Verde y rojo de la app, no otros: los mismos tokens que usa
+         lm-btn--success y lm-btn--danger. Antes esta pareja llevaba degradados
+         propios —un verde claro y un naranja— y se veía distinta de todos los
+         demás botones de aceptar y rechazar. Ahora hay una sola fuente. */
+      .dec--no { background: var(--state-error); color: #FFF6F5; outline: 2px solid #8B0000; }
+      .dec--si { background: var(--state-success); color: #F4FBF7; outline: 2px solid #0F4D2E; }
       .dec:not(:disabled):active { transform: scale(.97); filter: brightness(.88); }
       .dec:disabled { opacity: .46; cursor: default; }
       .dec:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; }
@@ -215,7 +218,7 @@ export class IconoBotonComponent {
   selector: 'lm-chip',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `<span class="lm-chip lm-chip--{{ estado() }}"><ng-content /></span>`,
-  styles: [':host{display:inline-flex}'],
+  styles: [':host{display:inline-flex;flex-shrink:0;max-width:100%}'],
 })
 export class ChipComponent {
   /** vacia · libre · ocupada · inactiva · reservada · pendiente · aprobado · rechazado */
@@ -519,14 +522,21 @@ export interface DatoFicha {
 
         @if (detalle().length) {
           <dl class="lm-modal__detalle">
-            @for (dato of detalle(); track dato.rotulo) {
-              <div>
-                <dt>
-                  @if (dato.icono) {
-                    <lm-icono [nombre]="dato.icono" [tamano]="16" color="var(--action-primary)" />
-                  }
-                  {{ dato.rotulo }}
-                </dt>
+            @for (dato of detalle(); track $index) {
+              <!-- Los datos largos (una lista de productos, un motivo) van debajo del rótulo y a todo el ancho: en una columna angosta se partían en muchos renglones. -->
+              <div
+                [class.lm-modal__fila--sola]="!dato.rotulo"
+                [class.lm-modal__fila--apilada]="!!dato.rotulo && (!!dato.marcas?.length || dato.valor.length > 24)"
+              >
+                <!-- Sin rótulo, la fila es sólo el contenido: no se gasta el ancho en una etiqueta. -->
+                @if (dato.rotulo) {
+                  <dt>
+                    @if (dato.icono) {
+                      <lm-icono [nombre]="dato.icono" [tamano]="16" color="var(--action-primary)" />
+                    }
+                    {{ dato.rotulo }}
+                  </dt>
+                }
                 @if (dato.marcas?.length) {
                   <dd class="lm-modal__marcas">
                     @for (marca of dato.marcas; track marca.texto) {
@@ -595,13 +605,13 @@ export interface DatoFicha {
         position: absolute; top: 12px; right: 12px;
         /* Mismo tamaño que el botón de cerrar sesión del encabezado. */
         width: var(--touch-min); height: var(--touch-min); display: grid; place-items: center; padding: 0;
-        /* Mismo contorno de vidrio que el botón de cerrar sesión; conserva el rojo. */
-        border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .5);
-        background: var(--state-error); color: #FFFFFF; cursor: pointer;
+        /* Mismo contorno, bordes y outline que el botón de cerrar sesión. */
+        border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .6);
+        outline: 2px solid #8B0000;
+        background: #FF0000; color: #FFFFFF; cursor: pointer;
         box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, .55),
-          inset 0 -6px 12px rgba(255, 255, 255, .06),
-          0 4px 10px rgba(94, 12, 44, .16);
+          inset 0 1px 0 rgba(255, 255, 255, .7),
+          0 3px 8px rgba(94, 12, 44, .14);
       }
       .modal-cerrar:active { transform: scale(.94); }
     `,

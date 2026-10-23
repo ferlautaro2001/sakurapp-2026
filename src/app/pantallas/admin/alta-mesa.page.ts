@@ -1,10 +1,9 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import { UI } from '../../ui';
 import { EstadoMesa, ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelos/enums';
-import { Mesa } from '../../nucleo/modelos/modelos';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { CamaraService } from '../../nucleo/servicios/camara.service';
 import { CargandoService } from '../../nucleo/servicios/cargando.service';
@@ -28,6 +27,7 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
  * - Erradicación de window.alert() con feedback háptico (@capacitor/haptics) y spinner Sakura.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-alta-mesa',
   imports: [ReactiveFormsModule, ...UI],
   template: `
@@ -91,19 +91,6 @@ const TIPOS: { valor: TipoMesa; rotulo: string }[] = [
       </div>
     </div>
 
-    @if (mesaCreada(); as m) {
-      <lm-modal animate.leave="sk-modal-host-sale"
-        titulo="Mesa agregada con éxito"
-        [mensaje]="'La mesa ' + m.numero + ' ya está registrada.'"
-        rotuloCancelar="Volver a mesas"
-        rotuloConfirmar="Ver código QR"
-        tono="exito"
-        icono="verified"
-        [detalle]="detalleAlta(m)"
-        (cancelar)="volver()"
-        (confirmar)="verQrCompleto(m.id)"
-      />
-    }
   `,
   styles: [
     `
@@ -139,7 +126,6 @@ export class AltaMesaPage implements OnInit {
   protected readonly foto = signal<string | null>(null);
   protected readonly errorFoto = signal<string | null>(null);
   protected readonly resumenError = signal<string | null>(null);
-  protected readonly mesaCreada = signal<Mesa | null>(null);
 
   protected readonly formulario = this.fb.nonNullable.group({
     numero: ['', [requerido('Escribí el número de mesa'), enteroEntre(1, 999, 'El número tiene que estar entre 1 y 999')]],
@@ -212,25 +198,12 @@ export class AltaMesaPage implements OnInit {
 
       void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
       this.avisos.exito(`Mesa ${nueva.numero} agregada`, 'Código QR generado y disponible para el salón.');
-      this.mesaCreada.set(nueva);
+      void this.router.navigate(['/mesas']);
     } catch (err: any) {
       console.error('Error al agregar mesa:', err);
       this.avisos.vibrarError();
       this.avisos.error('No se pudo guardar la mesa', err?.message || 'Error de conexión.');
     }
-  }
-
-  protected detalleAlta(m: Mesa): { rotulo: string; valor: string }[] {
-    return [
-      { rotulo: 'Mesa', valor: `Número ${m.numero}` },
-      { rotulo: 'Capacidad', valor: `${m.cantidadComensales} personas` },
-      { rotulo: 'Tipo', valor: ROTULO_TIPO_MESA[m.tipo] },
-      { rotulo: 'Estado', valor: m.estado === 'VACIA' ? 'Vacía' : 'Ocupada' },
-    ];
-  }
-
-  protected verQrCompleto(id: string): void {
-    void this.router.navigate(['/mesas', id, 'qr']);
   }
 
   protected volver(): void {

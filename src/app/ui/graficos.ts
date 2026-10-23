@@ -110,12 +110,18 @@ export class GraficoTortaComponent {
       <div class="sk-barras">
         @for (punto of puntos(); track punto.rotulo) {
           <div class="sk-barras__columna">
-            <span class="sk-barras__valor">{{ punto.valor }}</span>
+            <span class="sk-barras__valor">{{ punto.valor }}{{ sufijo() }}</span>
             <span class="sk-barras__pista">
               <span class="sk-barras__hueco" [style.flex-grow]="maximo() - punto.valor"></span>
               <span class="sk-barras__barra" [style.flex-grow]="punto.valor"></span>
             </span>
-            <span class="sk-barras__rotulo">{{ punto.rotulo }}</span>
+            @if (punto.icono) {
+              <span class="sk-barras__rotulo sk-barras__rotulo--icono" role="img" [attr.aria-label]="punto.rotulo">
+                <span class="material-symbols-rounded" aria-hidden="true">{{ punto.icono }}</span>
+              </span>
+            } @else {
+              <span class="sk-barras__rotulo">{{ punto.rotulo }}</span>
+            }
           </div>
         }
       </div>
@@ -127,6 +133,8 @@ export class GraficoBarrasComponent {
   readonly titulo = input.required<string>();
   readonly bajada = input<string | null>(null);
   readonly puntos = input.required<PuntoSerie[]>();
+  /** Lo que va pegado al número de cada barra, por ejemplo " %". */
+  readonly sufijo = input('');
 
   /**
    * La barra no se dibuja con un alto en porcentaje sino repartiendo el
@@ -134,6 +142,64 @@ export class GraficoBarrasComponent {
    * el número de arriba y el rótulo de abajo, y nunca se sale de la tarjeta.
    */
   protected readonly maximo = computed(() => Math.max(1, ...this.puntos().map((p) => p.valor)));
+}
+
+/**
+ * Barras horizontales con el porcentaje de cada opción, de la más elegida a la
+ * menos. Es el gráfico del multiple choice: cada uno elige varias, así que los
+ * porcentajes no suman cien y una torta mentiría.
+ */
+@Component({
+  selector: 'lm-grafico-ranking',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <figure class="sk-grafico">
+      <figcaption class="sk-grafico__titulo">{{ titulo() }}</figcaption>
+      @if (bajada()) {
+        <p class="sk-grafico__bajada">{{ bajada() }}</p>
+      }
+
+      <ul class="ranking" role="list" [attr.aria-label]="titulo()">
+        @for (punto of puntos(); track punto.rotulo) {
+          <li class="ranking__fila">
+            <span class="ranking__rotulo">{{ punto.rotulo }}</span>
+            <span class="ranking__pista"><span class="ranking__barra" [style.width.%]="punto.valor"></span></span>
+            <b class="ranking__valor">{{ punto.valor }} %</b>
+          </li>
+        }
+      </ul>
+    </figure>
+  `,
+  styles: [
+    `
+      :host { display: block; }
+      /* Las filas se reparten el alto de la tarjeta: entran todas, sin desplazar.
+         Las diez comparten las tres columnas: el nombre mide lo que el más largo
+         (hasta un tope, después se parte), el porcentaje lo que ocupa el número, y
+         todo lo demás es barra, alineada en todas las filas. */
+      .ranking {
+        list-style: none; margin: 0; padding: 0; flex: 1 1 auto; min-height: 0;
+        display: grid; grid-template-columns: fit-content(42%) minmax(0, 1fr) max-content;
+        grid-auto-rows: minmax(min-content, 1fr); column-gap: 10px; row-gap: 6px; align-items: center;
+      }
+      /* En una tarjeta baja, con el título en tres renglones, las diez filas
+         sólo entran juntando un poco más las filas. */
+      @container grafico (max-height: 420px) {
+        .ranking { row-gap: 2px; }
+      }
+      .ranking__fila { display: contents; }
+      .ranking__rotulo { font: 700 clamp(14px, 4vw, 15px)/1.15 var(--font-text); color: var(--text-title); text-wrap: balance; }
+      .ranking__pista { height: 12px; border-radius: 6px; background: rgba(199, 38, 87, .12); overflow: hidden; }
+      .ranking__barra { display: block; height: 100%; border-radius: 6px; background: var(--action-primary); }
+      .ranking__valor { text-align: right; white-space: nowrap; font: 800 clamp(15px, 4.2vw, 16px)/1 var(--font-numeric); color: var(--text-title); }
+    `,
+  ],
+})
+export class GraficoRankingComponent {
+  readonly titulo = input.required<string>();
+  readonly bajada = input<string | null>(null);
+  /** Porcentaje de comensales que eligió cada opción. */
+  readonly puntos = input.required<PuntoSerie[]>();
 }
 
 /** Gráfico lineal: una serie con sus puntos marcados. */

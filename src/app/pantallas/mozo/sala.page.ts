@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
@@ -11,6 +11,7 @@ import { Unsubscribe } from 'firebase/firestore';
  * Sala de chat en tiempo real del mozo con una mesa específica.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mozo-sala',
   imports: [ReactiveFormsModule, ...UI],
   template: `
@@ -86,10 +87,22 @@ import { Unsubscribe } from 'firebase/firestore';
     `
       :host { display: flex; flex: 1; min-height: 0; }
       .sala { overflow: hidden; }
+      /* Menos aire en general para aprovechar el espacio de mensajes. */
+      .sala .lm-title { margin-bottom: 4px; }
+      .sala .lm-body { gap: 6px; padding-block: 4px; }
       .sala__hilo {
         flex: 1 1 auto; min-height: 0; overflow-y: auto;
-        display: flex; flex-direction: column; gap: 8px; padding-right: 2px;
+        display: flex; flex-direction: column; gap: 6px; padding-right: 2px;
+        /* Snap por mensaje: al scrollear se ven ~5 burbujas a la vez y las
+           demás quedan arriba/abajo, sin cortarse. */
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0;
+        padding-bottom: 32px;
+        scroll-padding-bottom: 32px;
+        /* Recorte suave desactivado por performance (120 FPS). */
+        /* Performance: contain para evitar repaints en scroll. */
+        contain: layout style paint;
       }
+      .sala__hilo > * { scroll-snap-align: start; scroll-snap-stop: always; }
       .sala__vacia {
         flex: 1 1 auto; display: flex; flex-direction: column; align-items: center; justify-content: center;
         gap: 6px; text-align: center; padding: var(--space-5) 10px;

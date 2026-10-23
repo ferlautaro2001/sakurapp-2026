@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   booleanAttribute,
   inject,
   input,
@@ -8,7 +9,7 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { IconoComponent, ChipComponent, DecisionComponent } from './basicos';
+import { IconoComponent, ChipComponent, DecisionComponent, BotonComponent } from './basicos';
 import { FechaHoraPipe, HoraPipe, PesosPipe } from './pesos.pipe';
 import { Pedido, PedidoItem } from '../nucleo/modelos/modelos';
 import { MarcaRechazo, ROTULO_ESTADO_PEDIDO, ROTULO_MARCA_RECHAZO } from '../nucleo/modelos/enums';
@@ -24,8 +25,8 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent, PesosPipe],
   template: `
-    <div class="lm-resumen">
-      @if (hayDescuento()) {
+    <div class="lm-resumen" [class.lm-resumen--tira]="tira()">
+      @if (hayDescuento() && !tira()) {
         <div class="lm-resumen__desglose">
           <span class="lm-resumen__linea">
             <small>Subtotal</small>
@@ -44,22 +45,26 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         </div>
       }
       <div class="lm-resumen__cifras">
+        <span class="lm-resumen__tiempo">
+          <lm-icono nombre="schedule" [tamano]="16" color="var(--action-primary)" />
+          {{ tiempo() }}'
+          <small>
+            @if (tira()) {
+              &middot;
+            }
+            {{ unidades() }} {{ unidades() === 1 ? 'producto' : (tira() ? 'prod.' : 'productos') }}
+          </small>
+        </span>
         <span class="lm-resumen__total">
           <small>Total</small>
           {{ total() | pesos }}
         </span>
-        <span class="lm-resumen__tiempo">
-          <lm-icono nombre="schedule" [tamano]="16" color="var(--action-primary)" />
-          {{ tiempo() }} min
-          <small>{{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }}</small>
-        </span>
       </div>
     </div>
-    <ng-content />
   `,
   styles: [
     `
-      :host { display: flex; flex-direction: column; gap: var(--space-4); }
+      :host { display: block; min-width: 0; }
       .lm-resumen {
         display: flex; flex-direction: column; gap: 10px;
         padding: var(--space-3) var(--space-4);
@@ -80,7 +85,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       }
       .lm-resumen__linea small {
         display: inline-flex; align-items: center; gap: 5px;
-        font: var(--type-caption); color: var(--text-muted);
+        font: var(--type-caption); font-weight: 650; color: var(--text-muted);
       }
       .lm-resumen__linea--descuento,
       .lm-resumen__linea--descuento small { color: var(--state-success); }
@@ -91,7 +96,7 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
       }
       .lm-resumen__cifras { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-3); }
       .lm-resumen__total {
-        display: flex; flex-direction: column;
+        display: flex; flex-direction: column; align-items: flex-end; text-align: right;
         font: 900 clamp(19px, 6vw, 26px)/1 var(--font-numeric); color: var(--action-primary);
       }
       .lm-resumen__total small {
@@ -99,10 +104,40 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
         text-transform: uppercase; color: var(--text-muted); margin-bottom: 3px;
       }
       .lm-resumen__tiempo {
-        display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-end;
+        display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; justify-content: flex-start;
         font: 800 clamp(13.5px, 3.5vw, 15px)/1.1 var(--font-numeric); color: var(--text-title);
+        padding: 0; /* liso: sin aro de vidrio, el tiempo y la cantidad se leen como texto */
       }
-      .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: right; }
+      .lm-resumen__tiempo small { font: var(--type-caption); color: var(--text-muted); width: 100%; text-align: left; }
+
+      /* Tira: el importe y el tiempo en una sola línea baja, sin tarjeta. Para
+         las barras de acción donde el alto es el recurso escaso y una tarjeta
+         entera se come un cuarto de la pantalla. Es variante del propio
+         componente —la pide cada pantalla con [tira]— y no un reestilizado
+         desde afuera. Va después de las reglas base porque comparte
+         especificidad con ellas.
+         Un poco más de alto que una tira mínima: el total tiene que leerse como
+         el dato principal de la barra, no como una leyenda al pie. */
+      .lm-resumen--tira {
+        flex-direction: row; align-items: center; justify-content: space-between;
+        gap: var(--space-3); padding: 10px 14px; border-radius: var(--radius-pill);
+        background: rgba(110, 18, 52, .26);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+      }
+      .lm-resumen--tira .lm-resumen__cifras { display: contents; }
+      .lm-resumen--tira .lm-resumen__total {
+        display: flex; flex-direction: row; align-items: baseline; gap: 6px;
+        font-size: clamp(17px, 5vw, 21px);
+      }
+      .lm-resumen--tira .lm-resumen__total small {
+        margin-bottom: 0; font: var(--type-label); text-transform: uppercase;
+        letter-spacing: var(--tracking-label); color: var(--text-muted);
+      }
+      .lm-resumen--tira .lm-resumen__tiempo {
+        flex-wrap: nowrap; gap: 5px; padding: 0; border: none; background: none;
+        box-shadow: none; font: var(--type-body-small); color: var(--text-muted);
+      }
+      .lm-resumen--tira .lm-resumen__tiempo small { width: auto; text-align: left; }
     `,
   ],
 })
@@ -116,11 +151,150 @@ export class ResumenPedidoComponent {
   readonly descuento = input(0);
   /** Porcentaje del descuento, para rotular la línea. */
   readonly porcentaje = input(0);
+  /**
+   * Importe y tiempo en una sola tira baja, sin tarjeta. Lo piden las barras
+   * de acción con poco alto: el desglose del descuento se oculta porque no
+   * cabe en una línea.
+   */
+  readonly tira = input(false, { transform: booleanAttribute });
 
   /** El desglose aparece sólo cuando hay algo que desglosar. */
   protected hayDescuento(): boolean {
     return this.descuento() > 0 && this.subtotal() !== null;
   }
+}
+
+/**
+ * Barra de acción de un pedido: el resumen y la decisión, en una sola pieza.
+ *
+ * Antes cada pantalla armaba esto a mano con un `div.lm-actionbar` y le
+ * proyectaba los botones adentro del resumen, así que el componente del
+ * resumen terminaba siendo también el contenedor del layout. Acá la barra es
+ * una unidad: trae el resumen, trae la acción y decide cómo se acomodan
+ * (apilados o en la misma fila).
+ */
+@Component({
+  selector: 'lm-barra-pedido',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DecisionComponent, ResumenPedidoComponent],
+  template: `
+    <div class="barra" [class.barra--fila]="enFila()" [class.barra--compacta]="compacta()">
+      <lm-resumen-pedido
+        [total]="total()"
+        [tiempo]="tiempo()"
+        [unidades]="unidades()"
+        [subtotal]="subtotal()"
+        [descuento]="descuento()"
+        [porcentaje]="porcentaje()"
+        [tira]="tira()"
+      />
+
+      @if (decision()) {
+        <lm-decision
+          [rotuloRechazar]="rotuloDevolver()"
+          [rotuloAceptar]="rotuloConfirmar()"
+          (rechazar)="devolver.emit()"
+          (aceptar)="confirmar.emit()"
+        />
+      } @else {
+        <ng-content />
+      }
+    </div>
+  `,
+  styles: [
+    `
+      :host { display: block; }
+      /*
+       * La barra es la que manda el layout. Apilada por omisión (el resumen
+       * arriba, la decisión abajo, que es como se lee un total); en fila el
+       * resumen toma el ancho que sobra y la acción queda a la derecha, con el
+       * mismo alto. Todo lo que antes vivía en .resumen--con-enviar sobre el
+       * host del resumen, con su !important, ahora es de la barra.
+       */
+      .barra {
+        display: flex; flex-direction: column; gap: var(--space-2);
+        padding: var(--space-4) var(--gutter-screen) calc(var(--space-4) + var(--safe-bottom));
+        background: linear-gradient(to top, var(--bg-app) 62%, rgba(185, 46, 88, 0));
+      }
+      .barra--fila { flex-direction: row; align-items: stretch; gap: var(--space-2); }
+      /* Barra apretada: menos aire arriba y entre resumen y acción, y botones
+         algo más bajos. Para las pantallas donde la lista tiene que entrar
+         entera y cada píxel de la barra es un píxel de lista. La barra lo
+         resuelve por su cuenta; la pantalla no mete la mano adentro. */
+      .barra--compacta {
+        padding-top: var(--space-2);
+        gap: var(--space-2);
+      }
+      :host ::ng-deep .barra--compacta .dec {
+        min-height: 56px !important; border-radius: 16px !important;
+      }
+
+      /* El botón proyectado (Pedir, Reenviar) mide lo mismo que el total y lleva
+         la flecha de enviar debajo del rótulo. */
+      :host ::ng-deep .barra--fila > lm-boton { display: flex; flex: 0 0 auto; }
+      :host ::ng-deep .barra--fila > lm-boton .lm-btn {
+        height: 100%; min-width: 0; flex-direction: column; gap: 2px;
+        padding-inline: 8px !important; font-size: 13.5px;
+      }
+      :host ::ng-deep .barra--fila > lm-boton .lm-btn lm-icono { order: 1; }
+
+      /* El resumen toma el ancho que sobra; la acción, el que necesita. */
+      .barra--fila lm-resumen-pedido { flex: 1 1 auto; min-width: 0; }
+      .barra--fila lm-decision, .barra--fila > .accion { flex: 0 0 auto; display: flex; }
+
+      /* En fila el resumen se aplana un poco: la acción se lleva el ancho. */
+      :host ::ng-deep .barra--fila .lm-resumen {
+        flex: 1 1 auto; min-width: 0;
+        padding: var(--space-3); justify-content: center;
+      }
+      /* Con el botón al lado, el resumen va en dos filas y no en dos columnas: arriba el
+         tiempo y la cantidad, abajo el total. Así ninguna cifra se parte en dos renglones
+         aunque el teléfono sea angosto. */
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__cifras {
+        flex-direction: column; align-items: stretch; justify-content: center; gap: 5px;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__tiempo {
+        display: flex; flex-wrap: nowrap; align-items: center; justify-content: flex-start;
+        gap: 6px; text-align: left; white-space: nowrap; align-self: stretch;
+      }
+      /* Con un nivel más de selector: gana a los estilos propios del resumen. El reloj con el tiempo, pegado a la izquierda; la cantidad de productos, a la derecha. */
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__tiempo small {
+        display: inline; width: auto; white-space: nowrap; margin-left: auto;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__total {
+        flex-direction: row; align-items: baseline; justify-content: space-between; gap: 8px;
+        font-size: clamp(17px, 5.4vw, 22px); white-space: nowrap;
+      }
+      :host ::ng-deep .barra--fila .lm-resumen .lm-resumen__total small { margin-bottom: 0; }
+    `,
+  ],
+})
+export class BarraPedidoComponent {
+  readonly total = input.required<number>();
+  readonly tiempo = input.required<number>();
+  readonly unidades = input.required<number>();
+  /** Importe antes de descuentos. En nulo, el resumen muestra sólo el total. */
+  readonly subtotal = input<number | null>(null);
+  /** Monto descontado, en pesos. */
+  readonly descuento = input(0);
+  /** Porcentaje del descuento, para rotular la línea. */
+  readonly porcentaje = input(0);
+  /** El total y el tiempo en una sola tira baja, sin tarjeta. */
+  readonly tira = input(false, { transform: booleanAttribute });
+  /** Resumen y acción en la misma fila, en vez de apilados. */
+  readonly enFila = input(false, { transform: booleanAttribute });
+  /** Menos aire en la barra: para cuando la lista de arriba tiene que entrar entera. */
+  readonly compacta = input(false, { transform: booleanAttribute });
+
+  /**
+   * Botones de confirmar y devolver, en lugar de una acción propia. Cuando es
+   * falso la barra usa lo que le proyecten.
+   */
+  readonly decision = input(false, { transform: booleanAttribute });
+  readonly rotuloDevolver = input('Devolver');
+  readonly rotuloConfirmar = input('Confirmar');
+  readonly confirmar = output<void>();
+  readonly devolver = output<void>();
 }
 
 /**
@@ -245,15 +419,16 @@ export class CantidadComponent {
       }
 
       @if (editable()) {
-        <div class="renglon__datos">
+        <div class="renglon__datos renglon__datos--editable">
           <b>{{ nombre() }}</b>
           <small>
             <lm-icono [nombre]="sector() === 'BAR' ? 'local_bar' : 'restaurant'" [tamano]="14" />
-            {{ precioUnitario() | pesos }} c/u · {{ tiempo() }} min
+            {{ precioUnitario() | pesos }} c/u · {{ tiempo() }}'
           </small>
         </div>
 
         <div class="renglon__pie">
+          <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
           <lm-cantidad
             [cantidad]="cantidad()"
             [nombre]="nombre()"
@@ -261,16 +436,19 @@ export class CantidadComponent {
             (agregar)="agregar.emit()"
             (quitar)="quitar.emit()"
           />
-          <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
         </div>
       } @else {
         <div class="renglon__fila">
           <span class="renglon__cantidad"><small>×</small>{{ cantidad() }}</span>
           <span class="renglon__datos">
             <b>{{ nombre() }}</b>
-            <small>
+            <small class="renglon__precio">
               <lm-icono [nombre]="sector() === 'BAR' ? 'local_bar' : 'restaurant'" [tamano]="14" />
-              {{ precioUnitario() | pesos }} c/u · {{ tiempo() }} min
+              {{ precioUnitario() | pesos }} c/u
+            </small>
+            <small class="renglon__tiempo">
+              <lm-icono nombre="schedule" [tamano]="14" />
+              {{ tiempo() }}'
             </small>
           </span>
           <span class="renglon__subtotal">{{ subtotal() | pesos }}</span>
@@ -326,11 +504,29 @@ export class CantidadComponent {
       }
       .renglon__datos small {
         display: inline-flex; align-items: center; gap: 4px;
-        font: var(--type-caption); color: var(--text-muted);
+        font: 500 clamp(13px, 3.7vw, 15px)/1.3 var(--font-text); color: var(--text-muted);
       }
       .renglon__pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
-      .renglon__fila { display: flex; align-items: center; gap: 10px; }
-      .renglon__fila .renglon__datos { flex: 1 1 auto; }
+      /* Pedido enviado en tres filas: arriba el nombre; en el medio, el precio
+         unitario a la izquierda y la duración a la derecha; abajo, el total del
+         producto alineado con el precio. La cantidad queda a la izquierda. */
+      .renglon__fila {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        grid-template-rows: auto auto auto;
+        align-items: center;
+        column-gap: 10px;
+        row-gap: 4px;
+      }
+      .renglon__fila .renglon__cantidad { grid-column: 1; grid-row: 1 / 4; align-self: center; }
+      .renglon__fila .renglon__datos { display: contents; }
+      .renglon__fila .renglon__datos b { grid-column: 2 / 4; grid-row: 1; min-width: 0; }
+      .renglon__fila .renglon__precio { grid-column: 2; grid-row: 2; min-width: 0; }
+      .renglon__fila .renglon__tiempo { grid-column: 3; grid-row: 2; justify-self: end; }
+      .renglon__fila .renglon__subtotal {
+        grid-column: 2 / 4; grid-row: 3; justify-self: end;
+        font: 800 clamp(18px, 5.4vw, 22px)/1 var(--font-numeric); color: var(--action-primary);
+      }
       /* Alto mínimo y no fijo: con el alto clavado y el interlineado atado a
          él, una cantidad de tres cifras se salía de la placa por abajo. */
       .renglon__cantidad {
@@ -338,10 +534,20 @@ export class CantidadComponent {
         border-radius: 10px; display: inline-flex; align-items: baseline; justify-content: center; gap: 1px;
         background: var(--action-primary); color: #FFFFFF;
         font: 800 clamp(13.5px, 3.5vw, 15px)/1 var(--font-numeric);
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
       .renglon__cantidad small { font: 700 11px/1 var(--font-numeric); opacity: .8; }
       .renglon__subtotal {
         flex: 0 0 auto; font: 800 clamp(14.5px, 3.7vw, 16px)/1 var(--font-numeric); color: var(--text-title); text-align: right;
+      }
+      /* En el renglón editable el precio acompaña el tamaño del botón "+". */
+      /* El nombre del producto también un poco más grande en el renglón editable. */
+      .renglon__datos--editable b {
+        font: 700 clamp(17.5px, 5vw, 21px)/1.25 var(--font-display); color: var(--text-title);
+      }
+      .renglon__pie .renglon__subtotal {
+        font: 800 clamp(19px, 5.6vw, 24px)/1 var(--font-numeric); color: var(--action-primary);
       }
     `,
   ],
@@ -394,13 +600,20 @@ export class RenglonPedidoComponent {
   }
 }
 
+/** El botón de la fila del pedido: lo que dice y su ícono. */
+export interface AccionPedido {
+  rotulo: string;
+  icono: string;
+}
+
 /**
  * Fila de comanda del mozo.
  */
 @Component({
   selector: 'lm-fila-pedido',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent, DecisionComponent, PesosPipe, HoraPipe],
+  host: { '[class.fila-pedido--abierto]': 'abierto()' },
+  imports: [IconoComponent, ChipComponent, DecisionComponent, BotonComponent, PesosPipe, HoraPipe],
   template: `
     <div class="pedido">
       <button type="button" class="pedido__cuerpo" (click)="presionar.emit()">
@@ -430,7 +643,7 @@ export class RenglonPedidoComponent {
 
         <span class="pedido__pie">
           <span class="pedido__cuenta">
-            {{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }} · {{ pedido().tiempoEstimado }} min
+            {{ unidades() }} {{ unidades() === 1 ? 'producto' : 'productos' }} · {{ pedido().tiempoEstimado }}'
           </span>
           <span class="pedido__total">{{ pedido().totalFinal | pesos }}</span>
         </span>
@@ -458,6 +671,12 @@ export class RenglonPedidoComponent {
           (rechazar)="rechazar.emit()"
           (aceptar)="aceptar.emit()"
         />
+      }
+
+      @if (accion(); as a) {
+        <lm-boton class="pedido__acciones" variante="success" [icono]="a.icono" (presionar)="accionar.emit()">
+          {{ a.rotulo }}
+        </lm-boton>
       }
     </div>
   `,
@@ -540,9 +759,15 @@ export class FilaPedidoComponent {
   readonly pedido = input.required<Pedido>();
   readonly numeroMesa = input.required<number | string>();
   readonly conAcciones = input(false, { transform: booleanAttribute });
+  /**
+   * El paso que le toca al mozo con este pedido, adentro de la tarjeta para no
+   * salir de la lista: entregarlo, habilitar la cuenta o confirmar el pago.
+   */
+  readonly accion = input<AccionPedido | null>(null);
   readonly presionar = output<void>();
   readonly aceptar = output<void>();
   readonly rechazar = output<void>();
+  readonly accionar = output<void>();
 
   protected cliente(): string {
     const p = this.pedido();
@@ -562,9 +787,17 @@ export class FilaPedidoComponent {
    * renglón dice cuántos falta ver, no sólo que falta algo.
    */
   protected readonly abierto = signal(false);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
 
   protected alternar(): void {
     this.abierto.update((v) => !v);
+    // Como en los correos: la tarjeta abierta ocupa la lista y se la lleva al
+    // tope, para que el pedido entero se lea sin que quede a medias.
+    if (this.abierto()) {
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => this.host.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' })),
+      );
+    }
   }
 
   protected visibles(): PedidoItem[] {
@@ -587,7 +820,7 @@ export class FilaPedidoComponent {
   protected chip(): string {
     const estado = this.pedido().estadoGlobal;
     if (estado === 'RECHAZADO') return 'rechazado';
-    if (estado === 'LISTO') return 'aprobado';
+    if (['LISTO', 'ENTREGADO', 'RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'].includes(estado)) return 'aprobado';
     return 'reservada';
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ROTULO_PERFIL } from '../../nucleo/modelos/enums';
@@ -13,6 +13,7 @@ import { ROTULO_PERFIL } from '../../nucleo/modelos/enums';
  * se borra.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-en-preparacion',
   imports: [...UI],
   template: `

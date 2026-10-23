@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../../ui';
 import { PaginaConSesion } from '../../pagina-base';
 import { EsperaService } from '../../../nucleo/servicios/espera.service';
@@ -30,6 +30,7 @@ const PIENSA = 720;
  * Minijuego · Tateti de sushis.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-tateti-sushis',
   imports: [...UI],
   template: `
@@ -353,7 +354,6 @@ export class TatetiSushisPage extends PaginaConSesion {
     this.estado.set(estado);
     if (estado === 'GANASTE') {
       this.sonido.reproducir('exito');
-      this.avisos.exito('¡Tres en línea!', 'Le ganaste el tateti a la máquina.');
       this.consumirIntentoSiAplica(true);
     } else if (estado === 'PERDISTE') {
       this.avisos.error('Ganó la máquina', 'Alineó tres antes que vos. Probá de nuevo.');

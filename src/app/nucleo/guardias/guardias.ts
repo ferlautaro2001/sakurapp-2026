@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { SesionService } from '../servicios/sesion.service';
+import { PedidosService } from '../servicios/pedidos.service';
 import { Perfil } from '../modelos/enums';
 
 /** Exige sesión abierta para acceder a la pantalla principal. Sin sesión, al login. */
@@ -28,3 +29,19 @@ export function guardiaPerfil(...perfiles: Perfil[]): CanActivateFn {
     return router.createUrlTree([sesion.rutaInicio()]);
   };
 }
+
+/**
+ * Los juegos se abren recién cuando el mozo confirmó el pedido (punto 14 de la
+ * consigna). Antes de eso no existen para el cliente: ni en la barra, ni por
+ * un enlace o una dirección escrita a mano. Sin pedido habilitado vuelve a
+ * "Mi pedido", que le muestra en qué estado está.
+ */
+export const guardiaJuegos: CanActivateFn = () => {
+  const sesion = inject(SesionService);
+  const pedidos = inject(PedidosService);
+  const router = inject(Router);
+  pedidos.iniciar();
+  const pedido = pedidos.activoDe(sesion.usuario());
+  if (pedidos.juegosHabilitados(pedido)) return true;
+  return router.createUrlTree(['/cliente/pedido']);
+};

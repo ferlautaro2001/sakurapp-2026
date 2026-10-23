@@ -87,7 +87,8 @@ export function navegacionDe(
  *     registrado, además, sus reservas: el invitado no puede reservar.
  *  2. Sentado, armando el pedido → su mesa, la carta y el pedido.
  *  3. Con el pedido mandado → sólo el pedido, hasta que el mozo lo resuelva.
- *  4. Con el pedido confirmado o posterior → el estado del pedido y los juegos.
+ *  4. Con el pedido confirmado o posterior → el estado del pedido, la carta
+ *     (sólo lectura) y los juegos.
  */
 function navegacionDelComensal(contexto: ContextoNavegacion, registrado = false): ItemNavegacion[] {
   const lugar: ItemNavegacion = { id: 'lugar', rotulo: 'Mi mesa', icono: 'table_restaurant', ruta: '/cliente/espera' };
@@ -107,7 +108,8 @@ function navegacionDelComensal(contexto: ContextoNavegacion, registrado = false)
 
   switch (contexto.estadoPedido) {
     case 'PENDIENTE_CONFIRMACION':
-      return [pedido, encuestas];
+      // La carta se ve mientras espera al mozo, pero sin el "+" del pedido.
+      return [pedido, carta, encuestas];
     case 'CONFIRMADO':
     case 'EN_PREPARACION':
     case 'LISTO':
@@ -116,7 +118,8 @@ function navegacionDelComensal(contexto: ContextoNavegacion, registrado = false)
     case 'CUENTA_SOLICITADA':
     case 'PAGO_PENDIENTE':
     case 'CERRADO':
-      return [pedido, juegos, encuestas];
+      // La carta vuelve en sólo lectura: se ve, pero sin el "+" del pedido.
+      return [pedido, carta, juegos, encuestas];
     default:
       return [lugar, carta, pedido, encuestas];
   }

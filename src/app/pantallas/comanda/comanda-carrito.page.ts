@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import {
   MarcaRechazo,
@@ -12,6 +12,7 @@ import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-comanda-carrito',
   imports: [...UI],
   template: `
@@ -111,6 +112,8 @@ import { PaginaConSesion } from '../pagina-base';
                     <img
                       [src]="item.producto.fotos[0]"
                       [alt]="item.producto.nombre"
+                      loading="lazy"
+                      decoding="async"
                     />
                   } @else {
                     <lm-icono
@@ -200,7 +203,7 @@ import { PaginaConSesion } from '../pagina-base';
             <small>TIEMPO ESTIMADO</small>
             <strong>
               <lm-icono nombre="schedule" [tamano]="19" />
-              {{ carrito.tiempoEstimado() }} minutos
+              {{ carrito.tiempoEstimado() }}'
             </strong>
           </span>
         </span>
@@ -391,6 +394,8 @@ import { PaginaConSesion } from '../pagina-base';
         height: 26px;
         place-items: center;
         border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, .6);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 3px 8px rgba(94, 12, 44, .14);
       }
 
       .leyenda__sello--cantidad {

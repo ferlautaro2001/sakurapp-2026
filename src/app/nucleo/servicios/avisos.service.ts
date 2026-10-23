@@ -19,6 +19,8 @@ export interface Aviso {
 @Injectable({ providedIn: 'root' })
 export class AvisosService {
   private siguienteId = 1;
+  /** Relojes de autocierre por aviso: se cancelan si el aviso se cierra antes. */
+  private readonly temporizadores = new Map<number, ReturnType<typeof setTimeout>>();
 
   readonly avisos = signal<Aviso[]>([]);
   readonly avisosToast = computed(() => this.avisos().filter((a) => a.tono !== 'success'));
@@ -45,12 +47,20 @@ export class AvisosService {
   }
 
   cerrar(id: number): void {
+    const reloj = this.temporizadores.get(id);
+    if (reloj) {
+      clearTimeout(reloj);
+      this.temporizadores.delete(id);
+    }
     this.avisos.update((lista) => lista.filter((a) => a.id !== id));
   }
 
   private mostrar(tono: TonoAviso, titulo: string, cuerpo: string | undefined, duracion: number): void {
     const id = this.siguienteId++;
     this.avisos.update((lista) => [...lista, { id, tono, titulo, cuerpo }]);
-    setTimeout(() => this.cerrar(id), duracion);
+    this.temporizadores.set(
+      id,
+      setTimeout(() => this.cerrar(id), duracion),
+    );
   }
 }

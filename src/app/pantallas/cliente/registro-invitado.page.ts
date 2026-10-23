@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UI } from '../../ui';
@@ -15,6 +15,7 @@ import { largoMinimo, requerido, soloLetras, marcarEnviado } from '../../nucleo/
  * Requiere únicamente foto y nombre. Ingresa directo al salón sin requerir aprobación.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-registro-invitado',
   imports: [ReactiveFormsModule, ...UI],
   template: `

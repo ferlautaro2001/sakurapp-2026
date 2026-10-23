@@ -60,6 +60,34 @@ export class QrService {
   }
 
   /**
+   * Descarga el código como PNG. En el navegador baja el archivo directo; en el
+   * teléfono lo guarda en Documentos y, si el sistema no deja escribir ahí,
+   * abre el diálogo de compartir para guardarlo en Galería o Drive.
+   * Devuelve dónde quedó, para avisarle al usuario.
+   */
+  async descargar(imagen: string, nombreArchivo: string): Promise<'descargado' | 'documentos' | 'compartido' | null> {
+    const base64 = imagen.split(',')[1] ?? '';
+    if (!base64) return null;
+
+    if (!Capacitor.isNativePlatform()) {
+      const enlace = document.createElement('a');
+      enlace.href = imagen;
+      enlace.download = `${nombreArchivo}.png`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      return 'descargado';
+    }
+
+    try {
+      await Filesystem.writeFile({ path: `${nombreArchivo}.png`, data: base64, directory: Directory.Documents });
+      return 'documentos';
+    } catch {
+      return (await this.compartir(imagen, nombreArchivo, 'Código QR')) ? 'compartido' : null;
+    }
+  }
+
+  /**
    * Guarda el código generado en archivo y abre el diálogo nativo de compartir/imprimir.
    */
   async compartir(imagen: string, nombreArchivo: string, titulo: string): Promise<boolean> {

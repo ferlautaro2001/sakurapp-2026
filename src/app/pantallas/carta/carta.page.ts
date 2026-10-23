@@ -1,13 +1,14 @@
-import { Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
-import { Producto } from '../../nucleo/modelos/modelos';
+import { Pedido, Producto } from '../../nucleo/modelos/modelos';
 import { TipoProducto } from '../../nucleo/modelos/enums';
 import { ProductosService } from '../../nucleo/servicios/productos.service';
 import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { CarritoService } from '../../nucleo/servicios/carrito.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { ChatService } from '../../nucleo/servicios/chat.service';
+import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { Unsubscribe } from 'firebase/firestore';
 
 type Categoria = 'TODOS' | TipoProducto;
@@ -16,6 +17,7 @@ type Categoria = 'TODOS' | TipoProducto;
  * La carta completa del salón adaptada a la composición y UX de la-mesa.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-carta',
   imports: [...UI],
   template: `
@@ -48,11 +50,8 @@ type Categoria = 'TODOS' | TipoProducto;
 
         <lm-buscador marcador="Buscar en la carta" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
 
-        @if (rechazado()) {
-          <lm-banner tono="error" titulo="El mozo te pidió que modifiques el pedido">
-            {{ pedido()?.motivoRechazo }}
-          </lm-banner>
-        } @else if (sinStock() > 0) {
+        <!-- El aviso del pedido devuelto vive en Mi pedido, junto al detalle: acá no se repite. -->
+        @if (sinStock() > 0) {
           <lm-banner tono="info" titulo="Hay productos sin stock">
             {{ avisoSinStock() }}
           </lm-banner>
@@ -85,21 +84,24 @@ type Categoria = 'TODOS' | TipoProducto;
       </div>
 
       @if (esComensal()) {
-        <div class="lm-actionbar">
-          <lm-resumen-pedido
+        <lm-barra-pedido
+            class="carta__barra"
+            enFila
             [total]="carrito.importeTotal()"
             [tiempo]="carrito.tiempoEstimado()"
             [unidades]="carrito.cantidadTotal()"
           >
             <lm-boton
-              icono="receipt_long"
+              compacto
+              variante="success"
+              icono="send"
+              [ancho]="false"
               [deshabilitado]="carrito.cantidadTotal() === 0"
-              (presionar)="ir(['/cliente/pedido'])"
+              (presionar)="pedir()"
             >
-              {{ carrito.cantidadTotal() ? 'Ver mi pedido' : 'Elegí lo primero' }}
+              {{ rechazado() ? 'Reenviar' : 'Pedir' }}
             </lm-boton>
-          </lm-resumen-pedido>
-        </div>
+          </lm-barra-pedido>
       }
 
       <lm-barra-inferior [items]="secciones()" activo="carta" />
@@ -128,6 +130,7 @@ export class CartaPage extends PaginaConSesion {
   protected readonly carrito = inject(CarritoService);
   private readonly espera = inject(EsperaService);
   private readonly chat = inject(ChatService);
+  private readonly mesas = inject(MesasService);
   private readonly destroyRef = inject(DestroyRef);
 
   protected readonly busqueda = signal('');
@@ -165,12 +168,6 @@ export class CartaPage extends PaginaConSesion {
     super();
 
     effect(() => {
-      if (this.sesion.esCliente() && this.pedido()?.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-        void this.router.navigate(['/cliente/pedido'], { replaceUrl: true });
-      }
-    });
-
-    effect(() => {
       const mid = this.mesaId();
       const uid = this.usuario()?.id;
       if (this.escuchaChat) {
@@ -191,6 +188,90 @@ export class CartaPage extends PaginaConSesion {
         this.escuchaChat = null;
       }
     });
+  }
+
+  /** Manda el pedido al mozo: igual que el botón "Pedir" de Mi pedido. */
+  protected async pedir(): Promise<void> {
+    const devuelto = this.pedido();
+    if (devuelto?.estadoGlobal === 'RECHAZADO') {
+      await this.reenviar(devuelto);
+      return;
+    }
+    const cliente = this.usuario();
+    const mesaId = this.mesaId();
+    let mesa = mesaId ? this.mesas.porId(mesaId) : undefined;
+    if (!mesa && mesaId) {
+      mesa = {
+        id: mesaId,
+        numero: this.sesion.mesaActivaNumero() ?? 1,
+        cantidadComensales: 4,
+        tipo: 'ESTANDAR',
+        estado: 'OCUPADA',
+        fotoUrl: '',
+        qrCodeUrl: '',
+      };
+    }
+    if (!cliente || !mesa || !this.carrito.items().length) {
+      this.avisos.error('Error', 'Se necesita una mesa vinculada y productos en el pedido.');
+      return;
+    }
+
+    const seguro = await this.preguntar({
+      titulo: '¿Mandás el pedido al mozo?',
+      mensaje: 'El mozo lo revisa y te avisa. Mientras tanto no vas a poder modificarlo.',
+      confirmar: 'Enviar el pedido',
+      tono: 'primario',
+      icono: 'send',
+      detalle: [
+        { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
+        { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
+      ],
+    });
+    if (!seguro) return;
+
+    await this.cargando.conEsperaMinima('Mandando tu pedido…', async () => {
+      await this.pedidos.crearPendiente(
+        mesa!,
+        cliente,
+        this.carrito.items(),
+        this.carrito.tiempoEstimado(),
+        this.carrito.importeTotal(),
+      );
+      this.carrito.vaciar();
+    });
+    this.avisos.exito('Tu pedido salió', 'El mozo lo está revisando.');
+  }
+
+  /** Reenvía el pedido que el mozo devolvió: igual que el botón "Reenviar" de Mi pedido. */
+  private async reenviar(p: Pedido): Promise<void> {
+    if (!this.carrito.items().length) return;
+
+    // Todavía quedan productos marcados: se avisa arriba, sin crear un pedido nuevo.
+    const motivo = this.pedidos.trabaParaReenviar(p, this.carrito.items());
+    if (motivo) {
+      this.avisos.error('Todavía no lo podés mandar', motivo);
+      return;
+    }
+
+    const seguro = await this.preguntar({
+      titulo: '¿Reenviás el pedido corregido?',
+      confirmar: 'Reenviar',
+      tono: 'primario',
+      icono: 'send',
+      detalle: [
+        { rotulo: 'Productos', valor: `${this.carrito.cantidadTotal()}` },
+        { rotulo: 'Total', valor: `$ ${this.carrito.importeTotal()}` },
+        { rotulo: 'Demora', valor: `${this.carrito.tiempoEstimado()}'` },
+      ],
+    });
+    if (!seguro) return;
+
+    await this.cargando.conEsperaMinima('Reenviando tu pedido…', async () => {
+      await this.pedidos.reenviar(p, this.carrito.items(), this.carrito.tiempoEstimado(), this.carrito.importeTotal());
+      this.carrito.vaciar();
+    });
+    this.avisos.exito('Reenviado', 'El mozo está revisando tus cambios.');
   }
 
   protected puedeAgregar(producto: Producto): boolean {

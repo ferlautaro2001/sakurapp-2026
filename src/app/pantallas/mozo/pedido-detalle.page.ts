@@ -1,18 +1,29 @@
-import { Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, effect, input, signal, viewChild } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
-import { ROTULO_ESTADO_PEDIDO, Sector } from '../../nucleo/modelos/enums';
+import { EstadoSector, ROTULO_ESTADO_PEDIDO, ROTULO_ESTADO_SECTOR, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
+
+/**
+ * Alto de un renglón con nombre de hasta dos líneas y del espacio entre piezas.
+ * Es el mínimo cómodo: la paginación reparte la lista entre estos renglones, así
+ * que si se agranda entran menos por pantalla —y cada uno queda más alto— y si
+ * se achica entran más. Con la tira del total un poco más alta, la lista pierde
+ * unos píxeles; 90 los absorbe sin que cambie la cantidad por página.
+ */
+const ALTO_RENGLON = 90;
+const ESPACIO = 8;
 
 /**
  * Detalle completo de la comanda para revisión y auditoría del mozo.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mozo-pedido-detalle',
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado titulo="Pedido" conVolver (volver)="volver()" />
+      <lm-encabezado [titulo]="pedido() ? 'Pedido · Mesa ' + mesa() : 'Pedido'" conVolver (volver)="volver()" />
 
       @if (pedido(); as p) {
         <div class="lm-body lm-body--gap12">
@@ -21,16 +32,37 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
               <lm-icono nombre="table_restaurant" [tamano]="24" color="var(--action-primary)" />
             </span>
             <div class="mesa__datos">
-              <b>Mesa {{ numeroMesa(p) }}</b>
-              <small>Pedido de {{ comensal(p) }}</small>
+              <b>Mesa {{ mesa() }}</b>
+              <small>Pedido de {{ comensalNombre() }}</small>
             </div>
-            <lm-chip class="mesa__estado" [estado]="chip()">
-              @if (confirmado()) {
-                <lm-icono [nombre]="itemsDe('COCINA').length ? 'skillet' : 'local_bar'" [tamano]="18" />
-              }
-              {{ rotuloEstado() }}
-            </lm-chip>
+            <!-- Ya derivado, el mozo sigue cada parte por separado: un badge por
+                 sector que interviene, con su ícono, uno abajo del otro. Antes de
+                 eso, el estado del pedido entero. -->
+            @if (estadosSector().length) {
+              <div class="mesa__estados">
+                @for (s of estadosSector(); track s.sector) {
+                  <lm-chip class="mesa__estado" [estado]="s.chip">
+                    <lm-icono [nombre]="s.icono" [tamano]="16" />
+                    {{ s.rotulo }}
+                  </lm-chip>
+                }
+              </div>
+            } @else {
+              <lm-chip class="mesa__estado" [estado]="chip()">{{ rotuloEstado() }}</lm-chip>
+            }
           </div>
+
+          <!-- Sólo cuando el pedido tiene las dos partes: cada botón lleva a la
+               página de su sector y queda marcado el que está a la vista. -->
+          @if (ambosSectores()) {
+            <lm-segmentado
+              class="detalle__sectores"
+              vidrio
+              [opciones]="botonesSector"
+              [valor]="sectorActual()"
+              (cambiar)="irASector($any($event))"
+            />
+          }
 
           @if (p.estadoGlobal === 'RECHAZADO' && p.motivoRechazo) {
             <div class="lm-card devuelto">
@@ -39,30 +71,41 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
             </div>
           }
 
-          @for (sector of sectores; track sector.valor) {
-            @if (itemsDe(sector.valor).length) {
-              <lm-separador flor [rotulo]="sector.rotulo" />
-              <div class="lm-list">
-                @for (item of itemsDe(sector.valor); track item.id) {
-                  <lm-renglon-pedido [item]="item" />
-                }
-              </div>
+          <!-- El separador queda fijo arriba de la lista y nombra el sector de la
+               página que está a la vista: cambia cuando asoman los de la cantina. -->
+          <lm-separador class="detalle__sector" flor [rotulo]="rotuloVisible()" />
+
+          <!-- Cada pantalla de la lista es una página exacta con los renglones
+               que entran enteros. Si un sector no entra en una pantalla, sigue
+               en la siguiente. -->
+          <div #lista class="detalle__lista" [style.--k]="porPagina()" (scroll)="alDesplazar()">
+            @for (pagina of paginas(); track pagina.clave) {
+              <section class="pagina" [attr.data-sector]="pagina.sector">
+                <div class="pagina__items">
+                  @for (item of pagina.items; track item.id) {
+                    <lm-renglon-pedido class="casilla" [item]="item" />
+                  }
+                </div>
+              </section>
             }
-          }
+          </div>
         </div>
 
-        <div class="lm-actionbar">
-          <lm-resumen-pedido [total]="p.totalFinal" [tiempo]="p.tiempoEstimado" [unidades]="unidades(p)">
-            @if (p.estadoGlobal === 'PENDIENTE_CONFIRMACION') {
-              <lm-decision
-                rotuloRechazar="Devolver"
-                rotuloAceptar="Confirmar"
-                (rechazar)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
-                (aceptar)="confirmar()"
-              />
-            }
-          </lm-resumen-pedido>
-        </div>
+        <lm-barra-pedido
+          class="detalle__barra"
+          tira
+          compacta
+          [total]="p.totalFinal"
+          [tiempo]="p.tiempoEstimado"
+          [unidades]="unidadesTotal()"
+          [decision]="p.estadoGlobal === 'PENDIENTE_CONFIRMACION'"
+          (devolver)="ir(['/mozo/pedidos', p.id, 'rechazar'])"
+          (confirmar)="confirmar()"
+        >
+          @if (accionDe(p); as a) {
+            <lm-boton variante="success" [icono]="a.icono" (presionar)="hacer()">{{ a.rotulo }}</lm-boton>
+          }
+        </lm-barra-pedido>
       } @else {
         <div class="lm-body">
           <lm-vacio icono="receipt_long" titulo="No encontramos ese pedido">
@@ -77,10 +120,15 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
     `
       :host { display: flex; flex: 1; min-height: 0; }
       /* El estado del pedido, más grande y con el ícono del sector. */
-      .mesa__estado ::ng-deep .lm-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 15px; padding: 6px 12px; }
-      /* Tarjetas, resumen y botones de decisión con el aro de vidrio del botón de volver. */
+      .mesa__estado { flex: 0 0 auto; }
+      .mesa__estados { flex: 0 0 auto; display: flex; flex-direction: column; align-items: stretch; gap: 4px; }
+      /* Apilados, los dos miden lo mismo y el ícono de cada sector queda alineado. */
+      .mesa__estados .mesa__estado ::ng-deep .lm-chip { width: 100%; justify-content: flex-start; }
+      .mesa__estado ::ng-deep .lm-chip { display: inline-flex; align-items: center; justify-content: center; gap: 4px; font-size: clamp(12px, 3.2vw, 13.5px); padding: 5px clamp(8px, 2.2vw, 12px); box-sizing: border-box; white-space: nowrap; max-width: 100%; }
+      /* Tarjetas y resumen con el aro de vidrio del botón de volver. Los botones
+         de decisión (✕/✓) ya traen su propio borde estandarizado en el componente. */
       .lm-card, :host ::ng-deep .renglon,
-      :host ::ng-deep .lm-resumen, :host ::ng-deep lm-decision .dec {
+      :host ::ng-deep .lm-resumen {
         background-clip: padding-box !important;
         border: 1.5px solid rgba(255, 255, 255, .5) !important;
         box-shadow:
@@ -89,16 +137,97 @@ import { PedidoItem } from '../../nucleo/modelos/modelos';
           0 4px 10px rgba(94, 12, 44, .16) !important;
       }
       .mesa { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); }
-      .mesa__icono {
-        flex: 0 0 auto; width: var(--touch-min); min-height: var(--touch-min); border-radius: 14px;
-        display: grid; place-items: center; background: var(--surface-sunken);
-      }
+      /* Sólo la mesita, sin recuadro: el lugar queda para el nombre y los badges. */
+      .mesa__icono { flex: 0 0 auto; display: grid; place-items: center; }
       .mesa__datos { flex: 1 1 auto; min-width: 0; }
       .mesa__datos b { display: block; font: var(--type-section); color: var(--text-title); }
-      .mesa__datos small { display: block; font: var(--type-body-small); color: var(--text-muted); }
+      /* El nombre se parte en dos renglones antes que meterse debajo del badge. */
+      .mesa__datos small { display: block; font: var(--type-body-small); color: var(--text-muted); overflow-wrap: anywhere; }
       .devuelto { padding: var(--space-4); border-left: 4px solid var(--state-error); }
       .devuelto b { display: block; font: var(--type-card-title); color: var(--state-error); }
       .devuelto p { margin: 6px 0 0; font: var(--type-body); color: var(--text-body); text-wrap: pretty; }
+      /* La mesa y el aviso quedan fijos arriba; la lista se lleva el resto del
+         alto y va en tandas exactas: cada renglón mide justo una parte de la
+         lista y el snap frena en tandas enteras, sin nada cortado. */
+      .lm-body { overflow: hidden; }
+      .detalle__lista {
+        flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: detalle / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .detalle__lista::-webkit-scrollbar { display: none; }
+      .pagina {
+        flex: 0 0 100cqh; min-height: 0; display: flex; flex-direction: column; gap: 8px;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      .detalle__sector { flex: 0 0 auto; }
+      .detalle__sectores { flex: 0 0 auto; }
+      .pagina__items { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
+      /* Cada renglón mide una parte exacta de lo que deja el separador. La
+         tarjeta no usa todo el alto de la casilla —las dos filas ya entran
+         juntas— y se centra: el aire que sobra se reparte parejo entre las dos
+         tarjetas vecinas. */
+      .pagina__items > .casilla {
+        flex: 0 0 calc((100cqh - (var(--k, 1) - 1) * 8px) / var(--k, 1));
+        min-height: 0; display: flex; flex-direction: column; justify-content: center;
+      }
+      /* min-content es la red de seguridad: si un nombre de dos renglones pide
+         más alto que ese 92%, la tarjeta crece en vez de recortar el texto. */
+      .pagina__items > .casilla ::ng-deep .renglon {
+        flex: 1 1 auto; max-height: 92%; min-height: min-content; justify-content: center;
+      }
+      /* Lugar para un nombre de hasta dos renglones; si es más largo, "…". */
+      .pagina__items > .casilla ::ng-deep .renglon__datos b {
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+      }
+
+      :host ::ng-deep .renglon { padding: 4px 10px !important; }
+      /* El renglón, en dos filas: arriba el nombre con la duración al costado;
+         abajo la cantidad, el precio unitario y el subtotal. Antes el subtotal
+         caía en un tercer renglón propio y cada tarjeta quedaba alta al pedo.
+         Las dos filas van juntas y centradas en la tarjeta: separadas hasta los
+         bordes dejaban un hueco blanco en el medio que se leía como un error. */
+      :host ::ng-deep .renglon__fila {
+        flex: 1 1 auto;
+        grid-template-columns: auto minmax(0, 1fr) auto !important;
+        grid-template-rows: auto auto !important;
+        align-content: center !important;
+        column-gap: 10px !important;
+        row-gap: 8px !important;
+      }
+      :host ::ng-deep .renglon__fila .renglon__datos b {
+        grid-column: 1 / 3 !important; grid-row: 1 !important; padding-right: 8px;
+      }
+      :host ::ng-deep .renglon__fila .renglon__tiempo {
+        grid-column: 3 !important; grid-row: 1 !important; justify-self: end !important;
+      }
+      :host ::ng-deep .renglon__fila .renglon__cantidad {
+        grid-column: 1 !important; grid-row: 2 !important; align-self: center;
+      }
+      :host ::ng-deep .renglon__fila .renglon__precio {
+        grid-column: 2 !important; grid-row: 2 !important;
+      }
+      :host ::ng-deep .renglon__fila .renglon__subtotal {
+        grid-column: 3 !important; grid-row: 2 !important; justify-self: end !important;
+        font-size: clamp(17px, 5vw, 20px) !important;
+      }
+      /* Jerarquía del renglón: manda el nombre del producto, después el importe
+         y al final el tiempo. El reloj crece —es lo que se mira de reojo— pero
+         su texto no puede quedar más grande que el nombre, que era lo que
+         pasaba y desarmaba la lectura. */
+      :host ::ng-deep .renglon__datos b {
+        font-size: clamp(16px, 4.6vw, 19px) !important;
+      }
+      :host ::ng-deep .renglon__tiempo {
+        font-size: clamp(14px, 4vw, 16px) !important;
+        font-weight: 600 !important;
+      }
+      :host ::ng-deep .renglon__tiempo lm-icono .material-symbols-rounded {
+        font-size: 1.3em !important;
+      }
+      :host ::ng-deep .renglon__cantidad {
+        min-height: 24px !important; padding: 4px !important;
+      }
     `,
   ],
 })
@@ -107,44 +236,180 @@ export class MozoPedidoDetallePage extends PaginaDeComandas {
 
   protected readonly sectores: { valor: Sector; rotulo: string }[] = [
     { valor: 'COCINA', rotulo: 'Para sector cocina' },
-    { valor: 'BAR', rotulo: 'Para sector barra' },
+    { valor: 'BAR', rotulo: 'Para sector cantina' },
   ];
+
+  protected readonly botonesSector: { valor: Sector; rotulo: string }[] = [
+    { valor: 'COCINA', rotulo: 'Cocina' },
+    { valor: 'BAR', rotulo: 'Cantina' },
+  ];
+
+  /** Sector de la página que está a la vista: el botón marcado. */
+  protected readonly sectorVisible = signal<Sector>('COCINA');
 
   protected readonly pedido = computed(() => this.pedidos.porId(this.id()));
 
-  protected readonly confirmado = computed(() => {
-    const estado = this.pedido()?.estadoGlobal;
-    return (
-      estado === 'CONFIRMADO' ||
-      estado === 'EN_PREPARACION' ||
-      estado === 'LISTO' ||
-      estado === 'ENTREGADO' ||
-      estado === 'RECIBIDO'
-    );
+  /** Un badge por sector que interviene, mientras la comanda está en los sectores. */
+  protected readonly estadosSector = computed(() => {
+    const p = this.pedido();
+    if (!p || !['CONFIRMADO', 'EN_PREPARACION', 'LISTO'].includes(p.estadoGlobal)) return [];
+    const partes: { sector: Sector; icono: string; estado: EstadoSector }[] = [
+      { sector: 'COCINA', icono: 'skillet', estado: p.estadoCocina },
+      { sector: 'BAR', icono: 'local_bar', estado: p.estadoBar },
+    ];
+    return partes
+      .filter((x) => x.estado !== 'NO_APLICA')
+      .map((x) => ({
+        sector: x.sector,
+        icono: x.icono,
+        // En el badge, "Preparando": más corto que "En preparación" y deja lugar al nombre.
+        rotulo: x.estado === 'EN_PREPARACION' ? 'Preparando' : ROTULO_ESTADO_SECTOR[x.estado],
+        chip: x.estado === 'LISTO' ? 'aprobado' : x.estado === 'EN_PREPARACION' ? 'reservada' : 'pendiente',
+      }));
   });
 
-  protected itemsDe(sector: Sector): PedidoItem[] {
+  private itemsDe(sector: Sector): PedidoItem[] {
     const p = this.pedido();
     return p ? p.items.filter((i) => i.sector === sector) : [];
   }
 
-  protected rotuloEstado(): string {
+  protected readonly mesa = computed(() => {
     const p = this.pedido();
-    return p ? ROTULO_ESTADO_PEDIDO[p.estadoGlobal] : '';
+    return p ? this.numeroMesa(p) : '—';
+  });
+
+  protected readonly comensalNombre = computed(() => {
+    const p = this.pedido();
+    return p ? (this.comensal(p).trim().split(/\s+/)[0] || '') : '';
+  });
+
+  protected readonly unidadesTotal = computed(() => {
+    const p = this.pedido();
+    return p ? this.unidades(p) : 0;
+  });
+
+  /** Sectores ya resueltos con sus items: el template no vuelve a filtrar. */
+  /** Alto de la lista, para saber cuántos renglones entran enteros por pantalla. */
+  private readonly lista = viewChild<ElementRef<HTMLElement>>('lista');
+  private readonly altoLista = signal(0);
+
+  protected readonly porPagina = computed(() => {
+    return Math.max(1, Math.floor((this.altoLista() + ESPACIO) / (ALTO_RENGLON + ESPACIO)));
+  });
+
+  /** Los sectores partidos en páginas de `porPagina` renglones, cada una marcada con su sector. */
+  protected readonly paginas = computed(() => {
+    const k = this.porPagina();
+    return this.sectoresConItems().flatMap((sector) => {
+      const paginas = [];
+      for (let i = 0; i < sector.items.length; i += k) {
+        paginas.push({
+          clave: `${sector.valor}-${i}`,
+          sector: sector.valor,
+          items: sector.items.slice(i, i + k),
+        });
+      }
+      return paginas;
+    });
+  });
+
+  constructor() {
+    super();
+    effect((alLimpiar) => {
+      const el = this.lista()?.nativeElement;
+      if (!el) return;
+      const observador = new ResizeObserver(([entrada]) => this.altoLista.set(entrada.contentRect.height));
+      observador.observe(el);
+      alLimpiar(() => observador.disconnect());
+    });
   }
 
-  protected chip(): string {
+  protected readonly sectoresConItems = computed(() =>
+    this.sectores
+      .map((s) => ({ valor: s.valor, rotulo: s.rotulo, items: this.itemsDe(s.valor) }))
+      .filter((s) => s.items.length > 0),
+  );
+
+  /** Sector a la vista: con una sola parte, es ésa, sin importar el desplazamiento. */
+  protected readonly sectorActual = computed<Sector>(() => {
+    const con = this.sectoresConItems();
+    return con.length === 1 ? con[0].valor : this.sectorVisible();
+  });
+
+  protected readonly rotuloVisible = computed(
+    () => this.sectores.find((s) => s.valor === this.sectorActual())?.rotulo ?? '',
+  );
+
+  /** Con las dos partes, la lista se pagina por sector y aparecen los botones. */
+  protected readonly ambosSectores = computed(() => this.sectoresConItems().length === 2);
+
+  /** Mientras la lista viaja hasta un sector, el desplazamiento no cambia el botón marcado. */
+  private saltando = false;
+
+  /**
+   * Lleva la lista hasta la primera página del sector elegido. El snap se apaga
+   * durante el viaje: con `scroll-snap-stop: always` el navegador frenaría en
+   * cada página intermedia y nunca llegaría a la cantina si la cocina tiene dos.
+   */
+  protected irASector(sector: Sector): void {
+    const el = this.lista()?.nativeElement;
+    const pagina = el?.querySelector<HTMLElement>(`[data-sector="${sector}"]`);
+    if (!el || !pagina) return;
+    this.sectorVisible.set(sector);
+    const destino = el.scrollTop + pagina.getBoundingClientRect().top - el.getBoundingClientRect().top;
+    this.saltando = true;
+    el.style.scrollSnapType = 'none';
+    const llegar = () => {
+      clearTimeout(reserva);
+      el.removeEventListener('scrollend', llegar);
+      el.style.scrollSnapType = '';
+      this.saltando = false;
+    };
+    // `scrollend` avisa la llegada; el tiempo de reserva cubre los navegadores
+    // que no lo emiten y el caso en que la lista ya estaba en ese lugar.
+    const reserva = setTimeout(llegar, 900);
+    el.addEventListener('scrollend', llegar);
+    el.scrollTo({ top: destino, behavior: 'smooth' });
+  }
+
+  /** Marca el sector de la página que quedó más cerca del borde de arriba. */
+  protected alDesplazar(): void {
+    const el = this.lista()?.nativeElement;
+    if (!el || this.saltando) return;
+    const arriba = el.getBoundingClientRect().top;
+    let cercana: HTMLElement | null = null;
+    for (const pagina of Array.from(el.querySelectorAll<HTMLElement>('[data-sector]'))) {
+      const distancia = Math.abs(pagina.getBoundingClientRect().top - arriba);
+      if (!cercana || distancia < Math.abs(cercana.getBoundingClientRect().top - arriba)) cercana = pagina;
+    }
+    const sector = cercana?.dataset['sector'] as Sector | undefined;
+    if (sector && sector !== this.sectorVisible()) this.sectorVisible.set(sector);
+  }
+
+  protected readonly rotuloEstado = computed(() => {
+    const p = this.pedido();
+    return p ? ROTULO_ESTADO_PEDIDO[p.estadoGlobal] : '';
+  });
+
+  protected readonly chip = computed(() => {
     const estado = this.pedido()?.estadoGlobal;
     if (estado === 'RECHAZADO') return 'rechazado';
-    if (estado === 'LISTO') return 'aprobado';
+    if (estado && ['LISTO', 'ENTREGADO', 'RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'].includes(estado)) {
+      return 'aprobado';
+    }
     return 'reservada';
-  }
+  });
 
   protected async confirmar(): Promise<void> {
     const p = this.pedido();
     if (!p) return;
     const listo = await this.confirmarPedido(p);
     if (listo) this.volver();
+  }
+
+  protected async hacer(): Promise<void> {
+    const p = this.pedido();
+    if (p && (await this.accionar(p))) this.volver();
   }
 
   protected volver(): void {

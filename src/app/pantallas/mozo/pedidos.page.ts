@@ -1,14 +1,20 @@
-import { Component, computed, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaDeComandas } from './comandas-base';
 import { Pedido } from '../../nucleo/modelos/modelos';
 
-type Bandeja = 'REVISAR' | 'EN_CURSO';
+type Bandeja = 'REVISAR' | 'EN_CURSO' | 'ENTREGADOS';
+
+/** En curso: confirmados y en camino a la mesa, hasta que el comensal confirme que los recibió. */
+const EN_CURSO = ['CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO'];
+/** Entregados: sólo los que el comensal ya confirmó haber recibido. */
+const ENTREGADOS = ['RECIBIDO', 'CUENTA_SOLICITADA', 'PAGO_PENDIENTE'];
 
 /**
- * Listado de pedidos para el mozo, con pestañas "Para revisar" y "En curso".
+ * Listado de pedidos para el mozo, con pestañas "Para revisar", "En curso" y "Entregados".
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-mozo-pedidos',
   imports: [...UI],
   template: `
@@ -21,14 +27,16 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
         <lm-pestanas [opciones]="pestanas" [valor]="bandeja()" (cambiar)="bandeja.set($any($event))" />
 
         @if (visibles().length) {
-          <div class="lm-lista-libre">
+          <div class="pedidos__lista" [class.pedidos__lista--revisar]="conBotones()">
             @for (pedido of visibles(); track pedido.id) {
               <lm-fila-pedido
                 [pedido]="pedido"
                 [numeroMesa]="$any(numeroMesa(pedido))"
                 [conAcciones]="bandeja() === 'REVISAR'"
+                [accion]="accionDe(pedido)"
                 (presionar)="ir(['/mozo/pedidos', pedido.id])"
                 (aceptar)="confirmar(pedido)"
+                (accionar)="accionar(pedido)"
                 (rechazar)="ir(['/mozo/pedidos', pedido.id, 'rechazar'])"
               />
             }
@@ -45,7 +53,37 @@ type Bandeja = 'REVISAR' | 'EN_CURSO';
       <lm-barra-inferior [items]="secciones()" activo="pedidos" />
     </div>
   `,
-  styles: [':host{display:flex;flex:1;min-height:0}'],
+  styles: [
+    `
+      :host{display:flex;flex:1;min-height:0}
+      /* Pedidos en tandas exactas: cada tarjeta mide justo una parte de la lista
+         y se ancla entera. Una tarjeta de pedido ronda los 280px, así que de a
+         dos sólo entran en pantallas altas; si no, de a una. */
+      .pedidos__lista {
+        flex: 1 1 0 !important; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
+        container: pedidos / size; overflow-y: auto; overscroll-behavior: contain;
+        overflow-anchor: none; scroll-snap-type: y mandatory; scroll-padding: 0; scrollbar-width: none;
+      }
+      .pedidos__lista::-webkit-scrollbar { display: none; }
+      .pedidos__lista > lm-fila-pedido {
+        --por: 1;
+        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        min-height: min-content; display: flex; flex-direction: column; justify-content: center;
+        scroll-snap-align: start; scroll-snap-stop: always;
+      }
+      /* Una tarjeta de pedido mide hasta ~230px: de a dos entran en pantallas
+         comunes y de a tres sólo en las altas. */
+      @container pedidos (min-height: 470px) { .pedidos__lista > lm-fila-pedido { --por: 2; } }
+      @container pedidos (min-height: 700px) { .pedidos__lista > lm-fila-pedido { --por: 3; } }
+      /* "Para revisar" trae los botones de confirmar y devolver: la tarjeta mide
+         ~283px, así que de a dos sólo entra con una lista alta; si no, de a una. */
+      @container pedidos (min-height: 470px) { .pedidos__lista--revisar > lm-fila-pedido { --por: 1; } }
+      @container pedidos (min-height: 600px) { .pedidos__lista--revisar > lm-fila-pedido { --por: 2; } }
+      @container pedidos (min-height: 700px) { .pedidos__lista--revisar > lm-fila-pedido { --por: 2; } }
+      /* La tarjeta abierta ocupa toda la lista, como el correo abierto. */
+      .pedidos__lista > lm-fila-pedido.fila-pedido--abierto { flex: 0 0 100cqh !important; }
+    `,
+  ],
 })
 export class MozoPedidosPage extends PaginaDeComandas {
   protected readonly bandeja = signal<Bandeja>('REVISAR');
@@ -53,6 +91,7 @@ export class MozoPedidosPage extends PaginaDeComandas {
   protected readonly pestanas = [
     { valor: 'REVISAR', rotulo: 'Para revisar' },
     { valor: 'EN_CURSO', rotulo: 'En curso' },
+    { valor: 'ENTREGADOS', rotulo: 'Entregados' },
   ];
 
   protected readonly visibles = computed<Pedido[]>(() => {
@@ -60,23 +99,30 @@ export class MozoPedidosPage extends PaginaDeComandas {
     if (this.bandeja() === 'REVISAR') {
       return todos.filter((p) => p.estadoGlobal === 'PENDIENTE_CONFIRMACION');
     }
-    return todos.filter((p) =>
-      ['CONFIRMADO', 'EN_PREPARACION', 'LISTO', 'ENTREGADO', 'RECIBIDO'].includes(p.estadoGlobal),
-    );
+    const estados = this.bandeja() === 'EN_CURSO' ? EN_CURSO : ENTREGADOS;
+    return todos.filter((p) => estados.includes(p.estadoGlobal));
   });
+
+  /** Las tarjetas con botones miden más: la lista las muestra de a menos. */
+  protected readonly conBotones = computed(
+    () => this.bandeja() === 'REVISAR' || this.visibles().some((p) => this.accionDe(p)),
+  );
 
 
   protected tituloVacio(): string {
-    return this.bandeja() === 'REVISAR' ? 'No hay pedidos para revisar' : 'No hay pedidos en curso';
+    if (this.bandeja() === 'REVISAR') return 'No hay pedidos para revisar';
+    return this.bandeja() === 'EN_CURSO' ? 'No hay pedidos en curso' : 'No hay pedidos entregados';
   }
 
   protected textoVacio(): string {
-    return this.bandeja() === 'REVISAR'
-      ? ''
-      : 'Los pedidos que confirmes van a quedar acá mientras la cocina y la barra los preparan.';
+    if (this.bandeja() === 'REVISAR') return '';
+    return this.bandeja() === 'EN_CURSO'
+      ? 'Los pedidos que confirmes van a quedar acá mientras la cocina y la barra los preparan.'
+      : 'Acá aparecen los pedidos cuando el comensal confirma que los recibió.';
   }
 
   protected async confirmar(pedido: Pedido): Promise<void> {
     await this.confirmarPedido(pedido);
   }
+
 }

@@ -6953,23 +6953,23 @@ lm-barra-pedido .barra > lm-boton button:disabled lm-icono {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.92);
-  color: #000000;
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 3px 10px rgba(40, 4, 20, 0.35);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   cursor: pointer;
   z-index: 3;
   pointer-events: auto;
-  transition: transform var(--dur-fast) var(--ease-standard), background var(--dur-fast);
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .lm-product__info-badge:active {
   transform: scale(0.92);
-  background: #FFFFFF;
 }
 
-.lm-product__info-badge lm-icono {
-  color: #000000 !important;
+.lm-product__info-badge lm-icono,
+.lm-product__info-badge .material-symbols-rounded {
+  color: var(--action-primary, #C72657) !important;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45));
   font-variation-settings: 'FILL' 1, 'wght' 700;
 }
 

@@ -477,7 +477,7 @@ export class PlacaQrComponent {
             (keydown.enter)="$event.stopPropagation(); presionar.emit()"
             (keydown.space)="$event.stopPropagation(); presionar.emit()"
           >
-            <lm-icono nombre="info" [tamano]="22" />
+            <lm-icono nombre="info" [tamano]="28" color="var(--action-primary)" />
           </span>
         </span>
 

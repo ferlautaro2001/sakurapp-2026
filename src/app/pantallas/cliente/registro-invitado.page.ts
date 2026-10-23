@@ -130,7 +130,7 @@ export class RegistroInvitadoPage {
 
     const seguro = await this.confirmacion.pedir({
       titulo: '¿Entrás como invitado?',
-      mensaje: 'Entrás como cliente anónimo y no hace falta que nadie te apruebe.',
+      mensaje: '',
       confirmar: 'Entrar',
       tono: 'exito',
       icono: 'person',

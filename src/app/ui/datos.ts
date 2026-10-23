@@ -468,6 +468,17 @@ export class PlacaQrComponent {
           @if (!portada()) {
             <lm-icono [nombre]="glifo()" tamano="clamp(19px, 6vw, 26px)" color="var(--action-accent)" />
           }
+          <span
+            class="lm-product__info-badge"
+            role="button"
+            tabindex="0"
+            [attr.aria-label]="'Ver información de ' + producto().nombre"
+            (click)="$event.stopPropagation(); presionar.emit()"
+            (keydown.enter)="$event.stopPropagation(); presionar.emit()"
+            (keydown.space)="$event.stopPropagation(); presionar.emit()"
+          >
+            <lm-icono nombre="info" [tamano]="22" />
+          </span>
         </span>
 
         <span class="lm-product__datos">

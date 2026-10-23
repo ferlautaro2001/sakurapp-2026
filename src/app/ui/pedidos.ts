@@ -229,14 +229,15 @@ export class ResumenPedidoComponent {
         min-height: 56px !important; border-radius: 16px !important;
       }
 
-      /* El botón proyectado (Pedir, Reenviar) mide lo mismo que el total y lleva
-         la flecha de enviar debajo del rótulo. */
-      :host ::ng-deep .barra--fila > lm-boton { display: flex; flex: 0 0 auto; }
+      /* El botón proyectado (Pedir, Reenviar) en la barra en fila:
+         ícono y texto en una sola línea horizontal, con buen relleno, sin partirse */
+      :host ::ng-deep .barra--fila > lm-boton { display: flex; flex: 0 0 auto; align-items: stretch; }
       :host ::ng-deep .barra--fila > lm-boton .lm-btn {
-        height: 100%; min-width: 0; flex-direction: column; gap: 2px;
-        padding-inline: 8px !important; font-size: 13.5px;
+        height: 100%; min-width: max-content; flex-direction: row; align-items: center; justify-content: center;
+        gap: 8px; padding-inline: var(--space-4) !important; font-size: 15px; font-weight: 800;
+        white-space: nowrap; color: #FFFFFF !important;
       }
-      :host ::ng-deep .barra--fila > lm-boton .lm-btn lm-icono { order: 1; }
+      :host ::ng-deep .barra--fila > lm-boton .lm-btn lm-icono { order: 0; color: #FFFFFF !important; }
 
       /* El resumen toma el ancho que sobra; la acción, el que necesita. */
       .barra--fila lm-resumen-pedido { flex: 1 1 auto; min-width: 0; }

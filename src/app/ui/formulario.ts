@@ -286,12 +286,13 @@ export class BuscadorComponent {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [IconoComponent],
   template: `
-    <div class="lm-filters">
+    <div class="lm-filters" [class.lm-filters--fija]="!!reservarAncho()">
       @for (opcion of opciones(); track opcion) {
         <button
           type="button"
           class="lm-filter"
           [class.lm-filter--on]="opcion === valor()"
+          [class.lm-filter--reserva]="opcion === reservarAncho()"
           (click)="cambiar.emit(opcion)"
         >
           @if (opcion === valor()) {
@@ -302,10 +303,21 @@ export class BuscadorComponent {
       }
     </div>
   `,
-  styles: [':host{display:block}'],
+  styles: [
+    `
+      :host { display: block; }
+      /* Layout fijo: celdas de igual ancho y la opción reservada en su propia fila.
+         Elegir una opción sólo pinta la burbuja y suma el tilde: nada se mueve. */
+      .lm-filters--fija { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .lm-filters--fija .lm-filter { padding-inline: 4px; flex: none; white-space: nowrap; overflow-wrap: normal; }
+      .lm-filters--fija .lm-filter--reserva { grid-column: 1 / -1; }
+    `,
+  ],
 })
 export class FiltrosComponent {
   readonly opciones = input.required<string[]>();
+  /** Opción que conserva siempre el ancho que tiene al estar seleccionada. */
+  readonly reservarAncho = input<string | null>(null);
   readonly valor = input.required<string>();
   readonly cambiar = output<string>();
 }

@@ -115,17 +115,19 @@ import { ProductosService } from '../nucleo/servicios/productos.service';
          entera se come un cuarto de la pantalla. Es variante del propio
          componente —la pide cada pantalla con [tira]— y no un reestilizado
          desde afuera. Va después de las reglas base porque comparte
-         especificidad con ellas. */
+         especificidad con ellas.
+         Un poco más de alto que una tira mínima: el total tiene que leerse como
+         el dato principal de la barra, no como una leyenda al pie. */
       .lm-resumen--tira {
         flex-direction: row; align-items: center; justify-content: space-between;
-        gap: var(--space-3); padding: 6px 14px; border-radius: var(--radius-pill);
+        gap: var(--space-3); padding: 10px 14px; border-radius: var(--radius-pill);
         background: rgba(110, 18, 52, .26);
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
       }
       .lm-resumen--tira .lm-resumen__cifras { display: contents; }
       .lm-resumen--tira .lm-resumen__total {
         display: flex; flex-direction: row; align-items: baseline; gap: 6px;
-        font-size: clamp(15px, 4.4vw, 19px);
+        font-size: clamp(17px, 5vw, 21px);
       }
       .lm-resumen--tira .lm-resumen__total small {
         margin-bottom: 0; font: var(--type-label); text-transform: uppercase;

@@ -41,7 +41,7 @@ export interface ItemNavegacion {
         </div>
         <ng-content select="[accion]" />
         @if (!titulo()) {
-          <lm-icono-boton icono="logout" rotulo="Cerrar sesión" (presionar)="cerrarSesion.emit()" />
+          <lm-icono-boton icono="logout" rotulo="Cerrar sesión" tono="peligro" (presionar)="cerrarSesion.emit()" />
         }
       </div>
     </header>

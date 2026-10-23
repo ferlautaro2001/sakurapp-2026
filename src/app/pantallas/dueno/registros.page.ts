@@ -83,15 +83,12 @@ const FILTROS = [
     `
       :host { display: flex; flex: 1; min-height: 0; }
 
-      /* Tandas exactas: cada tarjeta mide justo una fracción del alto de la
-         lista y el snap la ancla al tope, así cada parada muestra tarjetas
-         enteras y el final de la lista coincide con la última parada. Con
-         filas de alto natural (128 a 203px según tengan botones o el correo
-         en dos renglones) siempre quedaba una a medias.
-         Cuántas van por pantalla sale del alto de la lista: tienen que
-         entrar enteras aun las más altas, que en un equipo angosto lo son
-         más. La tarjeta se estira a su casilla y centra el contenido; si aun
-         así no entrara, la casilla crece: nunca se corta. */
+      /* Tandas exactas: cada tarjeta mide justo el alto de la lista y el snap la
+         ancla al tope, así la parada muestra la tarjeta entera y el final de la
+         lista coincide con la última parada. Una por pantalla: con el nombre de
+         título, la foto grande y las dos decisiones en renglones propios, dos
+         no entran sin cortarse —y la cara se mira mejor así—.
+         Si aun así no entrara, la casilla crece: nunca se corta. */
       .registros__lista {
         flex: 1 1 0;
         min-height: 0;
@@ -108,29 +105,29 @@ const FILTROS = [
       }
       .registros__lista::-webkit-scrollbar { display: none; }
       .registros__lista > lm-fila-pendiente {
-        --por: 1;
-        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        flex: 0 0 100cqh;
         min-height: min-content;
         display: flex;
         flex-direction: column;
         scroll-snap-align: start;
         scroll-snap-stop: always;
       }
-      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; justify-content: center; }
-      /* La foto es lo que crece: ocupa lo que le deja la casilla después de los
-         datos (unos 130px), entre 56 y 120px y sin pasarse de un tercio del ancho. */
-      .registros__lista > lm-fila-pendiente ::ng-deep .fila .lm-avatar {
-        width: clamp(56px, min(30vw, calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por) - var(--resto, 130px))), 120px);
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; }
+      /* La foto se queda con el alto que sobra: del alto de la tarjeta se
+         descuentan el título, los datos, la fila de decisiones, los huecos y el
+         relleno (unos 210px), y lo que resta es la cara. Nunca baja de 104px y
+         el único techo real es el ancho de la tarjeta: 300px.
+         Cada caso suma su propio renglón —el chip de estado cuando el filtro es
+         "Todos" y las decisiones cuando está pendiente— para que el contenido
+         nunca crezca más que la casilla: si no, la tarjeta se estira y el snap
+         la deja cortada. */
+      .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending__foto {
+        width: min(100%, clamp(104px, calc(100cqh - 210px), 300px));
       }
-      /* De a dos por pantalla. La tarjeta mide hasta ~177px, así que de a dos
-         necesita al menos 326px de lista. Si la lista es más baja, la tarjeta se
-         achica (foto, espacios y relleno) para que entren dos igual. */
-      @container registros (min-height: 326px) { .registros__lista > lm-fila-pendiente { --por: 2; } }
-      @container registros (max-height: 365px) {
-        .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending { padding: 7px 10px; gap: 6px; }
-        .registros__lista > lm-fila-pendiente ::ng-deep .fila { gap: 4px; }
-        .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending__datos { gap: 2px; }
+      .registros__lista > lm-fila-pendiente ::ng-deep .lm-pending:not(:has(.lm-pending__acciones)) .lm-pending__foto {
+        width: min(100%, clamp(104px, calc(100cqh - 150px), 300px));
       }
+
     `,
   ],
 })

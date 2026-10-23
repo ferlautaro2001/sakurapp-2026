@@ -23,7 +23,8 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
       </lm-encabezado>
       <div class="lm-body lm-body--gap12 lm-body--pantalla">
         <lm-titulo [contador]="cargandoLista() || errorCarga() ? null : empleados().length">Empleados</lm-titulo>
-        <lm-buscador marcador="Buscar por nombre o puesto" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
+        <lm-buscador marcador="Buscar por nombre" [valor]="busqueda()" (cambiar)="busqueda.set($event)" />
+        <lm-pestanas [opciones]="filtrosRol" [valor]="filtroRol()" (cambiar)="filtroRol.set($event)" />
         @if (errorCarga()) {
           <lm-banner tono="error" titulo="No pudimos cargar los empleados">Volvé a abrir esta sección para intentar de nuevo.</lm-banner>
         } @else if (cargandoLista()) {
@@ -32,17 +33,23 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
           <div class="empleados__lista">
             @for (empleado of visibles(); track empleado.uid || empleado.id) {
               <article class="lm-pending empleado">
-                <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" loading="lazy" decoding="async" />
-                <b class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</b>
-                <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="18" />{{ roles[empleado.perfil] }}</span>
-                @if (correo(empleado); as partes) {
-                  <!-- Si no entra en un renglón, parte justo antes del "@". -->
-                  <span class="lm-pending__meta lm-pending__meta--correo">
-                    <lm-icono nombre="mail" [tamano]="18" />
-                    <span class="correo"><span class="correo__parte">{{ partes.usuario }}</span><wbr /><span class="correo__parte">{{ partes.dominio }}</span></span>
-                  </span>
-                }
-                <lm-chip [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
+                <h3 class="lm-pending__titulo">
+                  <span class="lm-pending__nombre">{{ usuarios.nombreCompleto(empleado) }}</span>
+                </h3>
+                <span class="lm-pending__foto">
+                  <img class="lm-avatar" [src]="usuarios.avatarSushi(empleado)" [alt]="usuarios.nombreCompleto(empleado)" loading="lazy" decoding="async" />
+                </span>
+                <span class="lm-pending__datos">
+                  <span class="lm-pending__meta"><lm-icono nombre="badge" [tamano]="20" />{{ roles[empleado.perfil] }}</span>
+                  @if (correo(empleado); as partes) {
+                    <!-- Si no entra en un renglón, parte justo antes del "@". -->
+                    <span class="lm-pending__meta lm-pending__meta--correo">
+                      <lm-icono nombre="mail" [tamano]="20" />
+                      <span class="correo"><span class="correo__parte">{{ partes.usuario }}</span><wbr /><span class="correo__parte">{{ partes.dominio }}</span></span>
+                    </span>
+                  }
+                </span>
+                <lm-chip class="lm-pending__estado" [estado]="empleado.activo ? 'aprobado' : 'rechazado'">{{ empleado.activo ? 'Activo' : 'Inactivo' }}</lm-chip>
               </article>
             }
           </div>
@@ -69,29 +76,10 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
-      /* La misma tarjeta que Registros: centrada, de arriba hacia abajo. */
-      .empleado {
-        min-width: 0; display: flex; flex-direction: column; align-items: center;
-        justify-content: center; text-align: center; gap: 6px;
-      }
-      /* La foto es lo que crece: ocupa lo que le deja la casilla después de los
-         datos, entre 44 y 120px y sin pasarse de un tercio del ancho. Los datos
-         miden entre 138px (280 de ancho) y 154px (412): crecen con la letra. */
-      .lm-avatar {
-        --resto: calc(105px + 12vw);
-        object-fit: cover; flex-shrink: 0; border-radius: 18px;
-        width: clamp(44px, min(30vw, calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por) - var(--resto))), 120px);
-      }
-      .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
-      .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); justify-content: center; max-width: 100%; }
-      .lm-pending__meta--correo { align-items: flex-start; }
-      .lm-pending__meta--correo .correo { text-align: left; min-width: 0; white-space: normal; overflow: visible; }
-      .correo__parte {
-        display: inline-block; max-width: 100%; vertical-align: top;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      /* Tandas exactas, como en Registros: cada tarjeta mide justo una parte del
-         alto de la lista y el snap ancla tarjetas enteras, sin huecos. */
+      /* La tarjeta es la misma que la de Registros —el aspecto vive en el
+         sistema de diseño, en .lm-pending—; acá sólo se decide cuánto mide y
+         cuánto de ese alto se lleva la foto. Una por pantalla: el nombre, la
+         foto grande y los datos no entran dos veces sin cortarse. */
       .empleados__lista {
         flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; gap: var(--space-3);
         container: empleados / size; overflow-y: auto; overscroll-behavior: contain;
@@ -99,13 +87,20 @@ import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
       }
       .empleados__lista::-webkit-scrollbar { display: none; }
       .empleados__lista > .empleado {
-        --por: 1;
-        flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
+        flex: 0 0 100cqh;
         min-height: min-content; scroll-snap-align: start; scroll-snap-stop: always;
+        /* El chip de estado va en su propia fila, bajo el nombre. La grilla base
+           de .lm-pending no la declara y sin ella el chip rompía la tarjeta. */
+        grid-template-areas: "titulo" "estado" "foto" "datos";
+        grid-template-rows: auto auto minmax(min-content, 1fr) auto;
       }
-      /* De a dos, como Registros: en las pantallas altas sobra lugar y lo toma la
-         foto. Cada casilla necesita la foto mínima (44px) más los datos (hasta 154px). */
-      @container empleados (min-height: 405px) { .empleados__lista > .empleado { --por: 2; } }
+      /* Sin decisiones al pie sobra más alto que en Registros, y lo toma la
+         foto: del alto de la tarjeta se descuentan el título, el chip de
+         estado, el puesto, el correo, los huecos y el relleno (unos 170px). El
+         único techo real es el ancho de la tarjeta: 300px. */
+      .empleados__lista > .empleado .lm-pending__foto {
+        width: min(100%, clamp(104px, calc(100cqh - 170px), 300px));
+      }
     `,
   ],
 })
@@ -114,12 +109,18 @@ export class DuenoEmpleadosPage extends PaginaConSesion {
   private readonly firestore = inject(FirestoreService);
   protected readonly roles = ROTULO_PERFIL;
   protected readonly busqueda = signal('');
+  protected readonly filtroRol = signal('Todos');
+  /** "Todos" va al final de la fila; sigue siendo el filtro inicial. */
+  protected readonly filtrosRol = [ROTULO_PERFIL['CANTINERO'], ...PERFILES_EMPLEADO.filter((p) => p !== 'CANTINERO').map((p) => ROTULO_PERFIL[p]), 'Todos']
+    .map((r) => ({ valor: r, rotulo: r }));
   protected readonly cargandoLista = signal(true);
   protected readonly errorCarga = signal(false);
   protected readonly empleados = signal<Usuario[]>([]);
   protected readonly visibles = computed(() => {
     const texto = this.busqueda().trim().toLocaleLowerCase('es-AR');
+    const rol = this.filtroRol();
     return this.empleados().filter((u) =>
+      (rol === 'Todos' || this.roles[u.perfil] === rol) &&
       `${this.usuarios.nombreCompleto(u)} ${this.roles[u.perfil]}`.toLocaleLowerCase('es-AR').includes(texto),
     );
   });

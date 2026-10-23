@@ -61,9 +61,9 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
         <div class="modal-exito-overlay" animate.leave="sk-fondo-sale" (click)="avisos.cerrar(exito.id)">
           <div class="modal-exito" (click)="$event.stopPropagation()">
             <div class="modal-exito__icono">
-              <lm-icono nombre="check_circle" tamano="clamp(32px, 10.2vw, 44px)" color="var(--state-success)" />
+              <lm-icono nombre="check" tamano="clamp(30px, 9.6vw, 42px)" color="#FFFFFF" />
             </div>
-            <h3 class="modal-exito__titulo">{{ exito.titulo }}</h3>
+            <h3 class="modal-exito__titulo" [class.modal-exito__titulo--solo]="!exito.cuerpo">{{ exito.titulo }}</h3>
             @if (exito.cuerpo) {
               <p class="modal-exito__cuerpo">{{ exito.cuerpo }}</p>
             }
@@ -148,15 +148,29 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
            título quedaba pegado al botón. */
         gap: var(--space-5);
         text-align: center;
-        box-shadow: 0 16px 36px rgba(110, 18, 52, 0.22);
-        border: 1.5px solid rgba(46, 125, 50, 0.2);
+        /* El aro y la sombra los pisa la regla global del sistema de diseño
+           (trae !important), así que el recargo va con !important también: un
+           modal de éxito flota más que el resto de las ventanas. */
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .75),
+          0 0 0 1.5px rgba(232, 51, 111, .38),
+          0 18px 40px rgba(59, 8, 27, .42) !important;
+        border: 2.5px solid rgba(255, 255, 255, .6) !important;
         animation: popModal 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
       }
       .modal-exito__icono {
         width: clamp(47px, 14.9vw, 64px);
         height: clamp(47px, 14.9vw, 64px);
         border-radius: 50%;
-        background: rgba(46, 125, 50, 0.12);
+        /* Verde pleno, como el botón: el tilde va en blanco arriba. */
+        background: var(--state-success, #1B7A4C);
+        /* Aro y sombra propios: el ícono es lo primero que se mira y no puede
+           quedar pegado al fondo de la tarjeta. */
+        border: 2px solid rgba(255, 255, 255, .85);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .35),
+          0 0 0 1px rgba(27, 122, 76, .45),
+          0 6px 14px rgba(27, 122, 76, .38);
         display: grid;
         place-items: center;
       }
@@ -164,6 +178,13 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
         margin: 0;
         font: 800 clamp(16px, 4.2vw, 18px)/1.2 var(--font-display);
         color: var(--text-title);
+      }
+      /* Cuando el aviso dice una sola cosa, esa cosa se escribe grande: no
+         queda un título chico encima de un botón. */
+      .modal-exito__titulo--solo {
+        font: 900 clamp(21px, 6vw, 28px)/1.15 var(--font-display);
+        letter-spacing: var(--tracking-tight);
+        text-align: center;
       }
       .modal-exito__cuerpo {
         margin: 0;
@@ -178,11 +199,16 @@ import { PedidosService } from './nucleo/servicios/pedidos.service';
         padding: 0 var(--space-4);
         background: var(--state-success, #2E7D32);
         color: #FFFFFF;
-        border: none;
+        /* El mismo aro de vidrio que el resto de los botones de la app, con la
+           sombra del botón verde. */
+        border: 2px solid rgba(255, 255, 255, .7);
         border-radius: var(--radius-pill, 999px);
         font: var(--type-button);
         cursor: pointer;
-        box-shadow: 0 3px 8px rgba(46, 125, 50, 0.3);
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, .45),
+          0 0 0 1px rgba(46, 125, 50, .3),
+          0 6px 14px rgba(46, 125, 50, .34);
         transition: transform 120ms ease;
       }
       .modal-exito__btn:active {

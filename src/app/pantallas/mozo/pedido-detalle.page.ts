@@ -4,8 +4,14 @@ import { PaginaDeComandas } from './comandas-base';
 import { EstadoSector, ROTULO_ESTADO_PEDIDO, ROTULO_ESTADO_SECTOR, Sector } from '../../nucleo/modelos/enums';
 import { PedidoItem } from '../../nucleo/modelos/modelos';
 
-/** Alto de un renglón con nombre de hasta dos líneas y del espacio entre piezas. */
-const ALTO_RENGLON = 95;
+/**
+ * Alto de un renglón con nombre de hasta dos líneas y del espacio entre piezas.
+ * Es el mínimo cómodo: la paginación reparte la lista entre estos renglones, así
+ * que si se agranda entran menos por pantalla —y cada uno queda más alto— y si
+ * se achica entran más. Con la tira del total un poco más alta, la lista pierde
+ * unos píxeles; 90 los absorbe sin que cambie la cantidad por página.
+ */
+const ALTO_RENGLON = 90;
 const ESPACIO = 8;
 
 /**
@@ -157,24 +163,70 @@ const ESPACIO = 8;
       .detalle__sector { flex: 0 0 auto; }
       .detalle__sectores { flex: 0 0 auto; }
       .pagina__items { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-      /* Cada renglón mide una parte exacta de lo que deja el separador. */
+      /* Cada renglón mide una parte exacta de lo que deja el separador. La
+         tarjeta no usa todo el alto de la casilla —las dos filas ya entran
+         juntas— y se centra: el aire que sobra se reparte parejo entre las dos
+         tarjetas vecinas. */
       .pagina__items > .casilla {
         flex: 0 0 calc((100cqh - (var(--k, 1) - 1) * 8px) / var(--k, 1));
-        min-height: 0; display: flex; flex-direction: column;
+        min-height: 0; display: flex; flex-direction: column; justify-content: center;
       }
-      .pagina__items > .casilla ::ng-deep .renglon { flex: 1 1 auto; justify-content: center; }
+      /* min-content es la red de seguridad: si un nombre de dos renglones pide
+         más alto que ese 92%, la tarjeta crece en vez de recortar el texto. */
+      .pagina__items > .casilla ::ng-deep .renglon {
+        flex: 1 1 auto; max-height: 92%; min-height: min-content; justify-content: center;
+      }
       /* Lugar para un nombre de hasta dos renglones; si es más largo, "…". */
       .pagina__items > .casilla ::ng-deep .renglon__datos b {
         display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
       }
 
-      :host ::ng-deep .renglon { padding: 5px 11px !important; }
-      :host ::ng-deep .renglon__fila { row-gap: 3px !important; }
+      :host ::ng-deep .renglon { padding: 4px 10px !important; }
+      /* El renglón, en dos filas: arriba el nombre con la duración al costado;
+         abajo la cantidad, el precio unitario y el subtotal. Antes el subtotal
+         caía en un tercer renglón propio y cada tarjeta quedaba alta al pedo.
+         Las dos filas van juntas y centradas en la tarjeta: separadas hasta los
+         bordes dejaban un hueco blanco en el medio que se leía como un error. */
+      :host ::ng-deep .renglon__fila {
+        flex: 1 1 auto;
+        grid-template-columns: auto minmax(0, 1fr) auto !important;
+        grid-template-rows: auto auto !important;
+        align-content: center !important;
+        column-gap: 10px !important;
+        row-gap: 8px !important;
+      }
+      :host ::ng-deep .renglon__fila .renglon__datos b {
+        grid-column: 1 / 3 !important; grid-row: 1 !important; padding-right: 8px;
+      }
+      :host ::ng-deep .renglon__fila .renglon__tiempo {
+        grid-column: 3 !important; grid-row: 1 !important; justify-self: end !important;
+      }
+      :host ::ng-deep .renglon__fila .renglon__cantidad {
+        grid-column: 1 !important; grid-row: 2 !important; align-self: center;
+      }
+      :host ::ng-deep .renglon__fila .renglon__precio {
+        grid-column: 2 !important; grid-row: 2 !important;
+      }
       :host ::ng-deep .renglon__fila .renglon__subtotal {
+        grid-column: 3 !important; grid-row: 2 !important; justify-self: end !important;
         font-size: clamp(17px, 5vw, 20px) !important;
       }
+      /* Jerarquía del renglón: manda el nombre del producto, después el importe
+         y al final el tiempo. El reloj crece —es lo que se mira de reojo— pero
+         su texto no puede quedar más grande que el nombre, que era lo que
+         pasaba y desarmaba la lectura. */
+      :host ::ng-deep .renglon__datos b {
+        font-size: clamp(16px, 4.6vw, 19px) !important;
+      }
+      :host ::ng-deep .renglon__tiempo {
+        font-size: clamp(14px, 4vw, 16px) !important;
+        font-weight: 600 !important;
+      }
+      :host ::ng-deep .renglon__tiempo lm-icono .material-symbols-rounded {
+        font-size: 1.3em !important;
+      }
       :host ::ng-deep .renglon__cantidad {
-        min-height: 27px !important; padding: 5px !important;
+        min-height: 24px !important; padding: 4px !important;
       }
     `,
   ],

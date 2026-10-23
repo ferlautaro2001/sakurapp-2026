@@ -5,6 +5,7 @@ import { PROPINAS, QrService } from '../../nucleo/servicios/qr.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { Mesa } from '../../nucleo/modelos/modelos';
 import { ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
+import { ModalMesaQrComponent } from '../mesas/modal-mesa';
 
 interface CodigoPropina {
   porcentaje: number;
@@ -19,7 +20,7 @@ interface CodigoPropina {
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-codigos',
-  imports: [...UI],
+  imports: [...UI, ModalMesaQrComponent],
   template: `
     <div class="lm-screen">
       <lm-encabezado (cerrarSesion)="cerrarSesion()" />
@@ -66,7 +67,7 @@ interface CodigoPropina {
                 @for (mesa of mesas.todas(); track mesa.id) {
                   <!-- El de descarga va al lado y no adentro: un botón no puede contener otro. -->
                   <div class="con-descarga">
-                    <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="ir(['/mesas', mesa.id, 'qr'])">
+                    <button type="button" class="lm-card mesa" [attr.aria-label]="'Mesa ' + mesa.numero" (click)="abrirQr(mesa)">
                       <img [src]="miniatura(mesa)" [alt]="'Código QR de la mesa ' + mesa.numero" loading="lazy" decoding="async" />
                       <!-- Igual que las propinas: número grande y una pastilla con el tipo, coloreada. -->
                       <div class="propina__datos" [attr.data-tipo]="mesa.tipo">
@@ -94,6 +95,11 @@ interface CodigoPropina {
 
       <lm-barra-inferior [items]="secciones()" activo="codigos" />
     </div>
+
+    <!-- El código de la mesa, grande: el mismo modal que en el salón. -->
+    @if (mesaQr(); as m) {
+      <lm-modal-mesa-qr [mesa]="m" (cerrar)="mesaQr.set(null)" />
+    }
   `,
   styles: [
     `
@@ -128,7 +134,7 @@ interface CodigoPropina {
       .propina[data-nivel="15"] { --nivel: #5E9E2F; }
       .propina[data-nivel="10"] { --nivel: #C99A06; }
       .propina[data-nivel="5"] { --nivel: #D9670F; }
-      .propina[data-nivel="0"] { --nivel: #C0261A; }
+      .propina[data-nivel="0"] { --nivel: #FF0000; }
       .propina__valor { color: var(--nivel); }
       .propina__rotulo { background: var(--nivel); color: #FFFFFF; }
       /* Mesas: el color lo da el tipo. */
@@ -179,6 +185,8 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
   protected readonly ingreso = signal<string | null>(null);
   protected readonly propinas = signal<CodigoPropina[]>([]);
   protected readonly rotuloTipo = ROTULO_TIPO_MESA;
+  /** La mesa cuyo código está abierto a pantalla completa. */
+  protected readonly mesaQr = signal<Mesa | null>(null);
   /** Código dibujado en el momento para cada mesa, indexado por su id. */
   private readonly codigosDeMesa = signal<Record<string, string>>({});
 
@@ -229,5 +237,10 @@ export class DuenoCodigosPage extends PaginaConSesion implements OnInit {
 
   protected miniatura(mesa: { id: string; qrCodeUrl: string }): string {
     return this.codigosDeMesa()[mesa.id] || mesa.qrCodeUrl;
+  }
+
+  /** Abre el código de la mesa a pantalla completa. */
+  protected abrirQr(mesa: Mesa): void {
+    this.mesaQr.set(mesa);
   }
 }

@@ -30,7 +30,7 @@
      porque aceptar y rechazar no pueden confundirse con la marca */
   --sk-verde: #1B7A4C;
   --sk-verde-fondo: #DCF1E5;
-  --sk-rojo: #C0261A;
+  --sk-rojo: #FF0000;
   --sk-rojo-fondo: #FFE0DB;
   --sk-ambar: #8F4B00;
   --sk-ambar-fondo: #FFE3D9;
@@ -180,7 +180,7 @@
   --size-avatar-header: clamp(48px, 13vw, 56px);
   --size-thumb: clamp(80px, 25vw, 108px);
   --size-visor: min(72vw, 236px);
-  --size-qr: min(66vw, 280px);
+  --size-qr: min(72vw, 320px);
   --size-icono-caja: clamp(38px, 12vw, 48px);
 
   /* forma */

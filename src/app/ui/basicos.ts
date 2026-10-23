@@ -123,8 +123,8 @@ export class BotonComponent {
          lm-btn--success y lm-btn--danger. Antes esta pareja llevaba degradados
          propios —un verde claro y un naranja— y se veía distinta de todos los
          demás botones de aceptar y rechazar. Ahora hay una sola fuente. */
-      .dec--no { background: var(--state-error); color: #FFF6F5; }
-      .dec--si { background: var(--state-success); color: #F4FBF7; }
+      .dec--no { background: var(--state-error); color: #FFF6F5; outline: 2px solid #8B0000; }
+      .dec--si { background: var(--state-success); color: #F4FBF7; outline: 2px solid #0F4D2E; }
       .dec:not(:disabled):active { transform: scale(.97); filter: brightness(.88); }
       .dec:disabled { opacity: .46; cursor: default; }
       .dec:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 2px; }
@@ -605,13 +605,13 @@ export interface DatoFicha {
         position: absolute; top: 12px; right: 12px;
         /* Mismo tamaño que el botón de cerrar sesión del encabezado. */
         width: var(--touch-min); height: var(--touch-min); display: grid; place-items: center; padding: 0;
-        /* Mismo contorno de vidrio que el botón de cerrar sesión; conserva el rojo. */
-        border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .5);
-        background: var(--state-error); color: #FFFFFF; cursor: pointer;
+        /* Mismo contorno, bordes y outline que el botón de cerrar sesión. */
+        border-radius: 17px; border: 1.5px solid rgba(255, 255, 255, .6);
+        outline: 2px solid #8B0000;
+        background: #FF0000; color: #FFFFFF; cursor: pointer;
         box-shadow:
-          inset 0 1px 0 rgba(255, 255, 255, .55),
-          inset 0 -6px 12px rgba(255, 255, 255, .06),
-          0 4px 10px rgba(94, 12, 44, .16);
+          inset 0 1px 0 rgba(255, 255, 255, .7),
+          0 3px 8px rgba(94, 12, 44, .14);
       }
       .modal-cerrar:active { transform: scale(.94); }
     `,

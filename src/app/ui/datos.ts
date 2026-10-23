@@ -94,30 +94,60 @@ export class TarjetaPerfilComponent {
 
 
 /**
- * Fila de un comensal pendiente de aprobación.
+ * Ficha de un comensal pendiente de aprobación.
  *
- * La foto va grande y a la izquierda, pegada a los nombres y apellidos, para
- * que nunca haya dudas de qué cara corresponde a qué registro. Aceptar y
- * rechazar viven dentro de la fila, no en una barra global: la decisión es por
- * persona. Van separados veinte píxeles y con colores opuestos, para que sea
- * imposible confundirlos de un toque.
+ * La tarjeta es una sola columna, de arriba hacia abajo: el nombre como título
+ * centrado, la foto en el medio, los datos debajo y las dos decisiones al pie,
+ * una a cada lado como en el resto de las pantallas. Así la cara se mira a gusto
+ * antes de decidir. Aceptar y rechazar viven dentro de la tarjeta, no en una
+ * barra global: la decisión es por persona.
  */
 @Component({
   selector: 'lm-fila-pendiente',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [IconoComponent, ChipComponent, DecisionComponent, DocumentoPipe],
+  imports: [IconoComponent, DecisionComponent, DocumentoPipe],
   template: `
     <div class="lm-pending">
-      <button type="button" class="lm-pending__fila fila" (click)="abrir.emit()">
+      <!-- El nombre manda: es el título de la tarjeta, centrado arriba de todo.
+           Es un botón porque toda la tarjeta abre la ficha ampliada. -->
+      <h3 class="lm-pending__titulo">
+        <button type="button" class="lm-pending__nombre" (click)="abrir.emit()">
+          {{ nombreCorto() }}
+        </button>
+        @if (mostrarEstado()) {
+          <span
+            class="lm-pending__estado-badge"
+            [class.lm-pending__estado-badge--pendiente]="cliente().estado === 'PENDIENTE'"
+            [class.lm-pending__estado-badge--aprobado]="cliente().estado === 'APROBADO'"
+            [class.lm-pending__estado-badge--rechazado]="cliente().estado === 'RECHAZADO'"
+            [attr.aria-label]="rotuloEstado()"
+            [title]="rotuloEstado()"
+          >
+            <lm-icono [nombre]="iconoEstado()" [tamano]="24" />
+          </span>
+        }
+      </h3>
+
+      <!-- La foto, en el medio y cuadrada: un botón propio con el mismo destino
+           que los datos, para que el gesto de abrir la ficha valga en cualquier
+           lado de la tarjeta. -->
+      <button
+        type="button"
+        class="lm-pending__foto"
+        [attr.aria-label]="'Ver la ficha de ' + usuarios.nombreCompleto(cliente())"
+        (click)="abrir.emit()"
+      >
         <span class="lm-avatar" [style.background-image]="'url(' + usuarios.avatarSushi(cliente()) + ')'"></span>
+      </button>
+
+      <button type="button" class="lm-pending__fila fila" (click)="abrir.emit()">
         <span class="lm-pending__datos">
-          <span class="lm-pending__nombre">{{ usuarios.nombreCompleto(cliente()) }}</span>
           <span class="lm-pending__meta">
-            <lm-icono nombre="badge" [tamano]="18" />
+            <lm-icono nombre="badge" [tamano]="20" />
             DNI: {{ cliente().dni | documento }}
           </span>
           <span class="lm-pending__meta lm-pending__meta--correo">
-            <lm-icono nombre="mail" [tamano]="18" />
+            <lm-icono nombre="mail" [tamano]="20" />
             @if (correo(); as partes) {
               <!-- Si no entra en un renglón, parte justo antes del "@" y nunca
                    en el medio del usuario o del dominio. -->
@@ -126,12 +156,10 @@ export class TarjetaPerfilComponent {
               <span>Sin correo</span>
             }
           </span>
-          <!-- El estado va debajo de los datos: al costado le comía el ancho al nombre y al correo. -->
-          @if (mostrarEstado()) {
-            <lm-chip class="lm-pending__estado" [estado]="cliente().estado.toLowerCase()">{{ rotuloEstado() }}</lm-chip>
-          }
         </span>
       </button>
+      <!-- El estado va ahora como un círculo junto al nombre: ocupa el alto del
+           título y no le roba espacio a la foto. -->
       @if (cliente().estado === 'PENDIENTE' && conAcciones()) {
         <lm-decision
           compacto
@@ -147,49 +175,62 @@ export class TarjetaPerfilComponent {
     `
       :host { display: block; }
       /*
-       * La fila entera abre la ficha ampliada: la foto de la lista es chica y
-       * la decisión merece ver bien la cara. Es un botón, no un div con click,
-       * para que también se llegue con el teclado.
+       * El nombre, la foto y los datos abren la ficha ampliada: la foto de la
+       * lista es chica y la decisión merece ver bien la cara. Son botones, no
+       * divs con click, para que también se llegue con el teclado.
+       *
+       * El aspecto de la tarjeta —la grilla, el título, la foto y los datos—
+       * vive en el sistema de diseño, en .lm-pending, porque la comparten los
+       * registros y los empleados. Acá queda sólo lo que es de este botón: que
+       * no se vea como botón y que el teclado lo alcance.
        */
-      .fila {
-        width: 100%;
+      .fila,
+      .lm-pending__foto {
         border: none;
         background: transparent;
         padding: 0;
-        text-align: left;
+        text-align: center;
         cursor: pointer;
         font: inherit;
         color: inherit;
+        -webkit-tap-highlight-color: transparent;
       }
-      .fila:active { opacity: 0.7; }
+      /* El nombre no hereda tipografía ni color: los pone el sistema de diseño
+         con su propia regla, y heredar acá la pisaría. */
+      .lm-pending__nombre {
+        border: none;
+        background: transparent;
+        padding: 0;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .lm-pending__titulo {
+       display: grid; grid-template-columns: var(--touch-min) 1fr var(--touch-min);
+       align-items: start; width: 100%;
+     }
+     .lm-pending__nombre { grid-column: 2; text-align: center; }
+     .lm-pending__estado-badge {
+       grid-column: 3; justify-self: center;
+       display: inline-flex; align-items: center; justify-content: center;
+       width: var(--touch-min); height: var(--touch-min); border-radius: 50%;
+       line-height: 1;
+       border: 1.5px solid rgba(255, 255, 255, .6);
+       box-shadow:
+         inset 0 1px 0 rgba(255, 255, 255, .7),
+         0 3px 8px rgba(94, 12, 44, .14);
+     }
+     .lm-pending__estado-badge--pendiente { background: var(--state-pending); color: #FFFFFF; }
+     .lm-pending__estado-badge--aprobado { background: var(--state-success); color: #FFFFFF; }
+     .lm-pending__estado-badge--rechazado { background: var(--state-error); color: #FFFFFF; }
+     .fila:active, .lm-pending__foto:active, .lm-pending__nombre:active { opacity: 0.7; }
+      .fila:focus-visible,
+      .lm-pending__foto:focus-visible,
+      .lm-pending__nombre:focus-visible { outline: 3px solid #FFFFFF; outline-offset: 3px; }
 
-      /* Una tarjeta, de arriba hacia abajo y centrada: la foto, el nombre, el
-         DNI, el correo y el estado. Las dos decisiones quedan apiladas a la
-         derecha, centradas en su columna, para no sumar alto. */
-      .lm-pending { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 12px; }
-      .fila { min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
-      /* La foto cede con el ancho del equipo: con 96px fijos, en un celular
-         angosto a los datos les quedaban ~125px y el DNI y el correo se
-         partían en dos renglones cada uno, lo que estiraba la tarjeta. */
-      .fila .lm-avatar { width: clamp(64px, 20vw, 88px); border-radius: 18px; }
-      .lm-pending__datos { display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 0; max-width: 100%; }
-      .lm-pending__meta { justify-content: center; max-width: 100%; }
-      .lm-pending__nombre { font-size: clamp(16px, 4.6vw, 18px); }
-      .lm-pending__meta { font-size: clamp(13px, 3.9vw, 15px); }
-      /* El correo se lee entero: en vez de cortarse con "…" baja de renglón
-         antes del "@". Cada mitad no se parte; sólo si una sola es más ancha
-         que la tarjeta se recorta, que es un caso extremo. */
-      .lm-pending__meta--correo { align-items: flex-start; }
-      .lm-pending__meta--correo .correo { text-align: left; }
-      .lm-pending__meta--correo lm-icono { margin-top: 1px; }
-      .lm-pending__meta .correo { white-space: normal; overflow: visible; text-overflow: clip; min-width: 0; }
-      .correo__parte {
-        display: inline-block; max-width: 100%; vertical-align: top;
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-      }
-      .lm-pending__acciones { display: flex; flex-direction: column; width: auto; gap: 8px; flex: 0 0 auto; }
-      .lm-pending__acciones ::ng-deep .dec { width: 48px; min-height: 0; height: 44px; border-radius: 14px; }
-      .lm-pending__acciones ::ng-deep .dec .material-symbols-rounded { font-size: 22px !important; }
+      /* Los datos van adentro del botón que abre la ficha, así que el botón es
+         el que ocupa la fila de la grilla y se estira a todo el ancho. */
+      .fila { grid-area: datos; width: 100%; display: flex; justify-content: center; }
+      .lm-pending__acciones ::ng-deep .dec { width: auto; min-height: 0; height: 54px; border-radius: 16px; }
     `,
   ],
 })
@@ -208,6 +249,23 @@ export class FilaPendienteComponent {
     return ROTULO_ESTADO_USUARIO[this.cliente().estado];
   }
 
+  protected iconoEstado(): string {
+    switch (this.cliente().estado) {
+      case 'APROBADO':
+        return 'check';
+      case 'RECHAZADO':
+        return 'close';
+      default:
+        return 'schedule';
+    }
+  }
+
+  protected nombreCorto(): string {
+    const nombre = this.usuarios.nombrePropio(this.cliente().nombre).split(/\s+/)[0] ?? '';
+    const apellido = this.usuarios.nombrePropio(this.cliente().apellido).split(/\s+/)[0] ?? '';
+    return `${nombre} ${apellido}`.trim();
+  }
+
   /** El correo en dos mitades para poder partirlo antes del "@". */
   protected correo(): { usuario: string; dominio: string } | null {
     const email = this.cliente().email?.trim();
@@ -221,8 +279,12 @@ export class FilaPendienteComponent {
 
 /**
  * Tarjeta de mesa para SakurApp.
- * Todas iguales y del mismo alto: la foto real de la mesa arriba, el número
- * en una placa, la capacidad, el tipo y la disponibilidad.
+ *
+ * La foto es el fondo de la tarjeta y los datos van abajo, en una banda
+ * sólida: el número de la mesa y su estado son lo que hay que leer de un
+ * vistazo, y encima de una foto el texto nunca gana. El estado dice su
+ * nombre —Vacía, Ocupada, Inactiva— y además lleva su color: el punto de
+ * color solo no se entendía y parecía un botón de grabar.
  */
 @Component({
   selector: 'lm-tarjeta-mesa',
@@ -232,6 +294,15 @@ export class FilaPendienteComponent {
 <button
   type="button"
   class="lm-mesa"
+  [attr.aria-label]="
+    'Mesa ' +
+    mesa().numero +
+    ', ' +
+    rotuloEstado().toLowerCase() +
+    ', ' +
+    mesa().cantidadComensales +
+    ' personas'
+  "
   (click)="presionar.emit()"
 >
   <!-- FOTO -->
@@ -245,7 +316,32 @@ export class FilaPendienteComponent {
         ? 'url(' + mesa().fotoUrl + ')'
         : null
     "
-  ></span>
+  >
+    <!-- Sin foto, el ícono del tipo en el centro: así cada mesa se distingue
+         de las demás aunque no tenga imagen. -->
+    @if (!mesa().fotoUrl) {
+      <span class="lm-mesa__sinfoto">
+        <lm-icono [nombre]="iconoTipo()" [tamano]="52" />
+      </span>
+    }
+  </span>
+
+  <!--
+    Arriba a la izquierda, pegada a la esquina: el número de la mesa y, a su
+    derecha, la pelotita del estado. Es como se llama a una mesa en el salón, y
+    desde lejos se lee el color antes que el número.
+  -->
+  <span class="lm-mesa__identidad">
+    <span class="lm-mesa__numero">{{ mesa().numero }}</span>
+    <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    <span
+      class="lm-mesa__punto"
+      [class.lm-mesa__punto--vacia]="mesa().estado.toLowerCase() === 'vacia'"
+      [class.lm-mesa__punto--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
+      [class.lm-mesa__punto--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+      aria-hidden="true"
+    ></span>
+  </span>
 
   <!-- Tipo (sólo el ícono) y comensales en una sola píldora arriba a la derecha. -->
   <span
@@ -262,37 +358,15 @@ export class FilaPendienteComponent {
     {{ mesa().cantidadComensales }}
   </span>
 
-  <span class="lm-mesa__numero">
-    {{ mesa().numero }}
-  </span>
-
-</span>
-
   <!--
-    Abajo a la derecha, en una sola píldora separada por pipes: editar, QR y el
-    estado. Los atajos van con el rol de botón y no como un elemento button,
-    porque la tarjeta entera ya es uno y el HTML no permite anidarlos; por eso
-    cada uno frena la propagación, para que tocar el lápiz no abra además la
-    ficha que hay detrás.
+    Los atajos van con el rol de botón y no como un elemento button, porque la
+    tarjeta entera ya es uno y el HTML no permite anidarlos; por eso cada uno
+    frena la propagación, para que tocar el lápiz no abra además la ficha que
+    hay detrás.
   -->
   <span class="lm-mesa__abajo">
-    @if (conEdicion()) {
-      <span
-        class="lm-mesa__atajo"
-        role="button"
-        tabindex="0"
-        [attr.aria-label]="'Editar la mesa ' + mesa().numero"
-        (click)="editar($event)"
-        (keydown.enter)="editar($event)"
-        (keydown.space)="editar($event)"
-      >
-        <lm-icono nombre="edit" [tamano]="20" />
-      </span>
-      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
-    }
-
     <span
-      class="lm-mesa__atajo"
+      class="lm-mesa__atajo lm-mesa__atajo--qr"
       role="button"
       tabindex="0"
       [attr.aria-label]="'Ver el código QR de la mesa ' + mesa().numero"
@@ -303,17 +377,21 @@ export class FilaPendienteComponent {
       <lm-icono nombre="qr_code_2" [tamano]="20" />
     </span>
 
-    @if (mostrarEstado()) {
-      <span class="lm-mesa__pipe" aria-hidden="true">|</span>
+    @if (conEdicion()) {
       <span
-        class="lm-mesa__semaforo"
-        [class.lm-mesa__semaforo--vacia]="mesa().estado.toLowerCase() === 'vacia'"
-        [class.lm-mesa__semaforo--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
-        role="img"
-        [attr.aria-label]="rotuloEstado()"
-      ></span>
+        class="lm-mesa__atajo lm-mesa__atajo--editar"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Editar la mesa ' + mesa().numero"
+        (click)="editar($event)"
+        (keydown.enter)="editar($event)"
+        (keydown.space)="editar($event)"
+      >
+        <lm-icono nombre="edit" [tamano]="20" />
+      </span>
     }
   </span>
+</span>
 </button>
   `,
   styles: [':host{display:block;height:100%}'],
@@ -322,8 +400,7 @@ export class TarjetaMesaComponent {
   readonly mesa = input.required<Mesa>();
   /** El lápiz sólo lo ven los perfiles que pueden editar la mesa. */
   readonly conEdicion = input(false, { transform: booleanAttribute });
-  /** Con un filtro de estado o de tipo activo, ese dato ya es obvio: se oculta. */
-  readonly mostrarEstado = input(true, { transform: booleanAttribute });
+  /** Con un filtro de tipo activo, ese dato ya es obvio: se oculta. */
   readonly mostrarTipo = input(true, { transform: booleanAttribute });
   readonly presionar = output<void>();
   readonly abrirQr = output<void>();

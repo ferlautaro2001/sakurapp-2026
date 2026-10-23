@@ -100,14 +100,6 @@ export const routes: Routes = [
         canActivate: [guardiaPerfil('MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO', 'DUENO', 'SUPERVISOR')],
         loadComponent: () => import('./pantallas/mesas/chat-mesa.page').then((m) => m.ChatMesaPage),
       },
-      {
-        path: ':id/qr',
-        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
-      },
-      {
-        path: ':id',
-        loadComponent: () => import('./pantallas/mesas/mesa-qr.page').then((m) => m.MesaQrPage),
-      },
     ],
   },
   {

@@ -299,8 +299,11 @@ export class MesaFormPage extends PaginaConSesion implements OnInit {
     if (!alta) return;
 
     const nueva: Mesa = await this.cargando.conEsperaMinima('Agregando la mesa…', () => this.mesas.crear(datos));
-    this.avisos.exito(`Mesa ${nueva.numero} agregada`, 'Su código QR ya está generado y listo para imprimir.');
-    this.ir(['/mesas', nueva.id, 'qr']);
+    this.avisos.exito(
+      `Mesa ${nueva.numero} agregada`,
+      'Su código QR ya está generado: lo vas a ver en el botón de QR de la tarjeta.',
+    );
+    this.ir(['/mesas']);
   }
 
   protected async darDeBaja(): Promise<void> {

@@ -76,11 +76,9 @@ const MENSAJE_ESTADO: Record<EstadoUsuario, string> = {
       :host { display: flex; flex: 1; min-height: 0; }
 
       /* La tarjeta conserva su alto natural y se centra en su casilla: nunca se
-         estira para llenarla ni se sale. Las que llevan Aceptar/Rechazar ocupan
-         lo que necesitan; las filas simples, hasta un tope. */
+         estira para llenarla ni se sale. */
       lm-fila-pendiente { display: flex; flex-direction: column; justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: clamp(96px, 21dvh, 150px); justify-content: center; }
-      lm-fila-pendiente ::ng-deep .lm-pending:has(.lm-pending__acciones) { flex: 0 1 auto; max-height: 100%; }
+      lm-fila-pendiente ::ng-deep .lm-pending { flex: 0 1 auto; height: auto; max-height: 100%; }
       /* Pantallas bajas: menos filas por tanda para que ninguna se corte. */
       @media (max-height: 760px) { .lm-lista-n:has(> :nth-child(5)) { --por: 2; } }
       @media (max-height: 640px) { .lm-lista-uno:has(> :nth-child(3)) { --por: 1; } }

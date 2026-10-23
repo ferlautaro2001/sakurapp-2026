@@ -742,7 +742,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger {
         color: #FFFFFF;
-        background: linear-gradient(180deg, #F0452F 0%, #C0261A 55%, #8E160F 100%);
+        background: linear-gradient(180deg, #F0452F 0%, #FF0000 55%, #8E160F 100%);
         border: 2px solid rgba(255, 190, 180, 0.7);
         box-shadow:
           inset 0 2px 0 rgba(255, 255, 255, 0.35),
@@ -751,7 +751,7 @@ import { MarcaRechazo } from '../../nucleo/modelos/enums';
           0 8px 18px rgba(142, 22, 15, 0.45);
       }
       .producto-screen--gestionable .lm-actionbar ::ng-deep .lm-btn--danger:not(:disabled):active {
-        background: linear-gradient(180deg, #C0261A 0%, #8E160F 100%);
+        background: linear-gradient(180deg, #FF0000 0%, #8E160F 100%);
       }
 
       /* Las flechas van en las esquinas de abajo de la foto: la de la izquierda

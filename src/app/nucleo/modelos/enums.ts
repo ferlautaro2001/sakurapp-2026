@@ -164,6 +164,27 @@ export const ROTULO_ESTADO_ESPERA: Record<EstadoEspera, string> = {
   FINALIZADO: 'Sentado en su mesa',
 };
 
+/**
+ * Momentos de una reserva agendada (puntos 24 a 26 del enunciado).
+ *
+ *   PENDIENTE  →  CONFIRMADA  →  CUMPLIDA
+ *   (la pidió)    (la aceptó     (escaneó el código
+ *                  el dueño)      de su mesa a tiempo)
+ *
+ * `RECHAZADA` la decide el dueño o el supervisor, `CANCELADA` el cliente, y
+ * `VENCIDA` llega sola cuando pasan los 45 minutos sin que se haya sentado.
+ */
+export type EstadoReserva = 'PENDIENTE' | 'CONFIRMADA' | 'RECHAZADA' | 'CANCELADA' | 'CUMPLIDA' | 'VENCIDA';
+
+export const ROTULO_ESTADO_RESERVA: Record<EstadoReserva, string> = {
+  PENDIENTE: 'Pendiente',
+  CONFIRMADA: 'Confirmada',
+  RECHAZADA: 'Rechazada',
+  CANCELADA: 'Cancelada',
+  CUMPLIDA: 'Cumplida',
+  VENCIDA: 'Vencida',
+};
+
 export type RolMensaje = 'CLIENTE' | 'MOZO';
 
 export const ROTULO_ROL_MENSAJE: Record<RolMensaje, string> = {

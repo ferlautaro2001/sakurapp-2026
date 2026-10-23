@@ -186,3 +186,113 @@ body{margin:0;background:#6E1234;font-family:'Trebuchet MS',Figtree,'Segoe UI',H
   </div>
 </div></body></html>`;
 }
+
+export interface DatosReserva {
+  nombre: string;
+  mesa: number;
+  comensales: number;
+  /** Día y hora de la reserva, ya escritos para leer. */
+  cuando: string;
+  resueltoPor?: string;
+  perfilResolutor?: string;
+  motivo?: string;
+  logoUrl: string;
+}
+
+/**
+ * Plantilla 4 · Reserva confirmada (punto 25).
+ * Misma familia que la aprobación de cuenta: es una buena noticia.
+ */
+export function correoReservaConfirmada(d: DatosReserva): string {
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reserva confirmada - SakurApp</title>
+<style>
+body{margin:0;background:#FFD7DF;font-family:'Trebuchet MS',Figtree,'Segoe UI',Helvetica,Arial,sans-serif;padding:24px 0}
+.wrap{max-width:600px;margin:0 auto;background:#FDECEF;border-radius:24px;overflow:hidden;box-shadow:0 8px 22px rgba(110,18,52,.2)}
+.hero{background:linear-gradient(135deg,#FF7665,#EB366B);background-color:#EB366B;padding:34px 36px;color:#FFFFFF}
+.hero h1{margin:16px 0 0;font-size:30px;line-height:1.15;font-weight:800;letter-spacing:-.015em}
+.hero p{margin:8px 0 0;font-size:16.5px;line-height:1.45;font-weight:500;color:rgba(255,255,255,.94)}
+.cuerpo{padding:30px 36px 14px}
+.cuerpo h2{margin:16px 0 10px;font-size:22px;line-height:1.25;font-weight:800;color:#6E1234}
+.cuerpo p{margin:0 0 14px;font-size:15.5px;line-height:1.6;color:#6E1234}
+.pill{display:inline-block;padding:7px 16px;border-radius:999px;background:#DCF1E5;color:#1B7A4C;font-size:13px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.aviso{margin:18px 0;padding:16px 18px;background:#FFFFFF;border-left:4px solid #EB366B;border-radius:0 12px 12px 0;font-size:14.5px;line-height:1.55;color:#6E1234}
+.datos{width:100%;margin:10px 0 18px;border-collapse:collapse}
+.datos td{padding:11px 0;border-bottom:1px solid #F5B1C0;font-size:15px;line-height:1.4;color:#6E1234}
+.datos td:first-child{color:#A4436A;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;width:40%}
+.pie{padding:22px 36px 30px;background:#FFD7DF;font-size:13px;line-height:1.6;color:#A4436A}
+</style></head><body>
+<div class="wrap">
+  <div class="hero">
+    <img src="${d.logoUrl}" width="62" height="62" alt="SakurApp" style="border-radius:26%;display:block">
+    <h1>¡Tu mesa te espera!</h1>
+    <p>Confirmamos tu reserva en ${R.nombre}.</p>
+  </div>
+  <div class="cuerpo">
+    <span class="pill">Reserva confirmada</span>
+    <h2>¡Hola, ${d.nombre}!</h2>
+    <p>Ya separamos la mesa para vos. Nadie más la va a poder ocupar en tu horario.</p>
+    <table class="datos">
+      <tr><td>Cuándo</td><td>${d.cuando}</td></tr>
+      <tr><td>Mesa</td><td>Número ${d.mesa}</td></tr>
+      <tr><td>Personas</td><td>${d.comensales}</td></tr>
+      <tr><td>Confirmada por</td><td>${d.resueltoPor ?? 'Administración'} · ${d.perfilResolutor ?? 'Supervisor'}</td></tr>
+    </table>
+    <div class="aviso">
+      <strong>Al llegar, no hace falta anotarse en la lista de espera:</strong> escaneá con la app el código QR de la mesa ${d.mesa} y ya quedás sentado. Te guardamos la mesa hasta 45 minutos después de la hora reservada.
+    </div>
+  </div>
+  <div class="pie">
+    ${PIE_MARCAS}
+    <strong style="color:#6E1234;font-size:15px;line-height:1.3">${R.nombre} · ${R.salon}</strong><br>
+    ${R.direccion} · Tel: ${R.telefono}<br>
+    Si no vas a poder venir, cancelá la reserva desde la app para liberar la mesa.
+  </div>
+</div></body></html>`;
+}
+
+/**
+ * Plantilla 5 · Reserva rechazada con motivo (punto 25).
+ * Misma familia que el rechazo de cuenta: clara y respetuosa.
+ */
+export function correoReservaRechazada(d: DatosReserva): string {
+  const motivo = d.motivo?.trim() || 'No tenemos disponibilidad para ese horario.';
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Información sobre tu reserva - SakurApp</title>
+<style>
+body{margin:0;background:#6E1234;font-family:'Trebuchet MS',Figtree,'Segoe UI',Helvetica,Arial,sans-serif;padding:24px 0}
+.wrap{max-width:600px;margin:0 auto;background:#FDECEF;border:2px solid #6E1234;border-radius:16px;overflow:hidden}
+.barra{background:#6E1234;padding:18px 30px}
+.barra span{font-size:13px;font-weight:700;letter-spacing:.15em;text-transform:uppercase;color:#FDECEF;vertical-align:middle;margin-left:12px}
+.cabeza{padding:28px 30px 0}
+.cabeza h1{margin:0;font-size:26px;line-height:1.2;font-weight:800;color:#6E1234}
+.tag{display:inline-block;margin-bottom:12px;padding:6px 14px;border:1.5px solid #C0261A;border-radius:999px;color:#C0261A;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.cuerpo{padding:16px 30px 24px}
+.cuerpo p{margin:0 0 14px;font-size:15px;line-height:1.65;color:#6E1234}
+.aviso{margin:16px 0;padding:16px 18px;background:#FFE0DB;border-left:4px solid #C0261A;border-radius:0 10px 10px 0;font-size:14.5px;line-height:1.55;color:#6E1234}
+.pie{padding:18px 30px;border-top:1px dashed #F5B1C0;font-size:12.5px;line-height:1.6;color:#A4436A}
+</style></head><body>
+<div class="wrap">
+  <div class="barra">
+    <img src="${d.logoUrl}" width="34" height="34" alt="SakurApp" style="border-radius:26%;vertical-align:middle">
+    <span>${R.nombre} · Reservas</span>
+  </div>
+  <div class="cabeza">
+    <span class="tag">Reserva no confirmada</span>
+    <h1>No pudimos confirmar tu reserva</h1>
+  </div>
+  <div class="cuerpo">
+    <p>Hola, ${d.nombre}. Revisamos tu pedido de reserva para el ${d.cuando} (mesa ${d.mesa}, ${d.comensales} ${d.comensales === 1 ? 'persona' : 'personas'}) y esta vez no la pudimos confirmar.</p>
+    <div class="aviso"><strong>Motivo informado:</strong> ${motivo}</div>
+    <p>Podés pedir otra reserva desde la app para otro día u horario, o acercarte al salón y anotarte en la lista de espera.</p>
+  </div>
+  <div class="pie">
+    ${R.nombre} · ${R.salon} · ${R.direccion}<br>
+    Revisado por ${d.resueltoPor ?? 'Administración'} · ${d.perfilResolutor ?? 'Supervisor'}<br>
+    Si tenés dudas, llamanos al ${R.telefono}.
+  </div>
+</div></body></html>`;
+}

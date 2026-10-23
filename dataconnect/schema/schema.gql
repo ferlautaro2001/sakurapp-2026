@@ -65,6 +65,15 @@ enum EstadoSector {
   LISTO
 }
 
+enum EstadoReserva {
+  PENDIENTE
+  CONFIRMADA
+  RECHAZADA
+  CANCELADA
+  CUMPLIDA
+  VENCIDA
+}
+
 enum RolMensaje {
   CLIENTE
   MOZO
@@ -121,6 +130,18 @@ type Espera @table(name: "listaEspera") {
   estado: EstadoEspera! @default(value: ESPERANDO)
   mesaAsignada: Mesa
   timestamp: Timestamp! @default(expr: "request.time")
+}
+
+type Reserva @table(name: "reservas") {
+  id: UUID! @default(expr: "uuidV4()")
+  cliente: User!
+  mesa: Mesa!
+  fechaHora: Timestamp!
+  comensales: Int!
+  estado: EstadoReserva! @default(value: PENDIENTE)
+  motivoRechazo: String
+  resueltoPor: User
+  createdAt: Timestamp! @default(expr: "request.time")
 }
 
 type Pedido @table(name: "pedidos") {

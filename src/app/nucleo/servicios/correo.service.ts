@@ -3,13 +3,16 @@ import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { FirestoreService } from './firestore.service';
 import { nuevoId } from '../datos/semilla';
-import { CorreoEnviado, Usuario } from '../modelos/modelos';
+import { CorreoEnviado, Reserva, Usuario } from '../modelos/modelos';
 import { ROTULO_PERFIL } from '../modelos/enums';
 import {
   DatosCorreo,
+  DatosReserva,
   correoAprobacion,
   correoRechazo,
   correoRegistroRecibido,
+  correoReservaConfirmada,
+  correoReservaRechazada,
 } from './plantillas-correo';
 
 const LOGO = 'assets/img/logo-badge.png';
@@ -85,6 +88,49 @@ export class CorreoService {
       plantilla: 'RECHAZO',
       cuerpoHtml: correoRechazo(datos),
     });
+  }
+
+  /**
+   * Correo automático 4 · Reserva confirmada (Punto 25).
+   */
+  async enviarReservaConfirmada(reserva: Reserva, resolutor: Usuario): Promise<CorreoEnviado> {
+    return this.enviar({
+      para: reserva.clienteEmail ?? '',
+      asunto: `${environment.restaurante.nombre} · Tu reserva está confirmada`,
+      plantilla: 'RESERVA_CONFIRMADA',
+      cuerpoHtml: correoReservaConfirmada(await this.armarDatosReserva(reserva, resolutor)),
+    });
+  }
+
+  /**
+   * Correo automático 5 · Reserva rechazada con motivo (Punto 25).
+   */
+  async enviarReservaRechazada(reserva: Reserva, resolutor: Usuario, motivo: string): Promise<CorreoEnviado> {
+    const datos = { ...(await this.armarDatosReserva(reserva, resolutor)), motivo };
+    return this.enviar({
+      para: reserva.clienteEmail ?? '',
+      asunto: `${environment.restaurante.nombre} · Sobre tu reserva`,
+      plantilla: 'RESERVA_RECHAZADA',
+      cuerpoHtml: correoReservaRechazada(datos),
+    });
+  }
+
+  private async armarDatosReserva(reserva: Reserva, resolutor: Usuario): Promise<DatosReserva> {
+    return {
+      nombre: reserva.clienteNombre.split(' ')[0] || reserva.clienteNombre,
+      mesa: reserva.mesaNumero,
+      comensales: reserva.comensales,
+      cuando: new Date(reserva.fechaHora).toLocaleString('es-AR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        hour: '2-digit',
+        minute: '2-digit',
+      }),
+      resueltoPor: `${resolutor.nombre} ${resolutor.apellido ?? ''}`.trim(),
+      perfilResolutor: ROTULO_PERFIL[resolutor.perfil],
+      logoUrl: await logoComoDatos(),
+    };
   }
 
   private async armarDatos(cliente: Usuario, resolutor?: Usuario): Promise<DatosCorreo> {

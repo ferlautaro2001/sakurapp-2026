@@ -15,18 +15,20 @@ describe('navegacionDe · secciones por perfil', () => {
     expect(rutas('CANTINERO')).toEqual(['/sector/pedidos', '/carta']);
   });
 
-  it('supervisor y dueño tienen registros, mesas, códigos, correos y empleados', () => {
-    expect(rutas('SUPERVISOR')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos', '/dueno/empleados']);
-    expect(rutas('DUENO')).toEqual(['/dueno/registros', '/mesas', '/dueno/codigos', '/dueno/correos', '/dueno/empleados']);
+  it('supervisor y dueño tienen registros, reservas, mesas, códigos, correos y empleados', () => {
+    const rutasAdmin = ['/dueno/registros', '/dueno/reservas', '/mesas', '/dueno/codigos', '/dueno/correos', '/dueno/empleados'];
+    expect(rutas('SUPERVISOR')).toEqual(rutasAdmin);
+    expect(rutas('DUENO')).toEqual(rutasAdmin);
   });
 
   it('metre tiene espera, mesas y registrar cliente', () => {
     expect(rutas('METRE')).toEqual(['/metre/espera', '/mesas', '/metre/registrar']);
   });
 
-  it('sin mesa (en fila), el comensal ve su lugar y encuestas, sin juegos', () => {
+  it('sin mesa (en fila), el comensal ve su lugar y encuestas, sin juegos; el registrado, también reservas', () => {
     expect(rutas('CLIENTE_REGISTRADO', { enMesa: false })).toEqual([
       '/cliente/espera',
+      '/cliente/reservas',
       '/cliente/encuestas',
     ]);
     expect(rutas('CLIENTE_ANONIMO', { enMesa: false })).toEqual([

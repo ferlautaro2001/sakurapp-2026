@@ -3,6 +3,7 @@ import {
   EstadoEspera,
   EstadoMesa,
   EstadoPedido,
+  EstadoReserva,
   EstadoSector,
   EstadoUsuario,
   MarcaRechazo,
@@ -87,7 +88,7 @@ export interface CorreoEnviado {
   id: string;
   para: string;
   asunto: string;
-  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO';
+  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO' | 'RESERVA_CONFIRMADA' | 'RESERVA_RECHAZADA';
   cuerpoHtml: string;
   enviadoEn: string;
   entregado: boolean;
@@ -128,6 +129,31 @@ export interface Espera {
   mesaAsignadaId: string | null;
   mesaAsignadaNumero: number | null;
   timestamp: string;
+}
+
+/**
+ * US-13.1 · una reserva agendada por un cliente registrado.
+ *
+ * Como la espera, guarda el nombre y el correo del cliente y el número de la
+ * mesa: el dueño decide mirando el listado, y el correo de la respuesta sale
+ * sin tener que buscar a nadie.
+ */
+export interface Reserva {
+  id: string;
+  clienteId: string;
+  clienteUid: string;
+  clienteNombre: string;
+  clienteEmail: string | null;
+  clienteFotoUrl: string;
+  mesaId: string;
+  mesaNumero: number;
+  /** Fecha y hora de la reserva, en ISO. */
+  fechaHora: string;
+  comensales: number;
+  estado: EstadoReserva;
+  motivoRechazo: string | null;
+  resueltoPorNombre: string | null;
+  createdAt: string;
 }
 
 /** Una respuesta de encuesta ya cargada. Para el comensal es sólo lectura. */

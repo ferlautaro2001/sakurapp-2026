@@ -71,6 +71,10 @@ export const routes: Routes = [
         path: 'codigos',
         loadComponent: () => import('./pantallas/dueno/codigos.page').then((m) => m.DuenoCodigosPage),
       },
+      {
+        path: 'reservas',
+        loadComponent: () => import('./pantallas/dueno/reservas.page').then((m) => m.DuenoReservasPage),
+      },
       { path: '', pathMatch: 'full', redirectTo: 'registros' },
     ],
   },
@@ -250,6 +254,11 @@ export const routes: Routes = [
       {
         path: 'consulta',
         loadComponent: () => import('./pantallas/cliente/consulta.page').then((m) => m.ClienteConsultaPage),
+      },
+      {
+        path: 'reservas',
+        canActivate: [guardiaPerfil('CLIENTE_REGISTRADO')],
+        loadComponent: () => import('./pantallas/cliente/reservas.page').then((m) => m.ClienteReservasPage),
       },
       {
         path: 'juegos',

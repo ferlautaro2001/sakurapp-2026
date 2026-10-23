@@ -6,6 +6,8 @@ import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
+import { ReservasService } from '../../nucleo/servicios/reservas.service';
+import { Reserva } from '../../nucleo/modelos/modelos';
 
 /**
  * US-5.1 · TASK-5.1.1.1 · primera pantalla del comensal, registrado o invitado.
@@ -36,6 +38,16 @@ import { NotificacionesService } from '../../nucleo/servicios/notificaciones.ser
           <lm-icono nombre="qr_code_scanner" tamano="clamp(64px, 24vw, 120px)" color="#FFFFFF" />
           <span class="marco__rotulo">Código de ingreso al local</span>
         </button>
+
+        <!-- US-13.1 · con la reserva en horario, el código de su mesa lo sienta directo. -->
+        @if (reservaEnHorario(); as r) {
+          <lm-banner tono="success" titulo="Tenés una reserva en la mesa {{ r.mesaNumero }}">
+            No hace falta anotarte: tocá el recuadro y escaneá el código de la mesa {{ r.mesaNumero }}.
+          </lm-banner>
+        }
+        @if (esRegistrado()) {
+          <lm-boton variante="secondary" icono="event" (presionar)="ir(['/cliente/reservas'])">Reservar una mesa</lm-boton>
+        }
       </div>
     </div>
   `,
@@ -76,6 +88,15 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
   private readonly qr = inject(QrService);
   private readonly usuarios = inject(UsuariosService);
   private readonly notificaciones = inject(NotificacionesService);
+  private readonly reservas = inject(ReservasService);
+
+  /** Sólo el registrado reserva: el invitado no tiene correo para la respuesta. */
+  protected readonly esRegistrado = computed(() => this.usuario()?.perfil === 'CLIENTE_REGISTRADO');
+
+  protected readonly reservaEnHorario = computed(() => {
+    const id = this.usuario()?.id;
+    return id ? this.reservas.paraSentarse(id) : undefined;
+  });
 
   /** Cualquier estado vivo —en la fila, con mesa o ya sentado— saca de acá. */
   protected readonly enLista = computed(() => {
@@ -86,6 +107,7 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
   constructor() {
     super();
     void this.espera.iniciar();
+    this.reservas.iniciar();
 
     // Si ya está anotado, esta pantalla no tiene nada más que ofrecerle: pasa
     // a ver su lugar en la fila.
@@ -114,6 +136,14 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
       return;
     }
 
+    // US-13.1 · TASK-13.1.1.3 · con una reserva confirmada en horario, el
+    // código de su mesa lo sienta sin pasar por la lista de espera.
+    const reserva = this.reservaEnHorario();
+    if (contenido.tipo === 'MESA' && reserva) {
+      await this.sentarseConReserva(reserva, contenido.mesaId);
+      return;
+    }
+
     // Candado del punto 10: sin asignación del metre, el código de una mesa no
     // vincula al comensal con ella.
     if (contenido.tipo === 'MESA') {
@@ -125,6 +155,19 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
     }
 
     this.avisos.error('Ese código no es de SakurApp', 'Buscá el código pegado en la puerta del salón.');
+  }
+
+  private async sentarseConReserva(reserva: Reserva, mesaEscaneadaId: string): Promise<void> {
+    try {
+      await this.cargando.conEsperaMinima('Te estamos sentando…', async () => {
+        await this.reservas.sentarse(reserva, mesaEscaneadaId);
+        await this.sesion.establecerMesaActiva(reserva.mesaId, reserva.mesaNumero);
+      });
+      this.avisos.exito(`Estás en la mesa ${reserva.mesaNumero}`, 'Ya podés explorar la carta.');
+      await this.router.navigate(['/carta'], { queryParams: { mesaId: reserva.mesaId }, replaceUrl: true });
+    } catch (err: any) {
+      this.avisos.error('No pudimos sentarte', err?.message || 'Revisá la conexión y volvé a intentarlo.');
+    }
   }
 
   private async anotarse(): Promise<void> {

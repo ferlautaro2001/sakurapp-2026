@@ -119,3 +119,27 @@ query ListEncuestas @auth(level: PUBLIC, insecureReason: "Resultados agregados d
     timestamp
   }
 }
+
+# US-13.1 · reservas de todos los clientes, de la más próxima a la más lejana.
+query ListReservas @auth(level: PUBLIC, insecureReason: "Listado de reservas del salón.") {
+  reservas(orderBy: [{ fechaHora: ASC }]) {
+    id
+    fechaHora
+    comensales
+    estado
+    motivoRechazo
+    createdAt
+    cliente {
+      id
+      uid
+      nombre
+      apellido
+      email
+      fotoUrl
+    }
+    mesa {
+      id
+      numero
+    }
+  }
+}

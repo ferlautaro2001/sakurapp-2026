@@ -30,9 +30,9 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
               <div #casilla class="casilla" [class.casilla--abierta]="abierto() === correo.id">
               <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
                 <button type="button" class="correo__fila" (click)="alternar(correo.id, casilla)">
-                  <span class="correo__icono" [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO'">
+                  <span class="correo__icono" [class.correo__icono--rechazo]="!esPositivo(correo)">
                     <lm-icono
-                      [nombre]="correo.plantilla === 'APROBACION' ? 'mark_email_read' : 'unsubscribe'"
+                      [nombre]="esPositivo(correo) ? 'mark_email_read' : 'unsubscribe'"
                       [tamano]="22"
                       color="var(--lm-surface)"
                     />
@@ -43,8 +43,8 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
                     <small>{{ correo.enviadoEn | fechaHora }}</small>
                   </span>
                   <!-- Qué se le avisó a la persona, a la altura del chevrón. -->
-                  <lm-chip [estado]="correo.plantilla === 'APROBACION' ? 'aprobado' : 'rechazado'">
-                    {{ correo.plantilla === 'APROBACION' ? 'Aprobado' : 'Rechazado' }}
+                  <lm-chip [estado]="esPositivo(correo) ? 'aprobado' : 'rechazado'">
+                    {{ rotuloPlantilla(correo) }}
                   </lm-chip>
                   <lm-icono [nombre]="abierto() === correo.id ? 'expand_less' : 'expand_more'" [tamano]="22" />
                 </button>
@@ -145,6 +145,22 @@ export class DuenoCorreosPage extends PaginaConSesion {
    */
   protected html(correo: CorreoEnviado): SafeHtml {
     return this.sanitizer.bypassSecurityTrustHtml(correo.cuerpoHtml);
+  }
+
+  /** Aprobaciones y reservas confirmadas van en verde; los rechazos, en rojo. */
+  protected esPositivo(correo: CorreoEnviado): boolean {
+    return correo.plantilla === 'APROBACION' || correo.plantilla === 'RESERVA_CONFIRMADA';
+  }
+
+  protected rotuloPlantilla(correo: CorreoEnviado): string {
+    switch (correo.plantilla) {
+      case 'RESERVA_CONFIRMADA':
+        return 'Reserva';
+      case 'RESERVA_RECHAZADA':
+        return 'Reserva rechazada';
+      default:
+        return this.esPositivo(correo) ? 'Aprobado' : 'Rechazado';
+    }
   }
 
   /** En la lista el asunto va corto: el nombre del local sobra y el del rechazo es largo. */

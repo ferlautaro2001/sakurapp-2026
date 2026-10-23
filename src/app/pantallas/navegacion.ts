@@ -47,6 +47,7 @@ export function navegacionDe(
     case 'SUPERVISOR':
       return [
         { id: 'registros', rotulo: 'Registros', icono: 'how_to_reg', ruta: '/dueno/registros' },
+        { id: 'reservas', rotulo: 'Reservas', icono: 'event', ruta: '/dueno/reservas' },
         { id: 'mesas', rotulo: 'Mesas', icono: 'table_restaurant', ruta: '/mesas' },
         { id: 'codigos', rotulo: 'Códigos', icono: 'qr_code_2', ruta: '/dueno/codigos' },
         { id: 'correos', rotulo: 'Correos', icono: 'outgoing_mail', ruta: '/dueno/correos' },
@@ -73,7 +74,7 @@ export function navegacionDe(
       ];
     case 'CLIENTE_REGISTRADO':
     case 'CLIENTE_ANONIMO':
-      return navegacionDelComensal(contexto);
+      return navegacionDelComensal(contexto, perfil === 'CLIENTE_REGISTRADO');
     default:
       return [];
   }
@@ -82,12 +83,13 @@ export function navegacionDe(
 /**
  * La barra del comensal, que es la que más cambia.
  *
- *  1. En la fila → su lugar y las encuestas (todavía no puede jugar).
+ *  1. En la fila → su lugar y las encuestas (todavía no puede jugar). El
+ *     registrado, además, sus reservas: el invitado no puede reservar.
  *  2. Sentado, armando el pedido → su mesa, la carta y el pedido.
  *  3. Con el pedido mandado → sólo el pedido, hasta que el mozo lo resuelva.
  *  4. Con el pedido confirmado o posterior → el estado del pedido y los juegos.
  */
-function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
+function navegacionDelComensal(contexto: ContextoNavegacion, registrado = false): ItemNavegacion[] {
   const lugar: ItemNavegacion = { id: 'lugar', rotulo: 'Mi mesa', icono: 'table_restaurant', ruta: '/cliente/espera' };
   const carta: ItemNavegacion = { id: 'carta', rotulo: 'Carta', icono: 'ramen_dining', ruta: '/carta' };
   const pedido: ItemNavegacion = { id: 'pedido', rotulo: 'Mi pedido', icono: 'receipt_long', ruta: '/cliente/pedido' };
@@ -95,8 +97,10 @@ function navegacionDelComensal(contexto: ContextoNavegacion): ItemNavegacion[] {
   const encuestas: ItemNavegacion = { id: 'encuestas', rotulo: 'Encuestas', icono: 'insights', ruta: '/cliente/encuestas' };
 
   if (!contexto.enMesa) {
+    const reservas: ItemNavegacion = { id: 'reservas', rotulo: 'Reservas', icono: 'event', ruta: '/cliente/reservas' };
     return [
       { id: 'lugar', rotulo: 'Mi lugar', icono: 'hourglass_top', ruta: '/cliente/espera' },
+      ...(registrado ? [reservas] : []),
       encuestas,
     ];
   }

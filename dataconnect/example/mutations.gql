@@ -383,3 +383,45 @@ mutation ActualizarEstadoPedido(
   )
 }
 
+
+# US-13.1 · TASK-13.1.1.1 · el cliente registrado pide una mesa para más adelante.
+mutation CreateReserva(
+  $clienteId: UUID!
+  $mesaId: UUID!
+  $fechaHora: Timestamp!
+  $comensales: Int!
+) @auth(level: PUBLIC, insecureReason: "Reserva agendada de un cliente registrado.") {
+  reserva_insert(
+    data: {
+      clienteId: $clienteId
+      mesaId: $mesaId
+      fechaHora: $fechaHora
+      comensales: $comensales
+    }
+  )
+}
+
+# US-13.1 · TASK-13.1.1.2 · el dueño o el supervisor confirma o rechaza.
+mutation ResolverReserva(
+  $id: UUID!
+  $estado: EstadoReserva!
+  $motivoRechazo: String
+  $resueltoPorId: UUID
+) @auth(level: PUBLIC, insecureReason: "Confirmación o rechazo de una reserva.") {
+  reserva_update(
+    id: $id
+    data: {
+      estado: $estado
+      motivoRechazo: $motivoRechazo
+      resueltoPorId: $resueltoPorId
+    }
+  )
+}
+
+# Cancelación del cliente, llegada a la mesa o vencimiento a los 45 minutos.
+mutation ActualizarEstadoReserva(
+  $id: UUID!
+  $estado: EstadoReserva!
+) @auth(level: PUBLIC, insecureReason: "Cambio de estado de una reserva.") {
+  reserva_update(id: $id, data: { estado: $estado })
+}

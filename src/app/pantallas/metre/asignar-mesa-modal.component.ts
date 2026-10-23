@@ -10,6 +10,7 @@ import {
 import { Haptics, NotificationType } from '@capacitor/haptics';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
+import { ReservasService } from '../../nucleo/servicios/reservas.service';
 import { Mesa } from '../../nucleo/modelos/modelos';
 import { ICONO_TIPO_MESA, ROTULO_TIPO_MESA } from '../../nucleo/modelos/enums';
 import { UI } from '../../ui';
@@ -248,6 +249,11 @@ import { UI } from '../../ui';
 export class AsignarMesaModalComponent {
   private readonly mesas = inject(MesasService);
   private readonly espera = inject(EsperaService);
+  private readonly reservas = inject(ReservasService);
+
+  constructor() {
+    this.reservas.iniciar();
+  }
 
   readonly clienteNombre = input.required<string>();
   readonly asignar = output<Mesa>();
@@ -255,13 +261,15 @@ export class AsignarMesaModalComponent {
 
   readonly mesaSeleccionada = signal<Mesa | null>(null);
 
-  // Libre = VACIA y sin una reserva viva (otra entrada ASIGNADO con esta mesa).
+  // Libre = VACIA, sin una reserva viva (otra entrada ASIGNADO con esta mesa)
+  // y sin una reserva agendada confirmada en horario (US-13.1).
   // No se mira clienteActualId: hay mesas con uno viejo que nunca se limpió.
   readonly mesasDisponibles = computed(() => {
     const reservadas = new Set(
       this.espera.lista().filter((e) => e.estado === 'ASIGNADO').map((e) => e.mesaAsignadaId),
     );
-    return this.mesas.vacias().filter((m) => !reservadas.has(m.id));
+    const agendadas = this.reservas.mesasBloqueadas();
+    return this.mesas.vacias().filter((m) => !reservadas.has(m.id) && !agendadas.has(m.id));
   });
 
   protected iconoTipo(mesa: Mesa): string {

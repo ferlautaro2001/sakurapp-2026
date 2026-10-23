@@ -187,6 +187,8 @@ export class DuenoCorreosPage extends PaginaConSesion {
         return { icono: 'event_available', chip: 'aprobado', rotulo: 'Reserva' };
       case 'RESERVA_RECHAZADA':
         return { icono: 'event_busy', chip: 'rechazado', rotulo: 'Reserva rechazada' };
+      case 'FACTURA':
+        return { icono: 'receipt_long', chip: 'aprobado', rotulo: 'Factura' };
       default:
         return { icono: 'forward_to_inbox', chip: 'pendiente', rotulo: 'En revisión' };
     }

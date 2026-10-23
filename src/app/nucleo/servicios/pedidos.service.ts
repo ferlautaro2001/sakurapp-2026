@@ -28,7 +28,7 @@ import {
 } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { EstadoPedido, EstadoSector, MarcaRechazo, Sector, sectorDe } from '../modelos/enums';
-import { Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
+import { FacturaEmitida, MedioPago, Mesa, ObservacionItem, Pedido, Usuario } from '../modelos/modelos';
 import {
   alcanceDe,
   itemsACambiar,
@@ -626,6 +626,153 @@ export class PedidosService {
     void Haptics.notification({ type: NotificationType.Success }).catch(() => undefined);
   }
 
+
+  /**
+   * El último pedido del comensal, también si ya está cerrado: es lo que dice
+   * que la visita terminó y que hay que soltarlo de la mesa.
+   */
+  ultimoDe(cliente: Usuario | null | undefined): Pedido | undefined {
+    if (!cliente) return undefined;
+    const ids = new Set([cliente.id, cliente.uid].filter(Boolean));
+    return this.todos()
+      .filter((p) => ids.has(p.clienteId) || ids.has(p.clienteUid))
+      .sort((a, b) => b.timestampCreacion.localeCompare(a.timestampCreacion))[0];
+  }
+
+  /** Lo que se paga: lo pedido, con el descuento del juego, más la propina. */
+  totalAPagar(pedido: Pedido): number {
+    return pedido.totalFinal + (pedido.montoPropina ?? 0);
+  }
+
+  /**
+   * Punto 21 · el mozo habilita la cuenta que pidió el comensal. Desde ahí el
+   * comensal escanea el código de propina y paga.
+   */
+  async habilitarCuenta(pedidoId: string): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA') throw new Error('El comensal todavía no pidió la cuenta.');
+    if (pedido.cuentaHabilitada) return;
+
+    await this.aplicar(pedidoId, { cuentaHabilitada: true });
+    await this.notificaciones.enviar(
+      [pedido.clienteUid || pedido.clienteId],
+      '🌸 Tu cuenta está lista',
+      'Escaneá el código de propina de tu mesa para ver el detalle y pagar.',
+      ['/cliente/pedido'],
+    );
+  }
+
+  /**
+   * Punto 21 · el código QR de propina fija el porcentaje. Sin propina no hay
+   * cuenta: el monto se calcula sobre lo pedido, ya con el descuento del juego.
+   */
+  async elegirPropina(pedidoId: string, porcentaje: number): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA' || !pedido.cuentaHabilitada) {
+      throw new Error('El mozo todavía no habilitó la cuenta.');
+    }
+    if (!Number.isFinite(porcentaje) || porcentaje < 0 || porcentaje > 100) {
+      throw new Error('Ese porcentaje de propina no es válido.');
+    }
+
+    await this.aplicar(pedidoId, {
+      porcentajePropina: porcentaje,
+      montoPropina: Math.round((pedido.totalFinal * porcentaje) / 100),
+    });
+  }
+
+  /**
+   * Punto 21 · el pago simulado. El pedido queda esperando que el mozo lo
+   * confirme, y se enteran el mozo, el dueño y el supervisor.
+   */
+  async pagar(pedidoId: string, medio: MedioPago): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'CUENTA_SOLICITADA' || !pedido.cuentaHabilitada) {
+      throw new Error('El mozo todavía no habilitó la cuenta.');
+    }
+    if (pedido.porcentajePropina === null || pedido.porcentajePropina === undefined) {
+      throw new Error('Primero escaneá el código de propina.');
+    }
+
+    const total = this.totalAPagar(pedido);
+    await this.aplicar(pedidoId, {
+      pago: {
+        medio,
+        operacion: String(Math.floor(1e9 + Math.random() * 9e9)),
+        total,
+        pagadoEn: new Date().toISOString(),
+      },
+    });
+    await this.actualizarEstadoGlobal(pedidoId, 'PAGO_PENDIENTE');
+
+    const importe = `$ ${total.toLocaleString('es-AR')}`;
+    for (const rol of ['MOZO', 'DUENO', 'SUPERVISOR'] as const) {
+      await this.notificaciones.enviarPorRol(
+        rol,
+        `💳 Mesa ${pedido.mesaNumero} pagó ${importe}`,
+        rol === 'MOZO' ? 'Confirmá el pago para liberar la mesa.' : 'Falta que el mozo confirme el pago.',
+        rol === 'MOZO' ? ['/mozo/pedidos'] : undefined,
+      );
+    }
+  }
+
+  /**
+   * Punto 22 · el mozo confirma el pago y el pedido se cierra. Se enteran el
+   * dueño, el supervisor y el comensal. Liberar la mesa, cerrar la visita en
+   * la fila y emitir la factura lo hace la pantalla del mozo, que tiene a mano
+   * esos servicios. La factura se guarda antes del cierre: cuando el teléfono
+   * del comensal ve el pedido cerrado, ya tiene con qué descargarla.
+   */
+  async confirmarPago(pedidoId: string, factura: FacturaEmitida | null = null): Promise<void> {
+    const pedido = this.porId(pedidoId);
+    if (!pedido) throw new Error('El pedido no existe.');
+    if (pedido.estadoGlobal !== 'PAGO_PENDIENTE') throw new Error('Ese pedido no tiene un pago para confirmar.');
+
+    if (factura) await this.aplicar(pedidoId, { factura });
+    await this.actualizarEstadoGlobal(pedidoId, 'CERRADO');
+
+    const importe = `$ ${(pedido.pago?.total ?? this.totalAPagar(pedido)).toLocaleString('es-AR')}`;
+    for (const rol of ['DUENO', 'SUPERVISOR'] as const) {
+      await this.notificaciones.enviarPorRol(
+        rol,
+        `✅ Pago confirmado · Mesa ${pedido.mesaNumero}`,
+        `Se cobraron ${importe} y la mesa ${pedido.mesaNumero} quedó libre.`,
+      );
+    }
+    // El registrado recibe la factura por correo; el anónimo, que no dejó
+    // correo, la baja tocando la notificación.
+    const comensal = [pedido.clienteUid || pedido.clienteId];
+    const anonimo =
+      this.usuarios.todos().find((u) => u.id === pedido.clienteId || (!!u.uid && u.uid === pedido.clienteUid))
+        ?.perfil === 'CLIENTE_ANONIMO';
+    if (factura && anonimo) {
+      await this.notificaciones.enviar(
+        comensal,
+        '🧾 Tu factura está lista',
+        `El mozo confirmó tu pago. Tocá acá para descargar la factura N° ${factura.numero}.`,
+        [factura.url],
+      );
+    } else {
+      await this.notificaciones.enviar(
+        comensal,
+        '🌸 ¡Gracias por tu visita!',
+        factura
+          ? `El mozo confirmó tu pago. Te mandamos la factura N° ${factura.numero} a tu correo.`
+          : 'El mozo confirmó tu pago. Te esperamos pronto.',
+      );
+    }
+  }
+
+  /** Guarda los cambios del pedido en Firestore y en lo que ya tiene cargado la aplicación. */
+  private async aplicar(pedidoId: string, cambios: Partial<Pedido>): Promise<void> {
+    await this.firestore.actualizarPedido(pedidoId, cambios);
+    const actualizar = (lista: Pedido[]) => lista.map((p) => (p.id === pedidoId ? { ...p, ...cambios } : p));
+    this.pedidosSql.update(actualizar);
+    this.pedidosFirestore.update(actualizar);
+  }
 
   private destinatarios(perfil: 'COCINERO' | 'CANTINERO'): string[] {
     return this.usuarios

@@ -44,6 +44,20 @@ export class AlmacenamientoService {
   }
 
   /**
+   * Punto 22 · sube un PDF (en base64) y devuelve su enlace de descarga. Se
+   * guarda como adjunto con su nombre, así el navegador lo baja como archivo
+   * en lugar de abrirlo con un nombre sin sentido.
+   */
+  async subirPdf(ruta: string, base64: string, nombreArchivo: string): Promise<string> {
+    const storageRef = ref(this.getStorageInstance(), ruta);
+    const snapshot = await uploadString(storageRef, base64, 'base64', {
+      contentType: 'application/pdf',
+      contentDisposition: `attachment; filename="${nombreArchivo}"`,
+    });
+    return getDownloadURL(snapshot.ref);
+  }
+
+  /**
    * Sube una colección de fotos a una carpeta dada y devuelve un array con las URLs de descarga.
    * Útil para los requerimientos de 3 fotos de platos/bebidas.
    */

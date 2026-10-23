@@ -1,4 +1,6 @@
 import { environment } from '../../../environments/environment';
+import type { DatosFactura } from '../factura/factura-pdf';
+import { fechaFactura, numeroDeFactura, numeroDePedido, pesos, rotuloPropina } from '../factura/datos-factura';
 
 export interface DatosCorreo {
   nombre: string;
@@ -10,6 +12,13 @@ export interface DatosCorreo {
   fecha: string;
   motivo?: string;
   logoUrl: string;
+}
+
+export interface DatosCorreoFactura {
+  factura: DatosFactura;
+  urlDescarga: string;
+  logoUrl: string;
+  petaloUrl?: string;
 }
 
 const R = environment.restaurante;
@@ -310,6 +319,148 @@ body{margin:0;background:#6E1234;font-family:'Trebuchet MS',Figtree,'Segoe UI',H
     ${R.nombre} · ${R.salon} · ${R.direccion}<br>
     Revisado por ${d.resueltoPor ?? 'Administración'} · ${d.perfilResolutor ?? 'Supervisor'}<br>
     Si tenés dudas, llamanos al ${R.telefono}.
+  </div>
+</div></body></html>`;
+}
+
+/** Para lo que escribió una persona (nombres, productos): nunca se toma como HTML. */
+function escapar(texto: string): string {
+  const entidades: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return texto.replace(/[&<>"']/g, (c) => entidades[c]);
+}
+
+/**
+ * Plantilla 4 · Factura del consumo (punto 22).
+ */
+export function correoFactura(d: DatosCorreoFactura): string {
+  const f = d.factura;
+  const numero = numeroDeFactura(f.puntoDeVenta, f.numero);
+  const cliente = f.cliente.anonimo
+    ? `<div class="gris">Cliente anónimo · consumidor final</div>`
+    : [
+        f.cliente.documento ? `<div class="gris">Documento: ${escapar(f.cliente.documento)}</div>` : '',
+        f.cliente.correo ? `<div class="gris">Correo: ${escapar(f.cliente.correo)}</div>` : '',
+      ].join('');
+  const renglones = f.renglones
+    .map(
+      (r, i) => `<tr${i % 2 === 0 ? ' class="par"' : ''}>
+        <td class="cant">${r.cantidad}</td>
+        <td class="desc">${escapar(r.descripcion)}</td>
+        <td class="unit">${pesos(r.precioUnitario)}</td>
+        <td class="imp">${pesos(r.importe)}</td>
+      </tr>`,
+    )
+    .join('');
+  const fila = (rotulo: string, valor: string, clase = '') =>
+    `<tr class="${clase}"><td>${rotulo}</td><td class="valor">${valor}</td></tr>`;
+
+  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Factura ${numero} - ${f.restaurante.nombre}</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#D8DDEE;font-family:'Share Tech Mono','Lucida Console',Monaco,monospace;color:#1B2440;padding:24px 0}
+.hoja{max-width:640px;margin:0 auto;background:#FFFFFF;border-radius:12px;overflow:hidden;box-shadow:0 8px 24px rgba(27,36,64,.22)}
+.banda{background:#1E2A5A}
+.banda td{vertical-align:middle}
+.banda .logo{padding:26px 0 26px 28px}
+.banda .local-datos{padding:26px 8px 26px 16px}
+.banda .petalo{vertical-align:top;padding-right:12px}
+.marca{font-size:30px;line-height:1.1;font-weight:800;color:#FFFFFF}
+.local{margin-top:4px;font-size:15px;color:#D9DEF2}
+.dir{margin-top:6px;font-size:12.5px;line-height:1.5;color:#D9DEF2}
+.saludo{padding:22px 28px 0;font-size:15px;line-height:1.6;color:#4A5378}
+.saludo b{color:#1B2440}
+.cabecera{padding:12px 20px 4px;font-size:0}
+.col{display:inline-block;vertical-align:top;width:100%;max-width:290px;font-size:14px;padding:0 8px;box-sizing:border-box}
+.rotulo{margin:10px 0 4px;font-size:11.5px;font-weight:800;letter-spacing:.06em;color:#C72657}
+.nombre{font-size:17px;font-weight:700;color:#1B2440}
+.gris{margin-top:3px;font-size:13px;color:#5A6282}
+.pedido{font-size:15.5px;font-weight:800;color:#1B2440}
+.tarjeta{margin:10px 0;padding:16px 12px;background:#EEF0F7;border-radius:12px;text-align:center}
+.tipo{font-size:22px;font-weight:800;color:#C72657}
+.final{margin-top:4px;font-size:12.5px;color:#5A6282}
+.nro{margin-top:8px;font-size:15px;font-weight:800;color:#1B2440}
+.cuerpo{padding:12px 28px 4px}
+.detalle{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px}
+.detalle th{background:#1B2440;color:#FFFFFF;font-size:12.5px;font-weight:700;padding:10px 8px;text-align:left}
+.detalle th:first-child{border-radius:8px 0 0 8px;text-align:center}
+.detalle th:last-child{border-radius:0 8px 8px 0}
+.detalle th.der{text-align:right}
+.detalle td{padding:10px 8px;vertical-align:top}
+.detalle .par td{background:#EEF0F7}
+.cant{width:34px;text-align:center;font-weight:700}
+.desc{font-weight:700}
+.unit{text-align:right;white-space:nowrap;color:#5A6282}
+.imp{text-align:right;white-space:nowrap;font-weight:800}
+.resumen{width:100%;max-width:340px;margin:16px 0 0 auto;border-collapse:collapse;font-size:15px}
+.resumen td{padding:4px 0}
+.resumen .valor{text-align:right;font-weight:800;white-space:nowrap}
+.resumen .verde{color:#2E7D4F}
+.total{width:100%;max-width:340px;margin:10px 0 0 auto;background:#2D4BA0;border-radius:12px;border-collapse:separate}
+.total td{padding:14px 18px;color:#FFFFFF;font-weight:800;font-size:19px}
+.total .monto{text-align:right;font-size:28px;white-space:nowrap}
+.pago{margin:10px 0 0;text-align:right;font-size:12.5px;color:#5A6282}
+.cta{display:block;margin:22px 0 6px;padding:15px;border-radius:12px;background:#C72657;color:#FFFFFF !important;text-align:center;font-size:16px;font-weight:700;text-decoration:none}
+.adjunto{margin:0 0 6px;text-align:center;font-size:12.5px;color:#5A6282}
+.pie{margin:18px 28px 0;padding:16px 0 24px;border-top:2px solid #C72657;text-align:center}
+.gracias{font-size:19px;font-weight:800;color:#C72657}
+.pie .gris{font-size:12.5px}
+@media (max-width:600px){.banda .logo{padding:22px 0 22px 20px}.banda .local-datos{padding:22px 20px 22px 14px}.petalo{display:none}.col{max-width:none}.cuerpo{padding:12px 16px 4px}.saludo{padding:20px 20px 0}.pie{margin:18px 20px 0}}
+</style></head><body>
+<div class="hoja">
+  <div class="banda">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td class="logo" width="80"><img src="${d.logoUrl}" width="68" height="68" alt="${f.restaurante.nombre}" style="border-radius:26%;display:block;box-shadow:0 4px 12px rgba(27,36,64,.45)"></td>
+      <td class="local-datos">
+        <div class="marca">${f.restaurante.nombre}</div>
+        <div class="local">Restaurante ${f.restaurante.salon}</div>
+        <div class="dir">${f.restaurante.direccion}<br>Tel. ${f.restaurante.telefono}</div>
+      </td>
+      ${d.petaloUrl ? `<td class="petalo" width="140" align="right"><img src="${d.petaloUrl}" width="140" height="110" alt="" style="display:block"></td>` : ''}
+    </tr></table>
+  </div>
+
+  <div class="saludo">Hola <b>${escapar(f.cliente.nombre.split(' ')[0])}</b>, te enviamos la factura de tu consumo en nuestro restaurante ${f.restaurante.salon}:</div>
+
+  <div class="cabecera">
+    <div class="col">
+      <div class="rotulo">CLIENTE</div>
+      <div class="nombre">${escapar(f.cliente.nombre)}</div>
+      ${cliente}
+      <div class="rotulo" style="margin-top:14px">PEDIDO</div>
+      <div class="pedido">N° ${numeroDePedido(f.pedido.id)} · Mesa ${f.pedido.mesa}</div>
+    </div><div class="col">
+      <div class="tarjeta">
+        <div class="tipo">FACTURA C</div>
+        <div class="final">Consumidor final</div>
+        <div class="nro">N° ${numero}</div>
+        <div class="final">${fechaFactura(f.emitidaEn)}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cuerpo">
+    <table class="detalle" role="presentation">
+      <tr><th>Cant.</th><th>Descripción</th><th class="der">P. unitario</th><th class="der">Importe</th></tr>
+      ${renglones}
+    </table>
+
+    <table class="resumen" role="presentation">
+      ${fila('Subtotal', pesos(f.subtotal))}
+      ${f.descuento && f.descuento.monto > 0 ? fila(`Descuento (${f.descuento.porcentaje} %)`, `- ${pesos(f.descuento.monto)}`, 'verde') : ''}
+      ${fila(rotuloPropina(f.propina), `+ ${pesos(f.propina.monto)}`)}
+    </table>
+    <table class="total" role="presentation"><tr><td>TOTAL</td><td class="monto">${pesos(f.total)}</td></tr></table>
+    ${f.pago ? `<p class="pago">Pagado con ${f.pago.medio} · Operación #${f.pago.operacion}</p>` : ''}
+
+    <a class="cta" href="${d.urlDescarga}" target="_blank" rel="noopener">Descargar la factura en PDF</a>
+    <p class="adjunto">El archivo factura-${numero}.pdf también va adjunto a este correo.</p>
+  </div>
+
+  <div class="pie">
+    <div class="gracias">¡Gracias por tu visita!</div>
+    <div class="gris">${f.restaurante.nombre} · ${f.restaurante.direccion}</div>
   </div>
 </div></body></html>`;
 }

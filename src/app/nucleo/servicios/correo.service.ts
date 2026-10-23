@@ -8,12 +8,15 @@ import { ROTULO_PERFIL } from '../modelos/enums';
 import {
   DatosCorreo,
   DatosReserva,
+  DatosCorreoFactura,
   correoAprobacion,
+  correoFactura,
   correoRechazo,
   correoRegistroRecibido,
   correoReservaConfirmada,
   correoReservaRechazada,
 } from './plantillas-correo';
+import { numeroDeFactura } from '../factura/datos-factura';
 
 const LOGO = 'assets/img/logo-badge.png';
 const BREVO_ENDPOINT = 'https://api.brevo.com/v3/smtp/email';
@@ -133,6 +136,25 @@ export class CorreoService {
     };
   }
 
+  /**
+   * Correo automático 6 · La factura del consumo, con el PDF adjunto (Punto 22).
+   */
+  async enviarFactura(
+    para: string,
+    datos: Omit<DatosCorreoFactura, 'logoUrl'>,
+    pdf: { nombre: string; base64: string },
+  ): Promise<CorreoEnviado> {
+    return this.enviar(
+      {
+        para,
+        asunto: `${environment.restaurante.nombre} · Tu factura N° ${numeroDeFactura(datos.factura.puntoDeVenta, datos.factura.numero)}`,
+        plantilla: 'FACTURA',
+        cuerpoHtml: correoFactura({ ...datos, logoUrl: await logoComoDatos() }),
+      },
+      [{ name: pdf.nombre, content: pdf.base64 }],
+    );
+  }
+
   private async armarDatos(cliente: Usuario, resolutor?: Usuario): Promise<DatosCorreo> {
     return {
       nombre: cliente.nombre,
@@ -152,8 +174,10 @@ export class CorreoService {
     };
   }
 
+  /** Los adjuntos van sólo a Brevo: la copia que se guarda no los lleva, por el peso. */
   private async enviar(
     base: Omit<CorreoEnviado, 'id' | 'enviadoEn' | 'entregado' | 'detalle'>,
+    adjuntos: { name: string; content: string }[] = [],
   ): Promise<CorreoEnviado> {
     let entregado = false;
     let detalle = 'Pendiente de entrega';
@@ -169,6 +193,7 @@ export class CorreoService {
           to: [{ email: base.para.trim(), name: base.para.split('@')[0] }],
           subject: base.asunto,
           htmlContent: base.cuerpoHtml,
+          ...(adjuntos.length ? { attachment: adjuntos } : {}),
         };
 
         const respuesta = await fetch(BREVO_ENDPOINT, {

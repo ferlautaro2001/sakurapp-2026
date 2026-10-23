@@ -16,7 +16,17 @@ import {
   Unsubscribe,
 } from 'firebase/firestore';
 import { environment } from '../../../environments/environment';
-import { Mesa, ObservacionItem, Pedido, PedidoItem, Producto, Usuario, CorreoEnviado } from '../modelos/modelos';
+import {
+  Mesa,
+  ObservacionItem,
+  PagoSimulado,
+  Pedido,
+  PedidoItem,
+  Producto,
+  Usuario,
+  CorreoEnviado,
+  FacturaEmitida,
+} from '../modelos/modelos';
 import {
   AlcanceRechazo,
   EstadoMesa,
@@ -606,6 +616,48 @@ export class FirestoreService {
     );
   }
 
+  /** Escribe sólo los campos indicados del pedido: la cuenta, la propina, el pago. */
+  async actualizarPedido(pedidoId: string, cambios: Partial<Pedido>): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'pedidos', pedidoId),
+      { ...cambios, actualizadoEn: new Date().toISOString() },
+      { merge: true },
+    );
+  }
+
+  /**
+   * Punto 22 · el número de la próxima factura. Es correlativo: la transacción
+   * evita que dos mozos que confirman a la vez se lleven el mismo.
+   */
+  async siguienteNumeroFactura(): Promise<number> {
+    const db = this.obtenerDb();
+    const contador = doc(db, 'contadores', 'facturas');
+    return runTransaction(db, async (transaccion) => {
+      const actual = await transaccion.get(contador);
+      const numero = (Number(actual.exists() ? actual.data()['ultimo'] : 0) || 0) + 1;
+      transaccion.set(contador, { ultimo: numero, actualizadoEn: new Date().toISOString() }, { merge: true });
+      return numero;
+    });
+  }
+
+  /**
+   * Punto 22 · la mesa vuelve a estar libre: vacía y sin el comensal ni la
+   * reserva de la visita que terminó.
+   */
+  async liberarMesa(mesaId: string): Promise<void> {
+    await setDoc(
+      doc(this.obtenerDb(), 'mesas', mesaId),
+      {
+        estado: 'VACIA',
+        clienteActualId: null,
+        clienteActualUid: null,
+        reservaEsperaId: null,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true },
+    );
+  }
+
   /** Actualiza el estado global de un pedido en Firestore. */
   async actualizarEstadoPedido(pedidoId: string, nuevoEstado: EstadoPedido): Promise<void> {
     await setDoc(
@@ -697,6 +749,14 @@ function pedidoDesdeFirestore(id: string, datos: Record<string, unknown>): Pedid
     juegoIntentado: datos['juegoIntentado'] === true,
     timestampCreacion: String(datos['timestampCreacion'] ?? new Date(0).toISOString()),
     items,
+    cuentaHabilitada: datos['cuentaHabilitada'] === true,
+    porcentajePropina:
+      datos['porcentajePropina'] === null || datos['porcentajePropina'] === undefined
+        ? null
+        : Number(datos['porcentajePropina']),
+    montoPropina: Number(datos['montoPropina']) || 0,
+    pago: datos['pago'] && typeof datos['pago'] === 'object' ? (datos['pago'] as PagoSimulado) : null,
+    factura: datos['factura'] && typeof datos['factura'] === 'object' ? (datos['factura'] as FacturaEmitida) : null,
   };
 }
 

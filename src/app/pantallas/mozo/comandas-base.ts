@@ -5,6 +5,8 @@ import { PedidosService } from '../../nucleo/servicios/pedidos.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { UsuariosService } from '../../nucleo/servicios/usuarios.service';
 import { NotificacionesService } from '../../nucleo/servicios/notificaciones.service';
+import { EsperaService } from '../../nucleo/servicios/espera.service';
+import { FacturaService } from '../../nucleo/factura/factura.service';
 import { AccionPedido } from '../../ui';
 
 /**
@@ -15,16 +17,24 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
   protected readonly mesas = inject(MesasService);
   protected readonly usuarios = inject(UsuariosService);
   protected readonly notificaciones = inject(NotificacionesService);
+  private readonly espera = inject(EsperaService);
+  private readonly facturas = inject(FacturaService);
 
   /** El paso que le toca al mozo con el pedido, o ninguno si está en manos de otro. */
   protected accionDe(pedido: Pedido): AccionPedido | null {
     if (pedido.estadoGlobal === 'LISTO') return { rotulo: 'Entregar', icono: 'room_service' };
+    if (pedido.estadoGlobal === 'CUENTA_SOLICITADA' && !pedido.cuentaHabilitada) {
+      return { rotulo: 'Habilitar cuenta', icono: 'receipt_long' };
+    }
+    if (pedido.estadoGlobal === 'PAGO_PENDIENTE') return { rotulo: 'Confirmar pago', icono: 'price_check' };
     return null;
   }
 
   /** Hace el paso que le toca; devuelve si se hizo. */
   protected accionar(pedido: Pedido): Promise<boolean> {
     if (pedido.estadoGlobal === 'LISTO') return this.entregarPedido(pedido);
+    if (pedido.estadoGlobal === 'CUENTA_SOLICITADA') return this.habilitarCuentaPedido(pedido);
+    if (pedido.estadoGlobal === 'PAGO_PENDIENTE') return this.confirmarPagoPedido(pedido);
     return Promise.resolve(false);
   }
 
@@ -106,6 +116,78 @@ export abstract class PaginaDeComandas extends PaginaConSesion {
     );
 
     this.avisos.exito(`Mesa ${this.numeroMesa(pedido)} entregada`, 'Falta que el comensal confirme la recepción.');
+    return true;
+  }
+
+  /** Punto 21 · el mozo le habilita la cuenta al comensal que la pidió. */
+  protected async habilitarCuentaPedido(pedido: Pedido): Promise<boolean> {
+    const seguro = await this.preguntar({
+      titulo: '¿Habilitás la cuenta?',
+      mensaje: '',
+      confirmar: 'Habilitar cuenta',
+      tono: 'exito',
+      icono: 'receipt_long',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${this.numeroMesa(pedido)}` },
+        { rotulo: 'Cliente', valor: this.comensal(pedido) },
+        { rotulo: 'Consumo', valor: `$ ${pedido.totalFinal.toLocaleString('es-AR')}` },
+      ],
+    });
+    if (!seguro) return false;
+
+    await this.cargando.conEsperaMinima('Habilitando la cuenta…', () => this.pedidos.habilitarCuenta(pedido.id));
+    this.avisos.exito(`Cuenta de la mesa ${this.numeroMesa(pedido)} habilitada`, 'El comensal ya puede pagar.');
+    return true;
+  }
+
+  /**
+   * Punto 22 · el mozo confirma el pago: el pedido se cierra, la mesa queda
+   * libre y la visita del comensal termina, así para volver a sentarse tiene
+   * que anotarse de nuevo en la puerta.
+   */
+  protected async confirmarPagoPedido(pedido: Pedido): Promise<boolean> {
+    const pago = pedido.pago;
+    const seguro = await this.preguntar({
+      titulo: '¿Confirmás el pago?',
+      mensaje: 'Se cierra la cuenta y la mesa queda libre.',
+      confirmar: 'Confirmar pago',
+      tono: 'exito',
+      icono: 'price_check',
+      detalle: [
+        { rotulo: 'Mesa', valor: `${this.numeroMesa(pedido)}` },
+        { rotulo: 'Cliente', valor: this.comensal(pedido) },
+        { rotulo: 'Pagó', valor: `$ ${(pago?.total ?? this.pedidos.totalAPagar(pedido)).toLocaleString('es-AR')}` },
+        ...(pago ? [{ rotulo: 'Operación', valor: `#${pago.operacion}` }] : []),
+      ],
+    });
+    if (!seguro) return false;
+
+    // El pedido se cierra al final: cuando el teléfono del comensal se entera
+    // del cierre, la fila ya lo soltó, la mesa ya está libre y la factura ya
+    // está emitida. Si la factura falla, el cobro igual se confirma: el mozo
+    // se entera y la mesa no queda trabada.
+    const factura = await this.cargando.conEsperaMinima('Confirmando el pago y emitiendo la factura…', async () => {
+      await this.espera.iniciar();
+      await this.espera.cerrarVisita(pedido.clienteId, pedido.clienteUid);
+      await this.mesas.liberar(pedido.mesaId);
+      const emitida = await this.facturas.emitir(pedido).catch((error) => {
+        console.warn('⚠️ No se pudo emitir la factura:', error);
+        return null;
+      });
+      await this.pedidos.confirmarPago(pedido.id, emitida);
+      return emitida;
+    });
+    if (factura) {
+      this.avisos.exito(
+        `Mesa ${this.numeroMesa(pedido)} libre`,
+        `El pago quedó confirmado y se emitió la factura N° ${factura.numero}.`,
+      );
+    } else {
+      this.avisos.error(
+        `Mesa ${this.numeroMesa(pedido)} libre, sin factura`,
+        'El pago quedó confirmado, pero no se pudo emitir la factura. Revisá la conexión.',
+      );
+    }
     return true;
   }
 }

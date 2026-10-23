@@ -79,6 +79,15 @@ Todas las imágenes del proyecto están en la carpeta [`visuals/`](visuals/) y s
 | :---: | :---: |
 | <img src="visuals/paleta.png" width="220" alt="Paleta de la marca"/> | Paleta de colores y tipografías de Sakura |
 
+### Correos automáticos
+
+| Correo | Imagen |
+| :--- | :---: |
+| Registro en revisión | <img src="visuals/correo-registro-en-revision.png" width="220" alt="Correo de registro en revisión"/> |
+| Cuenta aprobada | <img src="visuals/correo-cuenta-aprobada.png" width="220" alt="Correo de cuenta aprobada"/> |
+| Solicitud rechazada | <img src="visuals/correo-solicitud-rechazada.png" width="220" alt="Correo de solicitud rechazada"/> |
+| Factura | <img src="visuals/correo-factura.png" width="220" alt="Correo de la factura"/> |
+
 ### Códigos QR
 
 Los 18 códigos QR del sistema (ingreso al local, 12 mesas y 5 propinas) están indexados con su

@@ -88,7 +88,7 @@ export interface CorreoEnviado {
   id: string;
   para: string;
   asunto: string;
-  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO' | 'RESERVA_CONFIRMADA' | 'RESERVA_RECHAZADA';
+  plantilla: 'REGISTRO_RECIBIDO' | 'APROBACION' | 'RECHAZO' | 'RESERVA_CONFIRMADA' | 'RESERVA_RECHAZADA' | 'FACTURA';
   cuerpoHtml: string;
   enviadoEn: string;
   entregado: boolean;
@@ -229,6 +229,34 @@ export interface Pedido {
   juegoIntentado: boolean;
   timestampCreacion: string;
   items: PedidoItem[];
+  /** Punto 21 · el mozo habilitó la cuenta: recién ahí se deja propina y se paga. */
+  cuentaHabilitada?: boolean;
+  /** El porcentaje que fijó el QR de propina; nulo mientras no se escaneó. */
+  porcentajePropina?: number | null;
+  montoPropina?: number;
+  /** El pago simulado, desde que el comensal paga hasta que el mozo lo confirma. */
+  pago?: PagoSimulado | null;
+  /** Punto 22 · la factura que se emitió al confirmarse el pago. */
+  factura?: FacturaEmitida | null;
+}
+
+/** La factura en PDF, ya guardada en Storage. */
+export interface FacturaEmitida {
+  /** Como se imprime: 0001-00000042. */
+  numero: string;
+  url: string;
+  emitidaEn: string;
+}
+
+/** Cómo pagó el comensal, a la manera de Mercado Pago. */
+export type MedioPago = 'DINERO_EN_CUENTA' | 'DEBITO' | 'CREDITO';
+
+/** El comprobante del pago simulado. */
+export interface PagoSimulado {
+  medio: MedioPago;
+  operacion: string;
+  total: number;
+  pagadoEn: string;
 }
 
 /** Mensaje de consulta o respuesta en la sala de chat de la mesa (US-6.2). */

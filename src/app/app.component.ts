@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, untracked } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { Location } from '@angular/common';
 import { App } from '@capacitor/app';
@@ -14,6 +14,9 @@ import { EscanerService } from './nucleo/servicios/escaner.service';
 import { SesionService } from './nucleo/servicios/sesion.service';
 import { TransicionService } from './nucleo/servicios/transicion.service';
 import { PedidosService } from './nucleo/servicios/pedidos.service';
+import { FacturaService } from './nucleo/factura/factura.service';
+import { Pedido } from './nucleo/modelos/modelos';
+import { visitaCobrada } from './nucleo/modelos/visita';
 
 /**
  * Cáscara de la aplicación para v0 (MVP).
@@ -236,9 +239,13 @@ export class AppComponent implements OnInit {
   private readonly sesion = inject(SesionService);
   private readonly transicion = inject(TransicionService);
   private readonly pedidos = inject(PedidosService);
+  private readonly facturas = inject(FacturaService);
 
   /** Pedido del comensal visto en la pasada anterior, para notar cuándo se confirma. */
   private pedidoVisto: { id: string; juegos: boolean } | null = null;
+
+  /** La visita que ya se dio por terminada, para no hacerlo dos veces. */
+  private visitaCerrada: string | null = null;
 
   constructor() {
     // Cuando el mozo confirma el pedido con la app abierta, el comensal se
@@ -254,6 +261,53 @@ export class AppComponent implements OnInit {
       if (antes && ahora && antes.id === ahora.id && !antes.juegos && ahora.juegos) {
         this.avisos.exito('¡Tu pedido fue confirmado!', 'Ya podés jugar por un descuento: tocá Juegos en la barra de abajo.');
       }
+    });
+
+    // Punto 22 · cuando el mozo confirma el pago, la visita termina: el
+    // comensal se suelta de la mesa y vuelve a la puerta, donde para sentarse
+    // de nuevo tiene que escanear el código de ingreso. Vale también si abre
+    // la aplicación después de que el mozo confirmó. Un pedido cerrado de una
+    // visita anterior en la misma mesa no cuenta.
+    effect(() => {
+      if (!this.sesion.esCliente()) return;
+      const mesa = this.sesion.mesaActivaId();
+      const ultimo = this.pedidos.ultimoDe(this.sesion.usuario());
+      if (!ultimo || !visitaCobrada(ultimo, mesa, this.sesion.mesaActivaDesde())) return;
+      if (this.visitaCerrada === ultimo.id) return;
+      this.visitaCerrada = ultimo.id;
+      untracked(() => void this.terminarVisita(ultimo));
+    });
+  }
+
+  /**
+   * La visita terminó. Si hay factura, el anónimo la puede bajar desde acá
+   * (además de la push); al registrado se le recuerda que le llegó al correo.
+   */
+  private async terminarVisita(pedido: Pedido): Promise<void> {
+    await this.sesion.limpiarMesaActiva();
+    await this.router.navigate(['/cliente/ingreso'], { replaceUrl: true });
+    const volver = 'Para volver a sentarte, escaneá el código de la puerta.';
+    const factura = pedido.factura;
+    if (factura && this.sesion.usuario()?.perfil === 'CLIENTE_ANONIMO') {
+      const bajar = await this.confirmacion.pedir({
+        titulo: '¡Gracias por tu visita!',
+        mensaje: `El mozo confirmó tu pago y la mesa quedó libre. Tu factura N° ${factura.numero} está lista. ${volver}`,
+        confirmar: 'Descargar factura',
+        cancelar: 'Cerrar',
+        tono: 'exito',
+        icono: 'receipt_long',
+      });
+      if (bajar) this.facturas.descargar(factura);
+      return;
+    }
+    await this.confirmacion.mostrar({
+      titulo: '¡Gracias por tu visita!',
+      mensaje: factura
+        ? `El mozo confirmó tu pago y la mesa quedó libre. Te mandamos la factura N° ${factura.numero} a tu correo. ${volver}`
+        : `El mozo confirmó tu pago y la mesa quedó libre. ${volver}`,
+      confirmar: 'Cerrar',
+      tono: 'exito',
+      icono: 'favorite',
     });
   }
 

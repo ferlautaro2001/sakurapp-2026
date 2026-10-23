@@ -24,10 +24,18 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
 
         @if (comandas().length) {
           <div class="lm-lista-libre">
-          @for (pedido of comandas(); track pedido.id) {
+          <!-- Encabezados y tickets van como hermanos para que el scroll-snap
+               siga anclando ticket por ticket aunque una mesa tenga muchos. -->
+          @for (grupo of grupos(); track grupo.mesa; let primero = $first) {
+            <div class="mesa" [class.mesa--primera]="primero">
+              <span class="ticket__mesa">Mesa {{ grupo.mesa }}</span>
+              <span class="mesa__cantidad">
+                {{ grupo.pedidos.length }} {{ grupo.pedidos.length === 1 ? 'pedido' : 'pedidos' }}
+              </span>
+            </div>
+          @for (pedido of grupo.pedidos; track pedido.id) {
             <div class="ticket">
               <div class="ticket__cabecera">
-                <span class="ticket__mesa">Mesa {{ numeroMesa(pedido) }}</span>
                 <span class="ticket__cliente">{{ comensal(pedido) }}</span>
                 @if (filtro() === 'TODOS') {
                   <lm-chip [estado]="chip(pedido)">{{ rotuloEstado(pedido) }}</lm-chip>
@@ -35,8 +43,14 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
               </div>
 
               <div class="ticket__meta">
-                <lm-icono nombre="schedule" [tamano]="14" />
-                {{ minutosDe(pedido) }} min de preparación
+                <span class="ticket__pedido">
+                  <lm-icono nombre="event" [tamano]="14" />
+                  Pedido el {{ pedido.timestampCreacion | fechaHora }}
+                </span>
+                <span class="ticket__estimado">
+                  <lm-icono nombre="timer" [tamano]="14" />
+                  {{ minutosDe(pedido) }} min de preparación
+                </span>
               </div>
 
               <div class="ticket__items">
@@ -67,6 +81,7 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
               </div>
             </div>
           }
+          }
           </div>
         } @else {
           <lm-vacio icono="skillet" [titulo]="tituloVacio()">
@@ -81,6 +96,9 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      .mesa { display: flex; align-items: center; gap: 10px; margin-top: var(--space-4); }
+      .mesa--primera { margin-top: 0; }
+      .mesa__cantidad { font: var(--type-caption); color: var(--text-sobre-fondo-suave); }
       .ticket {
         display: flex; flex-direction: column;
         border-radius: var(--radius-card);
@@ -99,9 +117,11 @@ import { ProductosService } from '../../nucleo/servicios/productos.service';
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .ticket__meta {
-        display: flex; align-items: center; gap: 5px; padding: 0 var(--space-4) 10px;
+        display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 0 var(--space-4) 10px;
         font: var(--type-caption); color: var(--text-muted);
       }
+      .ticket__pedido, .ticket__estimado { display: inline-flex; align-items: center; gap: 5px; }
+      .ticket__pedido { color: var(--text-title); font-weight: 700; }
       .ticket__items {
         display: flex; flex-direction: column; gap: 8px;
         padding: var(--space-3) var(--space-4);
@@ -153,6 +173,21 @@ export class SectorPedidosPage extends PaginaConSesion {
     const filtro = this.filtro();
     const lista = this.todos();
     return filtro === 'TODOS' ? lista : lista.filter((p) => this.estadoDe(p) === filtro);
+  });
+
+  /**
+   * Comandas agrupadas por número de mesa. Dentro de cada mesa van del pedido
+   * más viejo al más nuevo, y las mesas se ordenan por su pedido más viejo:
+   * lo que espera hace más tiempo queda arriba.
+   */
+  protected readonly grupos = computed(() => {
+    const porMesa = new Map<number | string, Pedido[]>();
+    const ordenadas = [...this.comandas()].sort((a, b) => a.timestampCreacion.localeCompare(b.timestampCreacion));
+    for (const pedido of ordenadas) {
+      const mesa = this.numeroMesa(pedido);
+      porMesa.set(mesa, [...(porMesa.get(mesa) ?? []), pedido]);
+    }
+    return [...porMesa].map(([mesa, pedidos]) => ({ mesa, pedidos }));
   });
 
   private rotuloFiltro(): string {

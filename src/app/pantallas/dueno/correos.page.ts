@@ -30,6 +30,7 @@ import { CorreoEnviado } from '../../nucleo/modelos/modelos';
             @for (correo of correos(); track correo.id) {
               <div #casilla class="casilla" [class.casilla--abierta]="abierto() === correo.id">
               <div class="lm-card correo" [class.correo--abierto]="abierto() === correo.id">
+                <button type="button" class="correo__fila" (click)="alternar(correo.id, casilla)">
                   <span
                     class="correo__icono"
                     [class.correo__icono--rechazo]="correo.plantilla === 'RECHAZO' || correo.plantilla === 'RESERVA_RECHAZADA'"

@@ -154,7 +154,6 @@ interface TicketVM {
         font: var(--type-body-small); font-weight: 700; color: var(--action-primary);
       }
       .ticket__pie { margin-top: auto; }
->>>>>>> lauti
       .ticket {
         display: flex; flex-direction: column;
         border-radius: var(--radius-card);
@@ -173,11 +172,7 @@ interface TicketVM {
         overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
       }
       .ticket__meta {
-<<<<<<< HEAD
         display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; padding: 0 var(--space-4) 10px;
-=======
-        display: flex; align-items: center; gap: 5px; padding: 0 var(--space-4) 6px;
->>>>>>> lauti
         font: var(--type-caption); color: var(--text-muted);
       }
       .ticket__pedido, .ticket__estimado { display: inline-flex; align-items: center; gap: 5px; }

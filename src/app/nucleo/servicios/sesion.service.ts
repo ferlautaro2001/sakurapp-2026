@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
@@ -129,18 +130,33 @@ export class SesionService {
    * por el correo: el mismo que usa el ingreso con contraseña. El estado de la
    * cuenta (en revisión, rechazada, inactiva) lo decide `abrirSesion`, igual
    * que en el ingreso clásico.
+   *
+   * La pantalla de Google no se puede decorar —es suya y lo prohíbe—, por eso
+   * la presentación la elegimos nosotros: en navegador abre en una ventana
+   * chica sobre el login, y en el teléfono la redirección sale al navegador
+   * del sistema, donde el botón Atrás vuelve a la aplicación.
    */
   async ingresarConGoogle(): Promise<ResultadoIngreso> {
     let email: string | null = null;
     try {
       const app = getApps().length ? getApp() : initializeApp(environment.firebase);
       const auth = getAuth(app);
+
+      if (Capacitor.isNativePlatform()) {
+        // El WebView nativo bloquea popups y Google no negocia adentro de uno:
+        // el circuito del teléfono es redirección completa al navegador del
+        // sistema, donde el botón Atrás vuelve a la aplicación. El regreso lo
+        // cierra `restaurar`.
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return { ok: false, motivo: 'SERVICIO' };
+      }
+
       try {
         const credencial = await signInWithPopup(auth, new GoogleAuthProvider());
         email = (credencial.user.email ?? '').trim().toLocaleLowerCase() || null;
       } catch (err) {
-        // Los WebView —el teléfono corre la app en uno— bloquean los popups:
-        // ahí la conversación con Google va por la redirección completa.
+        // En un navegador que bloquea popups —visores embebidos, por ejemplo—
+        // la única salida es la redirección completa, igual que en el teléfono.
         if ((err as { code?: string } | null)?.code !== 'auth/popup-blocked') throw err;
         await signInWithRedirect(auth, new GoogleAuthProvider());
         return { ok: false, motivo: 'SERVICIO' };

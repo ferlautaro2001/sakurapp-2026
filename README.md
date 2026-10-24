@@ -15,21 +15,12 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 
 ### Integrantes, módulos y plazos
 
-Cada fila deja asentado quién develops cada módulo, desde cuándo y hasta cuándo, y en qué
-branch vive su trabajo. Si un integrante no llegara a terminar con la funcionalidad
-comprometida, el plazo se cambia o el módulo se reasigna, y queda registrado acá.
-
-| Integrante | Rol | Módulos (objetivos) a desarrollar | Fecha de inicio | Fecha de finalización | Branch |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Fernandez Di Bella, Lautaro Alfredo** (@ferlautaro2001) | Líder de proyecto | Épica 0 (Infraestructura, Data Connect, Design System) · US-1.4 (home y logout) · US-3.2 (push + correo corporativo) · US-4.3 (mesas y QR) · US-5.3 (asignación de mesa) · US-6.2 (consulta al mozo y chat) · integración de `main` y anotación en las revisiones semanales | 22-08-2026 | 17-10-2026 *(en curso: Épicas 8 a 15)* | `lauti` · `feat/setup-design-splash` · `feat/backend-data-auth` |
-| **Graneros, Johann** (@johanngraneros) | Desarrollo | US-4.1 (alta de platos con 3 fotos) · US-4.4 (tablero de mesas) · US-6.1 (carta desde el QR de mesa) · US-7.1 (comanda digital con total acumulado) | 28-08-2026 | 12-09-2026 | `johann` |
-| **Garcez, Gonzalo** (@gonzadjstaff-hue) | Desarrollo | US-3.3 (alta de personal con foto y lector de DNI) · US-4.2 (alta de bebidas y coctelería) · US-5.2 (lista de espera del metre) · US-7.3 (confirmación del pedido y derivación a sectores) | 29-08-2026 | 09-09-2026 | `gonzalo` · `feat/login-accesos-rapidos` |
-| **Nagel Cano, Sabrina** (@sabrinanagel) | Desarrollo | US-3.1 (aprobación y rechazo de clientes) · US-5.1 (invitado y QR de ingreso) · US-7.2 (rechazo de la comanda y re-edición) | 29-08-2026 | 19-10-2026 | `sabrina` · `feat/registro-cliente-home` |
-
-> **Estado de los plazos al 20-10-2026:** no hay módulos sin terminar ni plazos vencidos.
-> Los módulos entregados hasta el punto 15 del enunciado están terminados y verificados.
-> El trabajo que sigue (puntos 16 a 24) está asignado y anotado en las issues nuevas del
-> backlog, con su responsable y su branch.
+| Integrante | Rol |
+| :--- | :--- |
+| **Fernandez Di Bella, Lautaro Alfredo** (@ferlautaro2001) | Project Manager - Dev |
+| **Graneros, Johann** (@johanngraneros) | Dev |
+| **Garcez, Gonzalo** (@gonzadjstaff-hue) | Dev |
+| **Nagel Cano, Sabrina** (@sabrinanagel) | Dev |
 
 ---
 

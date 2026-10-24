@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { guardiaJuegos, guardiaPerfil, guardiaSesion } from './nucleo/guardias/guardias';
+import { guardiaJuegos, guardiaPerfil } from './nucleo/guardias/guardias';
 import { SesionService } from './nucleo/servicios/sesion.service';
 
 /**
@@ -300,13 +300,6 @@ export const routes: Routes = [
     path: 'juegos',
     redirectTo: 'cliente/juegos',
     pathMatch: 'full',
-  },
-
-  // --- fallback provisorio ---
-  {
-    path: 'en-preparacion',
-    canActivate: [guardiaSesion],
-    loadComponent: () => import('./pantallas/comunes/en-preparacion.page').then((m) => m.EnPreparacionPage),
   },
 
   {

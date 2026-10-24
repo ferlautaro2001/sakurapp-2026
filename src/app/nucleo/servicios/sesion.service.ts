@@ -230,9 +230,7 @@ export class SesionService {
    * Pantalla de inicio de cada perfil.
    *
    * No hay tablero intermedio: quien inicia sesión aparece directamente en la
-   * pantalla donde trabaja. Las secciones que todavía está desarrollando el
-   * resto del grupo caen en la pantalla provisoria; a medida que se suban, se
-   * reemplaza cada `/en-preparacion` por su ruta real.
+   * pantalla donde trabaja. 
    */
   rutaInicio(perfil?: Perfil): string {
     const p = perfil ?? this.usuario()?.perfil;

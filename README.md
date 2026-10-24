@@ -43,29 +43,33 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 * **Lenguajes & Estilos:** TypeScript 6, HTML5, SCSS/CSS3, Tailwind CSS & Font Awesome
 
 ---
+### Índice de Pantallas 
 
+El sitio con todas las capturas en alta resolución, de los flujos y componentes de la
+aplicación, está en:
+
+🔗 **https://sakupantallas.vercel.app/**
 
 
 ### Correos automáticos
 
-| Correo | Imagen |
-| :--- | :---: |
-| Registro en revisión | <img src="visuals/correo-registro-en-revision.png" width="220" alt="Correo de registro en revisión"/> |
-| Cuenta aprobada | <img src="visuals/correo-cuenta-aprobada.png" width="220" alt="Correo de cuenta aprobada"/> |
-| Solicitud rechazada | <img src="visuals/correo-solicitud-rechazada.png" width="220" alt="Correo de solicitud rechazada"/> |
-| Factura | <img src="visuals/correo-factura.png" width="220" alt="Correo de la factura"/> |
+<table>
+  <tr>
+    <td align="center"><strong>Registro en revisión</strong><br/><img src="visuals/correo-registro-en-revision.png" width="420" alt="Correo de registro en revisión"/></td>
+    <td align="center"><strong>Cuenta aprobada</strong><br/><img src="visuals/correo-cuenta-aprobada.png" width="420" alt="Correo de cuenta aprobada"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Solicitud rechazada</strong><br/><img src="visuals/correo-solicitud-rechazada.png" width="420" alt="Correo de solicitud rechazada"/></td>
+    <td align="center"><strong>Factura</strong><br/><img src="visuals/correo-factura.png" width="420" alt="Correo de la factura"/></td>
+  </tr>
+</table>
 
 ### Códigos QR
 
 Los 18 códigos QR del sistema (ingreso al local, 12 mesas y 5 propinas) están indexados con su
 contenido en el [catálogo de códigos QR](#catálogo-de-códigos-qr-del-sistema) de más abajo.
 
-### Galería externa
 
-El sitio con todas las capturas en alta resolución, de los flujos y componentes de la
-aplicación, está en:
-
-🔗 **https://sakupantallas.vercel.app/**
 
 ---
 

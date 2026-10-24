@@ -13,7 +13,7 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 * 📌 **Tablero de Proyecto & Backlog:** [GitHub Projects - Tablero Sakura](https://github.com/users/ferlautaro2001/projects/2)
 * 🎫 **Gestión de Incidencias & User Stories:** [Issues del Repositorio](https://github.com/ferlautaro2001/sakurapp-2026/issues)
 
-### Integrantes, módulos y plazos
+### Integrantes
 
 | Integrante | Rol |
 | :--- | :--- |

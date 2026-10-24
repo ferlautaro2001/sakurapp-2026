@@ -32,7 +32,7 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
         }
 
         <div class="campos-grupo">
-          <lm-campo
+          <lm-campo class="campo-email-verde" 
             [control]="formulario.controls.email"
             icono="mail"
             tipo="email"
@@ -92,6 +92,9 @@ import { correoElectronico, requerido, marcarEnviado } from '../../nucleo/valida
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      :host ::ng-deep .campo-email-verde .lm-field__box { background-color: #2e7d32 !important; }
+      :host ::ng-deep .campo-email-verde .lm-field__box input { color: #ffffff !important; }
+      :host ::ng-deep .campo-email-verde .lm-field__box lm-icono span { color: #ffffff !important; }
       .lm-screen--login {
         display: flex;
         flex-direction: column;

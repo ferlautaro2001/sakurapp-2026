@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Preferences } from '@capacitor/preferences';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, getRedirectResult, signInWithEmailAndPassword, signInWithPopup, signInWithRedirect, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { Mesa, Usuario } from '../modelos/modelos';
@@ -12,7 +12,7 @@ import { FirestoreService } from './firestore.service';
 
 export type ResultadoIngreso =
   | { ok: true; usuario: Usuario }
-  | { ok: false; motivo: 'CREDENCIALES' | 'PENDIENTE' | 'RECHAZADO' | 'INACTIVO' | 'SERVICIO' };
+  | { ok: false; motivo: 'CREDENCIALES' | 'PENDIENTE' | 'RECHAZADO' | 'INACTIVO' | 'SERVICIO' | 'SIN_CUENTA' };
 
 /**
  * Códigos con los que Firebase Authentication dice "esta contraseña está mal".
@@ -123,6 +123,60 @@ export class SesionService {
     return this.abrirSesion(usuario);
   }
 
+  /**
+   * US-12.1 · Ingreso con la cuenta de Google, disponible para todos los
+   * perfiles. La identidad la valida Google; la cuenta de SakurApp se asocia
+   * por el correo: el mismo que usa el ingreso con contraseña. El estado de la
+   * cuenta (en revisión, rechazada, inactiva) lo decide `abrirSesion`, igual
+   * que en el ingreso clásico.
+   */
+  async ingresarConGoogle(): Promise<ResultadoIngreso> {
+    let email: string | null = null;
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const auth = getAuth(app);
+      try {
+        const credencial = await signInWithPopup(auth, new GoogleAuthProvider());
+        email = (credencial.user.email ?? '').trim().toLocaleLowerCase() || null;
+      } catch (err) {
+        // Los WebView —el teléfono corre la app en uno— bloquean los popups:
+        // ahí la conversación con Google va por la redirección completa.
+        if ((err as { code?: string } | null)?.code !== 'auth/popup-blocked') throw err;
+        await signInWithRedirect(auth, new GoogleAuthProvider());
+        return { ok: false, motivo: 'SERVICIO' };
+      }
+    } catch (err) {
+      console.warn('⚠️ El ingreso con Google no pudo completarse:', err);
+      return { ok: false, motivo: 'SERVICIO' };
+    }
+
+    // Google siempre devuelve el correo de la cuenta elegida: si no vino, no
+    // hay con qué asociarla a la base, y si no está en la base, el perfil
+    // social no abre sesión por sí solo.
+    if (!email) return { ok: false, motivo: 'SIN_CUENTA' };
+
+    const usuario = this.usuarios.porCorreo(email);
+    if (!usuario) return { ok: false, motivo: 'SIN_CUENTA' };
+
+    return this.abrirSesion(usuario);
+  }
+
+  /**
+   * Cierra el flujo que se fue por redirección: cuando Google vuelve a la
+   * aplicación trae la identidad en la URL, y `getRedirectResult` la levanta
+   * una sola vez al arrancar.
+   */
+  private async redireccionGoogle(): Promise<string | null> {
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      const resultado = await getRedirectResult(getAuth(app));
+      return (resultado?.user?.email ?? '').trim().toLocaleLowerCase() || null;
+    } catch (err) {
+      console.warn('⚠️ El regreso de Google no pudo completarse:', err);
+      return null;
+    }
+  }
+
   private async abrirSesion(usuario: Usuario): Promise<ResultadoIngreso> {
     if (!usuario.activo) return { ok: false, motivo: 'INACTIVO' };
     if (usuario.estado === 'PENDIENTE') return { ok: false, motivo: 'PENDIENTE' };
@@ -173,6 +227,14 @@ export class SesionService {
 
   /** Recupera la sesión guardada al abrir la aplicación. */
   async restaurar(): Promise<Usuario | null> {
+    // Si el arranque es el regreso de una redirección de Google, el ingreso
+    // termina acá: la identidad viene validada y se asocia igual que siempre.
+    const emailGoogle = await this.redireccionGoogle();
+    if (emailGoogle && !this.usuario()) {
+      const usuarioGoogle = this.usuarios.porCorreo(emailGoogle);
+      if (usuarioGoogle) await this.abrirSesion(usuarioGoogle);
+    }
+
     const id = await this.almacen.leerSesion();
     if (!id) return null;
 
@@ -218,6 +280,14 @@ export class SesionService {
     const actual = this.usuario();
     if (actual) {
       void this.firestore.removerFcmToken(actual.uid || actual.id);
+    }
+    // La sesión social vive en Authentication: si no se cierra allá, el
+    // próximo ingreso reusaría la cuenta de Google sin preguntar quién entra.
+    try {
+      const app = getApps().length ? getApp() : initializeApp(environment.firebase);
+      await signOut(getAuth(app));
+    } catch {
+      // No había sesión de Authentication abierta (acceso rápido, invitado).
     }
     this.usuario.set(null);
     this.notificaciones.registrarSesion(null, null);

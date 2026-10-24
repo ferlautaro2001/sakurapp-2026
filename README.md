@@ -64,13 +64,6 @@ aplicación, está en:
   </tr>
 </table>
 
-### Códigos QR
-
-Los 18 códigos QR del sistema (ingreso al local, 12 mesas y 5 propinas) están indexados con su
-contenido en el [catálogo de códigos QR](#catálogo-de-códigos-qr-del-sistema) de más abajo.
-
-
-
 ---
 
 ## Catálogo de Códigos QR del Sistema

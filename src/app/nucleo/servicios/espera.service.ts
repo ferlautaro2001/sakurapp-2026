@@ -39,7 +39,7 @@ export class EsperaService {
 
 
   private escucha: Unsubscribe | null = null;
-  private iniciado = false;
+  private inicioPendiente: Promise<void> | null = null;
 
   readonly lista = signal<Espera[]>([]);
 
@@ -51,10 +51,12 @@ export class EsperaService {
   );
 
   /** Arranca la lectura en vivo. Se llama sola desde las pantallas que la usan. */
-  async iniciar(): Promise<void> {
-    if (this.iniciado) return;
-    this.iniciado = true;
+  iniciar(): Promise<void> {
+    if (!this.inicioPendiente) this.inicioPendiente = this.iniciarDatos();
+    return this.inicioPendiente;
+  }
 
+  private async iniciarDatos(): Promise<void> {
     // 1. Estado guardado en Cloud SQL (Data Connect).
     try {
       const res = await listEspera(this.dataConnect());
@@ -80,28 +82,39 @@ export class EsperaService {
     // 2. Sincronización en vivo por Firestore.
     try {
       const db = this.firestore.obtenerDb();
-      this.escucha = onSnapshot(
-        collection(db, COLECCION),
-        (snapshot) => {
-          const mapa = new Map(this.lista().map((e) => [e.id, e]));
-          snapshot.forEach((docSnap) => {
-            const datos = docSnap.data();
-            mapa.set(docSnap.id, {
-              id: docSnap.id,
-              clienteId: datos['clienteId'] ?? '',
-              clienteUid: datos['clienteUid'] ?? '',
-              clienteNombre: datos['clienteNombre'] ?? '',
-              clienteFotoUrl: datos['clienteFotoUrl'] ?? '',
-              estado: (datos['estado'] as EstadoEspera) ?? 'ESPERANDO',
-              mesaAsignadaId: datos['mesaAsignadaId'] ?? null,
-              mesaAsignadaNumero: datos['mesaAsignadaNumero'] ?? null,
-              timestamp: datos['timestamp'] ?? new Date().toISOString(),
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(() => resolve(), 4000);
+        const resolver = () => {
+          clearTimeout(timeout);
+          resolve();
+        };
+        this.escucha = onSnapshot(
+          collection(db, COLECCION),
+          (snapshot) => {
+            const mapa = new Map(this.lista().map((e) => [e.id, e]));
+            snapshot.forEach((docSnap) => {
+              const datos = docSnap.data();
+              mapa.set(docSnap.id, {
+                id: docSnap.id,
+                clienteId: datos['clienteId'] ?? '',
+                clienteUid: datos['clienteUid'] ?? '',
+                clienteNombre: datos['clienteNombre'] ?? '',
+                clienteFotoUrl: datos['clienteFotoUrl'] ?? '',
+                estado: (datos['estado'] as EstadoEspera) ?? 'ESPERANDO',
+                mesaAsignadaId: datos['mesaAsignadaId'] ?? null,
+                mesaAsignadaNumero: datos['mesaAsignadaNumero'] ?? null,
+                timestamp: datos['timestamp'] ?? new Date().toISOString(),
+              });
             });
-          });
-          this.lista.set([...mapa.values()]);
-        },
-        (error) => console.warn('⚠️ Error escuchando la lista de espera en Firestore:', error),
-      );
+            this.lista.set([...mapa.values()]);
+            resolver();
+          },
+          (error) => {
+            console.warn('⚠️ Error escuchando la lista de espera en Firestore:', error);
+            resolver();
+          },
+        );
+      });
     } catch (err) {
       console.warn('⚠️ No se pudo iniciar la escucha de la lista de espera:', err);
     }
@@ -111,7 +124,7 @@ export class EsperaService {
   detener(): void {
     this.escucha?.();
     this.escucha = null;
-    this.iniciado = false;
+    this.inicioPendiente = null;
   }
 
   /**

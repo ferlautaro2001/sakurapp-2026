@@ -299,7 +299,7 @@ export class FilaPendienteComponent {
     'Mesa ' +
     mesa().numero +
     ', ' +
-    rotuloEstado().toLowerCase() +
+    rotuloEstadoAria() +
     ', ' +
     mesa().cantidadComensales +
     ' personas'
@@ -424,8 +424,15 @@ export class TarjetaMesaComponent {
   protected rotuloTipo(): string {
     return ROTULO_TIPO_MESA[this.mesa().tipo];
   }
-  protected rotuloEstado(): string {
-    return ROTULO_ESTADO_MESA[this.estadoActual()];
+  protected rotuloEstadoAria(): string {
+    switch (this.estadoActual()) {
+      case 'VACIA':
+        return 'vacía';
+      case 'OCUPADA':
+        return 'ocupada';
+      default:
+        return 'inactiva';
+    }
   }
   protected estadoActual() {
     return normalizarEstadoMesa(this.mesa()?.estado);

@@ -26,7 +26,16 @@ import { QrService } from '../../nucleo/servicios/qr.service';
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+        @if (estado() === 'ASIGNADO' && entrada()?.mesaAsignadaId) {
+          <lm-icono-boton
+            accion
+            icono="forum"
+            rotulo="Consultarle al mozo"
+            (presionar)="abrirChatMozo()"
+          />
+        }
+      </lm-encabezado>
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
         @if (esperando()) {

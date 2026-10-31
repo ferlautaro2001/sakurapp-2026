@@ -111,12 +111,16 @@ export class EsperaService {
           },
           (error) => {
             console.warn('⚠️ Error escuchando la lista de espera en Firestore:', error);
+            this.escucha = null;
+            this.inicioPendiente = null;
             resolver();
           },
         );
       });
     } catch (err) {
       console.warn('⚠️ No se pudo iniciar la escucha de la lista de espera:', err);
+      this.escucha = null;
+      this.inicioPendiente = null;
     }
   }
 

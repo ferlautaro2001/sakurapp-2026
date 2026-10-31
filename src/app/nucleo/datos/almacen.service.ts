@@ -5,7 +5,7 @@ import { getDataConnect } from 'firebase/data-connect';
 import { listMesas, listProductos, listUsuarios, connectorConfig } from '../../../dataconnect-generated';
 import { environment } from '../../../environments/environment';
 import { CorreoEnviado, Mesa, Producto, Usuario } from '../modelos/modelos';
-import { EstadoMesa, TipoMesa } from '../modelos/enums';
+import { normalizarEstadoMesa, TipoMesa } from '../modelos/enums';
 import { Semilla } from './semilla';
 import { FirestoreService } from '../servicios/firestore.service';
 
@@ -96,7 +96,7 @@ export class AlmacenService {
             numero: m.numero,
             cantidadComensales: m.cantidadComensales,
             tipo: m.tipo as TipoMesa,
-            estado: m.estado as EstadoMesa,
+            estado: normalizarEstadoMesa(m.estado),
             fotoUrl: m.fotoUrl,
             qrCodeUrl: m.qrCodeUrl,
           }));
@@ -131,6 +131,10 @@ export class AlmacenService {
       if (!mesasCargadas.length) {
         mesasCargadas = await this.leer<Mesa>(CLAVE.mesas);
       }
+      mesasCargadas = mesasCargadas.map((mesa) => ({
+        ...mesa,
+        estado: normalizarEstadoMesa(mesa?.estado),
+      }));
 
       // Desduplicar preventivamente por número en caso de basura previa en almacenamiento local
       const mapaMesasInicial = new Map<number, Mesa>();

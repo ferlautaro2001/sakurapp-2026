@@ -127,6 +127,21 @@ export const PERFILES_EMPLEADO: Perfil[] = ['METRE', 'MOZO', 'COCINERO', 'CANTIN
 export type TipoMesa = 'ESTANDAR' | 'VIP' | 'MOVILIDAD_REDUCIDA';
 export type EstadoMesa = 'VACIA' | 'OCUPADA' | 'INACTIVA';
 
+/** Datos antiguos o sincronizados pueden venir sin un estado válido. Cerramos
+ * esos casos como inactivos para que no se muestren como mesas disponibles. */
+export function normalizarEstadoMesa(estado: unknown): EstadoMesa {
+  switch (typeof estado === 'string' ? estado.trim().toUpperCase() : '') {
+    case 'VACIA':
+      return 'VACIA';
+    case 'OCUPADA':
+      return 'OCUPADA';
+    case 'INACTIVA':
+      return 'INACTIVA';
+    default:
+      return 'INACTIVA';
+  }
+}
+
 export const ROTULO_TIPO_MESA: Record<TipoMesa, string> = {
   ESTANDAR: 'Estándar',
   VIP: 'VIP',

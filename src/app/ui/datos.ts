@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, booleanAttribute, inject, input, nu
 import { Mesa, Producto, Usuario } from '../nucleo/modelos/modelos';
 import {
   ICONO_TIPO_MESA,
+  normalizarEstadoMesa,
   ROTULO_ESTADO_MESA,
   ROTULO_ESTADO_USUARIO,
   ROTULO_PERFIL,
@@ -336,9 +337,9 @@ export class FilaPendienteComponent {
     <span class="lm-mesa__pipe" aria-hidden="true">|</span>
     <span
       class="lm-mesa__punto"
-      [class.lm-mesa__punto--vacia]="mesa().estado.toLowerCase() === 'vacia'"
-      [class.lm-mesa__punto--ocupada]="mesa().estado.toLowerCase() === 'ocupada'"
-      [class.lm-mesa__punto--inactiva]="mesa().estado.toLowerCase() === 'inactiva'"
+      [class.lm-mesa__punto--vacia]="estadoActual() === 'VACIA'"
+      [class.lm-mesa__punto--ocupada]="estadoActual() === 'OCUPADA'"
+      [class.lm-mesa__punto--inactiva]="estadoActual() === 'INACTIVA'"
       aria-hidden="true"
     ></span>
   </span>
@@ -424,7 +425,10 @@ export class TarjetaMesaComponent {
     return ROTULO_TIPO_MESA[this.mesa().tipo];
   }
   protected rotuloEstado(): string {
-    return ROTULO_ESTADO_MESA[this.mesa().estado];
+    return ROTULO_ESTADO_MESA[this.estadoActual()];
+  }
+  protected estadoActual() {
+    return normalizarEstadoMesa(this.mesa()?.estado);
   }
 }
 

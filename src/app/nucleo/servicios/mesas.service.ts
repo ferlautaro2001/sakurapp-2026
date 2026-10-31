@@ -15,7 +15,7 @@ import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { nuevoId } from '../datos/semilla';
 import { AltaMesa, Mesa } from '../modelos/modelos';
-import { EstadoMesa } from '../modelos/enums';
+import { EstadoMesa, normalizarEstadoMesa } from '../modelos/enums';
 import { QrService } from './qr.service';
 import { AlmacenamientoService } from './almacenamiento.service';
 import { FirestoreService } from './firestore.service';
@@ -217,7 +217,7 @@ export class MesasService {
         numero: mesa.numero,
         cantidadComensales: mesa.cantidadComensales,
         tipo: mesa.tipo as Mesa['tipo'],
-        estado: mesa.estado as EstadoMesa,
+        estado: normalizarEstadoMesa(mesa.estado),
         fotoUrl: mesa.fotoUrl,
         qrCodeUrl: mesa.qrCodeUrl,
       }));

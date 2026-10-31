@@ -423,12 +423,7 @@ export class ModalMesaQrComponent {
       const m = this.mesa();
       if (!m) return;
 
-      // La mesa ya trae el QR subido; sólo se genera cuando falta.
-      if (m.qrCodeUrl) {
-        this.fuente.set(m.qrCodeUrl);
-        return;
-      }
-
+      // El QR guardado puede venir de otro ID o número; se deriva del estado actual.
       let vigente = true;
       onCleanup(() => (vigente = false));
       void this.qr.generarDeMesa(m.id, m.numero).then((f) => {

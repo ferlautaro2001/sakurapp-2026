@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { Mesa, Reserva } from '../../nucleo/modelos/modelos';
@@ -21,6 +21,7 @@ const DIAS_ADELANTE = 8;
  * pedir una: personas, día, hora y una de las mesas que entran y están libres.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-cliente-reservas',
   imports: [...UI],
   template: `

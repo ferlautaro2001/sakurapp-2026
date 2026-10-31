@@ -107,10 +107,10 @@ export class ClienteConsultaPage extends PaginaConSesion {
   private escuchaChat: Unsubscribe | null = null;
 
   protected readonly mesaId = computed(() => {
-    const id = this.usuario()?.id;
+    const u = this.usuario();
     if (this.sesion.mesaActivaId()) return this.sesion.mesaActivaId();
-    const entrada = id ? this.espera.activaDe(id) : undefined;
-    return entrada?.estado === 'FINALIZADO' ? entrada.mesaAsignadaId : null;
+    const entrada = u ? this.espera.activaDe(u.id, u.uid) : undefined;
+    return (entrada?.estado === 'FINALIZADO' || entrada?.estado === 'ASIGNADO') ? entrada.mesaAsignadaId : null;
   });
 
   protected readonly mesa = computed<Mesa | undefined>(() => {
@@ -176,6 +176,12 @@ export class ClienteConsultaPage extends PaginaConSesion {
   }
 
   protected volverAlMenu(): void {
+    const u = this.usuario();
+    const entrada = u ? this.espera.activaDe(u.id, u.uid) : undefined;
+    if (entrada?.estado === 'ASIGNADO') {
+      this.ir(['/cliente/espera']);
+      return;
+    }
     this.ir(['/carta']);
   }
 }

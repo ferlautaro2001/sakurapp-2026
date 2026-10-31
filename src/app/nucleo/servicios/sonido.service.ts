@@ -17,13 +17,15 @@ export class SonidoService {
   /** Cuántas pantallas del sistema hay abiertas encima de la aplicación. */
   private pantallasDelSistema = 0;
 
-  constructor() {
-    for (const [nombre, archivo] of Object.entries(ARCHIVOS) as [Sonido, string][]) {
-      const audio = new Audio(`assets/sonidos/${archivo}`);
-      audio.preload = 'auto';
-      audio.volume = 0.7;
-      this.pistas.set(nombre, audio);
+  private obtenerPista(nombre: Sonido): HTMLAudioElement {
+    let pista = this.pistas.get(nombre);
+    if (!pista) {
+      pista = new Audio(`assets/sonidos/${ARCHIVOS[nombre]}`);
+      pista.preload = 'none';
+      pista.volume = 0.7;
+      this.pistas.set(nombre, pista);
     }
+    return pista;
   }
 
   /**
@@ -58,9 +60,8 @@ export class SonidoService {
   /** Reproduce sin bloquear: si el navegador todavía no dio permiso, se ignora. */
   reproducir(sonido: Sonido): void {
     if (!this.habilitado) return;
-    const pista = this.pistas.get(sonido);
-    if (!pista) return;
     try {
+      const pista = this.obtenerPista(sonido);
       pista.currentTime = 0;
       void pista.play().catch(() => undefined);
     } catch {
@@ -78,7 +79,7 @@ export class SonidoService {
    * se queda esperando a un sonido.
    */
   duracion(sonido: Sonido, porDefecto: number): Promise<number> {
-    const pista = this.pistas.get(sonido);
+    const pista = this.obtenerPista(sonido);
     if (!pista) return Promise.resolve(porDefecto);
 
     const leida = () => (Number.isFinite(pista.duration) && pista.duration > 0 ? pista.duration * 1000 : porDefecto);

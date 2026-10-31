@@ -6,7 +6,7 @@ import { listMesas, listProductos, listUsuarios, connectorConfig } from '../../.
 import { environment } from '../../../environments/environment';
 import { CorreoEnviado, Mesa, Producto, Usuario } from '../modelos/modelos';
 import { EstadoMesa, TipoMesa } from '../modelos/enums';
-import { Semilla } from './semilla';
+import { Semilla, construirSemilla } from './semilla';
 import { FirestoreService } from '../servicios/firestore.service';
 
 const CLAVE = {
@@ -29,7 +29,7 @@ const VERSION_DATOS = '3-v0';
 export class AlmacenService {
   private readonly firestore = inject(FirestoreService);
 
-  readonly usuarios = signal<Usuario[]>([]);
+  readonly usuarios = signal<Usuario[]>(construirSemilla().usuarios);
   readonly productos = signal<Producto[]>([]);
   readonly mesas = signal<Mesa[]>([]);
   readonly correos = signal<CorreoEnviado[]>([]);

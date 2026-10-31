@@ -132,7 +132,7 @@ interface CodigoPropina {
       /* Escala de color tipo formato condicional: de verde (excelente) a rojo (malo). */
       .propina { --nivel: #1B7A4C; }
       .propina[data-nivel="15"] { --nivel: #5E9E2F; }
-      .propina[data-nivel="10"] { --nivel: #C99A06; }
+      .propina[data-nivel="10"] { --nivel: #8F4B00; }
       .propina[data-nivel="5"] { --nivel: #D9670F; }
       .propina[data-nivel="0"] { --nivel: #FF0000; }
       .propina__valor { color: var(--nivel); }
@@ -140,7 +140,7 @@ interface CodigoPropina {
       /* Mesas: el color lo da el tipo. */
       .mesa { --nivel: var(--action-primary); align-items: stretch; padding: var(--space-4); }
       .mesa img { width: auto; height: 100%; max-width: 58%; align-self: center; }
-      [data-tipo="VIP"] { --nivel: #B8860B; }
+      [data-tipo="VIP"] { --nivel: #8F4B00; }
       [data-tipo="MOVILIDAD_REDUCIDA"] { --nivel: #1565C0; }
       .mesa .propina__valor small { font-size: .38em; margin: 0 2px 0 0; letter-spacing: 0; }
       /* El QR con el mismo aro de vidrio que el resto de las piezas. */

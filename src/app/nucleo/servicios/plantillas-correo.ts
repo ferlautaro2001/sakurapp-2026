@@ -112,8 +112,8 @@ body{margin:0;background:#FFD7DF;font-family:'Varela Round','Trebuchet MS','Sego
 .cta{display:block;text-align:center;margin:22px 0 10px;padding:18px;border-radius:16px;background:#EB366B;color:#FFFFFF !important;font-size:17.5px;font-weight:700;text-decoration:none;box-shadow:0 4px 14px rgba(235,54,107,.35)}
 .datos{width:100%;margin:10px 0 18px;border-collapse:collapse}
 .datos td{padding:11px 0;border-bottom:1px solid #F5B1C0;font-size:15px;line-height:1.4;color:#6E1234}
-.datos td:first-child{color:#A4436A;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;width:40%}
-.pie{padding:22px 36px 30px;background:#FFD7DF;font-size:13px;line-height:1.6;color:#A4436A}
+.datos td:first-child{color:#6E1234;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;width:40%}
+.pie{padding:22px 36px 30px;background:#FFD7DF;font-size:13px;line-height:1.6;color:#6E1234}
 </style></head><body>
 <div class="wrap">
   <div class="hero">
@@ -138,7 +138,7 @@ body{margin:0;background:#FFD7DF;font-family:'Varela Round','Trebuchet MS','Sego
       <tr><td>Fecha de alta</td><td>${d.fecha}</td></tr>
     </table>
     <a class="cta" href="https://project-48c8c6f4-0e4f-456d-889.firebaseapp.com/login" target="_blank" rel="noopener">Ingresar a SakurApp</a>
-    <p style="text-align:center;font-size:13.5px;color:#A4436A;margin-top:8px">Iniciá sesión en la app con tu correo y contraseña habituales.</p>
+    <p style="text-align:center;font-size:13.5px;color:#6E1234;margin-top:8px">Iniciá sesión en la app con tu correo y contraseña habituales.</p>
   </div>
   <div class="pie">
     ${PIE_MARCAS}
@@ -246,8 +246,8 @@ body{margin:0;background:#FFD7DF;font-family:'Trebuchet MS',Figtree,'Segoe UI',H
 .aviso{margin:18px 0;padding:16px 18px;background:#FFFFFF;border-left:4px solid #EB366B;border-radius:0 12px 12px 0;font-size:14.5px;line-height:1.55;color:#6E1234}
 .datos{width:100%;margin:10px 0 18px;border-collapse:collapse}
 .datos td{padding:11px 0;border-bottom:1px solid #F5B1C0;font-size:15px;line-height:1.4;color:#6E1234}
-.datos td:first-child{color:#A4436A;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;width:40%}
-.pie{padding:22px 36px 30px;background:#FFD7DF;font-size:13px;line-height:1.6;color:#A4436A}
+.datos td:first-child{color:#6E1234;font-size:13px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;width:40%}
+.pie{padding:22px 36px 30px;background:#FFD7DF;font-size:13px;line-height:1.6;color:#6E1234}
 </style></head><body>
 <div class="wrap">
   <div class="hero">
@@ -299,7 +299,7 @@ body{margin:0;background:#6E1234;font-family:'Trebuchet MS',Figtree,'Segoe UI',H
 .cuerpo{padding:16px 30px 24px}
 .cuerpo p{margin:0 0 14px;font-size:15px;line-height:1.65;color:#6E1234}
 .aviso{margin:16px 0;padding:16px 18px;background:#FFE0DB;border-left:4px solid #C0261A;border-radius:0 10px 10px 0;font-size:14.5px;line-height:1.55;color:#6E1234}
-.pie{padding:18px 30px;border-top:1px dashed #F5B1C0;font-size:12.5px;line-height:1.6;color:#A4436A}
+.pie{padding:18px 30px;border-top:1px dashed #F5B1C0;font-size:12.5px;line-height:1.6;color:#6E1234}
 </style></head><body>
 <div class="wrap">
   <div class="barra">

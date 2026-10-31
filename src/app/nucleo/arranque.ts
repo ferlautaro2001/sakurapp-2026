@@ -13,9 +13,14 @@ export async function arrancar(): Promise<void> {
   const sesion = inject(SesionService);
   const notificaciones = inject(NotificacionesService);
 
-  await almacen.iniciar(() => construirSemilla());
-  await sesion.restaurar();
-  await notificaciones.iniciar();
+  // Iniciar almacén y restaurar sesión en paralelo sin bloquear con tareas pesadas
+  await Promise.all([
+    almacen.iniciar(() => construirSemilla()),
+    sesion.restaurar(),
+  ]);
+
+  // Las notificaciones pueden inicializarse en segundo plano sin demorar la primera pantalla
+  void notificaciones.iniciar().catch(() => undefined);
 }
 
 

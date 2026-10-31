@@ -61,6 +61,7 @@ const FILTROS = [
           <div class="registros__lista">
             @for (cliente of visibles(); track cliente.id) {
               <lm-fila-pendiente
+                [class.resolviendo]="resolviendo() === cliente.id"
                 [cliente]="cliente"
                 [mostrarEstado]="filtro() === 'Todos'"
                 (abrir)="verFicha(cliente)"
@@ -111,6 +112,11 @@ const FILTROS = [
         flex-direction: column;
         scroll-snap-align: start;
         scroll-snap-stop: always;
+        transition: transform 320ms cubic-bezier(0.16, 1, 0.3, 1), opacity 320ms ease-out;
+      }
+      .registros__lista > lm-fila-pendiente.resolviendo {
+        transform: scale(0.92) translateX(30px);
+        opacity: 0;
       }
       lm-fila-pendiente ::ng-deep .lm-pending { flex: 1 1 auto; max-height: none; }
       /* La foto se queda con el alto que sobra: del alto de la tarjeta se

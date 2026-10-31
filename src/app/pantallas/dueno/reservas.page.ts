@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { UI } from '../../ui';
@@ -23,6 +23,7 @@ const FILTROS = [
  * se puede rechazar sin escribirlo.
  */
 @Component({
+  changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'lm-dueno-reservas',
   imports: [ReactiveFormsModule, ...UI],
   template: `

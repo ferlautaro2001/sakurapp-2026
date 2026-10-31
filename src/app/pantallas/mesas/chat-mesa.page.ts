@@ -345,6 +345,12 @@ import { PaginaConSesion } from '../pagina-base';
         word-break: break-word;
         background: #FFFFFF;
         color: var(--text-body);
+        animation: sk-mensaje-entra 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      @keyframes sk-mensaje-entra {
+        0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+        100% { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       /* Burbuja del usuario actual (verde auténtico WhatsApp) */

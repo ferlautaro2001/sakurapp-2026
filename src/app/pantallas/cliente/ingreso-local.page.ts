@@ -47,7 +47,7 @@ import { Reserva } from '../../nucleo/modelos/modelos';
           </lm-banner>
         }
         @if (esRegistrado()) {
-          <lm-boton variante="secondary" icono="event" (presionar)="ir(['/cliente/reservas'])">Reservar una mesa</lm-boton>
+          <lm-boton class="boton-reservar-blanco" variante="secondary" icono="event" (presionar)="ir(['/cliente/reservas'])">Reservar una mesa</lm-boton>
         }
       </div>
     </div>
@@ -55,6 +55,19 @@ import { Reserva } from '../../nucleo/modelos/modelos';
   styles: [
     `
       :host { display: flex; flex: 1; min-height: 0; }
+      :host ::ng-deep .boton-reservar-blanco .lm-btn {
+        background: #ffffff !important;
+        color: var(--action-primary) !important;
+        border: 2.5px solid rgba(255, 255, 255, 0.55) !important;
+        background-clip: padding-box !important;
+        box-shadow:
+          inset 0 1px 0 rgba(255, 255, 255, 0.7),
+          0 0 0 1px rgba(232, 51, 111, 0.32),
+          0 4px 10px rgba(94, 12, 44, 0.18) !important;
+      }
+      :host ::ng-deep .boton-reservar-blanco .lm-btn lm-icono span {
+        color: var(--action-primary) !important;
+      }
       .marco {
         position: relative;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-4);
@@ -101,8 +114,8 @@ export class ClienteIngresoLocalPage extends PaginaConSesion {
 
   /** Cualquier estado vivo —en la fila, con mesa o ya sentado— saca de acá. */
   protected readonly enLista = computed(() => {
-    const id = this.usuario()?.id;
-    return id ? this.espera.activaDe(id) !== undefined : false;
+    const u = this.usuario();
+    return u ? this.espera.activaDe(u.id, u.uid) !== undefined : false;
   });
 
   constructor() {

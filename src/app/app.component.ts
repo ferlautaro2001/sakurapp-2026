@@ -14,8 +14,7 @@ import { EscanerService } from './nucleo/servicios/escaner.service';
 import { SesionService } from './nucleo/servicios/sesion.service';
 import { TransicionService } from './nucleo/servicios/transicion.service';
 import { PedidosService } from './nucleo/servicios/pedidos.service';
-import { FacturaService } from './nucleo/factura/factura.service';
-import { Pedido } from './nucleo/modelos/modelos';
+import { FacturaEmitida, Pedido } from './nucleo/modelos/modelos';
 import { visitaCobrada } from './nucleo/modelos/visita';
 
 /**
@@ -239,7 +238,6 @@ export class AppComponent implements OnInit {
   private readonly sesion = inject(SesionService);
   private readonly transicion = inject(TransicionService);
   private readonly pedidos = inject(PedidosService);
-  private readonly facturas = inject(FacturaService);
 
   /** Pedido del comensal visto en la pasada anterior, para notar cuándo se confirma. */
   private pedidoVisto: { id: string; juegos: boolean } | null = null;
@@ -297,7 +295,9 @@ export class AppComponent implements OnInit {
         tono: 'exito',
         icono: 'receipt_long',
       });
-      if (bajar) this.facturas.descargar(factura);
+      if (bajar) {
+        window.open(factura.url, '_system');
+      }
       return;
     }
     await this.confirmacion.mostrar({

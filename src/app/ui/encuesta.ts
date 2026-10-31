@@ -226,7 +226,7 @@ import {
 
       /* Estrellas y corazones, grandes. */
       .escala { display: flex; justify-content: center; gap: 2px; }
-      .escala__icono { flex: 0 1 auto; min-height: 64px; border: none; background: none; cursor: pointer; padding: 0 2px; color: #E6A23C; }
+      .escala__icono { flex: 0 1 auto; min-height: 64px; border: none; background: none; cursor: pointer; padding: 0 2px; color: #8F4B00; }
       .escala__icono--corazon { color: var(--action-primary); }
       .escala__icono .material-symbols-rounded { font-size: clamp(46px, 14vw, 58px); font-variation-settings: 'FILL' 0; transition: transform var(--dur-fast) var(--ease-out-soft); }
       .escala__icono .lleno { font-variation-settings: 'FILL' 1; transform: scale(1.06); }

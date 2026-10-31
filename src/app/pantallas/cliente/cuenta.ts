@@ -221,7 +221,15 @@ type Paso = 'PROPINA' | 'DETALLE' | 'MEDIO';
       }
 
       /* El total, grande y claro, como el monto de Mercado Pago. */
-      .total { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-4); }
+      .total {
+        flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: var(--space-4);
+        animation: sk-total-pulse 320ms cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      @keyframes sk-total-pulse {
+        0% { transform: scale(0.96); opacity: 0.9; }
+        50% { transform: scale(1.03); }
+        100% { transform: scale(1); opacity: 1; }
+      }
       .total span { font: var(--type-body-small); font-weight: 700; color: var(--text-muted); }
       .total b { font: 900 clamp(34px, 11vw, 44px)/1.05 var(--font-numeric); color: var(--action-primary); }
       .total--chico { flex-direction: row; justify-content: space-between; align-items: center; padding: var(--space-3) var(--space-4); }

@@ -118,8 +118,10 @@ export class EsperaService {
    * La entrada viva del comensal, esté en la fila, con mesa asignada o ya
    * sentado. Es lo que decide qué pantalla le toca ver.
    */
-  activaDe(clienteId: string): Espera | undefined {
-    return this.lista().find((e) => e.clienteId === clienteId && e.estado !== 'CANCELADO');
+  activaDe(clienteId: string, clienteUid?: string): Espera | undefined {
+    return this.lista().find(
+      (e) => (e.clienteId === clienteId || (clienteUid && e.clienteUid === clienteUid)) && e.estado !== 'CANCELADO',
+    );
   }
 
   /** Posición en la fila, empezando en uno. Devuelve cero si no está esperando. */

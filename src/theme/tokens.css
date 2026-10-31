@@ -30,7 +30,7 @@
      porque aceptar y rechazar no pueden confundirse con la marca */
   --sk-verde: #1B7A4C;
   --sk-verde-fondo: #DCF1E5;
-  --sk-rojo: #FF0000;
+  --sk-rojo: #9E1D13;
   --sk-rojo-fondo: #FFE0DB;
   --sk-ambar: #8F4B00;
   --sk-ambar-fondo: #FFE3D9;
@@ -61,7 +61,7 @@
   --text-body: var(--sk-ciruela);
   --text-muted: var(--sk-ciruela-suave);
   --text-on-primary: #FFFFFF;
-  --text-link: var(--sk-fucsia);
+  --text-link: var(--sk-fucsia-hondo);
   /* lo que se apoya directamente sobre el degradado, sin tarjeta debajo */
   --text-sobre-fondo: #FFFFFF;
   --text-sobre-fondo-suave: rgba(255, 255, 255, .88);

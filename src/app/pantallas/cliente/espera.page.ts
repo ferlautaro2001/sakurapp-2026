@@ -2,10 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { UI } from '../../ui';
 import { PaginaConSesion } from '../pagina-base';
 import { ROTULO_TIPO_MESA, TipoMesa } from '../../nucleo/modelos/enums';
+import { ChatService } from '../../nucleo/servicios/chat.service';
 import { EscanerService } from '../../nucleo/servicios/escaner.service';
 import { EsperaService } from '../../nucleo/servicios/espera.service';
 import { MesasService } from '../../nucleo/servicios/mesas.service';
 import { QrService } from '../../nucleo/servicios/qr.service';
+import { Unsubscribe } from 'firebase/firestore';
 
 
 /**
@@ -26,7 +28,17 @@ import { QrService } from '../../nucleo/servicios/qr.service';
   imports: [...UI],
   template: `
     <div class="lm-screen">
-      <lm-encabezado (cerrarSesion)="cerrarSesion()" />
+      <lm-encabezado (cerrarSesion)="cerrarSesion()">
+        @if (estado() === 'ASIGNADO' && entrada()?.mesaAsignadaId) {
+          <lm-icono-boton
+            accion
+            icono="forum"
+            rotulo="Consultarle al mozo"
+            [globo]="respuestasSinLeer()"
+            (presionar)="ir(['/cliente/consulta'])"
+          />
+        }
+      </lm-encabezado>
 
       <div class="lm-body lm-body--fijo lm-body--gap12">
         @if (esperando()) {
@@ -251,13 +263,16 @@ export class ClienteEsperaPage extends PaginaConSesion {
   private readonly mesas = inject(MesasService);
   private readonly escaner = inject(EscanerService);
   private readonly qr = inject(QrService);
+  private readonly chat = inject(ChatService);
+
+  protected readonly respuestasSinLeer = signal(0);
+  private escuchaChat: Unsubscribe | null = null;
 
   protected readonly modalErrorMesa = signal<{ mensaje: string; mesaCorrectaNumero: number } | null>(null);
 
   protected readonly entrada = computed(() => {
-
-    const id = this.usuario()?.id;
-    return id ? this.espera.activaDe(id) : undefined;
+    const u = this.usuario();
+    return u ? this.espera.activaDe(u.id, u.uid) : undefined;
   });
 
   protected readonly estado = computed(() => this.entrada()?.estado ?? null);
@@ -290,6 +305,21 @@ export class ClienteEsperaPage extends PaginaConSesion {
     // Si lo sacaron de la lista, esta pantalla no tiene nada que mostrarle.
     effect(() => {
       if (!this.entrada()) void this.router.navigate(['/cliente/ingreso'], { replaceUrl: true });
+    });
+
+    effect(() => {
+      const mid = this.entrada()?.mesaAsignadaId;
+      const uid = this.usuario()?.id;
+      if (this.escuchaChat) {
+        this.escuchaChat();
+        this.escuchaChat = null;
+      }
+      if (mid && uid) {
+        this.escuchaChat = this.chat.escucharMensajes(mid, uid, (msjs) => {
+          const sinLeer = msjs.filter((m) => m.remitenteRol === 'MOZO' && !m.leido).length;
+          this.respuestasSinLeer.set(sinLeer);
+        });
+      }
     });
   }
 

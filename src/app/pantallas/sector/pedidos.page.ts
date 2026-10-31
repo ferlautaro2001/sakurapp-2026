@@ -41,13 +41,7 @@ interface TicketVM {
 
         @if (tickets().length) {
           <div class="sector__lista">
-          @for (grupo of grupos(); track grupo.mesa; let primero = $first) {
-            <div class="mesa" [class.mesa--primera]="primero">
-              <span class="ticket__mesa">Mesa {{ grupo.mesa }}</span>
-              <span class="mesa__cantidad">
-                {{ grupo.pedidos.length }} {{ grupo.pedidos.length === 1 ? 'pedido' : 'pedidos' }}
-              </span>
-            </div>
+          @for (grupo of grupos(); track grupo.mesa) {
             @for (t of grupo.pedidos; track t.id) {
               <div class="casilla" [class.casilla--abierta]="t.abierto" [id]="'ticket-' + t.id">
               <div class="ticket" [class.ticket--abierto]="t.abierto">
@@ -136,15 +130,29 @@ interface TicketVM {
         flex: 0 0 calc((100cqh - (var(--por) - 1) * var(--space-3)) / var(--por));
         min-height: min-content; display: flex; flex-direction: column;
         scroll-snap-align: start; scroll-snap-stop: always;
+        transition: flex 320ms cubic-bezier(0.2, 0, 0, 1), transform 320ms cubic-bezier(0.2, 0, 0, 1);
       }
-      .casilla > .ticket { flex: 1 1 auto; }
+      .casilla > .ticket {
+        flex: 1 1 auto;
+        transition: transform 320ms cubic-bezier(0.2, 0, 0, 1), box-shadow 320ms cubic-bezier(0.2, 0, 0, 1);
+      }
       /* De a dos sólo si la lista alcanza: cada ticket mide hasta ~217px. */
       @container sector (min-height: 444px) { .sector__lista > .casilla { --por: 2; } }
       /* El ticket abierto se queda solo en la pantalla, como el correo abierto,
          pero mide sólo lo que necesita y queda centrado: la casilla ocupa toda la
          lista (así no asoma ningún otro ticket cortado) y el ticket va al medio. */
-      .sector__lista > .casilla.casilla--abierta { flex: 0 0 100cqh !important; justify-content: center; }
-      .casilla--abierta > .ticket { flex: 0 0 auto; }
+      .sector__lista > .casilla.casilla--abierta {
+        flex: 0 0 100cqh !important;
+        justify-content: center;
+      }
+      .casilla--abierta > .ticket {
+        flex: 0 0 auto;
+        animation: animarTicketEntrada 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      @keyframes animarTicketEntrada {
+        0% { opacity: 0.85; transform: scale(0.97); }
+        100% { opacity: 1; transform: scale(1); }
+      }
       .casilla--abierta .ticket__pie { margin-top: 0; }
       .ticket__mas {
         display: flex; align-items: center; justify-content: center; gap: 6px;

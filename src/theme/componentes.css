@@ -605,13 +605,13 @@ body.camara-encendida .lm-header {
 
 .lm-textbtn--high { color: var(--text-sobre-fondo); font-weight: 700; text-decoration: underline; text-underline-offset: 4px; }
 
-.lm-textbtn--danger { color: #FFD3CC; font-weight: 700; }
+.lm-textbtn--danger { color: #9E1D13; font-weight: 700; }
 
 .lm-card .lm-textbtn, .lm-modal .lm-textbtn { color: var(--text-muted); }
 
 .lm-card .lm-textbtn--danger, .lm-modal .lm-textbtn--danger { color: var(--state-error); }
 
-.lm-textbtn--sobre-oscuro { color: rgba(253, 236, 239, .8); }
+.lm-textbtn--sobre-oscuro { color: #FDECEF; }
 
 
 
@@ -737,7 +737,7 @@ body.camara-encendida .lm-header {
 
    cuente y el paréntesis nunca se separe de su número. */
 
-.lm-title__contador { display: inline-block; margin-left: .28em; color: #FFE7ED; }
+.lm-title__contador { display: inline-block; margin-left: .28em; color: #FFFFFF; }
 
 .lm-title p { margin: 5px 0 0; font: var(--type-body-small); color: var(--text-sobre-fondo-suave); text-wrap: pretty; }
 
@@ -3333,6 +3333,8 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 
   scroll-snap-type: x mandatory;
 
+  scroll-behavior: smooth;
+
   scrollbar-width: none;
 
   -webkit-overflow-scrolling: touch;
@@ -3345,7 +3347,7 @@ img.lm-avatar { object-fit: cover; object-position: center; }
 
 /* Cada hija proyectada es una diapositiva entera, sin asomar la vecina. */
 
-.sk-diapos__pista > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; }
+.sk-diapos__pista > * { flex: 0 0 100%; min-width: 0; scroll-snap-align: start; transition: transform 300ms cubic-bezier(0.16, 1, 0.3, 1), opacity 300ms ease; }
 
 .sk-diapos__pie { display: flex; align-items: center; justify-content: center; gap: 4px; flex: 0 0 auto; }
 
@@ -6578,15 +6580,32 @@ html[data-nav-dir='-1'] .sk-app > router-outlet + * {
 
 }
 
-@keyframes sk-fondo-entra { from { opacity: 0; } to { opacity: 1; } }
+@keyframes sk-fondo-entra { from { opacity: 0; backdrop-filter: blur(0px); } to { opacity: 1; backdrop-filter: blur(4px); } }
 
-@keyframes sk-fondo-sale  { from { opacity: 1; } to { opacity: 0; } }
+@keyframes sk-fondo-sale  { from { opacity: 1; backdrop-filter: blur(4px); } to { opacity: 0; backdrop-filter: blur(0px); } }
 
-@keyframes sk-modal-entra { 0% { opacity: 0; transform: translateY(18px); } 100% { opacity: 1; transform: none; } }
+@keyframes sk-modal-entra {
+  0% { opacity: 0; transform: scale(0.92) translateY(14px); }
+  60% { opacity: 1; transform: scale(1.01) translateY(-2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
 
-@keyframes sk-modal-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(14px); } }
+@keyframes sk-modal-sale  { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.94) translateY(10px); } }
 
 @keyframes sk-aviso-sale  { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-14px); } }
+
+@keyframes sk-banner-entra {
+  0% { opacity: 0; transform: translateY(-12px) scale(0.98); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.lm-banner { animation: sk-banner-entra 280ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+/* Efecto háptico visual al presionar botones principales */
+.lm-btn:active, .lm-iconbtn:active {
+  transform: scale(0.96) !important;
+  transition: transform 120ms ease-out !important;
+}
 
 
 

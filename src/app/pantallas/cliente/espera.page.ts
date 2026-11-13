@@ -35,7 +35,7 @@ import { Unsubscribe } from 'firebase/firestore';
             icono="forum"
             rotulo="Consultarle al mozo"
             [globo]="respuestasSinLeer()"
-            (presionar)="ir(['/cliente/consulta'])"
+            (presionar)="abrirChatMozo()"
           />
         }
       </lm-encabezado>

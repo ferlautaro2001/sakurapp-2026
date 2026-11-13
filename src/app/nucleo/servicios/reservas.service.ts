@@ -1,5 +1,15 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { collection, doc, onSnapshot, setDoc, Unsubscribe } from 'firebase/firestore';
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  runTransaction,
+  setDoc,
+  Unsubscribe,
+  where,
+} from 'firebase/firestore';
+import { nuevoId } from '../datos/semilla';
 import { Mesa, Reserva, Usuario } from '../modelos/modelos';
 import { EstadoReserva } from '../modelos/enums';
 import { FirestoreService } from './firestore.service';
@@ -147,18 +157,13 @@ export class ReservasService {
     if (cliente.perfil !== 'CLIENTE_REGISTRADO') {
       throw new Error('Sólo los clientes registrados pueden reservar.');
     }
-    if (new Date(fechaHora).getTime() <= Date.now()) {
+    const hora = new Date(fechaHora).getTime();
+    if (!Number.isFinite(hora) || hora <= Date.now()) {
       throw new Error('La reserva tiene que ser para más adelante.');
-    }
-    if (this.vigenteDe(cliente.id)) {
-      throw new Error('Ya tenés una reserva pendiente o confirmada. Cancelala para pedir otra.');
-    }
-    if (!this.mesaLibre(mesa.id, fechaHora)) {
-      throw new Error(`La mesa ${mesa.numero} ya está reservada cerca de ese horario.`);
     }
 
     const reserva: Reserva = {
-      id: `res-${Date.now()}`,
+      id: nuevoId(),
       clienteId: cliente.id,
       clienteUid: cliente.uid,
       clienteNombre: [cliente.nombre, cliente.apellido ?? ''].join(' ').trim(),
@@ -174,7 +179,7 @@ export class ReservasService {
       createdAt: new Date().toISOString(),
     };
 
-    await this.guardar(reserva);
+    await this.guardarNuevaAtomica(reserva);
 
     const cuando = new Date(fechaHora).toLocaleString('es-AR', {
       day: '2-digit',
@@ -255,6 +260,56 @@ export class ReservasService {
     for (const r of vencidas) {
       await this.guardar({ ...r, estado: 'VENCIDA' });
     }
+  }
+
+  /**
+   * Valida y crea en una transacción. Los documentos de bloqueo hacen que dos
+   * altas simultáneas de la misma mesa o cliente se serialicen, aunque todavía
+   * no exista una reserva que ambas transacciones puedan leer.
+   */
+  private async guardarNuevaAtomica(reserva: Reserva): Promise<void> {
+    const db = this.firestore.obtenerDb();
+    const separacion = (MINUTOS_BLOQUEO_PREVIO + MINUTOS_TOLERANCIA) * MINUTO;
+    const hora = new Date(reserva.fechaHora).getTime();
+    const bloqueoMesa = doc(db, 'reservas_bloqueos', `mesa-${encodeURIComponent(reserva.mesaId)}`);
+    const bloqueoCliente = doc(db, 'reservas_bloqueos', `cliente-${encodeURIComponent(reserva.clienteId)}`);
+    const referencia = doc(db, COLECCION, reserva.id);
+
+    await runTransaction(db, async (transaccion) => {
+      await transaccion.get(bloqueoMesa);
+      await transaccion.get(bloqueoCliente);
+
+      const reservasMesa = await transaccion.get(
+        query(collection(db, COLECCION), where('mesaId', '==', reserva.mesaId)),
+      );
+      const reservasCliente = await transaccion.get(
+        query(collection(db, COLECCION), where('clienteId', '==', reserva.clienteId)),
+      );
+
+      const mesaOcupadaEnEseHorario = reservasMesa.docs.some((docReserva) => {
+        const existente = desdeDocumento(docReserva.id, docReserva.data());
+        return (
+          VIGENTES.includes(existente.estado) &&
+          Math.abs(new Date(existente.fechaHora).getTime() - hora) < separacion
+        );
+      });
+      if (mesaOcupadaEnEseHorario) {
+        throw new Error(`La mesa ${reserva.mesaNumero} ya está reservada cerca de ese horario.`);
+      }
+
+      const clienteYaTieneReserva = reservasCliente.docs.some((docReserva) =>
+        VIGENTES.includes(desdeDocumento(docReserva.id, docReserva.data()).estado),
+      );
+      if (clienteYaTieneReserva) {
+        throw new Error('Ya tenés una reserva pendiente o confirmada. Cancelala para pedir otra.');
+      }
+
+      transaccion.set(bloqueoMesa, { actualizadoEn: new Date().toISOString() });
+      transaccion.set(bloqueoCliente, { actualizadoEn: new Date().toISOString() });
+      transaccion.set(referencia, { ...reserva }, { merge: true });
+    });
+
+    this.guardadas.update((actual) => [...actual.filter((r) => r.id !== reserva.id), reserva]);
   }
 
   private async guardar(reserva: Reserva): Promise<void> {

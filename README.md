@@ -13,23 +13,14 @@ La planificación, fechas de inicio/finalización, branches y detalle de histori
 * 📌 **Tablero de Proyecto & Backlog:** [GitHub Projects - Tablero Sakura](https://github.com/users/ferlautaro2001/projects/2)
 * 🎫 **Gestión de Incidencias & User Stories:** [Issues del Repositorio](https://github.com/ferlautaro2001/sakurapp-2026/issues)
 
-### Integrantes, módulos y plazos
+### Integrantes
 
-Cada fila deja asentado quién develops cada módulo, desde cuándo y hasta cuándo, y en qué
-branch vive su trabajo. Si un integrante no llegara a terminar con la funcionalidad
-comprometida, el plazo se cambia o el módulo se reasigna, y queda registrado acá.
-
-| Integrante | Rol | Módulos (objetivos) a desarrollar | Fecha de inicio | Fecha de finalización | Branch |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Fernandez Di Bella, Lautaro Alfredo** (@ferlautaro2001) | Líder de proyecto | Épica 0 (Infraestructura, Data Connect, Design System) · US-1.4 (home y logout) · US-3.2 (push + correo corporativo) · US-4.3 (mesas y QR) · US-5.3 (asignación de mesa) · US-6.2 (consulta al mozo y chat) · integración de `main` y anotación en las revisiones semanales | 22-08-2026 | 17-10-2026 *(en curso: Épicas 8 a 15)* | `lauti` · `feat/setup-design-splash` · `feat/backend-data-auth` |
-| **Graneros, Johann** (@johanngraneros) | Desarrollo | US-4.1 (alta de platos con 3 fotos) · US-4.4 (tablero de mesas) · US-6.1 (carta desde el QR de mesa) · US-7.1 (comanda digital con total acumulado) | 28-08-2026 | 12-09-2026 | `johann` |
-| **Garcez, Gonzalo** (@gonzadjstaff-hue) | Desarrollo | US-3.3 (alta de personal con foto y lector de DNI) · US-4.2 (alta de bebidas y coctelería) · US-5.2 (lista de espera del metre) · US-7.3 (confirmación del pedido y derivación a sectores) | 29-08-2026 | 09-09-2026 | `gonzalo` · `feat/login-accesos-rapidos` |
-| **Nagel Cano, Sabrina** (@sabrinanagel) | Desarrollo | US-3.1 (aprobación y rechazo de clientes) · US-5.1 (invitado y QR de ingreso) · US-7.2 (rechazo de la comanda y re-edición) | 29-08-2026 | 19-10-2026 | `sabrina` · `feat/registro-cliente-home` |
-
-> **Estado de los plazos al 20-10-2026:** no hay módulos sin terminar ni plazos vencidos.
-> Los módulos entregados hasta el punto 15 del enunciado están terminados y verificados.
-> El trabajo que sigue (puntos 16 a 24) está asignado y anotado en las issues nuevas del
-> backlog, con su responsable y su branch.
+| Integrante | Rol |
+| :--- | :--- |
+| **Fernandez Di Bella, Lautaro Alfredo** (@ferlautaro2001) | Project Manager - Dev |
+| **Graneros, Johann** (@johanngraneros) | Dev |
+| **Garcez, Gonzalo** (@gonzadjstaff-hue) | Dev |
+| **Nagel Cano, Sabrina** (@sabrinanagel) | Dev |
 
 ---
 
@@ -52,53 +43,26 @@ comprometida, el plazo se cambia o el módulo se reasigna, y queda registrado ac
 * **Lenguajes & Estilos:** TypeScript 6, HTML5, SCSS/CSS3, Tailwind CSS & Font Awesome
 
 ---
-
-## Índice Visual de Pantallas
-
-Todas las imágenes del proyecto están en la carpeta [`visuals/`](visuals/) y se indexan acá.
-
-### Capturas de las pantallas
-
-| # | Pantalla | Imagen |
-| :--- | :--- | :---: |
-| 01 | Splash animado | <img src="visuals/01-splash-dinamico.png" width="150" alt="Splash animado"/> |
-| 02 | Presentación estática | <img src="visuals/02-presentacion-estatica.png" width="150" alt="Presentación estática"/> |
-| 03 | Login con accesos rápidos | <img src="visuals/03-login.png" width="150" alt="Login"/> |
-| 04 | Registro de cliente | <img src="visuals/04-registro-cliente.png" width="150" alt="Registro de cliente"/> |
-| 05 | Registro enviado | <img src="visuals/05-registro-enviado.png" width="150" alt="Registro enviado"/> |
-| 06 | Registro de invitado | <img src="visuals/06-registro-invitado.png" width="150" alt="Registro de invitado"/> |
-| 07 | Cuenta pendiente de aprobación | <img src="visuals/07-estado-cuenta-pendiente.png" width="150" alt="Estado de cuenta pendiente"/> |
-| 08 | Cuenta rechazada | <img src="visuals/08-estado-cuenta-rechazado.png" width="150" alt="Estado de cuenta rechazado"/> |
-| 09 | Home de la sesión | <img src="visuals/09-home-sesion.png" width="150" alt="Home de la sesión"/> |
-| 10 | Confirmación de cierre de sesión | <img src="visuals/10-cierre-sesion-modal.png" width="150" alt="Cierre de sesión"/> |
-| 11 | Login con error de validación | <img src="visuals/11-login-error-validacion.png" width="150" alt="Login con error de validación"/> |
-
-### Paleta de marca
-
-| Imagen | Imagen |
-| :---: | :---: |
-| <img src="visuals/paleta.png" width="220" alt="Paleta de la marca"/> | Paleta de colores y tipografías de Sakura |
-
-### Correos automáticos
-
-| Correo | Imagen |
-| :--- | :---: |
-| Registro en revisión | <img src="visuals/correo-registro-en-revision.png" width="220" alt="Correo de registro en revisión"/> |
-| Cuenta aprobada | <img src="visuals/correo-cuenta-aprobada.png" width="220" alt="Correo de cuenta aprobada"/> |
-| Solicitud rechazada | <img src="visuals/correo-solicitud-rechazada.png" width="220" alt="Correo de solicitud rechazada"/> |
-| Factura | <img src="visuals/correo-factura.png" width="220" alt="Correo de la factura"/> |
-
-### Códigos QR
-
-Los 18 códigos QR del sistema (ingreso al local, 12 mesas y 5 propinas) están indexados con su
-contenido en el [catálogo de códigos QR](#catálogo-de-códigos-qr-del-sistema) de más abajo.
-
-### Galería externa
+### Índice de Pantallas 
 
 El sitio con todas las capturas en alta resolución, de los flujos y componentes de la
 aplicación, está en:
 
 🔗 **https://sakupantallas.vercel.app/**
+
+
+### Correos automáticos
+
+<table>
+  <tr>
+    <td align="center"><strong>Registro en revisión</strong><br/><img src="visuals/correo-registro-en-revision.png" width="420" alt="Correo de registro en revisión"/></td>
+    <td align="center"><strong>Cuenta aprobada</strong><br/><img src="visuals/correo-cuenta-aprobada.png" width="420" alt="Correo de cuenta aprobada"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Solicitud rechazada</strong><br/><img src="visuals/correo-solicitud-rechazada.png" width="420" alt="Correo de solicitud rechazada"/></td>
+    <td align="center"><strong>Factura</strong><br/><img src="visuals/correo-factura.png" width="420" alt="Correo de la factura"/></td>
+  </tr>
+</table>
 
 ---
 

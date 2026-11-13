@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
-import { guardiaJuegos, guardiaPerfil } from './nucleo/guardias/guardias';
+import { guardiaCartaCliente, guardiaJuegos, guardiaPerfil } from './nucleo/guardias/guardias';
 import { SesionService } from './nucleo/servicios/sesion.service';
 
 /**
@@ -115,7 +115,10 @@ export const routes: Routes = [
   // --- carta: cocina, barra, mozo y el comensal ya sentado ---
   {
     path: 'carta',
-    canActivate: [guardiaPerfil('COCINERO', 'CANTINERO', 'MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO')],
+    canActivate: [
+      guardiaPerfil('COCINERO', 'CANTINERO', 'MOZO', 'CLIENTE_REGISTRADO', 'CLIENTE_ANONIMO'),
+      guardiaCartaCliente,
+    ],
     children: [
       {
         path: '',

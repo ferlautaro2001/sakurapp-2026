@@ -15,7 +15,7 @@ import { environment } from '../../../environments/environment';
 import { AlmacenService } from '../datos/almacen.service';
 import { nuevoId } from '../datos/semilla';
 import { AltaMesa, Mesa } from '../modelos/modelos';
-import { EstadoMesa } from '../modelos/enums';
+import { EstadoMesa, normalizarEstadoMesa } from '../modelos/enums';
 import { QrService } from './qr.service';
 import { AlmacenamientoService } from './almacenamiento.service';
 import { FirestoreService } from './firestore.service';
@@ -116,7 +116,9 @@ export class MesasService {
     }
 
     // 2. Generar código QR vectorial
-    const qrDataUrl = await this.qr.generarDeMesa(idLocal, datos.numero);
+    // Data Connect asigna otro UUID al insertar; el validador también resuelve
+    // el número de mesa, así el QR provisional sigue siendo válido.
+    const qrDataUrl = await this.qr.generarDeMesa(String(datos.numero), datos.numero);
     let qrCodeUrl = qrDataUrl;
     try {
       qrCodeUrl = await this.almacenamiento.subirFoto(`mesas/${idLocal}/qr.png`, qrDataUrl);
@@ -151,6 +153,12 @@ export class MesasService {
 
       if (res?.data?.mesa_insert?.id) {
         mesa.id = res.data.mesa_insert.id;
+        const qrFinal = await this.qr.generarDeMesa(mesa.id, mesa.numero);
+        try {
+          mesa.qrCodeUrl = await this.almacenamiento.subirFoto(`mesas/${mesa.id}/qr.png`, qrFinal);
+        } catch {
+          mesa.qrCodeUrl = qrFinal;
+        }
         console.log(`✅ Mesa ${mesa.numero} registrada exitosamente en Cloud SQL Data Connect`);
       }
     } catch (sqlErr: any) {
@@ -217,7 +225,7 @@ export class MesasService {
         numero: mesa.numero,
         cantidadComensales: mesa.cantidadComensales,
         tipo: mesa.tipo as Mesa['tipo'],
-        estado: mesa.estado as EstadoMesa,
+        estado: normalizarEstadoMesa(mesa.estado),
         fotoUrl: mesa.fotoUrl,
         qrCodeUrl: mesa.qrCodeUrl,
       }));

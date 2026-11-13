@@ -38,6 +38,7 @@ import {
   Sector,
   TipoMesa,
   TipoProducto,
+  normalizarEstadoMesa,
 } from '../modelos/enums';
 
 export interface NotificacionCola {
@@ -271,7 +272,7 @@ export class FirestoreService {
             numero: Number(data['numero']) || 0,
             cantidadComensales: Number(data['cantidadComensales']) || 2,
             tipo: (data['tipo'] as TipoMesa) || 'ESTANDAR',
-            estado: (data['estado'] as EstadoMesa) || 'VACIA',
+            estado: normalizarEstadoMesa(data['estado']),
             clienteActualId: data['clienteActualId'] || null,
             fotoUrl: data['fotoUrl'] || undefined,
             qrCodeUrl: data['qrCodeUrl'] || undefined,

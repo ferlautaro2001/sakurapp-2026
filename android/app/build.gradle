@@ -59,7 +59,7 @@ try {
             resValue "string", "google_app_id", "1:301899482653:android:7a182293a16db7038e68f4"
             resValue "string", "gcm_defaultSenderId", "301899482653"
             resValue "string", "project_id", "project-48c8c6f4-0e4f-456d-889"
-            resValue "string", "google_api_key", "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+            resValue "string", "google_api_key", System.getenv("FIREBASE_API_KEY") ?: ""
         }
     }
 } catch(Exception e) {
@@ -67,7 +67,7 @@ try {
         resValue "string", "google_app_id", "1:301899482653:android:7a182293a16db7038e68f4"
         resValue "string", "gcm_defaultSenderId", "301899482653"
         resValue "string", "project_id", "project-48c8c6f4-0e4f-456d-889"
-        resValue "string", "google_api_key", "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+        resValue "string", "google_api_key", System.getenv("FIREBASE_API_KEY") ?: ""
     }
     logger.info("google-services.json not found, fallback resources applied")
 }

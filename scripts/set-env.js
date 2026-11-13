@@ -114,7 +114,7 @@ if (fs.existsSync(androidAppDir) && !fs.existsSync(googleServicesPath)) {
         oauth_client: [],
         api_key: [
           {
-            current_key: process.env.FIREBASE_API_KEY || "AIzaSyD0EI7W1MhycSe9UskqUbC2QJJtn1OvqjM"
+            current_key: process.env.FIREBASE_API_KEY || ""
           }
         ],
         services: {
